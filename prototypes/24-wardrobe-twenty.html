@@ -37,6 +37,7 @@
   .chip[aria-pressed="true"] { color: var(--ink); border-color: var(--cyan); background: var(--press); }
   .chip:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
   /* the twenty */
+  .tag.new { color: var(--cyan); border-color: var(--cyan); }
   #twenty { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
   .card { display: grid; gap: 8px; align-content: start; padding: 10px 10px 14px; border: 1px solid var(--rule); }
   .card canvas { width: 100%; aspect-ratio: 56 / 50; }
@@ -87,9 +88,9 @@
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Clothing · twenty pieces · hats, hair, masks · eleven slots</div>
+    <div class="eyebrow">Clothing · forty pieces · hats, hair, masks · eleven slots</div>
     <h1>The ronin's wardrobe</h1>
-    <p>Twenty pieces of clothing for the ronin, each hung on the game's own rig and posed with the game's own frames. Loose parts are live cloth. Everything is a shade of black. Dress him below, then see how the layers stack.</p>
+    <p>Forty pieces of clothing for the ronin, each hung on the game's own rig and posed with the game's own frames. Loose parts are live cloth. Everything is a shade of black. Dress him below, then see how the layers stack.</p>
   </header>
 
   <section aria-labelledby="room-h">
@@ -118,7 +119,7 @@
   </section>
 
   <section aria-labelledby="twenty-h">
-    <div class="intro"><h2 id="twenty-h">The twenty</h2><p>Each figure wears one piece alone and loops through a breath, a run, a cut and the counter stance. Thirteen are from the rig study; seven are new: hakama, leg wraps, haori, maedare apron, tasuki, straw rain cape and cowl.</p></div>
+    <div class="intro"><h2 id="twenty-h">The forty</h2><p>Each figure wears one piece alone and loops through a breath, a run, a cut and the counter stance, grouped by slot. The first twenty are the earlier set; the twenty marked <span class="tag new">new</span> fill out every slot: torn hakama, tight trousers, shin guards, short kimono, jinbaori, chain shirt, monk's robe, split cape, sashimono banner, travel bundle, sake gourd, belt and pouches, tassets, shoulder strap, prayer beads, fur mantle, kataginu, neckerchief, iron gorget and hand guards.</p></div>
     <div id="twenty"></div>
   </section>
 
@@ -153,7 +154,7 @@
       <div><h3>Around his body</h3><p>The far arm and far leg sit behind everything. The torso is the zero plane. Clothes wrap round it, so the half of a sash or mantle behind him hides and the near half shows.</p></div>
       <div><h3>The near arm and the blade</h3><p>In the side view his near arm is drawn over whatever he wears, as it always was. Wraps and armoured sleeves ride on that arm. A held blade sits above everything.</p></div>
       <div><h3>Cloth</h3><p>Loose parts are cloth pinned to the bones. They fall under gravity and catch the breeze and his own speed, and they are kept out of his body and legs. Stiff pieces pull back to their cut.</p></div>
-      <div><h3>Turning and other views</h3><p>Each piece is measured from the skeleton, not drawn in pixels. When the port system brings the front and back views, only the skeleton changes and all twenty follow.</p></div>
+      <div><h3>Turning and other views</h3><p>Each piece is measured from the skeleton, not drawn in pixels. When the port system brings the front and back views, only the skeleton changes and all forty follow.</p></div>
     </div>
     <div class="intro"><h3>The palette</h3><p>Seven shades of black for the clothes, nothing brighter. The accents come from the effects, his eyes and the masks, which can be any colour.</p></div>
     <div class="swatches" id="swatches"></div>
@@ -173,8 +174,8 @@
   <div class="ask">
     <h2>Your call</h2>
     <ol>
-      <li><b>Which pieces stay?</b> Keep, cut or change any of the twenty.</li>
-      <li><b>His default outfit.</b> In the game today he starts in the straw hat and the flat mantle. Should he start bareheaded?</li>
+      <li><b>Which pieces stay?</b> Keep, cut or change any of the forty.</li>
+      <li><b>His default outfit.</b> Since the hat isn't on by default, the game will start him bareheaded in the flat mantle. Say if you want something else.</li>
       <li><b>Slots.</b> Keep the eleven, one piece in each?</li>
       <li><b>Hats and masks.</b> Are the four special pairs the kind of thing you want? Should a special pair also do something in play, like a bonus?</li>
       <li><b>Hair.</b> Which styles stay? Should hair colour be natural shades only, or any dye?</li>
@@ -185,7 +186,7 @@
 </div>
 <script>
 (function() {
-	//#region src/rig/pose.js
+	//#region ../../../../../../home/claude/chud_the_anime/src/rig/pose.js
 	const REST = {
 		hx: 0,
 		hy: 0,
@@ -230,7 +231,7 @@
 		});
 	}
 	//#endregion
-	//#region src/anims/poses.js
+	//#region ../../../../../../home/claude/chud_the_anime/src/anims/poses.js
 	const run8 = Array.from({ length: 8 }, (_, i) => {
 		const a = i / 8 * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);
 		return pz({
@@ -1181,7 +1182,7 @@
 		]
 	};
 	//#endregion
-	//#region src/anims/anims.js
+	//#region ../../../../../../home/claude/chud_the_anime/src/anims/anims.js
 	const ANIMS = {
 		idle: {
 			n: 16,
@@ -1366,7 +1367,7 @@
 		}
 	};
 	//#endregion
-	//#region src/config.js
+	//#region ../../../../../../home/claude/chud_the_anime/src/config.js
 	const RC = {
 		K: "#0c0d11",
 		D: "#2c323b",
@@ -1389,7 +1390,7 @@
 		c6: "#3d424d"
 	};
 	//#endregion
-	//#region src/rig/rig.js
+	//#region ../../../../../../home/claude/chud_the_anime/src/rig/rig.js
 	const Z = {
 		scab: -3.5,
 		farArm: -3,
@@ -1503,7 +1504,7 @@
 		return { hc };
 	}
 	//#endregion
-	//#region src/wardrobe/skeleton.js
+	//#region ../../../../../../home/claude/chud_the_anime/src/wardrobe/skeleton.js
 	const TAU = Math.PI * 2;
 	const V = {
 		add: (a, b) => [
@@ -1663,7 +1664,7 @@
 		return J;
 	}
 	//#endregion
-	//#region src/wardrobe/raster.js
+	//#region ../../../../../../home/claude/chud_the_anime/src/wardrobe/raster.js
 	const pack = (hex) => {
 		const n = parseInt(hex.slice(1), 16);
 		return (255 << 24 | (n & 255) << 16 | n & 65280 | n >> 16) >>> 0;
@@ -1758,7 +1759,7 @@
 		}
 	}
 	//#endregion
-	//#region src/wardrobe/cloth.js
+	//#region ../../../../../../home/claude/chud_the_anime/src/wardrobe/cloth.js
 	var Cloth = class {
 		constructor(n) {
 			this.p = new Float32Array(n * 3);
@@ -1951,7 +1952,7 @@
 		}
 	}
 	//#endregion
-	//#region src/wardrobe/items.js
+	//#region ../../../../../../home/claude/chud_the_anime/src/wardrobe/items.js
 	const TATTER = [
 		11,
 		9,
@@ -2624,7 +2625,7 @@
 		}
 	}
 	//#endregion
-	//#region ../../../tmp/claude-0/-home-claude-chud-the-anime/f3966784-c5ab-5522-82f4-36aeaa80c408/scratchpad/w24/entry.js
+	//#region entry.js
 	const LAYERS = [
 		{
 			id: "legs",
@@ -2995,6 +2996,816 @@
 			}]
 		}
 	];
+	const NECK2 = [{
+		f: "c",
+		u: 8.1,
+		vf: 1.9,
+		vb: -2.1,
+		b: 2.4
+	}, {
+		f: "c",
+		u: 9.2,
+		vf: 1.6,
+		vb: -1.8,
+		b: 2
+	}];
+	const MRING = {
+		f: "c",
+		u: 7.5,
+		vf: 2.7,
+		vb: -2.9,
+		b: 3.6
+	};
+	const MORE_START = NEW.length;
+	NEW.push({
+		id: "rhakama",
+		slot: "legs",
+		name: "Torn hakama",
+		about: "The hakama after a long war: cut short and ragged at the hem, one leg torn higher than the other.",
+		parts: [{
+			kind: "skirt",
+			f: "h",
+			ring: {
+				u: 1.6,
+				vf: 2.6,
+				vb: -2.7,
+				b: 3
+			},
+			cols: 14,
+			rows: 4,
+			drop: [5, 7.6],
+			flare: 1.6,
+			jag: .7,
+			stiff: .05,
+			catch: .8,
+			col: {
+				out: "c1",
+				in: "c0",
+				hem: "c2"
+			},
+			bias: 0
+		}, {
+			kind: "line",
+			f: "h",
+			u: 1.6,
+			vf: 2.6,
+			vb: -2.7,
+			b: 3,
+			col: "c3",
+			bias: .05
+		}]
+	}, {
+		id: "momohiki",
+		slot: "legs",
+		name: "Tight trousers",
+		about: "Close-fitting momohiki from hip to calf. Nothing to catch on a slide.",
+		parts: [{
+			kind: "legs",
+			style: "tight",
+			col: ["c3", "c1"],
+			bias: 0
+		}]
+	}, {
+		id: "suneate",
+		slot: "legs",
+		name: "Iron shin guards",
+		about: "Suneate: iron splints strapped over the shins, a round plate at each knee.",
+		parts: [{
+			kind: "legs",
+			style: "guard",
+			col: ["c4", "c2"],
+			edge: "c6",
+			bias: 0
+		}]
+	}, {
+		id: "kimono",
+		slot: "body",
+		name: "Short kimono",
+		about: "Closed and wrapped left over right, to mid-thigh. The plainest thing he could wear.",
+		parts: [
+			{
+				kind: "shell",
+				rings: [
+					{
+						f: "h",
+						u: 1.2,
+						vf: 2.3,
+						vb: -2.3,
+						b: 2.6
+					},
+					{
+						f: "c",
+						u: 4,
+						vf: 2.3,
+						vb: -2.4,
+						b: 2.5
+					},
+					{
+						f: "c",
+						u: 7.3,
+						vf: 2.6,
+						vb: -2.7,
+						b: 3.1
+					},
+					{
+						f: "c",
+						u: 8.7,
+						vf: 1.8,
+						vb: -2,
+						b: 2.1
+					}
+				],
+				col: [
+					"c2",
+					"c2",
+					"c3"
+				],
+				bias: 0
+			},
+			{
+				kind: "lapel",
+				col: "c4",
+				bias: .1
+			},
+			{
+				kind: "skirt",
+				f: "h",
+				ring: {
+					u: 1.3,
+					vf: 2.6,
+					vb: -2.7,
+					b: 3
+				},
+				cols: 12,
+				rows: 3,
+				drop: [3.8, 4.2],
+				flare: 1,
+				stiff: .12,
+				catch: .5,
+				col: {
+					out: "c2",
+					in: "c0",
+					hem: "c3"
+				},
+				bias: 0
+			}
+		]
+	}, {
+		id: "jinbaori",
+		slot: "body",
+		name: "Jinbaori",
+		about: "A sleeveless war surcoat, split at the back. Its tails fly out behind him like a general's.",
+		parts: [
+			{
+				kind: "shell",
+				rings: [
+					{
+						f: "c",
+						u: 3.6,
+						vf: 2.5,
+						vb: -2.6,
+						b: 2.8
+					},
+					{
+						f: "c",
+						u: 7.4,
+						vf: 2.7,
+						vb: -2.9,
+						b: 3.3
+					},
+					{
+						f: "c",
+						u: 8.8,
+						vf: 1.9,
+						vb: -2.1,
+						b: 2.3
+					}
+				],
+				col: ["c4", "c4"],
+				bias: 0
+			},
+			{
+				kind: "line",
+				f: "c",
+				u: 7.4,
+				vf: 2.7,
+				vb: -2.9,
+				b: 3.3,
+				col: "c6",
+				bias: .05
+			},
+			{
+				kind: "skirt",
+				f: "c",
+				ring: {
+					u: 3.6,
+					vf: 2.5,
+					vb: -2.6,
+					b: 2.8
+				},
+				arc: [1.9, 2 * Math.PI - 1.9],
+				cols: 8,
+				rows: 4,
+				drop: [6.4, 7.2],
+				flare: 1.2,
+				stiff: .04,
+				catch: 1,
+				col: {
+					out: "c4",
+					in: "c0",
+					hem: "c5"
+				},
+				bias: 0
+			}
+		]
+	}, {
+		id: "kusari",
+		slot: "body",
+		name: "Chain shirt",
+		about: "Kusari: fine iron rings sewn to cloth, worn under everything else. It glints in rows.",
+		parts: [{
+			kind: "shell",
+			rings: [
+				{
+					f: "h",
+					u: 1.6,
+					vf: 2.3,
+					vb: -2.3,
+					b: 2.6
+				},
+				{
+					f: "c",
+					u: 4.2,
+					vf: 2.4,
+					vb: -2.5,
+					b: 2.6
+				},
+				{
+					f: "c",
+					u: 7.4,
+					vf: 2.6,
+					vb: -2.7,
+					b: 3
+				}
+			],
+			col: ["c2", "c2"],
+			bias: 0
+		}, ...[
+			2.6,
+			4.4,
+			5.6,
+			6.8
+		].map((u, i) => ({
+			kind: "line",
+			f: i ? "c" : "h",
+			u,
+			vf: 2.5,
+			vb: -2.6,
+			b: 2.8,
+			col: "c5",
+			bias: .05
+		}))]
+	}, {
+		id: "robe",
+		slot: "body",
+		name: "Monk's robe",
+		about: "Down to the ankle, with a kesa stole crossed over one shoulder. It drags at the hem when he runs.",
+		parts: [
+			{
+				kind: "shell",
+				rings: [
+					{
+						f: "h",
+						u: .3,
+						vf: 2.4,
+						vb: -2.4,
+						b: 2.7
+					},
+					{
+						f: "c",
+						u: 4,
+						vf: 2.3,
+						vb: -2.4,
+						b: 2.5
+					},
+					{
+						f: "c",
+						u: 7.3,
+						vf: 2.6,
+						vb: -2.7,
+						b: 3.1
+					},
+					{
+						f: "c",
+						u: 8.7,
+						vf: 1.8,
+						vb: -2,
+						b: 2.1
+					}
+				],
+				col: [
+					"c1",
+					"c1",
+					"c2"
+				],
+				bias: 0
+			},
+			{
+				kind: "skirt",
+				f: "h",
+				ring: {
+					u: .5,
+					vf: 2.6,
+					vb: -2.7,
+					b: 3
+				},
+				cols: 14,
+				rows: 5,
+				drop: [9.4, 10],
+				flare: 1.4,
+				stiff: .06,
+				catch: .6,
+				col: {
+					out: "c1",
+					in: "c0",
+					hem: "c2"
+				},
+				bias: 0
+			},
+			{
+				kind: "strap",
+				side: 1,
+				w: 2,
+				col: "c4",
+				bias: .1
+			}
+		]
+	}, {
+		id: "splitcape",
+		slot: "back",
+		name: "Split cape",
+		about: "Two long panels that part in the middle and fly apart when he spins.",
+		parts: [{
+			kind: "sheet",
+			f: "c",
+			u: 8.1,
+			v: -2.3,
+			b0: -2.7,
+			b1: -.4,
+			cols: 3,
+			rows: 9,
+			seg: 1.5,
+			back: .3,
+			stiff: .01,
+			col: {
+				out: "c3",
+				in: "c1",
+				hem: "c2",
+				edge: "c4"
+			},
+			bias: 0
+		}, {
+			kind: "sheet",
+			f: "c",
+			u: 8.1,
+			v: -2.3,
+			b0: .4,
+			b1: 2.7,
+			cols: 3,
+			rows: 9,
+			seg: 1.5,
+			back: .3,
+			stiff: .01,
+			col: {
+				out: "c3",
+				in: "c1",
+				hem: "c2",
+				edge: "c4"
+			},
+			bias: .01
+		}]
+	}, {
+		id: "banner",
+		slot: "back",
+		name: "Sashimono banner",
+		about: "A pole on his back and a black banner high over his hat, so his own side can find him. It stands clear of any hat, the kabuto included.",
+		parts: [{
+			kind: "pole",
+			col: "c5",
+			flag: "c3",
+			edge: "c1",
+			bias: 0
+		}]
+	}, {
+		id: "bundle",
+		slot: "back",
+		name: "Travel bundle",
+		about: "Everything he owns in one furoshiki, knotted across his chest and riding on his back.",
+		parts: [
+			{
+				kind: "knot",
+				f: "c",
+				u: 5.8,
+				v: -3.4,
+				b: 0,
+				size: 4,
+				col: "c3",
+				bias: 0
+			},
+			{
+				kind: "knot",
+				f: "c",
+				u: 7.1,
+				v: -3.6,
+				b: 0,
+				size: 2,
+				col: "c5",
+				bias: .05
+			},
+			{
+				kind: "strap",
+				side: -1,
+				w: 1,
+				col: "c5",
+				bias: .05,
+				short: true
+			}
+		]
+	}, {
+		id: "gourd",
+		slot: "waist",
+		name: "Sake gourd",
+		about: "A cord belt with a gourd hanging at the hip. It knocks against his leg as he runs.",
+		parts: [{
+			kind: "line",
+			f: "h",
+			u: 2.4,
+			vf: 2.25,
+			vb: -2.3,
+			b: 2.55,
+			col: "c4",
+			bias: 0
+		}, {
+			kind: "chain",
+			f: "h",
+			u: 2.2,
+			v: .6,
+			b: 2.6,
+			n: 4,
+			seg: 1.3,
+			dir: [
+				0,
+				-1,
+				.1
+			],
+			w: [1, 3],
+			split: .5,
+			col: ["c5", "c3"],
+			stiff: .1,
+			bias: .05
+		}]
+	}, {
+		id: "pouches",
+		slot: "waist",
+		name: "Belt and pouches",
+		about: "A plain belt with two small pouches: medicine at the front, whetstone at the back.",
+		parts: [
+			{
+				kind: "line",
+				f: "h",
+				u: 2.6,
+				vf: 2.3,
+				vb: -2.4,
+				b: 2.6,
+				col: "c5",
+				w: 2,
+				bias: 0
+			},
+			{
+				kind: "knot",
+				f: "h",
+				u: 1.6,
+				v: 1.6,
+				b: 2.7,
+				size: 3,
+				col: "c3",
+				bias: .05
+			},
+			{
+				kind: "knot",
+				f: "h",
+				u: 1.7,
+				v: -1.8,
+				b: 2.7,
+				size: 2,
+				col: "c4",
+				bias: .05
+			}
+		]
+	}, {
+		id: "kusazuri",
+		slot: "waist",
+		name: "Tassets",
+		about: "Kusazuri: armoured flaps hung from the waist over the thighs. They clack apart on a stride.",
+		parts: [{
+			kind: "line",
+			f: "h",
+			u: 1.8,
+			vf: 2.5,
+			vb: -2.6,
+			b: 2.8,
+			col: "c5",
+			bias: 0
+		}, {
+			kind: "skirt",
+			f: "h",
+			ring: {
+				u: 1.6,
+				vf: 2.5,
+				vb: -2.6,
+				b: 2.9
+			},
+			cols: 8,
+			rows: 3,
+			drop: [4.6, 4.6],
+			flare: 1.4,
+			down: "frame",
+			stiff: .5,
+			catch: .25,
+			col: {
+				out: "c3",
+				in: "c0",
+				hem: "c5"
+			},
+			bias: 0
+		}]
+	}, {
+		id: "bandolier",
+		slot: "ties",
+		name: "Shoulder strap",
+		about: "One wide strap from the right shoulder to the left hip, for a second blade or nothing at all.",
+		parts: [{
+			kind: "strap",
+			side: 1,
+			w: 1,
+			col: "c5",
+			bias: 0
+		}, {
+			kind: "knot",
+			f: "c",
+			u: 5.2,
+			v: 2.6,
+			b: 0,
+			size: 2,
+			col: "c6",
+			bias: .05
+		}]
+	}, {
+		id: "beads",
+		slot: "ties",
+		name: "Prayer beads",
+		about: "A long juzu worn round the neck. The beads click when he stops.",
+		parts: [{
+			kind: "beads",
+			col: ["c5", "c6"],
+			bias: 0
+		}]
+	}, {
+		id: "fur",
+		slot: "shoulders",
+		name: "Fur mantle",
+		about: "A wolf pelt over the shoulders, thick and shaggy. It shivers rather than swings.",
+		parts: [{
+			kind: "shell",
+			rings: [{
+				f: "c",
+				u: 9,
+				vf: 1.7,
+				vb: -2,
+				b: 2.4
+			}, MRING],
+			col: ["c3"],
+			bias: 0
+		}, {
+			kind: "skirt",
+			f: "c",
+			ring: MRING,
+			cols: 22,
+			rows: 2,
+			drop: [2.2, 3.6],
+			flare: .9,
+			jag: .9,
+			down: "frame",
+			stiff: .4,
+			catch: .4,
+			col: {
+				out: "c3",
+				in: "c1",
+				hem: "c4"
+			},
+			bias: 0
+		}]
+	}, {
+		id: "kataginu",
+		slot: "shoulders",
+		name: "Kataginu",
+		about: "The stiff winged vest of court dress. Its shoulders stand out square past his own.",
+		parts: [{
+			kind: "shell",
+			rings: [
+				{
+					f: "c",
+					u: 8.8,
+					vf: 1.6,
+					vb: -1.9,
+					b: 2.3
+				},
+				{
+					f: "c",
+					u: 7.8,
+					vf: 2.5,
+					vb: -2.7,
+					b: 4.9
+				},
+				{
+					f: "c",
+					u: 5,
+					vf: 2.4,
+					vb: -2.6,
+					b: 2.8
+				}
+			],
+			col: ["c4", "c3"],
+			bias: 0
+		}, {
+			kind: "line",
+			f: "c",
+			u: 7.8,
+			vf: 2.5,
+			vb: -2.7,
+			b: 4.9,
+			col: "c6",
+			bias: .05
+		}]
+	}, {
+		id: "kerchief",
+		slot: "neck",
+		name: "Neckerchief",
+		about: "A cloth knotted at the throat, its two ends flicking forward.",
+		parts: [
+			{
+				kind: "shell",
+				rings: NECK2,
+				col: ["c5"],
+				bias: 0
+			},
+			{
+				kind: "knot",
+				f: "c",
+				u: 8.3,
+				v: 2.1,
+				b: 0,
+				size: 2,
+				col: "c6",
+				bias: .05
+			},
+			{
+				kind: "chain",
+				f: "c",
+				u: 8.1,
+				v: 2.2,
+				b: .3,
+				n: 3,
+				seg: 1.2,
+				dir: [
+					.4,
+					-1,
+					.2
+				],
+				w: [1, 1],
+				col: ["c5", "c4"],
+				stiff: .05,
+				bias: .05
+			}
+		]
+	}, {
+		id: "gorget",
+		slot: "neck",
+		name: "Iron gorget",
+		about: "Nodowa: a plate collar that guards the throat. Rigid, it never moves.",
+		parts: [{
+			kind: "shell",
+			rings: [{
+				f: "c",
+				u: 7.9,
+				vf: 2.2,
+				vb: -2.3,
+				b: 2.7
+			}, {
+				f: "c",
+				u: 9.1,
+				vf: 1.7,
+				vb: -1.9,
+				b: 2.1
+			}],
+			col: ["c4"],
+			bias: 0
+		}, {
+			kind: "line",
+			f: "c",
+			u: 7.9,
+			vf: 2.2,
+			vb: -2.3,
+			b: 2.7,
+			col: "c6",
+			bias: .05
+		}]
+	}, {
+		id: "tekko",
+		slot: "hands",
+		name: "Hand guards",
+		about: "Tekko: an iron plate over the back of each hand, laced at the wrist.",
+		parts: [{
+			kind: "tekko",
+			col: "c4",
+			edge: "c6",
+			bias: 0
+		}]
+	});
+	const MORE_IDS = new Set(NEW.slice(MORE_START).map((i) => i.id));
+	function drawMore(S, part, J) {
+		const b = part.bias;
+		if (part.kind === "legs") {
+			const p = J.p;
+			for (const [lg, off, dz] of [[
+				p.fl,
+				.5,
+				1.2
+			], [
+				p.bl,
+				-.5,
+				-2.5
+			]]) {
+				const hip = J.Lh(0, off, 0), knee = V.add(hip, V.mul(dirL(lg[0]), 5)), ank = V.add(knee, V.mul(dirL(lg[0] - lg[1]), 6));
+				const z = dz + b + .3, c = dz > 0 ? part.col[0] : part.col[1], run = (A, B, w, k) => {
+					for (let i = 0; i <= 8; i++) {
+						const q = S.P(V.lerp(A, B, i / 8));
+						S.dot(q[0], q[1], z, w, k);
+					}
+				};
+				if (part.style === "tight") {
+					run(V.lerp(hip, knee, .15), knee, 2, c);
+					run(knee, V.lerp(knee, ank, .7), 2, c);
+				} else {
+					run(V.lerp(knee, ank, .15), V.lerp(knee, ank, .8), 2, c);
+					const k = S.P(knee);
+					S.dot(k[0], k[1], z + .01, 2, part.edge);
+				}
+			}
+			return true;
+		}
+		if (part.kind === "strap") {
+			const s = part.side, top = J.Lc(8.4, .4, s * 2), fr = part.short ? J.Lc(6, 2.6, -s * .5) : J.Lh(2.9, 2.5, -s * 2.2), bk = part.short ? J.Lc(6.4, -3, 0) : J.Lh(2.9, -2.5, -s * 2.2);
+			S.seg(fr, top, part.w, part.col, b + 2.5);
+			S.seg(top, bk, part.w, part.col, b - 3);
+			return true;
+		}
+		if (part.kind === "pole") {
+			const top = 25.5, back = -3.7, f = J.p.flutter || 0, L = (u, v) => S.P(J.Lc(u, v, -1.5)), z = b - 1.5;
+			S.poly([
+				L(25, -4.3),
+				L(25 + f * .4, -9.100000000000001),
+				L(18.5 + f * .8, -9.100000000000001 - f * .6),
+				L(18.5, -4.3)
+			], z, part.flag);
+			for (let i = 0; i < 3; i++) S.seg(J.Lc(23.2 - i * 1.6, -5.1, -1.5), J.Lc(23.2 - i * 1.6, -8.3, -1.5), 1, part.edge, b + .01);
+			S.seg(J.Lc(top, -4, -1.5), J.Lc(top, -9.3, -1.5), 1, part.col, b + .02);
+			S.seg(J.Lc(3, -3.3, -1.5), J.Lc(26, back, -1.5), 1, part.col, b + .02);
+			return true;
+		}
+		if (part.kind === "beads") {
+			const L = bone(J, "c").L;
+			ring(L, 8.1, 2.1, -2.2, 2.5, 18).forEach((q, i) => {
+				const s = S.P(q);
+				S.dot(s[0], s[1], s[2] + b, 1, part.col[i % 2]);
+			});
+			for (let i = 1; i <= 3; i++) {
+				const s = S.P(J.Lc(8.1 - i * 1.1, 2.4, 0));
+				S.dot(s[0], s[1], s[2] + b + 2.6, i === 3 ? 2 : 1, part.col[i % 2]);
+			}
+			return true;
+		}
+		if (part.kind === "tekko") {
+			for (const k of ["r", "l"]) {
+				const A = J.arm[k], z = b + A.dz + .3;
+				S.seg(V.lerp(A.el, A.hand, .7), A.hand, 1, part.edge, z);
+				const h = S.P(A.hand);
+				S.dot(h[0], h[1], h[2] + z, 2, part.col);
+			}
+			return true;
+		}
+		return false;
+	}
 	const MASK_PAL = {
 		hX: "#1a1c22",
 		hx: "#2f333c",
@@ -3681,7 +4492,7 @@
 			if (!F.outfit.has(it.id) || only && !only.has(it.slot)) continue;
 			it.parts.forEach((part, pi) => {
 				if (!isCloth(part)) {
-					if (!drawExtra(R, part, J)) drawPart(R, part, J);
+					if (!drawExtra(R, part, J) && !drawMore(R, part, J)) drawPart(R, part, J);
 					return;
 				}
 				const key = it.id + ":" + pi;
@@ -3862,6 +4673,43 @@
 			]
 		},
 		{
+			name: "General",
+			items: [
+				"kabuto",
+				"hair-topknot",
+				"suneate",
+				"kusari",
+				"jinbaori",
+				"kusazuri",
+				"banner",
+				"gorget",
+				"tekko",
+				"mask-menpo"
+			]
+		},
+		{
+			name: "Monk",
+			items: [
+				"tengai",
+				"robe",
+				"beads",
+				"legwraps",
+				"bundle"
+			]
+		},
+		{
+			name: "Drifter",
+			items: [
+				"hair-wild",
+				"rhakama",
+				"kimono",
+				"gourd",
+				"fur",
+				"kerchief",
+				"wraps"
+			]
+		},
+		{
 			name: "Bare",
 			items: []
 		}
@@ -4013,9 +4861,9 @@
 	});
 	$("twenty").innerHTML = LAYERS.map((l) => {
 		return cards.filter((c) => c.it.slot === l.id).map((c) => {
-			const n = ITEMS.indexOf(c.it) + 1, cl = c.it.parts.some(isCloth);
+			const n = cards.indexOf(c) + 1, cl = c.it.parts.some(isCloth), fresh = MORE_IDS.has(c.it.id);
 			return `<article class="card"><canvas width="56" height="50" aria-label="The ronin wearing only the ${c.it.name}, breathing, running, cutting"></canvas>
-    <div class="meta"><span class="num">${String(n).padStart(2, "0")}</span><span class="tag">${l.name}</span><span class="tag ${cl ? "cloth" : ""}">${cl ? "cloth" : "rigid"}</span></div>
+    <div class="meta"><span class="num">${String(n).padStart(2, "0")}</span><span class="tag">${l.name}</span><span class="tag ${cl ? "cloth" : ""}">${cl ? "cloth" : "rigid"}</span>${fresh ? "<span class=\"tag new\">new</span>" : ""}</div>
     <h3>${c.it.name}</h3><p>${c.it.about}</p></article>`;
 		}).join("");
 	}).join("");
