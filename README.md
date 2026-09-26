@@ -30,5 +30,5 @@ On a touch screen, buttons appear under the game.
 ## Layout
 
 - `game/`: the engine, one self-contained HTML file.
-- `prototypes/`: style studies, character rounds, and UI ideas.
+- `prototypes/`: style studies, character rounds, UI ideas, and test builds (`13-charged-i.html`: hold I to charge, keys 1–6 pick one of six variations).
 - `docs/design-notes.md`: decisions made so far and what's next.

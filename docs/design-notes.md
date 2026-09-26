@@ -24,7 +24,7 @@ Decisions made in the design sessions so far, newest last.
 
 ## Next
 
-1. **Held I:** hold to charge, release for a far longer dash with a much bigger area of effect. Six variations are being prototyped.
+1. **Held I:** hold to charge, release for a far longer dash with a much bigger area of effect. Six variations to choose from in `prototypes/13-charged-i.html`: Flash Line, Thousand Cuts, Crescent Moon, Storm Chain, Cross Rift, Afterimage Barrage.
 2. **K assassinations:**
    - With an isolated enemy in range (no other enemy within the isolation distance, 36 px to start), K flashes to it and plays an execution.
    - A kill resets K after 0.2 s.
