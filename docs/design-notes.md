@@ -81,6 +81,14 @@ The owner said the deaths still don't feel like someone dying, and the execution
 - **Sword impact.** Each hit knocks him away from the blade, he shakes through the hit pause, light sparks leave out the far side, and a killing blow (hit pause of 0.09 s or more) gets two impact frames, black then white.
 - **Blood.** Dark red drops fly out with the spray and stain the floor, pieces trail a little and pool where they land. Approved as a new palette colour, alongside the impact frames.
 
+## Elements (approved 2026-09-26, artifact "Ronin Elements")
+- His electricity is one element of several: Storm (default), Fire, Slime, Water, Wind, Energy, Psychic. The owner loved them.
+- Each element is its own matter on every move, never recoloured lightning: only Storm and Energy use bolts and glitch slices.
+- Slime: goo gathers and sticks ON his body when he charges (never just floating round him); on K he melts into a puddle, stretches to the new spot and stands back up.
+- Floor marks: attacks and the teleport leave them (puddles, scorch, ripples); Qi skills leave nothing on the floor.
+- A new style is one palette row plus one kit. Executions layer the element on top of the deaths pass; the body motion stays.
+- `[` and `]` step through the elements for testing; 1-4 stay free for the quick slots.
+
 ## Next
 
 2. **K assassinations:**

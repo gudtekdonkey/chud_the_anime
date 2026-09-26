@@ -1,6 +1,6 @@
 // ---- Constants: the screen, the palette, the rig's frame ----
 export const W = 480, H = 270;
-export const COL = { body: '#15181c', mid: '#262b31', eye: '#6ff3e4', blade: '#f2f2f2', fx: '#52e8d6', fx2: '#b8fff6' };
+export const COL = { body: '#15181c', mid: '#262b31', eye: '#6ff3e4', blade: '#f2f2f2', fx: '#52e8d6', fx2: '#b8fff6', core: '#ffffff', flash: '#e4fffb' };
 // one rig frame: 48x48, his feet at (OX, OY)
 export const FW = 48, FH = 48, OX = 24, OY = 40;
 // the rig's palette: one letter per colour, shared by the rig and the hand-drawn rows

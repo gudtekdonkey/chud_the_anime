@@ -2,6 +2,7 @@ import { COL } from '../config.js';
 import { g } from '../screen.js';
 import { P } from '../state.js';
 import { pixText } from './pixfont.js';
+import { EL } from '../fx/element.js';
 
 // the Qi meter, bottom left: a tiny pixel label, a 48px bar, glowing and crackling when full (the storm)
 export function drawQi() {
@@ -15,5 +16,5 @@ export function drawQi() {
   if (P.qiPop > 0) { g.globalAlpha = P.qiPop * 2; g.fillStyle = '#ffffff'; g.fillRect(x - 1, y - 1, w + 2, 5); g.globalAlpha = 1; }
   if (full) { g.fillStyle = '#ffffff'; for (let i = 0; i < 3; i++) if (Math.random() < .5) { let px = x + (Math.random() * fill | 0), py = y - 1 - (Math.random() * 2 | 0);
       for (let k = 0; k < 4; k++) { g.fillRect(px, py, 1, 1); px += 1; py += Math.random() < .5 ? -1 : 1; } }
-    pixText('STORM', 82, y - 1, blink ? COL.fx2 : '#ffffff'); }
+    pixText(EL.cur.chain, 82, y - 1, blink ? COL.fx2 : '#ffffff'); }
 }

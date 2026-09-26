@@ -3,6 +3,7 @@ import { ANIMS } from './anims.js';
 import { OPEN_FRONT, INVITE_FRONT, frontFrame, sitFrame } from './hand-drawn.js';
 import { POSES, GLF } from './poses.js';
 import { rig } from '../rig/rig.js';
+import { EL } from '../fx/element.js';
 
 // ---- Sheets: every animation is baked to a strip at load, so a dropped-in PNG strip can replace any one of them ----
 function sliceGlitch(g, fx, s, seed) {
@@ -34,7 +35,7 @@ function placeholderSheet(name) {
     const ps = POSES[name], p = ps && ps[i % ps.length];   // exec has no sheet: its stage draws him live
     if (p) rig(g, i * FW, p);
     const gl = GLF[name] && GLF[name][i];
-    if (gl) sliceGlitch(g, i * FW, gl, i + name.length * 7);
+    if (gl && EL.cur.glitch) sliceGlitch(g, i * FW, gl, i + name.length * 7);
   }
   return { img: c, fw: FW, fh: FH, n, ox: OX, oy: OY, custom: false };
 }
@@ -45,3 +46,5 @@ for (const k in ANIMS) SHEETS[k] = placeholderSheet(k);
 export const dur = k => ANIMS[k].n / ANIMS[k].fps;
 // after a move's poses change (a new personality): bake its sheet again, unless a dropped-in strip has replaced it
 export function rebake(k) { ANIMS[k].n = POSES[k].length; if (!SHEETS[k].custom) SHEETS[k] = placeholderSheet(k); }
+// an element swap recolours his eyes and the baked glitch slices, so every placeholder is baked again
+export function rebakeAll() { for (const k in ANIMS) if (!SHEETS[k].custom) SHEETS[k] = placeholderSheet(k); }

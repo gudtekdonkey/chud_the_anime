@@ -52,6 +52,8 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `fx/debris.js` | Stone chips the storm slam gathers and flings, floor cracks |
 | `fx/moon.js` | The Crescent Moon: sweep, hang, shatter, its light on the floor |
 | `fx/void.js` | Cross Rift's tear in reality |
+| `fx/element.js` | `ELEMENTS` (palette + kit per element), `EL` (the current one), `setElement`, `cc`/`ec` (storm white and cyan to the element's tones) |
+| `fx/matter.js` | The non-lightning elements' matter (flames, goo, drops, gusts, motes), floor stains, the kits `FIRE`/`SLIME`/`WATER`/`WIND`/`PSYCHIC`, `qiFx` |
 | `fx/blood.js` | Blood drops, floor stains and pools |
 | `assassin/targets.js` | The one place K reads enemies from (the enemy API): `targets`, `faceOf`, `hold` (an execution takes one over), `roomFade` |
 | `assassin/markers.js` | Isolation bubbles, link lines, the kill line and the K prompt; `K.pick` (whom K would execute now), `K_RANGE` |
@@ -72,12 +74,14 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `ui/pixfont.js` | The 5-row pixel font the HUD draws with (`pixText`, `textW`) |
 | `ui/moveset.js` | The moveset table under the game (from `ANIMS` "about" rows + skill rows) |
 | `ui/personality.js` | The personality picker under the game (remembered in localStorage) |
+| `ui/element-picker.js` | The element buttons over the game, `[` / `]` to step through them |
 | `ui/strip-tester.js` | "Test a sprite strip": drop a PNG strip in place of any animation |
 | `styles.css` / `index.html` | The page; `index.html` holds markup only |
 
 - Shared state lives in `state.js` and is imported, never copied. A value other modules reassign goes on `S`, because an imported `let` cannot be reassigned.
 - Keep files focused and under about 400 lines. Keep the compact style and the short WHY comments.
 - Effects are drawn in world space, never baked into sheets, so they survive real art replacing a placeholder.
+- Effects take their colours from `COL` (never a literal cyan) and throw bolts, sparks and slivers through `zap`/`spark`/`residue`, so every element re-skins them. A new element is a row in `ELEMENTS` plus a kit in `fx/matter.js`.
 
 ## Design rules (from `docs/design-notes.md`)
 

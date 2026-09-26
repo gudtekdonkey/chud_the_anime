@@ -17,12 +17,15 @@ import { gate, startCd, updateCds } from './cooldowns.js';
 import { updateEnemies } from '../world/enemies.js';
 import { assassinate, tickStages, updateStages } from '../assassin/assassinate.js';
 import { K, updateMarkers } from '../assassin/markers.js';
+import { EL } from '../fx/element.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
   for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; q.life -= dt; }
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
   P.ghosts.forEach(g => { g.age += dt; g.white -= dt; }); P.ghosts = P.ghosts.filter(g => g.age < g.hold + .25);
+  if (P.hide > 0 && P.state !== 'tele' && P.state !== 'idle' && P.state !== 'run') P.hide = 0;   // acting mid-slither: he re-forms at once
+  P.hide = Math.max(0, (P.hide || 0) - dt); if (!(P.hide > 0)) P.goo = Math.max(0, (P.goo || 0) - dt);
   S.shake = Math.max(0, S.shake - dt); S.impact = Math.max(0, S.impact - 1); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
   updateCds(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
   updateFx(dt); updateEnemies(dt, S.hitstop > 0); updateStages(dt); updateMarkers();
@@ -76,11 +79,12 @@ export function update(dt, inp) {
         const [dx, dy] = inputDir(inp), gait = held.has('walk') ? 'walk' : 'run';
         moveBy(dx * P.gait[gait] * dt, dy * P.gait[gait] * dt);
         if (s !== gait) setState(gait);
+        if (EL.cur.kit && Math.floor(T / .09) !== Math.floor((T - dt) / .09)) EL.cur.kit.step(P.x, P.y);   // his footsteps leave the element behind
         P.still = 0;
       } else {
         P.still += dt;
         if (s === 'run' || s === 'walk') setState('idle');
-        if (s === 'idle' && P.still > 4) { setState('idleGlitch'); P.still = 0; }
+        if (s === 'idle' && P.still > 4) { setState('idleGlitch'); P.still = 0; const k = EL.cur.kit; if (k) (k.idle || (() => k.residue(P.x, P.y, 6)))(); }
         if (s === 'idleGlitch' && T >= D) setState('idle');
         if (s === 'sitDown' && T >= D) setState('sit');
       }
@@ -90,6 +94,7 @@ export function update(dt, inp) {
       const sp = 260 * (1 - u) + 50;
       moveBy(P.slideDir[0] * sp * dt, P.slideDir[1] * sp * dt);
       if (u < .7 && Math.random() < .5) dust(1, P.slideDir[0]);
+      if (EL.cur.kit && u < .8 && Math.random() < .5) EL.cur.kit.step(P.x - P.slideDir[0] * 4, P.y);   // the slide smears the element along the floor
       if (Math.floor(T / .04) !== Math.floor((T - dt) / .04)) ghost();
       if (T >= D + .08) setState(moving ? 'run' : 'idle');
       break;
@@ -98,7 +103,7 @@ export function update(dt, inp) {
       if (moving) { const [dx, dy] = inputDir(inp); moveBy(dx * 70 * dt, dy * 70 * dt); }
       P.vz -= 520 * dt; P.z += P.vz * dt;
       if (s === 'jump' && P.vz < 0) { P.state = 'fall'; P.t = 0; }
-      if (P.z <= 0) { P.z = 0; P.vz = 0; setState('land'); dust(8); }
+      if (P.z <= 0) { P.z = 0; P.vz = 0; setState('land'); dust(8); if (EL.cur.kit) for (let i = 0; i < 4; i++) EL.cur.kit.step(P.x + rr(-4, 4), P.y); }
       break;
     }
     case 'land': if (T >= D) setState(moving ? 'run' : 'idle'); break;
@@ -118,6 +123,7 @@ export function update(dt, inp) {
     case 'tele': {
       P.inv = true;
       if (u >= .45 && !P.moved) { P.moved = true; const fx = P.x, fy = P.y; blink(56, P.blinkDir);
+        if (EL.cur.kit) { EL.cur.kit.travel(fx, fy); break; }
         residue(fx, fy, 12); residue(P.x, P.y, 12); storm(P.x, P.y);
         const n = Math.hypot(P.x - fx, P.y - fy) | 0;
         for (let i = 0; i < n; i += 2) spark(fx + (P.x - fx) * i / n, fy - 12 + (P.y - fy) * i / n + (Math.random() - .5) * 10, 0, 0, .18, COL.fx, false); }
@@ -210,7 +216,7 @@ export function update(dt, inp) {
       break;
     }
     case 'death': {
-      if (u > .8 && !P.burst) { P.burst = true; for (let i = 0; i < 30; i++) spark(P.x + (Math.random() - .5) * 26, P.y - Math.random() * 8, (Math.random() - .5) * 40, -20 - Math.random() * 40, .7, Math.random() < .5 ? COL.fx : COL.body, false); }
+      if (u > .8 && !P.burst) { P.burst = true; if (EL.cur.kit) EL.cur.kit.residue(P.x, P.y, 16); for (let i = 0; i < 30; i++) spark(P.x + (Math.random() - .5) * 26, P.y - Math.random() * 8, (Math.random() - .5) * 40, -20 - Math.random() * 40, .7, Math.random() < .5 ? COL.fx : COL.body, false); }
       if (T >= D + 1) { P.burst = false; setState('idleGlitch'); }
       break;
     }

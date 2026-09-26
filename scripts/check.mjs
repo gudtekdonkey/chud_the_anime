@@ -115,6 +115,14 @@ try {
   await run('C: sit, then a key to stand', async () => {
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });
+  await run('] and [: switch elements; slime teleports and slashes, then back to storm', async () => {
+    const el = () => page.evaluate(() => document.querySelector('#elements [aria-pressed=true]')?.dataset.el);
+    await kb.press(']'); if (await el() !== 'fire') fail(`] picked ${await el()}, not fire`);
+    await kb.press(']'); if (await el() !== 'slime') fail(`] picked ${await el()}, not slime`);
+    await until('the K cooldown to end', () => !(window.__game.P.cd.tele > 0), undefined, 4000);
+    await kb.press('k'); await reach(/^tele$/); await sleep(120); await shot('09-slime-tele'); await reach(FREE);
+    await kb.press('j'); await reach(/^slash1/); await reach(FREE);
+    await kb.press('['); await kb.press('['); if (await el() !== 'storm') fail(`[ [ left ${await el()}, not storm`); });
   await run('X: die and come back', async () => { await kb.press('x'); await reach(/^death$/); await reach(/^idleGlitch$/, 5000); });
   step = '';
 
