@@ -18,7 +18,7 @@ function hull(P) {
 export function drawBody3d(S, J, st) {
   const p = J.p, W = st.art || KATANA_3D;
   // what he carries it in: the scabbard at his hip, the sling or the saya on his back
-  S.two = true; W.carried(S, J, p, !J.swordR && !J.swordL && !p.sheathing); S.two = false;   // weapons: two-tone lines at 2x
+  S.two = true; if (!p.laid) W.carried(S, J, p, !J.swordR && !J.swordL && !p.sheathing); S.two = false;   // laid: set down beside him   // weapons: two-tone lines at 2x
   for (const k of ['r', 'l']) { const L = J.leg[k];
     if (!HD) { S.seg(L.hip, L.knee, 2, L.col); S.seg(L.knee, L.ank, 2, L.col); S.seg(L.ank, L.toe, 1, L.col); continue; }
     // HD: the side rig's hakama from any side: full thighs, the hem flaring over a bound ankle, the foot, a sandal sole, a pleat
@@ -80,9 +80,10 @@ export function drawHat3d(S, J, spec, bias = 0) {
       const q = V.add(V.add(c, V.mul(fw, r * Math.cos(a))), V.mul(Hd.R, r * Math.sin(a)));
       const x = S.ox + q[0] * S.s, y = Math.round(S.oy + (hz0 * S.kz + (q[2] - hz0) * KH - q[1]) * S.s);
       const m = rows.get(y); if (m) { m[0] = Math.min(m[0], x); m[1] = Math.max(m[1], x); } else rows.set(y, [x, x]); }
-    // each level is S.s rows deep, so at 2x the stack has no gaps; at 2x its inner rows show the weave
+    // each level is S.s rows deep, so at 2x the stack has no gaps; at 2x the crown's top rows carry one glare on its lit side
     for (const [y, [a, b]] of rows) { const x0 = Math.floor(a) + 1, x1 = Math.floor(b), ew = (Lv.ew || 1) * S.s;
       for (let dy = 0; dy < S.s; dy++) for (let x = x0; x <= x1; x++) { const edge = x - x0 < ew || x1 - x < ew;
-        S.px(x, y + dy, zBase + li * .01, edge ? Lv.edge : S.s > 1 && dy === 1 && Lv.fill === 'H' && (x + y) % 2 === 0 ? 'B' : Lv.fill); } }
+        const glare = S.s > 1 && Lv.fill === 'H' && dy === 0 && x - x0 >= ew && x - x0 < ew + Math.max(2, (x1 - x0) * .22);
+        S.px(x, y + dy, zBase + li * .01, edge ? Lv.edge : glare ? 'g' : Lv.fill); } }
   });
 }

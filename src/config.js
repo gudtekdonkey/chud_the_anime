@@ -11,6 +11,6 @@ export const FW = 96 * PX, FH = 64 * PX, OX = 48 * PX, OY = 56 * PX;   // in scr
 export const RC = { K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', H: '#2a2f37', G: '#3b424c', B: '#1a1d24',
   E: '#6ff3e4', e: '#2e6a64', W: '#e9eeee', S: '#7d868e', s: '#2c3037', T: '#806650',   // T: a spear's lacquered haft, warm so it reads against the grey floor
   // clothing: shades of black only, never a bright colour (the accents come from the effects and the eyes)
-  r: '#1c2027', q: '#262b33', o: '#0f1115', w: '#9aa3aa', t: '#5b4838',   // HD (?hd) detail: r the rim of light on his black, q a dark cord, o his hair, w a blade's back, t a haft's shaded side
+  r: '#1c2027', q: '#262b33', o: '#0f1115', w: '#9aa3aa', t: '#5b4838', g: '#566069',   // HD (?hd) detail: r the rim of light on his black, q a dark cord, o his hair, w a blade's back, t a haft's shaded side, g the glare off his hat
   c0: '#0f1115', c1: '#14171c', c2: '#1b1e25', c3: '#22262e', c4: '#2b2f38', c5: '#30353e', c6: '#3d424d' };
 export const SQ = .8; // SQ flattens circles into the top-down floor plane

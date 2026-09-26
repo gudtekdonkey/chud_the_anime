@@ -89,7 +89,6 @@ function drawShell(S, part, J) {
     if (HD && outer && lit(V.dot(nn, rad) > 0 ? nn : V.mul(nn, -1)) < -.05) key = DARK[key] || key;
     S.poly([a, b, c, d].map(q => S.P(q)), mid[2] + bias, key);
     S.seg(a, d, HD ? .5 : 1, key, bias);
-    if (HD && outer && k > 0) S.seg(a, b, .5, DARK[part.col[k]] || key, bias + .01);
   }
 }
 export function drawPart(S, part, J) {
@@ -122,8 +121,8 @@ export function drawPart(S, part, J) {
       const q = [V.add(V.add(A.sh, V.mul(out, 1.2)), V.add(V.mul(ac, 1.7), [0, .8, 0])), V.add(V.add(A.sh, V.mul(out, 1.2)), V.add(V.mul(ac, -1.7), [0, .8, 0])),
         V.add(V.add(A.sh, V.mul(al, 3.4)), V.add(V.mul(out, 1.3), V.mul(ac, -1.9))), V.add(V.add(A.sh, V.mul(al, 3.4)), V.add(V.mul(out, 1.3), V.mul(ac, 1.9)))];
       const z = (q[0][2] + q[2][2]) / 2 + bias + A.dz; S.poly(q.map(p => S.P(p)), z, part.col); S.seg(q[2], q[3], HD ? .5 : 1, part.edge, bias + A.dz + .05);
-      if (HD) for (const t of [.33, .66]) { const a = V.lerp(q[1], q[2], t), b = V.lerp(q[0], q[3], t);   // lamellar rows, laced at each end
-        S.seg(a, b, .5, DARK[part.col] || part.col, bias + A.dz + .04); for (const e of [a, b]) { const s = S.P(e); S.dot(s[0], s[1], s[2] + bias + A.dz + .06, .5, part.edge); } } }
+      if (HD) for (const t of [.33, .66]) { const a = V.lerp(q[1], q[2], t), b = V.lerp(q[0], q[3], t);   // lamellar rows
+        S.seg(a, b, .5, DARK[part.col] || part.col, bias + A.dz + .04); } }
     return; }
   if (part.kind === 'arm') {
     for (const k of ['r', 'l']) { const A = J.arm[k], near = A.col === 'K', b = bias + A.dz;

@@ -33,10 +33,10 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `anims/anims.js` | `ANIMS` (frame count, fps, loop, the moveset "about" text), `GLITCHY` |
 | `anims/item-poses.js` | Poses for the item interactions (pray, take, cut seal, read), the quick-slot uses and Harvest |
 | `anims/poses.js` | `POSES` for every rig animation, the guard and counter stances, `GLF` (baked glitch frames) |
-| `anims/hand-drawn.js` | Hand-drawn rows the rig can't pose: the two open stances (front view) and sit / sit down / stand up (back view) |
+| `anims/turned-poses.js` | Moves drawn turned on the rig (a pose's `yaw`, rig v2 knobs in `v2`): the two open stances (facing the camera) and sit / sit down / stand up (back to the camera) |
 | `anims/sheets.js` | Bakes every animation to a sheet at load (`SHEETS`, the equipped weapon's, in the default outfit, keeping each frame's pose and glitch), `sliceGlitch`, `dur()`, `rebake` |
 | `weapons/weapons.js` | `WEAPONS`, `weapon()`, `setWeapon(id)` (the API for pickups: bakes once, swaps `SHEETS`), `reach()`, `framesFor` (a weapon's poses, or the katana's run through its `adapt`) |
-| `weapons/katana.js` | `KATANA_ART`: the drawing hooks every weapon's art has (`far`, `stowed`, `held`, `backHeld`, `sheathing`, optional `offHand`, `front`/`sit` rows) |
+| `weapons/katana.js` | `KATANA_ART`: the drawing hooks every weapon's art has (`far`, `stowed`, `held`, `backHeld`, `sheathing`, optional `offHand`; the old `front`/`sit` pixel lists are unused now the rig poses those moves) |
 | `weapons/grip.js` | Shared by weapons: `grip` (two-handed poses from where the fists go), `twoHanded`, `breathe`, the draw and stow for weapons carried on the back (`slungDraw`/`slungStow`, `shoulderDraw`/`shoulderStow`), `runWith` |
 | `weapons/yari.js`, `nodachi.js`, `tanto.js`, `naginata.js`, `kanabo.js`, `kusarigama.js`, `tessen.js`, `bo.js`, `tetsubo.js`, `kama.js`, `jitte.js`, `daisho.js`, `nunchaku.js`, `wakizashi.js` | Each weapon's art, its own poses (cuts, guard, the four side-on stances, what it does with the hilt hand), `reach` and `weight` |
 | `player/update.js` | The state machine: one `update(dt, inp)` step |

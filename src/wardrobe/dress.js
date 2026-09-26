@@ -12,10 +12,11 @@ export const makeFigure = (items = ['straw', 'mantle']) => ({ outfit: new Set(it
 // dt > 0 steps the cloth; dt 0 draws it where it last was (or where it hangs, the first time).
 // yaw: the facing (port.js DIRS). 0 is the side view, drawn by the side rig on the pixels it always had; any other
 // facing runs the pose through port() and draws rig v2's body (body3d.js). The clothes hang from the same bones either way.
+// A pose may carry its own yaw (the moves drawn turned, anims/turned-poses.js) and rig v2 knobs for the port (p.v2).
 export function dress(R, F, p, dt = 0, yaw = 0) {
-  R.clear(); let J;
+  R.clear(); let J; yaw = p.yaw ?? yaw;
   if (!yaw) { const { hc, hcR } = rigR(R, p); J = solve(fromSide(p), 0, true); J.hc = hc; J.hcR = hcR; }
-  else { J = solve(port(p), yaw);
+  else { J = solve(port(p, p.v2), yaw);
     drawBody3d(R, J, { blink: p.dim > .5, hat: [...F.outfit].some(id => BY_ID[id] && BY_ID[id].slot === 'head'), art: p.wp && p.wp.d3 }); }
   const live = new Set();
   // the breeze, plus the wind of his own motion

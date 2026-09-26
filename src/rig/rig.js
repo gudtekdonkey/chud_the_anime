@@ -153,8 +153,8 @@ function draw(out, p, clothed) {
 }
 
 // ---- HD pieces shared with the wardrobe (src/wardrobe/items.js draws the same hat and mantle as items) ----
-// the straw hat side on at 2x: a woven crown in rings, the brim's shadowed underside with straw ends at the rim, a knot at the peak,
-// a chin cord. px(x, y, c) in screen pixels, hc the head's centre in rig coords, tip the pose's forward nudge (p.hat)
+// the straw hat side on at 2x: a clean crown with one glare coming off its lit slope, the brim's shadowed underside, a chin cord
+// (owner: no pattern on it, just the glare). px(x, y, c) in screen pixels, hc the head's centre in rig coords, tip the pose's forward nudge (p.hat)
 export function strawHD(px, hc, tip = 0) {
   const [cx0, cy0] = toPx(Math.round(hc[0]) + .5 + tip, Math.round(hc[1]) - 6), Hh = 5 * PX, hw = 10 * PX;
   for (let yy = 0; yy < Hh; yy++) { const t = (yy + .5) / Hh, brim = t > .62, last = yy === Hh - 1;
@@ -162,17 +162,15 @@ export function strawHD(px, hc, tip = 0) {
     const xa = Math.round(cx0 - half), xb = Math.round(cx0 + half) - 1;
     for (let x = xa; x <= xb; x++) { const edge = x === xa || x === xb;
       let c = brim ? (edge ? (last ? 'K' : 'G') : 'B') : edge ? 'G' : 'H';
-      if (!brim && !edge && yy % 3 === 1 && (x + yy) % 2 === 0) c = 'B';                // the weave
-      if (brim && !last && !edge && yy === Math.ceil(.62 * Hh) && x % 3 === 0) c = 'H';   // straw ends at the rim
+      if (!brim && !edge && yy >= 1 && x - xa >= 1 && x - xa <= 2 + (yy >> 1)) c = 'g';   // the glare down the front slope
       px(x, Math.round(cy0) + yy, c); } }
-  px(Math.round(cx0 - .5), Math.round(cy0) - 1, 'G');
   const a = toPx(hc[0] - 1.6, hc[1] - 1.7), b = toPx(hc[0] + .3, hc[1] + 1.8), n = Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]));
   for (let i = 0; i <= n; i++) px(Math.round(a[0] + (b[0] - a[0]) * i / n), Math.round(a[1] + (b[1] - a[1]) * i / n), 'q');   // the chin cord
 }
 // the flat mantle's 2x detail over its polygon: two folds and a torn hem whose strips lift with the flutter.
 // L(u, v): up the spine and forward, in whatever coords seg draws in (the rig's, or the wardrobe's bones)
 export function mantleHD(L, f, seg, col, fold) {
-  seg(L(7.9, .2), L(4.6, -2.2), .5, fold); seg(L(7.6, 1.6), L(5.6, 1.2), .5, fold);
+  seg(L(7.9, .2), L(4.6, -2.2), .5, fold);   // one long fold, clean
   [[3.2, -2.8, 1.2], [3.5, -2.0, .8], [4.1, -2.6, 1.0]].forEach(([u, v, k], i) => {
     const dv = i === 0 ? -f * .7 : 0; seg(L(u, v + dv), L(u - k - (1 - f) * .3, v + dv - f * .3 * (i + 1)), .5, col); });
 }

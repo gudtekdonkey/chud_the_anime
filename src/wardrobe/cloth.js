@@ -69,8 +69,8 @@ export function drawCloth(S, C, part, J) {
   if (part.kind === 'chain') {
     for (let j = 0; j + 1 < rows; j++) { const far = j >= rows * (part.split ?? .5), w = far ? part.w[1] : part.w[0], c = far ? col[1] : col[0];
       S.seg(pt(j), pt(j + 1), w, c, bias);
-      // HD: a wide tail gets a lit top edge and a crease down it; a thin one frays to a pixel at its tip
-      if (HD && w >= 2) { S.seg(V.add(pt(j), [0, .45, 0]), V.add(pt(j + 1), [0, .45, 0]), .5, LIGHT[c] || c, bias + .01); if (j % 2) S.seg(pt(j), pt(j + 1), .5, DARK[c] || c, bias + .02); }
+      // HD: a wide tail gets a lit top edge; a thin one frays to a pixel at its tip
+      if (HD && w >= 2) S.seg(V.add(pt(j), [0, .45, 0]), V.add(pt(j + 1), [0, .45, 0]), .5, LIGHT[c] || c, bias + .01);
       else if (HD && j === rows - 2) S.seg(pt(j + 1), V.add(pt(j + 1), V.mul(V.sub(pt(j + 1), pt(j)), .4)), .5, c, bias); }
     if (part.tassel) { const e = S.P(pt(rows - 1)); S.dot(e[0], e[1] + S.s, e[2] + bias, 1, part.tassel);
       if (HD) for (const dx of [-1, 0, 1]) S.px(Math.round(e[0]) + dx, Math.round(e[1]) + 3 * S.s, e[2] + bias, part.tassel); }   // the tassel's threads
@@ -86,11 +86,10 @@ export function drawCloth(S, C, part, J) {
     const outer = (V.dot(n, cam) > 0) === (V.dot(n, o) > 0);
     const last = j + 2 >= (part.lens ? Math.min(part.lens[i], part.lens[i2]) : rows);
     let key = last && col.hem ? col.hem : outer ? (col.edge && (i === 0 || i2 === cols - 1) && !loop ? col.edge : col.out) : col.in;
-    // HD: the cloth turned from the light a shade down, so its folds read; fold lines down alternate seams; the hem a lit edge
+    // HD: the cloth turned from the light a shade down, so its folds read as it flows; the hem a lit edge
     if (HD && outer && !last && lit(V.dot(n, o) > 0 ? n : V.mul(n, -1)) < -.1) key = DARK[key] || key;
     const z = mid[2] + bias, sp = [a, b, c, d].map(q => S.P(q)), lw = HD ? .5 : 1;
     S.poly(sp, z, key); S.seg(a, d, lw, key, bias); S.seg(b, c, lw, key, bias);
-    if (HD && outer && i % 2 === 1 && !last) S.seg(a, d, .5, DARK[col.out] || key, bias + .01);
     if (HD && last) S.seg(d, c, .5, LIGHT[key] || key, bias + .01);
   }
 }

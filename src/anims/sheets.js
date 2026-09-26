@@ -1,6 +1,5 @@
 import { COL, FW, FH, OX, OY, PX } from '../config.js';
 import { ANIMS } from './anims.js';
-import { OPEN_FRONT, INVITE_FRONT, frontFrame, sitFrame } from './hand-drawn.js';
 import { POSES, GLF } from './poses.js';
 import { rig } from '../rig/rig.js';
 import { EL } from '../fx/element.js';
@@ -30,7 +29,7 @@ export function sliceGlitch(g, fx, s, seed) {
   for (let k = 0; k < 3 * s; k++) g.fillRect(bx + (14 + (rnd() * 20 | 0)) * PX, by + (14 + (rnd() * 24 | 0)) * PX, (3 + (rnd() * 8 | 0)) * PX, PX);
 }
 
-// frames: the poses to bake (a weapon's, src/weapons/); art: the weapon's art for the hand-drawn rows, null for the katana.
+// frames: the poses to bake (a weapon's, src/weapons/, each carrying its art as p.wp); art: kept for the weapon picker's calls.
 // Each rig frame keeps its pose and glitch, so the player can be redrawn live in whatever he wears;
 // the sheet itself is baked in his default outfit (mirror images and afterimages use it)
 const R = new Raster(FW, FH, OX, OY);
@@ -39,10 +38,7 @@ export function placeholderSheet(name, frames = POSES[name], art = null) {
   const c = document.createElement('canvas'); c.width = FW * n; c.height = FH;
   const g = c.getContext('2d'), poses = [], glf = [];
   for (let i = 0; i < n; i++) {
-    let p = null;
-    if (name === 'sit' || name === 'sitDown' || name === 'standUp') p = sitFrame(g, i * FW, name, i, art) || null;
-    else if (name === 'ready4' || name === 'ready5') frontFrame(g, i * FW, name === 'ready4' ? OPEN_FRONT : INVITE_FRONT, i, art);
-    else p = (frames && frames[i % frames.length]) || null;   // exec has no sheet: its stage draws him live
+    const p = (frames && frames[i % frames.length]) || null;   // exec has no sheet: its stage draws him live
     if (p) g.drawImage(dress(R, makeFigure(), p), i * FW, 0);
     const gl = GLF[name] && GLF[name][i];
     if (gl && EL.cur.glitch) sliceGlitch(g, i * FW, gl, glitchSeed(name, i));
