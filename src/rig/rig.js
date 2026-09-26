@@ -2,10 +2,14 @@ import { OX, OY, RC } from '../config.js';
 import { KATANA_ART } from '../weapons/katana.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
+// the rig works in its original 48x48 frame (feet at 24, 40) and is shifted by whole pixels into the bigger frame, so the
+// rounding of every pose stays exactly as it was
+export const RX = 24, RY = 40;
+const DX = OX - RX, DY = OY - RY;
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
 export function rig(g, fx, p) {
-  const put = (x, y, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
-  const blob = (x, y, w, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
+  const put = (x, y, c) => { g.fillStyle = RC[c]; g.fillRect(fx + DX + Math.round(x), DY + Math.round(y), 1, 1); };
+  const blob = (x, y, w, c) => { g.fillStyle = RC[c]; g.fillRect(fx + DX + Math.round(x - (w - 1) / 2), DY + Math.round(y - (w - 1) / 2), w, w); };
   const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
     for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
   const poly = (pts, c) => {
@@ -20,7 +24,7 @@ export function rig(g, fx, p) {
         if (inside) put(x, y, c);
       }
   };
-  const hip = [OX + p.hx, OY - 11 + p.hy];
+  const hip = [RX + p.hx, RY - 11 + p.hy];
   const up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
   // breath lifts the chest, shoulders and head but not the hips, so it reads as breathing, not bobbing
   // the chest pivots at the waist (u = 4), so a cut can be driven by the hips and then the chest

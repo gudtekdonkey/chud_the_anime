@@ -20,7 +20,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | File | Owns |
 |---|---|
 | `main.js` | Boot, the fixed 60 Hz update loop under `requestAnimationFrame`, the debug hook |
-| `config.js` | `W`/`H`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY`, `SQ` (floor squash) |
+| `config.js` | `W`/`H`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY` (72×64; the rig draws in its old 48×48 box, `RX`/`RY`, shifted by whole pixels), `SQ` (floor squash) |
 | `state.js` | ALL shared mutable state: the player `P`, `S` (`shake`, `hitstop`, `scr` screen flash, `roomClear`), `parts` and every effect list |
 | `screen.js` | The `#game` canvas, its 2D context `g`, the `#hud` line |
 | `input.js` | Keyboard map, touch pad, `held`/`taps`, `readInput()`, the room-clear checkbox |

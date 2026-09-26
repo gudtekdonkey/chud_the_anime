@@ -1,27 +1,32 @@
-import { OY } from '../config.js';
+import { RY } from '../rig/rig.js';
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
 
 // ---- The nodachi (the Grave Nodachi pickup): a greatsword worn on the back, hilt over the shoulder. Every cut is heavy, wound up far and followed through low ----
 const along = a => [Math.cos(a), Math.sin(a)];
 const stowed = p => p.sword === null && !p.sheathing && p.bsword == null;
-const LEN = 19;
-// the long blade, clipped at the floor: a point that would go under his feet is planted in it instead
-function blade(k, hand, a, len = LEN) { const d = along(a); let n = len;
-  while (n > 3 && hand[1] + d[1] * n > OY + 1) n--;
-  k.seg(hand, k.add(hand, d, -3.5), 1, 'K'); k.put(...hand, 'S'); k.put(...k.add(hand, d, 1), 'S'); k.seg(k.add(hand, d, 2), k.add(hand, d, n), 1, 'W'); }
+const LEN = 26;   // taller than he is (he is 26 px): it has to read as a field sword, not a long katana
+// the huge blade: a long wrapped grip, a heavy tsuba, a 2 px blade (edge and spine) tapering to the point. A point that would go
+// under his feet is planted in the floor instead
+function blade(k, hand, a, len = LEN) { const d = along(a), n = [-d[1], d[0]]; let e = len;
+  while (e > 4 && hand[1] + d[1] * e > RY + 1) e--;
+  k.seg(k.add(hand, d, -1), k.add(hand, d, -6), 1, 'K'); k.put(...k.add(hand, d, -3), 'D'); k.put(...k.add(hand, d, -5), 'D');
+  k.put(...hand, 'S'); k.put(...k.add(hand, d, 1), 'S'); k.put(...k.add(k.add(hand, d, 1), n, 1), 'S'); k.put(...k.add(k.add(hand, d, 1), n, -1), 'S');
+  k.seg(k.add(hand, d, 2), k.add(hand, d, e), 1, 'W'); k.seg(k.add(k.add(hand, d, 2), n, 1), k.add(k.add(hand, d, Math.min(e, len - 3)), n, 1), 1, 'S'); }
+const MOUTH = (k) => k.L(9.5, -3.4), END = (k) => k.L(-14, -8.6);
 const ART = {
-  // the long saya down his back, always there; its hilt pokes up behind the shoulder while the blade is home
-  far(k, p) { const m = k.L(8, -3.2), e = k.L(-9, -7.4);
-    k.seg(m, e, 1, 's'); k.put(...e, 'S');
-    if (stowed(p)) { k.put(...m, 'S'); k.seg(k.L(8.8, -3), k.L(12, -2.3), 1, 'W'); } },
+  // the long saya slung down his back to his calves, always there; the long hilt stands up past his hat while the blade is home
+  far(k, p) { const m = MOUTH(k), e = END(k), d = [(e[0] - m[0]), (e[1] - m[1])], l = Math.hypot(...d), u = [d[0] / l, d[1] / l];
+    k.seg(m, e, 2, 's'); k.put(...e, 'S');
+    if (stowed(p)) { k.put(...m, 'S'); k.put(...k.add(m, u, -1), 'S'); k.seg(k.add(m, u, -2), k.add(m, u, -8), 1, 'K'); k.put(...k.add(m, u, -4), 'D'); k.put(...k.add(m, u, -6), 'D'); } },
   stowed() {},
   held(k, hand, a) { blade(k, hand, a); },
   backHeld(k, bh, a) { k.blob(bh[0], bh[1], 2, 'D'); blade(k, bh, a); },
   // slid home over the shoulder: the blade runs from the hand into the saya's mouth behind his neck
-  sheathing(k, hand) { const m = k.L(8, -3.2), dx = hand[0] - m[0], dy = hand[1] - m[1], l = Math.hypot(dx, dy) || 1;
-    k.seg(hand, m, 1, 'W'); k.put(...hand, 'S'); k.seg(hand, k.add(hand, [dx / l, dy / l], 3), 1, 'K'); },
-  front: [[7, 15, 'S'], [6, 16, 'S'], ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => [5 - i, 17 + i, 'W'])],
-  sit: [[11, 17, 'K'], [12, 17, 'K'], [13, 17, 'S'], ...Array.from({ length: 18 }, (_, i) => [14 + i, 17, 'W'])],
+  sheathing(k, hand) { const m = MOUTH(k), dx = hand[0] - m[0], dy = hand[1] - m[1], l = Math.hypot(dx, dy) || 1;
+    k.seg(hand, m, 1, 'W'); k.put(...hand, 'S'); k.seg(hand, k.add(hand, [dx / l, dy / l], 6), 1, 'K'); },
+  // opened to the camera: the blade laid back over his shoulder, towering past his hat
+  front: [[8, 16, 'K'], [9, 17, 'K'], [7, 15, 'S'], [6, 15, 'S'], [7, 14, 'S'], ...Array.from({ length: 16 }, (_, i) => [6 - Math.round(i * .45), 13 - i, 'W'])],
+  sit: [[4, 17, 'K'], [5, 17, 'D'], [6, 17, 'K'], [7, 17, 'D'], [8, 17, 'K'], [9, 17, 'S'], [9, 16, 'S'], ...Array.from({ length: 24 }, (_, i) => [10 + i, 17, i < 21 ? 'W' : 'S'])],
 };
 // hasso: the blade upright beside his head, hands at the shoulder
 const GUARD = pz({ hy: 3, lean: .08, chest: .04, fl: [.6, 1.0], bl: [-.65, .4], fa: [.9, 1.75], ba: [.6, 1.9], sword: -1.72 });
