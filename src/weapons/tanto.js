@@ -1,5 +1,6 @@
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
 import { TANTO_3D } from './art3d.js';
+import { comboPoses } from '../anims/combo-poses.js';
 
 // ---- Twin tanto: two short blades at the front of the obi. The lead hand cuts, the back hand rides along in a reverse grip ----
 const along = a => [Math.cos(a), Math.sin(a)];
@@ -29,6 +30,14 @@ const CUT = pz({ hx: 3, hy: 3, lean: .55, chest: .45, fl: [1.1, 1.2], bl: [-1.1,
 const TAIL = [[.16, pz({ ...CUT, fa: [1.7, .2], sword: -.2 }), lin], [.22, CUT], [.36, pz({ ...CUT, lean: .5 })], [.5, GUARD]];
 // slash 2: the back hand's answer, a reverse-grip hook driven across by the turning chest
 const HOOK = pz({ hx: 3, hy: 4, lean: .5, chest: .55, fl: [1.1, 1.3], bl: [-1.05, .2], fa: [-.3, .9], ba: [1.75, .2], sword: 2.2, hat: 1, flutter: 1 });
+// J3 to J6 (anims/combo-poses.js): both blades wound over the shoulder, the lead backhand whirled level with the back arm flung,
+//   fists up by the chin for the kick, both blades rising for the launch, and the flash step ends with the lead blade laid out behind him
+const ARMS = {
+  wind: { fa: [1.9, 1.6], ba: [1.5, 1.8], sword: -2.8 }, sweep: { fa: [1.9, 0], ba: [-1.4, .2], sword: -.3 },
+  kick: { fa: [1.1, 1.3], ba: [.7, 1.9], sword: -.6 }, crouch: { fa: [.4, .5], ba: [-.3, .6], sword: 2.0 },
+  top: { fa: [3.0, .1], ba: [2.6, .4], sword: -1.5 }, set: { fa: [.3, 1.0], ba: [-.3, .6], sword: 1.9 },
+  fin: { fa: [1.3, 0], ba: [-1.2, .3], sword: 2.6 },
+};
 const STANCES = [
   pz({ hx: -1, hy: 3, lean: .12, chest: .08, fl: [.55, .8], bl: [-.45, .55], fa: [.6, 1.4], ba: [-.2, .6], sword: -1.3 }),
   pz({ hx: -1, hy: 4, lean: .2, chest: .1, fl: [.7, 1.1], bl: [-.6, .6], fa: [1.1, .9], ba: [.4, 1.7], sword: -.6 }),
@@ -46,5 +55,6 @@ export const TANTO = { id: 'tanto', name: 'Twin tanto', about: 'Two short blades
     slash2: keyed([[0, CUT],
       [.08, pz({ hx: 1, hy: 5, lean: .35, chest: -.3, fl: [.8, 1.3], bl: [-.8, .4], fa: [1.0, .6], ba: [-.6, 1.4], sword: -.4 })],
       [.14, pz({ ...HOOK, chest: .2, ba: [1.2, .8] }), lin], [.2, HOOK], [.34, pz({ ...HOOK, lean: .46 })], [.5, GUARD]], 30),
+    ...comboPoses(ARMS, pz({ ...HOOK, lean: .46 }), GUARD),
   },
 };

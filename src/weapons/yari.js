@@ -2,6 +2,7 @@ import { pz, HILT, lin, keyed } from '../rig/pose.js';
 import { RY } from '../rig/rig.js';
 import { grip, twoHanded, breathe, slungDraw, slungStow } from './grip.js';
 import { YARI_3D } from './art3d.js';
+import { comboPoses } from '../anims/combo-poses.js';
 
 // ---- The yari: a straight-headed spear half again his height, slung across his back. Both hands on the haft, far apart;
 //   the back hand drives it through the front one, so every attack is led by the point ----
@@ -45,6 +46,14 @@ const TAIL = [[.16, THRUST, lin], [.22, grip({ ...THRUST, lean: .62 }, [12.5, -4
 // the answer: tataki, the spear whipped up overhead and beaten down onto the enemy
 const HIGH = grip({ hx: 2, hy: 1, lean: -.1, chest: -.25, fl: [.9, .5], bl: [-.8, .2], hat: 1, flutter: 1 }, [4, -13], [-3, -11]);
 const BEAT = grip({ hx: 4, hy: 5, lean: .55, chest: .35, fl: [1.15, 1.3], bl: [-1.1, .15], hat: 1 }, [10, -2], [4, -6]);
+// J3 to J6 (anims/combo-poses.js): the haft carried over the back, swept level at waist height, held low behind for the kick,
+//   the head rising straight up for the launch, and the flash step ends with the spear laid out behind him
+const ARMS = {
+  wind: { fa: [1.4, 1.3], ba: [.6, 1.3], sword: 3.1 }, sweep: { fa: [1.5, .2], ba: [1.1, .5], sword: .05 },
+  kick: { fa: [.4, .6], ba: [-.2, .8], sword: 2.9 }, crouch: { fa: [.5, .4], ba: [.1, .6], sword: 2.5 },
+  top: { fa: [2.8, 0], ba: [2.4, .3], sword: -1.35 }, set: { fa: [.6, 1.3], ba: [.2, 1.1], sword: 3.0 },
+  fin: { fa: [1.3, .1], ba: [.9, .6], sword: 2.95 },
+};
 const STANCES = [
   // grounded upright in the back hand, the head high over the hat
   pz({ hx: -1, hy: 2, lean: -.04, chest: .06, fl: [.4, .5], bl: [-.35, .45], fa: [.5, .4], ba: [-.1, 1.4], bsword: -1.62 }),
@@ -72,6 +81,7 @@ export const YARI = { id: 'yari', name: 'Yari', about: 'A straight-headed spear 
       [.08, grip({ hx: 1, hy: 5, lean: .3, chest: .1, fl: [.8, 1.3], bl: [-.8, .4] }, [3, -1], [-5, 1])],
       [.14, HIGH, lin], [.2, BEAT], [.34, grip({ ...BEAT, lean: .52 }, [10, -2], [4, -6])], [.5, GUARD]], 30),
     sheathe: slungStow(GUARD, SLUNG),
+    ...comboPoses(ARMS, grip({ ...BEAT, lean: .52 }, [10, -2], [4, -6]), GUARD),
   },
   // every other move keeps the katana's pose; the hand that would rest on the hilt hangs free (the spear is on his back)
   adapt(p) { return p.fa === HILT ? pz({ ...p, fa: [.3, .5] }) : p; },
