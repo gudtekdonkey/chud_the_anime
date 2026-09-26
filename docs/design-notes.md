@@ -30,7 +30,13 @@ Decisions made in the design sessions so far, newest last.
    - With an isolated enemy in range (no other enemy within the isolation distance, 36 px to start), K flashes to it and plays an execution.
    - A kill resets K after 0.2 s.
    - 40 executions, built and approved 5 at a time.
-   - A marker shows who can be assassinated. The options are in `prototypes/12-assassin-markers.html`.
+   - Marker system, picked from `prototypes/12-assassin-markers.html`:
+     - Every enemy carries an **isolation bubble**. Empty bubbles glow cyan; overlapping ones are grey and joined by a link line.
+     - A **kill line** runs to the nearest enemy he can dash to.
+     - A **K key prompt** pops up only when that enemy is in range AND outside every other enemy's bubble.
+     - **Lock-on brackets** are reserved for big items you can pick up.
+   - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, in a darker red-grey.
+   - Executions are short and brutal, show only the key frames (each one leaning into the motion), and cut the enemy into real pieces.
 3. **Clothing redesign.** The mantle was flattened because it read as a hump; the rest still needs a pass.
 4. **Front and back views** for every move. Everything uses the side view today.
 5. **Real enemies** with health, needed by K.
