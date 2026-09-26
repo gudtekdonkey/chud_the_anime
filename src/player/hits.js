@@ -1,9 +1,10 @@
 import { COL } from '../config.js';
-import { P, S, cuts } from '../state.js';
+import { P, S, INV, cuts } from '../state.js';
 import { rr, residue, spark } from '../fx/util.js';
 import { QI_GAIN, qiAdd, chainFrom } from './qi.js';
 import { ENEMIES, DMG, damage } from '../world/enemies.js';
 import { weapon } from '../weapons/weapons.js';
+import { has } from '../items/inventory.js';
 
 // ---- Hits: each enemy once per kind per move; P.struck remembers them for the sheath-click burst ----
 export function hitOne(e, i, kind, fx = P.x, fy = P.y) {
@@ -19,9 +20,12 @@ export function hitOne(e, i, kind, fx = P.x, fy = P.y) {
   const away = Math.atan2(e.y - fy, e.x - fx), n = 6 + (Math.random() * 7 | 0);
   for (let i = 0; i < n; i++) { const a = i < n * .7 ? away + rr(-1.1, 1.1) : rr(0, Math.PI * 2), v = rr(110, 170);
     spark(e.x + rr(-2, 2), e.y - 16 + rr(-4, 4), Math.cos(a) * v, Math.sin(a) * v * .7, rr(.09, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
-  if (P.storm > 0) chainFrom(e); else qiAdd(QI_GAIN[base] || 0);
+  if (P.storm > 0) chainFrom(e); else qiAdd((QI_GAIN[base] || 0) * qiMul());
   damage(e, DMG[base] || 1, fx, fy);
 }
+// Split Tsuba: +25%; a whetstone edge: twice as fast
+const qiMul = () => (has('tsuba') ? 1.25 : 1) * (INV.edge > 0 ? 2 : 1);
+// the blade's own cuts (J, and I's two) reach further with a longer weapon
 export function hit(kind, cx, cy, r) {
   ENEMIES.forEach((d, i) => { if (d.alive && !P.hitDone[kind + i] && Math.hypot(d.x - cx, (d.y - 10 - cy) * 1.4) <= r) hitOne(d, i, kind); });
 }

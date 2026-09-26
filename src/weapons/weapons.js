@@ -1,4 +1,4 @@
-import { P } from '../state.js';
+import { P, INV } from '../state.js';
 import { SHEETS, BAKE, onRebake, placeholderSheet } from '../anims/sheets.js';
 import { POSES } from '../anims/poses.js';
 import { KATANA_ART } from './katana.js';
@@ -30,7 +30,7 @@ function equip(id) {
   const had = BAKED[id] || (BAKED[id] = {});
   for (const k in SHEETS) if (!had[k]) had[k] = placeholderSheet(k, framesFor(w, k), w.art);
   Object.assign(SHEETS, had);
-  P.weapon = id; BAKE.frames = k => framesFor(w, k); BAKE.art = w === KATANA ? null : w.art;
+  P.weapon = INV.weapon = id; BAKE.frames = k => framesFor(w, k); BAKE.art = w === KATANA ? null : w.art;
 }
 // a personality re-baked a move for the equipped weapon: every other weapon bakes it again on its next equip (dropped-in strips stay)
 onRebake.push(k => { for (const id in BAKED) if (id !== weapon().id && BAKED[id][k] && !BAKED[id][k].custom) delete BAKED[id][k]; });

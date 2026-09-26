@@ -73,6 +73,20 @@ Decisions made in the design sessions so far, newest last.
 - **Cooldowns on every active.** The flash (K) is recastable after an assassination: its cooldown drops to 0.2 s. Starting values, to tune: K 3 s, I 2 s (Thousand Cuts 8 s), O 10 s, P 12 s, N 14 s, U 8 s, slide 1 s. K keeps the old rule that with no enemy near you can spam it.
 - **Weapons:** his attacks depend on the equipped weapon. Every move works with every weapon, on the same timing and hits, but each weapon has its own poses. First set, in review: katana (as before), yari (thrusts, slung on the back), nodachi (the Grave Nodachi pickup: heavy cuts, worn on the back, hilt over the shoulder, longer reach, a longer hit pause and more shake), twin tanto (short blades at the obi, the back hand in a reverse grip). In play a weapon comes from a pickup; a picker under the game switches for testing.
 
+## Items and the HUD (`prototypes/20-items.html`, in the game)
+
+- **Owner:** "I love the whole UI … the HUD, everything, please do it." Built into `src/` as displayed: health and Qi top left (Qi notched in thirds, STORM when Storm Chain runs), mon and glitch shards top right, and the bottom bar (weapon slot, quick slots 1-4, four charm slots).
+- **Big items** (lock-on brackets and an E prompt): Wayside Shrine (PRAY), Grave Nodachi (TAKE), Sealed Chest (CUT), Rift Tablet (READ). **Small pickups** fly to him within about 22 px: Qi mote +10% Qi, rice ball +20% health, old mon +1, glitch shard +1. **Consumables** in the quick slots: static bomb, thunder talisman, whetstone (20 s cyan edge, Qi twice as fast), grave incense (60% over 1.5 s; moving or a hit puts it out). **Relics** in the charm slots: Thunder Bead, Cracked Mirror, Temple Bell, Split Tsuba, Paper Crane, Sageo Knot.
+- **E:** tap for the locked-on item's verb, hold 0.2 s near the fallen for Harvest (EXP, levels, LEVEL UP / LV n banner). 1-4 use the quick slots.
+- **The Grave Nodachi:** a 19 px blade (the katana's is 13), 1.3× reach on J and I, and 1.6× the hit pause and shake.
+- Proposed in the build, for the owner to confirm:
+  - Qi from items and shrines fills the meter but does not wake Storm Chain; a full meter wakes it on the next landed hit.
+  - The skill cooldowns from the League-style bar now sit as a row of small slots under health and Qi, in the items HUD's style (the prototype has no place for them).
+  - The whetstone use is shortened to 0.8 s (the study's was 1.7 s) so every use stays under a second; he keeps the honed blade out, in guard.
+  - He starts at 60% health so healing shows; nothing damages him yet. Low health (below 35%) blinks the health bar red, as there is no HP label.
+  - Two placeholder remains lie in the room so Harvest can be tried before real kills exist; EXP needs 100 × the level.
+- **Open:** where the power tier (`INV.power`, I / II / III) comes from: level, relics or upgrades.
+
 ## Next
 ## Deaths pass (prototypes 29 to 31, was 23 to 25, waiting on the owner)
 

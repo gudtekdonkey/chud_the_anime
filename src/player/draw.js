@@ -1,6 +1,6 @@
 import { COL, FW, FH, OX, OY } from '../config.js';
 import { g } from '../screen.js';
-import { P, S, wear } from '../state.js';
+import { P, S, wear, INV } from '../state.js';
 import { GLITCHY } from '../anims/anims.js';
 import { SHEETS, sliceGlitch, glitchSeed } from '../anims/sheets.js';
 import { Raster } from '../wardrobe/raster.js';
@@ -33,8 +33,23 @@ function dressed(sheet, f) {
   if (sheet.glf[f]) sliceGlitch(R.g, 0, sheet.glf[f], glitchSeed(sheet.name, f));
   return [{ img: cv, fw: FW, fh: FH, ox: OX, oy: OY }, 0];
 }
+// the whetstone's cyan edge: the frame with the blade's white swapped for cyan; a baked sheet's frames are cached,
+// a live dressed frame is recoloured as it is drawn
+const EDGE = new WeakMap(), BLADE_RGB = [233, 238, 238], EDGE_RGB = [111, 243, 228], EDGE_C = document.createElement('canvas');
+function edged(sheet, f, cache) {
+  let m = cache && EDGE.get(sheet); if (cache && !m) EDGE.set(sheet, m = new Map());
+  let c = m && m.get(f);
+  if (!c) { c = cache ? document.createElement('canvas') : EDGE_C; c.width = sheet.fw; c.height = sheet.fh; const cg = c.getContext('2d', { willReadFrequently: true });
+    cg.drawImage(sheet.img, f * sheet.fw, 0, sheet.fw, sheet.fh, 0, 0, sheet.fw, sheet.fh);
+    const d = cg.getImageData(0, 0, sheet.fw, sheet.fh);
+    for (let i = 0; i < d.data.length; i += 4) if (d.data[i] === BLADE_RGB[0] && d.data[i + 1] === BLADE_RGB[1] && d.data[i + 2] === BLADE_RGB[2]) [d.data[i], d.data[i + 1], d.data[i + 2]] = EDGE_RGB;
+    cg.putImageData(d, 0, 0); if (m) m.set(f, c); }
+  return { img: c, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy };
+}
 export function drawPlayer() {
-  const [sheet, f] = dressed(SHEETS[P.state], frameOf());
+  if (P.hidden) return;   // inside the static bomb's burst
+  let [sheet, f] = dressed(SHEETS[P.state], frameOf());
+  if (INV.edge > 0 && !SHEETS[P.state].custom) { sheet = edged(sheet, f, sheet === SHEETS[P.state]); f = 0; }
   const glitchy = (GLITCHY.has(P.state) && SHEETS[P.state].custom) || P.glitchNow > 0;
   // shadow and reflection
   g.fillStyle = 'rgba(20,24,24,.35)';
