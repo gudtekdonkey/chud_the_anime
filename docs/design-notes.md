@@ -77,12 +77,12 @@ Decisions made in the design sessions so far, newest last.
 
 - Owner: "a companion system, and you can equip items to your companions and yourself."
 - Companions are samurai on his rig, near-black like him, told apart by eyes: the ronin cyan, companions white, enemies red. Three by name: **Kuro** (yari, Grim + Soldier), **Suzume** (twin tanto, Nimble + Restless), **Tetsu** (nodachi, Heavy + Lumbering); every other recruit is generated from the wardrobe, weapons and traits.
-- **Up to 30 companions** (owner). They fall in behind him in ranks of six and spread across enemies (no more than about four on one). The HUD shows one small bar each, ten to a row.
+- **Up to 30 companions** (owner). They fall in behind him in ranks of six and spread across enemies (approved) (no more than about four on one). The HUD shows one small bar each, ten to a row.
 - **One kit for everyone:** a weapon, one piece per wardrobe layer (the 11 layers of the Clothing branch) and charms (the ronin 4, a companion 2). Mon, shards, EXP and quick slots stay shared on `INV`; `INV.weapon` / `INV.charms` become the hero's kit. Gear nobody wears is in the bag; there can be several of a piece.
 - Taking a piece from someone takes it off them; taking their weapon is a trade. Hat × mask fit rules apply per person.
 - **The weapon sets a companion's role:** katana duelist, yari holds the line, tanto flanks, nodachi breaks. Poses and weights come from the weapon system.
 - **Charms by scope:** anyone (Thunder Bead, Split Tsuba, Paper Crane, Sageo Knot), ronin only (Cracked Mirror, Temple Bell), companion only (new: Bond Cord, Iron Oath).
-- **Downed companions MAY die** (owner): cut to nothing, they kneel with 15 s to live; hold E beside them to lift them. If time runs out or they are struck again while down, they die for good and their gear returns to the bag.
+- **Downed companions MAY die** (owner, confirmed): cut to nothing, they kneel with 15 s to live; hold E beside them to lift them. If time runs out or they are struck again while down, they die for good and their gear returns to the bag.
 - **Paired executions, on the odd occasion** (owner: "if the companion is nearby and set up for it … seamless and smooth"): a companion wearing Bond Cord near the enemy joins K. First one: the crossing cut (he glitches to the near side, they close on the far side, both pass through, hold, resheathe together, the kill on the click).
 - **Recruiting, all three** (owner): met on the road, freed from the enemy (captives march in with waves), hired at camp for mon.
 - Keys: **Tab** kit screen, **G** hold here / with me, **E** recruit (tap) or lift (hold), **K** paired execution.
