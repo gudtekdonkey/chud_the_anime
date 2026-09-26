@@ -56,4 +56,10 @@ Decisions made in the design sessions so far, newest last.
    - Executions are short and brutal, show only the key frames (each one leaning into the motion), and cut the enemy into real pieces.
 3. **Clothing redesign.** The mantle was flattened because it read as a hump; the rest still needs a pass.
 4. **Front, back and diagonal views** for every move. Everything uses the side view today. The 8-direction rig (`prototypes/19-rig-v2-and-clothing.html`) is the path: port each move's key poses onto it, starting with walk, idle and the stances. Harvest facing north waits on this.
-5. **Real enemies** with health, needed by K.
+5. **Real enemies** with health, needed by K. Built in the game (`src/world/enemies.js`), waiting on the owner's review:
+   - Seven topknot samurai replace the dummies, on his rig: bare head and topknot, no hat or mantle, red-grey, a red eye, blade out in guard.
+   - Health 4. Damage per hit: slash 1, double slash 1 per cut, sheath-click burst 1, storm slam 2, Thousand Cuts 2, Crescent Moon 3, Cross Rift 1 per arm and 2 on the detonation, mirror 1, chain 1. Starting numbers, open to tuning.
+   - Reactions: a hit makes him flinch; a blow of 2 or more, or a second hit within 0.5 s, staggers him back a step. He turns to face whoever hit him, and in guard turns to keep facing the ronin a beat late. A thin red health bar shows once he is hurt.
+   - Death uses the deaths pass (PR #2): spring joints, knees give, kneel, a gravity fall that stops dead with dust, a twitch or two, the eye going out; his sword falls from his hands; blood drops, stains and a pool.
+   - Clear the room and the fallen fade after about 3 s and a new squad steps in.
+   - Not yet: enemy movement and attacks (the counters' attacks come with them), executions cutting into pieces (K).
