@@ -1,0 +1,259 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Counter Stance</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 26px; }
+  header { display: grid; gap: 8px; max-width: 70ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 19px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 18px; }
+  @media (max-width: 500px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--rule); display: grid; }
+  .card canvas { width: 100%; aspect-ratio: 110 / 56; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--rule); }
+  .card div { padding: 14px 16px 16px; display: grid; gap: 6px; }
+  .num { font: 700 13px/1 "Pixelify Sans", monospace; color: var(--cyan); letter-spacing: .06em; }
+  .ask { background: var(--panel); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; max-width: 70ch; }
+  .ask b { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Sword out · the counter stance</div>
+    <h1>Waiting for you to strike</h1>
+    <p>His stance with the blade drawn, from your description: one hand, the blade in his back hand pointing at the ground, his lead shoulder turned at the opponent so he makes himself thin, waiting cautiously so he can counter. Four takes, each breathing slowly and facing an enemy, at 4× zoom. A glint runs down the blade every few seconds.</p>
+  </header>
+  <div class="grid" id="grid"></div>
+  <div class="ask">
+    <h2>Your call</h2>
+    <p><b>Pick one</b>, or mix, like "B's grip with D's shoulder". It replaces the current two-handed guard after every attack, and the run with the blade out gets the same grip.</p>
+  </div>
+</div>
+
+<script>
+// ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
+const FW = 48, FH = 48, OX = 24, OY = 40;
+const RC = { K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', H: '#2a2f37', G: '#3b424c', B: '#1a1d24',
+  E: '#6ff3e4', W: '#e9eeee', S: '#7d868e', s: '#2c3037' };
+const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
+// angles in radians: limbs 0 = straight down, + swings forward; knee + folds the shin back; elbow + folds the forearm forward
+const REST = { hx: 0, hy: 0, lean: .04, chest: 0, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
+  sword: null, bsword: null, sheathing: false, hat: 0, flutter: 0 };
+const pz = o => ({ ...REST, ...o });
+const HILT = [.42, 1.0];          // front hand resting on the hilt at the hip
+const lerpP = (a, b, k) => { const o = {}; for (const key in a) {
+  const x = a[key], y = b[key];
+  o[key] = Array.isArray(x) ? x.map((v, i) => v + (y[i] - v) * k) : typeof x === 'number' && typeof y === 'number' ? x + (y - x) * k : k < .5 ? x : y; }
+  return o; };
+
+function rig(g, fx, p) {
+  const put = (x, y, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
+  const blob = (x, y, w, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
+  const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
+    for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
+  const poly = (pts, c) => {
+    const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+    for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++)
+      for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+        let inside = false;
+        for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+          const [xi, yi] = pts[i], [xj, yj] = pts[j];
+          if ((yi > y + .5) !== (yj > y + .5) && x + .5 < (xj - xi) * (y + .5 - yi) / (yj - yi) + xi) inside = !inside;
+        }
+        if (inside) put(x, y, c);
+      }
+  };
+  const hip = [OX + p.hx, OY - 11 + p.hy];
+  const up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
+  // breath lifts the chest, shoulders and head but not the hips, so it reads as breathing, not bobbing
+  // the chest pivots at the waist (u = 4), so a cut can be driven by the hips and then the chest
+  const up2 = [Math.sin(p.lean + p.chest), -Math.cos(p.lean + p.chest)], fw2 = [Math.cos(p.lean + p.chest), Math.sin(p.lean + p.chest)];
+  const L = (u, v) => { const b = u > 4 ? p.breath * Math.min(1, (u - 4) / 3) : 0;
+    if (u <= 4) return [hip[0] + up[0] * u + fw[0] * v, hip[1] + up[1] * u + fw[1] * v];
+    const w = [hip[0] + up[0] * 4, hip[1] + up[1] * 4];
+    return [w[0] + up2[0] * (u - 4) + fw2[0] * v, w[1] + up2[1] * (u - 4) + fw2[1] * v - b]; };
+  const dir = a => [Math.sin(a), Math.cos(a)];
+  const add = (a, d, k) => [a[0] + d[0] * k, a[1] + d[1] * k];
+  const leg = ([th, kn], c, off) => { const h = L(0, off), k = add(h, dir(th), 5), f = add(k, dir(th - kn), 6);
+    seg(h, k, 2, c); seg(k, f, 2, c); seg(f, [f[0] + 2, f[1]], 1, c); };
+  const arm = ([sh, el], c) => { const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
+    seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
+  const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
+
+  // far side first: scabbard, far arm, far leg
+  seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
+  // the back hand can carry the blade too, for the counter stance
+  const bh = arm(p.ba, 'D');
+  if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
+  leg(p.bl, 'D', -.5);
+  // torso, near leg
+  poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
+  for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
+  leg(p.fl, 'K', .5);
+  // head and hat
+  const hc = L(10, .6);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
+  put(hc[0] + 1.5, hc[1], 'E');
+  const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
+  HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x - fx + fx, hy0 + y, ch); }));
+  // mantle over the shoulders, its back tip lifting a hair with the flutter
+  const f = p.flutter;
+  // it drapes flat down the back instead of standing off it, so it no longer reads as a hump
+  poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M');
+  seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
+  if (f > .5) put(...L(2.6, -3.4), 'M');
+  // near arm and the sword
+  const hand = arm(p.fa, 'K');
+  if (p.sword === null && !p.sheathing && p.bsword == null) {                    // sheathed: hilt pokes forward-up out of the scabbard
+    put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W');
+  } else if (p.sheathing) {                                  // sliding home: blade runs from the hand into the scabbard mouth
+    seg(hand, mouth, 1, 'W'); put(...hand, 'S'); put(...add(hand, [hand[0] - mouth[0], hand[1] - mouth[1]].map(v => v / (Math.hypot(hand[0] - mouth[0], hand[1] - mouth[1]) || 1)), 2), 'K');
+  } else if (p.sword !== null) {
+    const d = [Math.cos(p.sword), Math.sin(p.sword)];
+    seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S');
+    seg(add(hand, d, 1), add(hand, d, 13), 1, 'W');
+  }
+}
+
+// ---- Poses, one per frame ----
+const run8 = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);
+  return pz({ lean: .32, hy: Math.round(.5 - .5 * Math.cos(2 * a)), fl: [.95 * s, .3 + 1.1 * Math.max(0, c)], bl: [-.95 * s, .3 + 1.1 * Math.max(0, -c)],
+    fa: [-.7 * s + .3, .9], ba: [.7 * s - .5, .5], flutter: (i % 4) / 2 }); });
+// a calm breath: 16 frames, eased, with long rests at the top and bottom
+const BREATH = [0, 0, 0, .15, .45, .75, .95, 1, 1, 1, .85, .6, .3, .1, 0, 0];
+const FLUT = [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0];
+const idle16 = BREATH.map((b, i) => pz({ breath: b, fa: [.12 + b * .03, .18], ba: [-.08 - b * .03, .12], flutter: FLUT[i] }));
+const ease = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, lin = k => k;
+// sample eased keyframes [time, pose, easing?] into frames
+function keyed(keys, fps) {
+  const n = Math.round(keys[keys.length - 1][0] * fps) + 1;
+  return Array.from({ length: n }, (_, i) => { const t = i / fps; let j = 0;
+    while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+    const [t0, a] = keys[j], [t1, b, e] = keys[j + 1];
+    return lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0))))); });
+}
+// his battle stance: feet wide, hips low, both hands on the hilt, blade angled up at the enemy
+const GUARD = pz({ hy: 3, lean: .14, chest: .06, fl: [.6, 1.0], bl: [-.65, .4], fa: [1.2, .55], ba: [1.05, .75], sword: -.85 });
+const J1_WIND = pz({ hx: -1, hy: 4, lean: -.1, chest: -.4, fl: [.6, 1.05], bl: [-.75, .45], fa: [2.6, .6], ba: [2.3, .8], sword: -2.45 });
+const J1_FOLLOW = pz({ hx: 2, hy: 4, lean: .6, chest: .5, fl: [1.1, 1.25], bl: [-1.1, .1], fa: [1.0, .2], sword: 1.3, ba: [.6, .2], hat: 1 });
+const J1_TAIL = [
+  [.16, pz({ hx: 2, hy: 3, lean: .45, chest: .35, fl: [1.0, 1.1], bl: [-1.0, .1], fa: [1.8, .1], sword: .1, ba: [1.2, .3], hat: 1, flutter: 1 }), lin],
+  [.22, J1_FOLLOW],
+  [.36, pz({ ...J1_FOLLOW, lean: .56, chest: .46 })],
+  [.5, GUARD]];
+const LUNGE = pz({ hx: 3, hy: 2, lean: .55, fl: [1.0, .9], bl: [-.95, .1] });
+
+// ---------- pose sampling ----------
+function at(keys, t) {
+  if (t <= keys[0][0]) return keys[0][1];
+  let j = 0; while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+  const [t0, a] = keys[j], [t1, b, e] = keys[j + 1];
+  return lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0)))));
+}
+const IDLE = pz({ fa: [.15, .2] });
+const CROUCH = pz({ hy: 2, lean: .4, fl: [.5, .9], bl: [-.5, .3], fa: HILT, ba: [-.9, .2] });
+const KNEEL = pz({ hy: 6, lean: .5, fl: [1.25, 1.95], bl: [-.15, 2.4], fa: HILT, ba: [-.7, .4] });
+const IAI = pz({ hy: 4, lean: .55, fl: [.8, 1.4], bl: [-.8, .5], fa: HILT, ba: [-.05, .8] });
+const CY = '#6ff3e4', CY2 = '#b8fff6', CY3 = '#52e8d6', WH = '#ffffff';
+const rr = (a, b) => a + Math.random() * (b - a), sgn = () => Math.random() < .5 ? -1 : 1;
+
+// ---------- the ronin, rendered from a pose ----------
+const off = document.createElement('canvas'); off.width = off.height = 48; const og = off.getContext('2d');
+const tint = document.createElement('canvas'); tint.width = tint.height = 48; const tg = tint.getContext('2d');
+function ronin(g, R, alpha = 1) {
+  og.clearRect(0, 0, 48, 48); rig(og, 0, R.pose);
+  let img = off;
+  if (R.col) { tg.clearRect(0, 0, 48, 48); tg.drawImage(off, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = R.col; tg.fillRect(0, 0, 48, 48); tg.globalCompositeOperation = 'source-over'; img = tint; }
+  g.save(); g.globalAlpha *= alpha; g.translate(Math.round(R.x), Math.round(R.y - (R.z || 0))); if (R.face < 0) g.scale(-1, 1);
+  if (R.glitch) { for (let y = 0; y < 48;) { const h = 1 + (Math.random() * 3 | 0), o = Math.random() < R.glitch ? Math.round(rr(-5, 5) * R.glitch) : 0; g.drawImage(img, 0, y, 48, h, -24 + o, y - 40, 48, h); y += h; } }
+  else g.drawImage(img, -24, -40);
+  g.restore();
+}
+// ---------- an original enemy: hooded grunt, 12×16, faces left ----------
+const EN = ['....aaaa....', '...aaaaaa...', '..aabbbbaa..', '..abrbbbba..', '..aabbbbaa..', '...aaaaaa...', '..aaaaaaaa..', '.aaaaaaaaaa.',
+  '.aaaaaaaaaa.', '.aa.aaaa.aa.', '.aa.aaaa.aa.', '....aaaa....', '....aaaa....', '....a..a....', '....a..a....', '...aa..aa...'];
+const EC = { a: '#4b4145', b: '#1c1719', r: '#ff5a4a' };
+// E: x, y (feet), z, face (-1 looks left), flash, split {y, dx, dy, fall} upper half sliding off, crumple 0..1, lie 0..1, glitch, alpha, jit
+function enemy(g, E) {
+  if (E.alpha <= 0) return;
+  const px = (x, y, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), 1, 1); };
+  g.globalAlpha = E.alpha ?? 1;
+  const bx = E.x + (E.jit || 0), by = E.y - (E.z || 0);
+  if (!E.lie) { g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(Math.round(E.x) - 4, Math.round(E.y) + 1, 8, 1); }
+  EN.forEach((r, y) => [...r].forEach((ch, x) => {
+    if (ch === '.') return;
+    const lx = E.face > 0 ? 11 - x : x, c = E.flash ? WH : EC[ch];
+    if (E.lie) {                                   // on the floor: head toward the side he fell to
+      const d = E.lieDir || -1, k = E.lie;
+      const sx = bx - 6 + lx, sy = by - 15 + y, lx2 = bx + d * (15 - y) * .9 - (d > 0 ? 0 : 0), ly2 = E.y - Math.floor((lx) / 2);
+      px(sx + (lx2 - sx) * k, sy + (ly2 - sy) * k, c); return;
+    }
+    let X = bx - 6 + lx, Y = by - 15 + y;
+    if (E.crumple) Y = E.y - (15 - y) * (1 - E.crumple * .6);
+    if (E.split && y < E.split.y) { X += E.split.dx; Y += E.split.dy; }
+    if (E.glitch && Math.random() < E.glitch * .5) X += Math.round(rr(-4, 4) * E.glitch);
+    px(X, Y, c);
+  }));
+  g.globalAlpha = 1;
+}
+
+
+const STANCES = [
+  { name: 'Low hang', note: 'The blade hangs from his back hand, point angled to the ground behind him. His empty lead hand rests forward and low, open, almost an invitation. Weight sits on the back leg.',
+    pose: pz({ hx: -1, hy: 2, lean: -.06, chest: .08, fl: [.45, .55], bl: [-.35, .45], fa: [.55, .35], ba: [-.35, .25], bsword: 2.05 }) },
+  { name: 'Reverse grip', note: 'The blade is held in a reverse grip along his back forearm, point down, tucked tight to his body so he is as thin as he can be. His lead hand is raised a little toward the enemy, feeling for the strike.',
+    pose: pz({ hx: -1, hy: 2, lean: -.02, chest: .12, fl: [.4, .6], bl: [-.35, .5], fa: [.95, .7], ba: [-.15, .9], bsword: 1.85 }) },
+  { name: 'Tip to the floor', note: 'Deepest and stillest: knees soft, head slightly bowed so the hat hides his eyes, the blade trailing behind with its point a pixel off the floor. Nothing moves but the breath until you come in.',
+    pose: pz({ hx: -1, hy: 3, lean: .02, chest: .14, fl: [.5, .75], bl: [-.45, .6], fa: [.3, .25], ba: [-.55, .1], bsword: 1.95, hat: 1 }) },
+  { name: 'Shoulder first', note: 'The most side-on: the lead shoulder drives forward, the lead arm folded in close, and the back arm extended long behind him with the blade angled down. A coiled spring, the counter already loaded.',
+    pose: pz({ hx: -2, hy: 2, lean: -.1, chest: .22, fl: [.5, .5], bl: [-.5, .5], fa: [.25, 1.3], ba: [-.75, .15], bsword: 1.75 }) },
+];
+const W = 110, H = 56;
+function floor(seed) { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); let r = seed;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  g.fillStyle = '#474c4a'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < W * H / 40; i++) { g.fillStyle = rnd() < .5 ? '#434846' : '#4b504e'; g.fillRect(rnd() * W | 0, rnd() * H | 0, 2, 1); } return c; }
+const cards = STANCES.map((s, i) => {
+  const card = document.createElement('section'); card.className = 'card';
+  card.innerHTML = `<canvas width="${W}" height="${H}" role="img" aria-label="Counter stance ${String.fromCharCode(65 + i)}: ${s.name}"></canvas><div><span class="num">${String.fromCharCode(65 + i)}</span><h2>${s.name}</h2><p>${s.note}</p></div>`;
+  document.getElementById('grid').append(card);
+  return { g: card.querySelector('canvas').getContext('2d'), s, floor: floor(5 + i * 23), phase: i * .9 };
+});
+const BR = [0, 0, .3, .7, 1, 1, 1, .7, .3, 0, 0, 0];
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function frame(now) {
+  const t = still ? 0 : now / 1000;
+  for (const c of cards) {
+    const tt = t + c.phase, f = Math.floor(tt * 5) % BR.length, b = BR[f];
+    const pose = pz({ ...c.s.pose, breath: b, flutter: f === 5 ? 1 : 0, bsword: c.s.pose.bsword + b * .03 });
+    const R = { x: 38, y: 46, face: 1, pose };
+    const { g } = c;
+    g.drawImage(c.floor, 0, 0);
+    g.save(); g.globalAlpha = .17; g.translate(0, 2 * R.y + 1); g.scale(1, -1); ronin(g, R); g.restore();
+    g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(R.x - 5, R.y + 1, 10, 1);
+    ronin(g, R);
+    // a glint sliding down the blade every few seconds
+    const gl = (tt % 3.2) / .35;
+    if (gl < 1) {                     // find the blade's pixels, then light the one the glint has reached
+      og.clearRect(0, 0, 48, 48); rig(og, 0, pose);
+      const img = og.getImageData(0, 0, 48, 48).data, d = [Math.cos(pose.bsword), Math.sin(pose.bsword)], blade = [];
+      for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) { const i = (y * 48 + x) * 4; if (img[i] === 0xe9 && img[i + 1] === 0xee) blade.push([x, y, x * d[0] + y * d[1]]); }
+      blade.sort((p, q) => p[2] - q[2]);
+      const k = Math.floor(gl * blade.length);
+      g.fillStyle = '#ffffff';
+      for (const j of [k - 1, k, k + 1]) if (blade[j]) g.fillRect(R.x - 24 + blade[j][0], R.y - 40 + blade[j][1], 1, 1);
+      if (blade[k]) { g.fillStyle = '#b8fff6'; g.fillRect(R.x - 24 + blade[k][0] - 1, R.y - 40 + blade[k][1], 1, 1); g.fillRect(R.x - 24 + blade[k][0] + 1, R.y - 40 + blade[k][1], 1, 1); }
+    }
+    enemyAt(g, 86, 45, tt);
+  }
+  requestAnimationFrame(frame);
+}
+function enemyAt(g, x, y, t) { enemy(g, { x, y, z: 0, face: -1, alpha: 1, flash: 0 }); }
+requestAnimationFrame(frame);
+</script>
