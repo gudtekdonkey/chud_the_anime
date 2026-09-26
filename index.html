@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ronin Engine</title>
+<title>Ronin Elements</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
 <link rel="stylesheet" href="/src/styles.css">
 </head>
@@ -15,6 +15,7 @@
   </header>
 
   <section>
+    <div class="elements" id="elements" role="group" aria-label="Element"></div>
     <canvas id="game" width="480" height="270" tabindex="0" aria-label="Game screen. Click, then use the keys listed below."></canvas>
     <div class="hud" id="hud"></div>
     <div class="keys">
@@ -35,6 +36,7 @@
       <span>Hold <kbd>E</kbd> by the fallen: Harvest</span>
       <span><kbd>1</kbd>–<kbd>4</kbd> quick slots</span>
       <span><kbd>X</kbd> die (to test)</span>
+      <span><kbd>[</kbd> / <kbd>]</kbd> switch element (or the buttons above the game)</span>
     </div>
     <label class="clear" for="weapon">Weapon (for testing; in the game you pick them up) <select id="weapon"></select></label>
     <label class="clear" for="clear"><input type="checkbox" id="clear"> Room is clear: the samurai don't count as a threat, so after an attack he sheathes at once</label>
@@ -50,6 +52,35 @@
     </div>
   </section>
 
+  <section class="notes">
+    <h2>How an element works</h2>
+    <p>Every move makes the same few calls: throw a bolt, throw sparks, leave a trail, leave residue where he was, travel (the teleport), and leave footsteps. Storm answers them with lightning and glitch slices. Every other element answers them with its own kit of matter, so it looks and moves differently on every skill while the timing and hits stay the same.</p>
+    <div class="cols">
+      <div><h3>Fire</h3><p>Bolts become lines of flame, sparks become embers and falling cinders that scorch and keep burning on the floor. The teleport bursts into fire and leaves a burning trail.</p></div>
+      <div><h3>Slime</h3><p>Bolts become sagging strands that drip and break into goo. Everything splats into puddles. The teleport melts him into a puddle that stretches to the new spot and stands back up.</p></div>
+      <div><h3>Water</h3><p>Thick water whips and spray. Drops fall, ripple and pool. The teleport splashes down and erupts out of a geyser.</p></div>
+      <div><h3>Wind</h3><p>Gusts that curl, leaves that tumble, little whirlwinds where he was. The teleport scatters him into streaks along the path.</p></div>
+      <div><h3>Psychic</h3><p>No lines at all: ripples where things land and floating motes. The teleport leaves a string of his own silhouettes folding into the new spot.</p></div>
+      <div><h3>A new style</h3><p>One palette row plus one kit of small functions (around 20 lines). Psychic was added this way as the test.</p></div>
+    </div>
+    <h2>Every move, every element</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Move</th><th>What the element does there</th></tr></thead>
+      <tbody>
+        <tr><td>Charging (hold I, O, P)</td><td>The element gathers onto his outline. Slime globs fly in and stick, then drip off. Water beads run down him. Fire licks up off his body. Wind wraps round him. Psychic motes drift in.</td></tr>
+        <tr><td>Slash, double slash, Thousand Cuts</td><td>Matter comes off the blade's edge as it cuts: flames, flung goo, spray, gusts, motes. The slivers each cut sheds turn into the element too.</td></tr>
+        <tr><td>Crescent Moon</td><td>Same crescent in the element's colours; the motes streaming off it become flames, goo, drops, gusts or motes.</td></tr>
+        <tr><td>Cross Rift</td><td>The tear bleeds the element from its lips while it is open (a burning seam, a dripping membrane, spray, a rush of air).</td></tr>
+        <tr><td>Glitch teleport (K)</td><td>Each element travels its own way: burst of fire, the slime melt and stretch, a geyser, scattering streaks, a string of silhouettes.</td></tr>
+        <tr><td>Storm slam</td><td>The cyclone and the slam's spokes are made of the element; the cracks glow in its colour.</td></tr>
+        <tr><td>Mirror Meditation, Storm Chain</td><td>The aura sits on his body; chain links are the element's bolt. Nothing lands on the floor (Qi rule).</td></tr>
+        <tr><td>Run, slide, landing</td><td>Footsteps, the slide and the landing leave the element behind: embers, goo smears, ripples, dust and leaves.</td></tr>
+        <tr><td>Idle (after 4 s)</td><td>Storm and Energy glitch. The others do their own thing: a flare, goo oozing out, shaking off water, a gust, motes.</td></tr>
+        <tr><td>Death</td><td>His death motion is untouched; the element bursts off him on top.</td></tr>
+        <tr><td>Executions</td><td>The body motion and the deaths pass stay as they are; the sparks, bolts and slivers off the kill become the element's matter, and the glitch slices only play for Storm and Energy.</td></tr>
+      </tbody>
+    </table></div>
+    <p>Qi skills (Mirror Meditation, the Storm Chain waking and chaining) leave nothing on the floor, per your rule. Their matter still flies but never lands as a puddle, scorch or ripple. Attacks and the teleport do leave marks. This page is a preview built from a copy; the game in the repo is unchanged.</p>
   <section aria-labelledby="ward-h">
     <div class="ward-head">
       <div class="ward-title"><h2 id="ward-h">Wardrobe</h2><p id="wearing" aria-live="polite"></p></div>

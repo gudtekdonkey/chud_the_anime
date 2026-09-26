@@ -55,6 +55,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `traits/knobs.js` | `BASE`: the knobs a personality turns (lean, breath, hands, stride, bounce...), the plain ronin's values; `ARMS` hand targets |
 | `traits/fidgets.js` | `FIDGETS`: small idle actions (tug the hat, crack the neck...) |
 | `traits/traits.js` | `TRAITS`: 52 personality traits as plain data, `GROUPS`, `PRESETS` (ready-made characters) |
+| `traits/cultures.js` | `CULTURES`: each culture's shared trait mix and a pool of personal traits; `personOf(culture, seed)` gives one person's traits |
 | `traits/mix.js` | `mix()`: adds traits by strength into one set of knobs; `defineTrait()`; validates every trait at load |
 | `traits/bake.js` | `bake()`: knobs to idle / walk / run poses. No traits gives today's idle and run exactly |
 | `fx/fx.js` | `updateFx`, `drawFloorFx`, `drawFx`: the effect systems' per-frame update and draw |
@@ -64,6 +65,8 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `fx/debris.js` | Stone chips the storm slam gathers and flings, floor cracks |
 | `fx/moon.js` | The Crescent Moon: sweep, hang, shatter, its light on the floor |
 | `fx/void.js` | Cross Rift's tear in reality |
+| `fx/element.js` | `ELEMENTS` (palette + kit per element), `EL` (the current one), `setElement`, `cc`/`ec` (storm white and cyan to the element's tones) |
+| `fx/matter.js` | The non-lightning elements' matter (flames, goo, drops, gusts, motes), floor stains, the kits `FIRE`/`SLIME`/`WATER`/`WIND`/`PSYCHIC`, `qiFx` |
 | `fx/blood.js` | Blood drops, floor stains and pools |
 | `assassin/targets.js` | The one place K reads enemies from (the enemy API): `targets`, `faceOf`, `hold` (an execution takes one over), `roomFade` |
 | `assassin/markers.js` | Isolation bubbles, link lines, the kill line and the K prompt; `K.pick` (whom K would execute now), `K_RANGE` |
@@ -96,6 +99,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `ui/moveset.js` | The moveset table under the game (from `ANIMS` "about" rows + skill rows) |
 | `ui/personality.js` | The personality picker under the game (remembered in localStorage) |
 | `ui/weapon-picker.js` | The test weapon picker under the game |
+| `ui/element-picker.js` | The element buttons over the game, `[` / `]` to step through them |
 | `ui/strip-tester.js` | "Test a sprite strip": drop a PNG strip in place of any animation |
 | `ui/wardrobe.js` | The wardrobe under the game: one item per slot, outfit presets |
 | `styles.css` / `index.html` | The page; `index.html` holds markup only |
@@ -104,6 +108,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Keep files focused and under about 400 lines. Keep the compact style and the short WHY comments.
 - A weapon changes poses and art only: its frames match the katana's count for every move, so timing, hit beats and effects stay shared. Reach and weight (hit pause, shake) are per weapon, 1 for the katana. A new move needs a pose per weapon (or the weapon's `adapt` covers it).
 - Effects are drawn in world space, never baked into sheets, so they survive real art replacing a placeholder.
+- Effects take their colours from `COL` (never a literal cyan) and throw bolts, sparks and slivers through `zap`/`spark`/`residue`, so every element re-skins them. A new element is a row in `ELEMENTS` plus a kit in `fx/matter.js`.
 
 ## Design rules (from `docs/design-notes.md`)
 
@@ -127,6 +132,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 
 - Iterate on design as standalone pages in `prototypes/`, numbered in order (`34-…html` next). Never edit an old prototype; make a new one.
 - Record every decision the owner makes in `docs/design-notes.md`.
+- Every culture moves through the trait system: a character from a culture gets `setPersonality`/`bake(personOf(culture, seed))`, never hand-made idle or walk poses. A culture's mannerisms go in `CULTURES` (a new mannerism is a new trait or fidget).
 - Personality traits (`src/traits/`) never import player, enemy or clothing code, so any rig character can take them. A new trait is a new entry in `TRAITS`; a new knob goes in `BASE` with the plain ronin's value, so no-trait output never changes.
 - Every new move gets an `ANIMS` row with an `about` text (it fills the moveset table); a skill that plays on another move's frames gets a row in `ui/moveset.js` `SKILL_ROWS`.
 - Tuning numbers, colours and timings change only on purpose, never as a side effect of a refactor.

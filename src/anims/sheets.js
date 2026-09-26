@@ -2,6 +2,8 @@ import { COL, FW, FH, OX, OY } from '../config.js';
 import { ANIMS } from './anims.js';
 import { OPEN_FRONT, INVITE_FRONT, frontFrame, sitFrame } from './hand-drawn.js';
 import { POSES, GLF } from './poses.js';
+import { rig } from '../rig/rig.js';
+import { EL } from '../fx/element.js';
 import { Raster } from '../wardrobe/raster.js';
 import { dress, makeFigure } from '../wardrobe/dress.js';
 
@@ -41,8 +43,8 @@ export function placeholderSheet(name, frames = POSES[name], art = null) {
     else p = (frames && frames[i % frames.length]) || null;   // exec has no sheet: its stage draws him live
     if (p) g.drawImage(dress(R, makeFigure(), p), i * FW, 0);
     const gl = GLF[name] && GLF[name][i];
-    if (gl) sliceGlitch(g, i * FW, gl, glitchSeed(name, i));
-    poses.push(p); glf.push(gl || 0);
+    if (gl && EL.cur.glitch) sliceGlitch(g, i * FW, gl, glitchSeed(name, i));
+    poses.push(p); glf.push(EL.cur.glitch ? gl || 0 : 0);
   }
   return { img: c, fw: FW, fh: FH, n, ox: OX, oy: OY, custom: false, poses, glf, name };
 }
@@ -57,3 +59,5 @@ export const dur = k => ANIMS[k].n / ANIMS[k].fps;
 // onRebake: told which move was re-baked, so the other weapons' cached sheets of it are dropped and baked again on equip
 export const BAKE = { frames: k => POSES[k], art: null }, onRebake = [];
 export function rebake(k) { ANIMS[k].n = POSES[k].length; if (!SHEETS[k].custom) SHEETS[k] = placeholderSheet(k, BAKE.frames(k), BAKE.art); onRebake.forEach(f => f(k)); }
+// an element swap recolours his eyes and the baked glitch slices, so every placeholder is baked again
+export function rebakeAll() { for (const k in ANIMS) if (!SHEETS[k].custom) SHEETS[k] = POSES[k] ? placeholderSheet(k, BAKE.frames(k), BAKE.art) : placeholderSheet(k); for (const k in ANIMS) onRebake.forEach(f => f(k)); }

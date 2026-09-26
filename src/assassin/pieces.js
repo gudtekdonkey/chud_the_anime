@@ -2,6 +2,7 @@ import { FW, FH, OX, OY, RC } from '../config.js';
 import { rig } from '../rig/rig.js';
 import { pz, ease } from '../rig/pose.js';
 import { rr } from '../fx/util.js';
+import { EL, ec } from '../fx/element.js';
 
 // ---- Execution bodies: the rig drawn live from a pose (ronin or enemy), and the enemy cut into real pieces of his own pixels ----
 // the enemy samurai: his body, no hat or mantle, in a darker red-grey (from prototypes/14-executions-batch-1.html)
@@ -14,9 +15,9 @@ function paint(pose, enemy, dark) { og.clearRect(0, 0, FW, FH); rig(og, 0, enemy
 // R: { x, y, z, face, pose, enemy, dark (his eye out), col (solid tint), glitch (0..2: rows jump sideways) }
 export function figure(g, R, alpha = 1) {
   let img = paint(R.pose, R.enemy, R.dark);
-  if (R.col) { tg.clearRect(0, 0, FW, FH); tg.drawImage(img, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = R.col; tg.fillRect(0, 0, FW, FH); tg.globalCompositeOperation = 'source-over'; img = tint; }
+  if (R.col) { tg.clearRect(0, 0, FW, FH); tg.drawImage(img, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = ec(R.col); tg.fillRect(0, 0, FW, FH); tg.globalCompositeOperation = 'source-over'; img = tint; }
   g.save(); g.globalAlpha *= alpha; g.translate(Math.round(R.x), Math.round(R.y - (R.z || 0))); if (R.face < 0) g.scale(-1, 1);
-  if (R.glitch) { for (let y = 0; y < FH;) { const h = 1 + (Math.random() * 3 | 0), o = Math.random() < R.glitch ? Math.round(rr(-5, 5) * R.glitch) : 0; g.drawImage(img, 0, y, FW, h, -OX + o, y - OY, FW, h); y += h; } }
+  if (R.glitch && EL.cur.glitch) { for (let y = 0; y < FH;) { const h = 1 + (Math.random() * 3 | 0), o = Math.random() < R.glitch ? Math.round(rr(-5, 5) * R.glitch) : 0; g.drawImage(img, 0, y, FW, h, -OX + o, y - OY, FW, h); y += h; } }
   else g.drawImage(img, -OX, -OY);
   g.restore();
 }
