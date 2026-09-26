@@ -4,7 +4,7 @@ import { Raster, packPal } from '../../src/wardrobe/raster.js';
 import { dress, makeFigure, WEST } from '../../src/wardrobe/dress.js';
 import { OUTFITS } from '../../src/wardrobe/items.js';
 import { DIRS, port } from '../../src/rig/port.js';
-import { turner, turnTo, trueView } from '../../src/rig/turn.js';
+import { turner, turnTo, trueView, STEP } from '../../src/rig/turn.js';
 import { rig, rigR } from '../../src/rig/rig.js';
 import { drawBody3d } from '../../src/rig/body3d.js';
 import { solve } from '../../src/wardrobe/skeleton.js';
@@ -119,6 +119,45 @@ function drawTurn(dt) {
     $('turnlab' + li).textContent = `${MODES[L.mode]} · facing ${L.mode === 'before' ? (L.face < 0 ? L.view + ' mirrored' : L.view) : id}`;
   });
 }
+// ---- 3b. turn speed: one route, run at several speeds of turn side by side ----
+// the route: run, stop, run back, stop, toward the camera, away, the diagonals; px/s like his run, then a pause
+const ROUTE = [[1, 0, 1.1], [0, 0, .6], [-1, 0, 1.1], [0, 0, .6], [0, 1, .45], [0, 0, .5], [0, -1, .45], [0, 0, .5], [1, 1, .4], [-1, -1, .4], [0, 0, .6], [-1, 1, .4], [1, -1, .4], [0, 0, .8]];
+const RLEN = ROUTE.reduce((a, r) => a + r[2], 0);
+const SPEEDS = [[0, 'No turn: a pop'], [.015, '0.015 s a facing'], [STEP, `${STEP} s a facing (now)`], [.05, '0.05 s a facing'], [.08, '0.08 s a facing']];
+const spd = SPEEDS.map(([step, label]) => ({ step, label, F: null, T: turner('E'), view: 'E', face: 1, x: 70, y: 40, rt: 0 }));
+function drawSpeeds(dt) {
+  const slow = $('slow').checked ? .25 : 1, d = dt * slow;
+  const run = poses('run'), idle = poses('idle');
+  spd.forEach((A, i) => {
+    const g = canvasFor($('spd' + i), 150 * 3, 70 * 3); floor(g, g.canvas.width, g.canvas.height);
+    const rt = (A.rt + d) % RLEN; if (rt < A.rt) { A.x = 70; A.y = 40; } A.rt = rt;   // each lap starts from the same spot, so the five stay in step
+    let t = A.rt, seg = ROUTE[0]; for (const r of ROUTE) { if (t < r[2]) { seg = r; break; } t -= r[2]; }
+    const [mx, my] = seg, moving = mx || my;
+    if (moving) { A.x += mx * 60 * d; A.y += my * 48 * d; if (mx) A.face = Math.sign(mx); A.view = viewTo(mx, my); }
+    // no turn is the step 0: straight to the facing wanted
+    const id = A.step ? turnTo(A.T, trueView(A.view, A.face), A.face, d, A.step).id : turnTo(A.T, trueView(A.view, A.face), A.face, -1).id;
+    const p = moving ? run[Math.floor(A.rt * ANIMS.run.fps) % run.length] : idle[Math.floor(A.rt * ANIMS.idle.fps) % idle.length];
+    A.F = A.F || makeFigure(outfit()); A.F.vel = moving ? [mx * 60, my * 48] : [0, 0];
+    const [cv, fl] = hero(A.F, p, d, id, 'side');
+    shadow(g, Math.round(A.x) * 3, Math.round(A.y) * 3, 3); put(g, cv, Math.round(A.x) * 3, Math.round(A.y) * 3, 3, fl);
+    $('spdlab' + i).textContent = `${A.label}${A.step ? ` · half turn ${(A.step * 4).toFixed(2)} s` : ''} · ${id}`;
+  });
+}
+// the same, frame by frame: the 14 frames (60 a second) after he reverses from running right to running left
+const FR = 14, FS = 2, FTW = 40, FTH = 44;
+function drawFrames() {
+  const run = poses('run'), g = canvasFor($('frames'), FR * FTW * FS, SPEEDS.length * FTH * FS); floor(g, g.canvas.width, g.canvas.height);
+  SPEEDS.forEach(([step, label], r) => {
+    const T = turner('E'), F = makeFigure(outfit());
+    for (let k = 0; k < FR; k++) {
+      const id = step ? turnTo(T, 'W', -1, 1 / 60, step).id : turnTo(T, 'W', -1, -1).id, p = run[k % run.length];
+      F.vel = [-60, 0]; const [cv, fl] = hero(F, p, 1 / 60, id, 'side');
+      g.save(); g.beginPath(); g.rect(k * FTW * FS, r * FTH * FS, FTW * FS, FTH * FS); g.clip();
+      put(g, cv, (k * FTW + FTW / 2) * FS, (r * FTH + FTH - 4) * FS, FS, fl); g.restore();
+      g.fillStyle = '#9aa3a1'; g.font = '11px Figtree, sans-serif'; g.fillText(id, k * FTW * FS + 4, r * FTH * FS + 13); }
+    g.fillStyle = '#6ff3e4'; g.font = '600 12px Figtree, sans-serif'; g.fillText(label, 4, (r + 1) * FTH * FS - 6);
+    g.fillStyle = '#2a2f2e'; g.fillRect(0, (r + 1) * FTH * FS - 1, g.canvas.width, 2); });
+}
 // ---- 4. attacks stay side on: idle facing W, a cut, back to idle ----
 const atk = Object.keys(MODES).map(m => ({ mode: m, F: null }));
 function drawAttack(dt) {
@@ -165,7 +204,7 @@ function buttons(el, items, get, set) {
 function ui() {
   buttons($('moves'), [['idle', 'Idle'], ['walk', 'Walk'], ['run', 'Run'], ['runArmed', 'Run, blade out']], () => st.move, v => { st.move = v; st.frame = 0; });
   buttons($('weapons'), WEAPONS.map(w => [w.id, w.name]), () => st.weapon, v => { st.weapon = v; });
-  buttons($('outfits'), OUTFITS.map((o, i) => [i, o.name]), () => st.outfit, v => { st.outfit = v; figs.clear(); for (const L of laps) L.F = null; for (const A of atk) A.F = null; });
+  buttons($('outfits'), OUTFITS.map((o, i) => [i, o.name]), () => st.outfit, v => { st.outfit = v; figs.clear(); drawFrames(); for (const L of laps) L.F = null; for (const A of atk) A.F = null; });
   buttons($('westmode'), [['side', 'Side rig from his left (in the game)'], ['3d', 'Rig v2 at 180°']], () => st.west, v => { st.west = v; });
   $('play').onclick = () => { st.play = !st.play; $('play').textContent = st.play ? 'Pause' : 'Play'; };
   $('step').onclick = () => { st.play = false; $('play').textContent = 'Play'; st.frame++; tick(1 / 60, true); };
@@ -175,9 +214,9 @@ let last = performance.now();
 function tick(dt, stepped) {
   if (st.play) { st.t += dt; st.frame = Math.floor(st.t * ANIMS[st.move].fps); }
   const d = st.play || stepped ? dt : 0;
-  drawEvery(d); drawZoom(d); drawTurn(st.play ? dt : 0); drawAttack(d); drawPeople(d);
+  drawEvery(d); drawZoom(d); drawTurn(st.play ? dt : 0); drawSpeeds(st.play ? dt : 0); drawAttack(d); drawPeople(d);
   $('frameno').textContent = `frame ${st.frame % poses(st.move).length + 1} / ${poses(st.move).length}`;
 }
 function loop(now) { const dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now; tick(dt); requestAnimationFrame(loop); }
-ui(); requestAnimationFrame(loop);
+ui(); drawFrames(); requestAnimationFrame(loop);
 window.__proto = st;

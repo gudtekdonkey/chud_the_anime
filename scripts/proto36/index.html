@@ -32,6 +32,9 @@
   .stage { display: grid; gap: 6px; }
   .stage canvas { width: 100%; height: auto; border: 1px solid var(--rule); }
   .cap { font-size: 13px; color: var(--muted); }
+  .speeds { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+  #frames { max-width: none; }
+  .speeds canvas { width: 100%; height: auto; border: 1px solid var(--rule); }
   .atk { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
   .atk canvas { width: 100%; height: auto; border: 1px solid var(--rule); }
   .phase { font: 500 13px/1 "Pixelify Sans", monospace; color: var(--cyan); letter-spacing: .06em; }
@@ -79,6 +82,21 @@
   </section>
 
   <section class="sec">
+    <h2>Turn speed</h2>
+    <p>The same run five times over, each turning at a different speed. He runs right, stops, runs back left, stops, then toward the camera, away, and along the diagonals. How long each in-between facing shows decides how quickly he comes round: with no turn he pops straight to the new side; slower, you see him swing round by the camera. Tick <b>Slow motion</b> to watch each step at quarter speed. Tell me which one feels right.</p>
+    <label><input type="checkbox" id="slow"> Slow motion (quarter speed)</label>
+    <div class="speeds">
+      <div class="stage"><canvas id="spd0"></canvas><div class="cap" id="spdlab0"></div></div>
+      <div class="stage"><canvas id="spd1"></canvas><div class="cap" id="spdlab1"></div></div>
+      <div class="stage"><canvas id="spd2"></canvas><div class="cap" id="spdlab2"></div></div>
+      <div class="stage"><canvas id="spd3"></canvas><div class="cap" id="spdlab3"></div></div>
+      <div class="stage"><canvas id="spd4"></canvas><div class="cap" id="spdlab4"></div></div>
+    </div>
+    <p>Frame by frame: the 14 game frames (under a quarter of a second) after he reverses from running right to running left. Each row is one speed, top to bottom as above; the label is the facing drawn that frame.</p>
+    <div class="scroll"><canvas id="frames"></canvas></div>
+  </section>
+
+  <section class="sec">
     <h2>Attacks facing west: his true left too</h2>
     <p>Attacks stay side on ("Same side attack is fine"), but nothing is mirrored any more ("don't mirror"): facing west a cut is drawn from his true left, so the scabbard stays at his left hip from idle, through the cut, to the sheathe. Every pixel is where the mirror put it, so hits and effects do not move; only the near and far sides are true. The executions, the samurai (the dead too), the companions and the mirror images do the same. Left: before, the mirror. Now: <span class="phase" id="atkphase"></span></p>
     <div class="atk">
@@ -100,7 +118,7 @@
     <ul>
       <li><b>How to draw W: decided.</b> Your pick, the side rig seen from his left: W keeps his exact E pixels (the scabbard and the near arm swapped), it sits between SW and NW the way E sits between SE and NE, and a cut facing west changes only which side is near. Rig v2 at 180° stays on this page for comparison.</li>
       <li><b>Attacks facing west: decided.</b> Drawn from his true left, never mirrored, the scabbard at his left hip throughout.</li>
-      <li><b>The turn speed</b> (0.03 s a facing) is a first guess.</li>
+      <li><b>The turn speed</b> (0.03 s a facing) is a first guess: compare the five in <b>Turn speed</b> above.</li>
     </ul>
   </section>
 </div>

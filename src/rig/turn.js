@@ -11,13 +11,13 @@ export const trueView = (view, face) => face < 0 ? WEST[view] || view : view;
 export function sideOn(T, face) { if (T) turnTo(T, face < 0 ? 'W' : 'E', face, -1); return face < 0 ? [Math.PI, 1] : [0, 1]; }
 // a turn passes through the facings between, one 45° step at a time, so the hilt and scabbard never jump sides.
 // Half a turn (E to W) goes by the camera, the way a body turns toward the one watching; S to N goes by the side it faces.
-const STEP = .03;   // seconds a facing shows on the way round: 180° in about a tenth of a second
+export const STEP = .03;   // seconds a facing shows on the way round: 180° in about a tenth of a second (prototype 36 compares speeds)
 export const turner = (view = 'E') => ({ i: IX[view], t: 0 });
-export function turnTo(T, view, face, dt) {
+export function turnTo(T, view, face, dt, step = STEP) {
   const want = IX[view], d = (want - T.i + 8) % 8;
   if (!d) { T.t = 0; return DIRS[T.i]; }
   if (dt < 0) { T.i = want; T.t = 0; return DIRS[T.i]; }   // no turn: snap (an attack ended side on, a new figure)
-  if ((T.t += dt) >= STEP) { T.t -= STEP;
+  if ((T.t += dt) >= step) { T.t = step > 0 ? T.t - step : 0;
     let s = d < 4 ? 1 : -1;
     if (d === 4) s = T.i === 2 || T.i === 6 ? (T.i === 2) === face < 0 ? 1 : -1   // S or N: by the side it faces
       : [1, 2, 3].some(k => (T.i + k) % 8 === 2) ? 1 : -1;                     // otherwise by the camera (S)
