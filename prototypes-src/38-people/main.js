@@ -1,7 +1,7 @@
 // Prototype 38: the people lane on the simulation core. Bundled into prototypes/38-people.html by scripts/proto-bundle.mjs.
 import '../../src/sim/people/index.js';   // registers the people system before the world is made
 import { generateWorld, advance, calendar, HOURS_PER_YEAR, HOURS_PER_SEASON, on, ownerOf, zoneAt } from '../../src/sim/index.js';
-import { residents, tree, founder, brides, judge, court, propose, nameHeir, playableHeirs, killActor, waitingYears, tieValue, livingChildren, activity } from '../../src/sim/people/index.js';
+import { residents, tree, founder, brides, judge, court, propose, nameHeir, playableHeirs, killActor, lootGrave, tieValue, livingChildren, activity, PEOPLE_RULES } from '../../src/sim/people/index.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -26,10 +26,10 @@ on('*', (e, W) => {
     'people.seatPassed': () => `The seat of ${esc(L.regions[e.region].name)} passed to <b>${nm(e.to)}</b> (${e.how})`,
     'people.married': () => `<b>${nm(e.actor)}</b> married <b>${nm(e.spouse)}</b>${e.adopted ? ', taken into her house as its heir' : ''}${e.price ? ` (bride price ${e.price} mon)` : ''}`,
     'people.born': () => `<b>${nm(e.actor)}</b> was born to ${nm(e.mother)}`,
-    'people.heir': () => `<b>${nm(e.actor)}</b> takes up the name of ${nm(e.from)}${e.waiting ? ` (aged ${e.age})` : ''}`,
+    'people.heir': () => `<b>${nm(e.actor)}</b>, ${e.age}, takes up the name of ${nm(e.from)}${e.regent ? `; ${nm(e.regent)} is regent` : ''}`,
+    'people.graveLooted': () => e.kin ? `<b>${nm(e.actor)}</b> took up ${nm(e.from)}'s ${e.weapon || 'purse'} from his grave` : `<b>${nm(e.actor)}</b> robbed the grave of ${nm(e.from)}`,
     'people.lineEnded': () => `<b>${nm(e.actor)}</b> died with no heir. The line has ended.`,
     'people.cameOfAge': () => `<b>${nm(e.actor)}</b> came of age and holds ${plural(e.plots, 'plot')}`,
-    'people.plotBought': () => `<b>${nm(e.actor)}</b> bought a plot from the lord for ${e.price} mon`,
     'people.vendetta': () => `<b>${nm(e.actor)}</b> swore to avenge ${nm(e.victim)} on ${nm(e.target)}`,
     'people.succession': () => `<b>${nm(e.actor)}</b> covets the seat meant for his brother ${nm(e.heir)}`,
     'people.migrated': () => `${plural(e.n, 'person')} left for a place with more land`,
@@ -158,19 +158,20 @@ function renderRonin() {
       <div class="row"><button id="again" class="hot">Start a new world</button></div></div>`;
     return;
   }
-  const ag = ageOf(p), sp = p.spouse && L.actors[p.spouse], kids = livingChildren(L, p), heirs = playableHeirs(L, p), wait = waitingYears(L);
+  const ag = ageOf(p), sp = p.spouse && L.actors[p.spouse], kids = livingChildren(L, p), heirs = playableHeirs(L, p), minor = ag < 16;
   const money = `${p.money.mon} mon${p.money.silver ? `, ${p.money.silver} monme` : ''}${p.money.ryo ? `, ${p.money.ryo} ryō` : ''}`;
   let html = '';
   if (note) html += `<div class="death flash"><h2>${esc(note.title)}</h2><p>${note.text}</p></div>`;
   html += `<div class="row"><h2>${esc(p.given)} ${esc(p.family)}</h2><p>${P.lineage.length ? `the ${ord(P.lineage.length + 1)} of his line` : 'the ronin'}, ${ag}, ${p.cls}</p></div>
-    <div class="stats"><span>purse <b>${money}</b></span><span>home <b>${p.home ? esc(zoneOfKey(keyOf(p.home)).name) : 'the road'}</b></span><span>wife <b>${sp ? esc(nm(sp.id)) + (sp.alive ? '' : ' (dead)') : 'none'}</b></span>
+    <div class="stats"><span>purse <b>${money}</b></span><span>home <b>${p.home ? esc(zoneOfKey(keyOf(p.home)).name) : 'the road'}</b></span><span>${p.sex === 'm' ? 'wife' : 'husband'} <b>${sp ? esc(nm(sp.id)) + (sp.alive ? '' : ' (dead)') : 'none'}</b></span>
       <span>land <b>${plural(p.holds.length, 'plot')}</b></span></div>`;
-  if (wait > 0) html += `<p>${esc(p.given)} is ${ag}. The world lives on for ${wait.toFixed(1)} years until ${p.sex === 'm' ? 'he' : 'she'} comes of age; ${p.regent ? `${esc(nm(p.regent))} holds the land until then` : 'nobody holds land for them'}.</p>
-    <div class="row"><button id="wait" class="hot">Let the years pass</button></div>`;
+  if (minor) html += `<p>${esc(p.given)} is ${ag} and is played now. ${p.regent ? `${esc(nm(p.regent))} is regent${p.holds.length ? ' and holds the land' : ''}` : 'Nobody is left to act as regent'} until ${p.sex === 'm' ? 'he' : 'she'} turns 16.</p>`;
+  const last = P.lineage.length && L.actors[P.lineage.at(-1).actor], goods = last && last.grave && last.grave.goods, gw = goods ? PEOPLE_RULES.worth(goods.money) : 0;
+  if (goods && (goods.weapon || gw)) html += `<div class="row"><button id="loot" class="hot">Go to ${esc(last.given)}'s grave</button><p style="font-size:13px">His ${esc(goods.weapon || 'purse')} and ${gw} mon lie with him at zone ${last.grave.zone}. Finders keepers.</p></div>`;
   if (kids.length) html += `<h3>Children</h3><div class="brides">${kids.map(c => `<div class="bride"><span><button class="p dyn" data-f="${c.id}"><span class="ag">${ageOf(c)}</span><span class="nm">${esc(c.given)}</span><span class="job">${c.sex === 'm' ? 'son' : 'daughter'}</span></button></span>
       <span class="acts">${heirs[0] === c ? '<span class="tag c">heir</span>' : `<button data-heir="${c.id}">Name heir</button>`}</span></div>`).join('')}</div>`;
   if (!sp || !sp.alive) {
-    const bs = wait > 0 ? [] : brides(L, p.id).slice(0, 6);
+    const bs = minor ? [] : brides(L, p.id).slice(0, 6);
     html += `<h3>Court a bride near ${esc(zoneOfKey(keyOf(p.at || p.home)).name)}</h3>`;
     html += bs.length ? `<div class="brides">${bs.map(b => { const j = judge(L, p, b), t = tieValue(p, b.id);
       return `<div class="bride"><span><b>${esc(nm(b.id))}</b>, ${ageOf(b)}, ${b.cls} · ${esc(L.cultures[b.culture].name)}</span>
@@ -178,7 +179,7 @@ function renderRonin() {
         <span class="why"><span style="display:inline-flex;gap:6px;align-items:center">fondness <span class="meter"><i style="width:${Math.round(Math.max(0, t) * 100)}%"></i></span></span>
           · her house's acceptance ${Math.round(j.accept * 100)}%${j.reasons.length ? ' · ' + esc(j.reasons.join('; ')) : ' · ready to wed'}</span></div>`; }).join('')}</div>
         <div class="row"><button id="purse">Find 10 ryō (test)</button><p style="font-size:13px">Court until she knows him, then pay the bride price to her house.</p></div>`
-      : `<p>${wait > 0 ? 'Too young to court.' : 'No unmarried women near him.'}</p>`;
+      : `<p>${minor ? 'Too young to court.' : 'No unmarried women near him.'}</p>`;
   }
   html += `<div class="row"><button id="fall" class="grave">He falls here</button><p style="font-size:13px">${heirs.length ? `${esc(heirs[0].given)} would carry on.` : 'No heir: his death ends the run.'}</p></div>`;
   box.innerHTML = html;
@@ -203,11 +204,11 @@ document.addEventListener('click', e => {
     const heirs = playableHeirs(L, p), at = p.at || p.home;
     killActor(L, p.id, 'duel', null, { zone: at, tile: [30 + (L.hour % 5), 30 + (L.hour % 7)] });
     const h = L.actors[L.player];
-    note = P.over ? null : { title: `${p.given} ${p.family} has fallen`, text: `He lies where he fell, zone ${p.grave.zone}, tile ${p.grave.tile}, a grave the world remembers. ${esc(nm(h.id))}, ${ageOf(h)}, carries on${heirs.length > 1 ? ` (${heirs.length - 1} other heir${heirs.length > 2 ? 's' : ''} stand behind)` : ''}.` };
+    note = P.over ? null : { title: `${p.given} ${p.family} has fallen`, text: `He lies where he fell, zone ${p.grave.zone}, tile ${p.grave.tile}, a grave the world remembers, with what he carried. ${esc(nm(h.id))}, ${ageOf(h)}, carries on${heirs.length > 1 ? ` (${heirs.length - 1} other heir${heirs.length > 2 ? 's' : ''} stand behind)` : ''}.` };
     if (!P.over && h.home) { vkey = keyOf(h.home); if (places.includes(vkey)) $('village').value = vkey; follow = h.id; }
     render();
   }
-  else if (t.id === 'wait') { const h = L.actors[L.player]; stop(); note = null; const n = Math.ceil(waitingYears(L) * 4); step(n); if (h.alive) note = { title: `${h.given} comes of age`, text: `${esc(nm(h.id))} is ${ageOf(h)} and takes up the sword. The land ${h.holds.length ? 'is theirs to hold' : 'was lost in the waiting'}.` }; P.waiting = null; render(); }
+  else if (t.id === 'loot') { const last = L.actors[P.lineage.at(-1).actor], got = lootGrave(L, last.id, p.id); note = got ? { title: 'At the grave', text: `${esc(p.given)} took up ${esc(last.given)}'s ${esc(got.weapon || 'purse')} and ${PEOPLE_RULES.worth(got.money)} mon.` } : null; render(); }
   else if (t.id === 'again') newWorld();
 });
 $('s1').onclick = () => { note = null; step(1); };

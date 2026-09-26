@@ -1,13 +1,12 @@
-import { emit, zoneAt } from '../ledger.js';
+import { emit } from '../ledger.js';
 import { bear } from '../actors.js';
 import { CLASSES, KINDS } from '../cultures.js';
 import { HOURS_PER_SEASON, HOURS_PER_YEAR } from '../time.js';
 import { AGE, VISITS, hazard, CLASS_HAZARD, VIOLENCE, VIOLENCE_OTHER, FAMINE, FAMINE_FROM, CHILDBIRTH, CONCEIVE, conceiveAge, conceiveKids, conceiveRoom, GESTATION,
-  PURSE_NORM, EARN, SPEND, TIES, PLOT_PRICE, worth } from './rules.js';
+  PURSE_NORM, EARN, SPEND, TIES, FADE_AFTER, worth } from './rules.js';
 import { act, alive, age, zkey, idKey, livingChildren } from './kin.js';
-import { SETTLED, addResident, freePlot, grantPlot } from './settle.js';
+import { SETTLED, addResident } from './settle.js';
 import { killActor } from './death.js';
-import { pay } from './marriage.js';
 import { recordDeed, notable } from './player.js';
 import { bond, fade } from './ties.js';
 
@@ -123,14 +122,14 @@ export function yearOf(L, cal, r) {
     pop++; if (a.household === a.id) houses++;
     if (a.id !== L.player && age(L, a) >= AGE.ADULT) ambition(L, a, r);
   }
-  if (P.fadeAfter > 0) fadeTheDead(L, P.fadeAfter);
+  const fadeAfter = P.fadeAfter ?? FADE_AFTER; if (fadeAfter > 0) fadeTheDead(L, fadeAfter);
   P.census.push({ year: cal.year - 1, pop, houses, ...P.year });
   if (P.census.length > 400) P.census.shift();
   P.year = { births: 0, deaths: 0, marriages: 0 };
 }
-// ---- forgetting (off unless L.sys.people.fadeAfter is set, in years): the long dead who were nobody in particular keep only who they were,
-// whose child and whose parent, and where they lie. It removes other systems' fields from those records, so it waits for the integrator ----
-const KEEP_DEAD = new Set(['id', 'given', 'family', 'sex', 'born', 'died', 'alive', 'cause', 'killer', 'culture', 'cls', 'parents', 'children', 'spouse', 'grave', 'faded']);
+// ---- forgetting (owner 2026-09-26: ok): after L.sys.people.fadeAfter years (0 = never) the dead who were nobody in particular keep only who they were,
+// whose child and whose parent, and where they lie; other systems must not rely on any other field of a record marked faded ----
+const KEEP_DEAD = new Set(['id', 'given', 'family', 'sex', 'born', 'died', 'alive', 'cause', 'killer', 'culture', 'cls', 'job', 'parents', 'children', 'spouse', 'grave', 'faded']);
 function fadeTheDead(L, years) {
   const before = L.hour - years * HOURS_PER_YEAR;
   for (let n = 1, max = L.ids.a || 0; n <= max; n++) {
@@ -142,19 +141,11 @@ function fadeTheDead(L, years) {
 }
 
 function ambition(L, a, r) {
-  const P = L.sys.people, am = a.ambition;
+  const am = a.ambition;
   if (am) {
+    // 'land' is only the want: buying or bidding for a plot is the economy lane's (owner 2026-09-26); it reads actor.ambition
     if (am.kind === 'revenge' && !alive(L, am.target)) { a.ambition = null; return; }
-    const z = am.kind === 'land' && a.home && zoneAt(L, a.home[0], a.home[1]), price = z ? PLOT_PRICE[z.kind] || 4000 : 0;
-    if (z && SETTLED.has(z.kind) && worth(a.money) >= price * 1.1) {
-      const pid = freePlot(L, z);
-      if (pid) {
-        pay(a, alive(L, L.regions[z.region].lord), price); grantPlot(L, pid, a); P.stats.bought++; a.ambition = null;
-        recordDeed(L, a.id, 'bought a plot from the lord');
-        emit(L, 'people.plotBought', { actor: a.id, plot: pid, price, zone: [z.x, z.y] });
-        return;
-      }
-    }
+    if (am.kind === 'land' && a.holds.length >= 3) { a.ambition = null; return; }
     if (am.kind !== 'revenge' && L.hour - am.since > 15 * HOURS_PER_YEAR) a.ambition = null;   // given up after fifteen years
     return;
   }

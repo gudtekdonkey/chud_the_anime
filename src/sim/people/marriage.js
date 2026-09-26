@@ -49,7 +49,7 @@ export function pay(from, to, amount) {
   if (left < 0) { from.money.mon += -left; if (to) to.money.mon -= -left; }   // change
   return paid;
 }
-const headOf = (L, a) => act(L, a.household) || a;
+const headOf = (L, a) => alive(L, a.household) || a;
 const eldestSon = (L, p) => p ? livingChildren(L, p).find(c => c.sex === 'm') : null;
 
 // h and w marry: the bride price goes from his house to hers, and she joins his household (or he hers, taken in as its heir)
@@ -104,6 +104,7 @@ export function judge(L, suitor, bride) {
   if (!bride || !bride.alive) return { ok: false, accept: 0, price: 0, reasons: ['gone'] };
   if (bride.spouse != null) reasons.push('already married');
   if (bride.sex === suitor.sex) reasons.push('not a match');
+  if (age(L, suitor) < AGE.ADULT) reasons.push('he is too young to wed');
   const ba = age(L, bride); if (ba < AGE.ADULT) reasons.push('too young');
   if (bride.cls === 'monk') reasons.push('a nun keeps her vows');
   if (closeKin(L, suitor, bride)) reasons.push('close kin');

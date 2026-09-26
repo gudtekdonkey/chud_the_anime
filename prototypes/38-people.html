@@ -103,13 +103,13 @@
   </div>
   <section class="card"><div class="row"><h2>Chronicle</h2><p>People events in this village and in the ronin's house, newest first</p></div><div class="log" id="log"></div></section>
   <section class="ask">
-    <h2>Questions for the owner</h2>
+    <h2>Decided by the owner (2026-09-26)</h2>
     <ol>
-      <li>May the ledger kill him of old age while you are away (it never kills him young off screen)?</li>
-      <li>Who can carry on: only his children and grandchildren (as built), or also a widow, a brother, an adopted son?</li>
-      <li>An heir under 16: the years pass until they come of age (as built), or play the child?</li>
-      <li>What passes with the name: the land and money (built), the family blade (built), his gear and companions?</li>
-      <li>Should the long dead be forgotten to keep saves small (a save grows to about 11 MB after 60 years)?</li>
+      <li>Old age can take him while you are away. The ledger never kills him young off screen.</li>
+      <li>His children and grandchildren carry on, then a brother. A companion is still open.</li>
+      <li>A child heir is played at once. The widow, else the next of kin, is regent until 16.</li>
+      <li>What he carried lies with his body: finders keepers. His heir can take it back from the grave first, if he gets there first.</li>
+      <li>Buying and bidding for land belongs to the economy lane. The long dead are forgotten after 20 years to keep saves small.</li>
     </ol>
   </section>
 </div>
@@ -312,10 +312,6 @@
 	const conceiveAge = (age) => age < 20 ? .8 : age < 32 ? 1 : age < 38 ? .7 : age < 42 ? .4 : .15;
 	const conceiveKids = (alive) => alive < 2 ? 1.1 : alive < 4 ? .85 : alive < 6 ? .5 : .2;
 	const conceiveRoom = (dens) => Math.max(.05, Math.min(1.5, 2.2 - 1.8 * dens));
-	const PLOT_PRICE = {
-		village: 3e3,
-		town: 6e3
-	};
 	const FEEDS = {
 		paddy: 1.35,
 		plains: 1.15,
@@ -453,7 +449,8 @@
 				"named",
 				"son",
 				"child",
-				"grandchild"
+				"grandchild",
+				"brother"
 			],
 			split: "heir"
 		}
@@ -1014,6 +1011,16 @@
 			x = f;
 		}
 		return x;
+	}
+	function pickRegent(L, heir, dead) {
+		const ok = (p) => p && p.alive && p.id !== dead.id && p.id !== heir.id && adult(L, p);
+		for (const pid of heir.parents) {
+			const p = act(L, pid);
+			if (ok(p)) return p;
+		}
+		const sib = siblings(L, heir).find(ok);
+		if (sib) return sib;
+		return nearKin(L, dead).filter(ok).sort((x, y) => x.born - y.born)[0] || null;
 	}
 	//#endregion
 	//#region src/sim/cultures.js
@@ -2050,10 +2057,12 @@
 	}
 	function playableHeirs(L, p) {
 		const kids = livingChildren(L, p).filter((c) => c.cls !== "monk"), sons = kids.filter((c) => c.sex === "m"), daughters = kids.filter((c) => c.sex === "f");
+		const brothers = siblings(L, p).filter((s) => s.alive && s.sex === "m" && s.cls !== "monk");
 		const out = [
 			...sons,
 			...daughters,
-			...grandchildren(L, p, false)
+			...grandchildren(L, p, false),
+			...brothers
 		];
 		const named = alive(L, p.heir);
 		if (named && out.includes(named)) {
@@ -2072,6 +2081,51 @@
 			heir: c.id
 		});
 		return true;
+	}
+	function layOut(L, p) {
+		if (!p.grave) return;
+		p.grave.goods = {
+			weapon: p.weapon || null,
+			money: {
+				mon: p.money.mon || 0,
+				silver: p.money.silver || 0,
+				ryo: p.money.ryo || 0
+			}
+		};
+		p.money.mon = p.money.silver = p.money.ryo = 0;
+	}
+	function lootGrave(L, deadId, finderId) {
+		const d = L.actors[deadId], f = alive(L, finderId), g = d && d.grave && d.grave.goods;
+		if (!g || !f || !g.weapon && !g.money.mon && !g.money.silver && !g.money.ryo) return null;
+		const taken = {
+			weapon: g.weapon,
+			money: { ...g.money }
+		};
+		for (const k of [
+			"mon",
+			"silver",
+			"ryo"
+		]) f.money[k] = (f.money[k] || 0) + g.money[k];
+		if (g.weapon) f.weapon = g.weapon;
+		d.grave.goods = {
+			weapon: null,
+			money: {
+				mon: 0,
+				silver: 0,
+				ryo: 0
+			}
+		};
+		const kin = f.dynasty && d.dynasty;
+		recordDeed(L, f.id, kin ? `took up ${d.given}'s ${taken.weapon || "purse"} from his grave` : `robbed the grave of ${d.given} ${d.family}`);
+		emit(L, "people.graveLooted", {
+			actor: f.id,
+			from: d.id,
+			zone: d.grave.zone,
+			kin,
+			weapon: taken.weapon,
+			money: taken.money
+		});
+		return taken;
 	}
 	function handOff(L, p, est) {
 		const P = L.sys.people, heir = est.heir && playableHeirs(L, p).includes(est.heir) ? est.heir : playableHeirs(L, p)[0] || null;
@@ -2099,27 +2153,25 @@
 		L.player = heir.id;
 		heir.dynasty = true;
 		heir.playedFrom = L.hour;
-		heir.weapon = p.weapon;
 		heir.at = heir.home ? [...heir.home] : p.grave ? [...p.grave.zone] : p.at;
 		const ag = age(L, heir);
-		P.waiting = ag < AGE.ADULT ? {
-			heir: heir.id,
-			until: heir.born + AGE.ADULT * HOURS_PER_YEAR
-		} : null;
+		if (ag < AGE.ADULT && !alive(L, heir.regent)) {
+			const reg = pickRegent(L, heir, p);
+			if (reg) {
+				heir.regent = reg.id;
+				(reg.wards || (reg.wards = [])).push(heir.id);
+			}
+		}
 		recordDeed(L, heir.id, `took up the name of ${p.given} ${p.family}`);
 		emit(L, "people.heir", {
 			actor: heir.id,
 			from: p.id,
 			zone: p.grave && p.grave.zone,
 			age: Math.floor(ag),
-			waiting: !!P.waiting
+			regent: heir.regent || null
 		});
 		return heir;
 	}
-	const waitingYears = (L) => {
-		const w = L.sys.people.waiting;
-		return w ? Math.max(0, (w.until - L.hour) / HOURS_PER_YEAR) : 0;
-	};
 	//#endregion
 	//#region src/sim/people/ties.js
 	const tieOf = (a, id) => {
@@ -2217,6 +2269,7 @@
 				});
 			}
 		}
+		if (isPlayer) layOut(L, a);
 		const est = passEstate(L, a);
 		if (a.household === a.id) rehouse(L, a, est.heir);
 		if (a.lord != null && L.regions[a.lord] && L.regions[a.lord].lord === a.id) passSeat(L, a, est.heir);
@@ -2287,16 +2340,6 @@
 			heir: null,
 			rule: "none"
 		};
-	}
-	function pickRegent(L, heir, dead) {
-		const ok = (p) => p && p.alive && p.id !== dead.id && p.id !== heir.id && adult(L, p);
-		for (const pid of heir.parents) {
-			const p = act(L, pid);
-			if (ok(p)) return p;
-		}
-		const sib = siblings(L, heir).find(ok);
-		if (sib) return sib;
-		return nearKin(L, dead).filter(ok).sort((x, y) => x.born - y.born)[0] || null;
 	}
 	function setRegent(L, heir, regent) {
 		const old = alive(L, heir.regent);
@@ -2379,7 +2422,7 @@
 		head = head || (alive(L, a.spouse) && members.includes(alive(L, a.spouse)) ? alive(L, a.spouse) : null) || grown.find((m) => m.sex === "m") || grown[0] || null;
 		if (!head) {
 			const kin = [heir, ...nearKin(L, a)].filter((k) => k && k.alive && adult(L, k) && k.household)[0];
-			const fallback = (kin ? act(L, kin.household) || kin : null) || (a.home ? residents(L, a.home[0] + "," + a.home[1]).filter((m) => m.household === m.id && m.id !== a.id).sort((x, y) => y.holds.length - x.holds.length)[0] : null);
+			const fallback = (kin ? alive(L, kin.household) || kin : null) || (a.home ? residents(L, a.home[0] + "," + a.home[1]).filter((m) => m.household === m.id && m.id !== a.id).sort((x, y) => y.holds.length - x.holds.length)[0] : null);
 			for (const m of members) if (fallback) {
 				m.household = fallback.household || fallback.id;
 				if (fallback.home && (fallback.home[0] !== m.home[0] || fallback.home[1] !== m.home[1])) moveHome(L, m, fallback.home);
@@ -2434,200 +2477,6 @@
 			from: a.id,
 			to: next ? next.id : null
 		});
-	}
-	//#endregion
-	//#region src/sim/people/marriage.js
-	function single(L, a, sex) {
-		if (!a.alive || a.spouse != null || a.sex !== sex || a.cls === "monk" || a.id === L.player) return false;
-		const ag = age(L, a), [lo, hi] = sex === "m" ? AGE.WED_M : AGE.WED_F;
-		return ag >= lo && ag < hi;
-	}
-	const cultureOk = (L, a, b) => a.culture === b.culture || a.culture != null && b.culture != null && (L.cultures[a.culture].relations[b.culture] ?? 0) > .3;
-	function marketSeason(L, r) {
-		const P = L.sys.people, men = {}, women = {};
-		for (const k in P.settle) {
-			const s = P.settle[k];
-			if (!SETTLED.has(s.kind)) continue;
-			for (const a of residents(L, k)) if (single(L, a, "m")) (men[s.region] || (men[s.region] = [])).push(a);
-			else if (single(L, a, "f")) (women[s.region] || (women[s.region] = [])).push(a);
-		}
-		for (const g in women) {
-			const ms = men[g];
-			if (!ms || !ms.length) continue;
-			for (const w of r.shuffle(women[g])) {
-				if (!r.chance(w.formerSpouses ? .32 : .65)) continue;
-				const wa = age(L, w);
-				let best = -1, bi = -1;
-				for (let t = 0; t < 10 && t < ms.length; t++) {
-					const i = r.int(0, ms.length - 1), m = ms[i], gap = age(L, m) - wa;
-					if (gap < -4 || gap > 16 || Math.abs(m.rank - w.rank) > 1 || !cultureOk(L, m, w) || closeKin(L, m, w)) continue;
-					const score = (m.home[0] === w.home[0] && m.home[1] === w.home[1] ? 1 : 0) + (m.cls === w.cls ? .5 : 0) - Math.abs(gap - 3) * .05 + r.next() * .5;
-					if (score > best) {
-						best = score;
-						bi = i;
-					}
-				}
-				if (bi < 0) continue;
-				const m = ms.splice(bi, 1)[0];
-				wed(L, m, w, Math.round(BRIDE_PRICE[w.cls] * .3), r);
-				if (!ms.length) break;
-			}
-		}
-	}
-	function pay(from, to, amount) {
-		let left = Math.min(amount, worth(from.money));
-		const paid = left;
-		const take = (k, unit) => {
-			while (left > 0 && (from.money[k] || 0) > 0) {
-				const n = Math.min(from.money[k], Math.ceil(left / unit));
-				from.money[k] -= n;
-				if (to) to.money[k] = (to.money[k] || 0) + n;
-				left -= n * unit;
-			}
-		};
-		take("mon", 1);
-		take("silver", 16);
-		take("ryo", RYO_MON);
-		if (left < 0) {
-			from.money.mon += -left;
-			if (to) to.money.mon -= -left;
-		}
-		return paid;
-	}
-	const headOf = (L, a) => act(L, a.household) || a;
-	const eldestSon = (L, p) => p ? livingChildren(L, p).find((c) => c.sex === "m") : null;
-	function wed(L, h, w, price = 0, r = null) {
-		const P = L.sys.people;
-		if (h.sex !== "m") [h, w] = [w, h];
-		const bridesHead = headOf(L, w), grooms = headOf(L, h);
-		if (price > 0 && bridesHead !== grooms) price = pay(grooms === h || worth(grooms.money) < price ? h : grooms, bridesHead, price);
-		const kind = w.culture != null && L.cultures[w.culture] ? L.cultures[w.culture].kind : null;
-		const father = act(L, w.parents[0]), fatherHead = father && father.alive && father.household === father.id ? father : null;
-		const younger = siblings(L, h).some((s) => s.alive && s.sex === "m" && s.born < h.born);
-		const muko = fatherHead && !eldestSon(L, fatherHead) && [
-			"clan",
-			"court",
-			"merchants"
-		].includes(kind) && younger && h.household !== h.id && !h.holds.length && h.id !== L.player && h.lord == null && !!r && r.chance(.6);
-		const wasFamily = w.family;
-		marry(h, w);
-		if (muko) {
-			h.family = w.family = wasFamily;
-			h.adoptedBy = fatherHead.id;
-			fatherHead.heir = h.id;
-			h.household = fatherHead.id;
-			if (zkey(h.home) !== zkey(fatherHead.home)) moveHome(L, h, fatherHead.home);
-			P.stats.adopted++;
-		} else {
-			if (h.household == null || h.id === L.player) {
-				h.household = h.id;
-				if (!h.home && w.home) moveHome(L, h, w.home);
-			}
-			if (w.household === w.id && w.holds.length && !h.holds.length && h.household !== h.id) {
-				h.household = w.id;
-				if (zkey(h.home) !== zkey(w.home)) moveHome(L, h, w.home);
-			} else {
-				const fatherH = act(L, h.parents[0]);
-				if (h.household !== h.id && !(fatherH && fatherH.alive && eldestSon(L, fatherH) === h) && h.home) {
-					const z = zoneAt(L, h.home[0], h.home[1]), pid = z ? freePlot(L, z) : null;
-					if (pid) {
-						h.household = h.id;
-						grantPlot(L, pid, h);
-						P.stats.granted++;
-					}
-				}
-				if (w.household === w.id && w.id !== h.household) {
-					for (const m of residents(L, zkey(w.home))) if (m.household === w.id && m !== w && m.parents.includes(w.id)) {
-						m.household = h.household;
-						if (h.home && zkey(m.home) !== zkey(h.home)) moveHome(L, m, h.home);
-					}
-				}
-				w.household = h.household;
-				if (h.home && zkey(w.home) !== zkey(h.home)) moveHome(L, w, h.home);
-			}
-		}
-		if (h.dynasty || w.dynasty || h.id === L.player || w.id === L.player) h.dynasty = w.dynasty = true;
-		P.stats.marriages++;
-		P.year.marriages++;
-		if (notable(L, h) || notable(L, w)) {
-			recordDeed(L, h.id, `married ${w.given} ${w.family}`);
-			recordDeed(L, w.id, `married ${h.given} ${h.family}`);
-			emit(L, "people.married", {
-				actor: h.id,
-				spouse: w.id,
-				zone: h.home,
-				price,
-				adopted: !!muko,
-				player: h.id === L.player || w.id === L.player
-			});
-		}
-	}
-	function judge(L, suitor, bride) {
-		const reasons = [];
-		if (!bride || !bride.alive) return {
-			ok: false,
-			accept: 0,
-			price: 0,
-			reasons: ["gone"]
-		};
-		if (bride.spouse != null) reasons.push("already married");
-		if (bride.sex === suitor.sex) reasons.push("not a match");
-		if (age(L, bride) < AGE.ADULT) reasons.push("too young");
-		if (bride.cls === "monk") reasons.push("a nun keeps her vows");
-		if (closeKin(L, suitor, bride)) reasons.push("close kin");
-		const standing = bride.culture != null ? suitor.standing[bride.culture] ?? 0 : 0;
-		const rel = suitor.culture != null && bride.culture != null && suitor.culture !== bride.culture ? L.cultures[suitor.culture].relations[bride.culture] ?? 0 : 0;
-		const gap = bride.rank - suitor.rank;
-		const kind = bride.culture != null ? L.cultures[bride.culture].kind : null, despised = kind ? KINDS[kind].despise : [];
-		const hated = suitor.traits.filter(([t]) => despised.includes(t)).length;
-		let accept = .55 + standing * .5 + rel * .25 + Math.min(.2, (suitor.karma || 0) * .2) - Math.max(0, gap) * .22 - hated * .15;
-		if (gap >= 3 && standing < .8) reasons.push("her house is far above him");
-		if (kind !== "bandits" && (suitor.karma || 0) < -.4) reasons.push("his name is dark");
-		if (standing < -.2) reasons.push("her people do not trust him");
-		const price = Math.round((BRIDE_PRICE[bride.cls] || 1e3) * (1 + Math.max(0, gap) * .5) * (1 - Math.max(0, standing) * .4));
-		if (worth(suitor.money) < price) reasons.push(`the bride price is ${price} mon`);
-		const tie = tieValue(suitor, bride.id);
-		if (tie < .4) reasons.push("she hardly knows him");
-		accept = Math.max(0, Math.min(1, accept));
-		if (accept < .5 && !reasons.length) reasons.push("her family refuses");
-		return {
-			ok: !reasons.length,
-			accept: +accept.toFixed(2),
-			price,
-			tie: +tie.toFixed(2),
-			reasons
-		};
-	}
-	function court(L, suitorId, brideId, r) {
-		const s = alive(L, suitorId), b = alive(L, brideId);
-		if (!s || !b) return 0;
-		const shared = s.traits.filter(([t]) => b.traits.some(([u]) => u === t)).length;
-		const kind = b.culture != null ? L.cultures[b.culture].kind : null, hated = kind ? s.traits.filter(([t]) => KINDS[kind].despise.includes(t)).length : 0;
-		const v = Math.max(0, Math.min(1, tieValue(s, brideId) + .12 + shared * .06 - hated * .05 + (r ? r.range(-.04, .06) : 0)));
-		setTie(s, brideId, "lover", v);
-		setTie(b, suitorId, "lover", v);
-		return v;
-	}
-	function propose(L, suitorId, brideId) {
-		const s = alive(L, suitorId), b = alive(L, brideId), j = judge(L, s, b);
-		if (!j.ok) return j;
-		pay(s, headOf(L, b), j.price);
-		wed(L, s, b, 0);
-		return {
-			...j,
-			wed: true
-		};
-	}
-	function brides(L, suitorId, radius = 6) {
-		const s = alive(L, suitorId), at = s && (s.at || s.home);
-		if (!at) return [];
-		const P = L.sys.people, out = [];
-		for (const k in P.settle) {
-			const i = k.indexOf(","), x = +k.slice(0, i), y = +k.slice(i + 1), d = Math.max(Math.abs(x - at[0]), Math.abs(y - at[1]));
-			if (d > radius || !SETTLED.has(P.settle[k].kind)) continue;
-			for (const b of residents(L, k)) if (b.sex !== s.sex && b.spouse == null && b.id !== s.id && age(L, b) >= AGE.ADULT && age(L, b) < 45 && b.cls !== "monk") out.push([d, b]);
-		}
-		return out.sort((a, b) => a[0] - b[0] || (a[1].id < b[1].id ? -1 : 1)).map(([, b]) => b);
 	}
 	//#endregion
 	//#region src/sim/people/life.js
@@ -2797,7 +2646,8 @@
 			if (a.household === a.id) houses++;
 			if (a.id !== L.player && age(L, a) >= AGE.ADULT) ambition(L, a, r);
 		}
-		if (P.fadeAfter > 0) fadeTheDead(L, P.fadeAfter);
+		const fadeAfter = P.fadeAfter ?? 20;
+		if (fadeAfter > 0) fadeTheDead(L, fadeAfter);
 		P.census.push({
 			year: cal.year - 1,
 			pop,
@@ -2823,6 +2673,7 @@
 		"killer",
 		"culture",
 		"cls",
+		"job",
 		"parents",
 		"children",
 		"spouse",
@@ -2839,29 +2690,15 @@
 		}
 	}
 	function ambition(L, a, r) {
-		const P = L.sys.people, am = a.ambition;
+		const am = a.ambition;
 		if (am) {
 			if (am.kind === "revenge" && !alive(L, am.target)) {
 				a.ambition = null;
 				return;
 			}
-			const z = am.kind === "land" && a.home && zoneAt(L, a.home[0], a.home[1]), price = z ? PLOT_PRICE[z.kind] || 4e3 : 0;
-			if (z && SETTLED.has(z.kind) && worth(a.money) >= price * 1.1) {
-				const pid = freePlot(L, z);
-				if (pid) {
-					pay(a, alive(L, L.regions[z.region].lord), price);
-					grantPlot(L, pid, a);
-					P.stats.bought++;
-					a.ambition = null;
-					recordDeed(L, a.id, "bought a plot from the lord");
-					emit(L, "people.plotBought", {
-						actor: a.id,
-						plot: pid,
-						price,
-						zone: [z.x, z.y]
-					});
-					return;
-				}
+			if (am.kind === "land" && a.holds.length >= 3) {
+				a.ambition = null;
+				return;
 			}
 			if (am.kind !== "revenge" && L.hour - am.since > 15 * HOURS_PER_YEAR) a.ambition = null;
 			return;
@@ -2913,6 +2750,201 @@
 		}
 	}
 	//#endregion
+	//#region src/sim/people/marriage.js
+	function single(L, a, sex) {
+		if (!a.alive || a.spouse != null || a.sex !== sex || a.cls === "monk" || a.id === L.player) return false;
+		const ag = age(L, a), [lo, hi] = sex === "m" ? AGE.WED_M : AGE.WED_F;
+		return ag >= lo && ag < hi;
+	}
+	const cultureOk = (L, a, b) => a.culture === b.culture || a.culture != null && b.culture != null && (L.cultures[a.culture].relations[b.culture] ?? 0) > .3;
+	function marketSeason(L, r) {
+		const P = L.sys.people, men = {}, women = {};
+		for (const k in P.settle) {
+			const s = P.settle[k];
+			if (!SETTLED.has(s.kind)) continue;
+			for (const a of residents(L, k)) if (single(L, a, "m")) (men[s.region] || (men[s.region] = [])).push(a);
+			else if (single(L, a, "f")) (women[s.region] || (women[s.region] = [])).push(a);
+		}
+		for (const g in women) {
+			const ms = men[g];
+			if (!ms || !ms.length) continue;
+			for (const w of r.shuffle(women[g])) {
+				if (!r.chance(w.formerSpouses ? .32 : .65)) continue;
+				const wa = age(L, w);
+				let best = -1, bi = -1;
+				for (let t = 0; t < 10 && t < ms.length; t++) {
+					const i = r.int(0, ms.length - 1), m = ms[i], gap = age(L, m) - wa;
+					if (gap < -4 || gap > 16 || Math.abs(m.rank - w.rank) > 1 || !cultureOk(L, m, w) || closeKin(L, m, w)) continue;
+					const score = (m.home[0] === w.home[0] && m.home[1] === w.home[1] ? 1 : 0) + (m.cls === w.cls ? .5 : 0) - Math.abs(gap - 3) * .05 + r.next() * .5;
+					if (score > best) {
+						best = score;
+						bi = i;
+					}
+				}
+				if (bi < 0) continue;
+				const m = ms.splice(bi, 1)[0];
+				wed(L, m, w, Math.round(BRIDE_PRICE[w.cls] * .3), r);
+				if (!ms.length) break;
+			}
+		}
+	}
+	function pay(from, to, amount) {
+		let left = Math.min(amount, worth(from.money));
+		const paid = left;
+		const take = (k, unit) => {
+			while (left > 0 && (from.money[k] || 0) > 0) {
+				const n = Math.min(from.money[k], Math.ceil(left / unit));
+				from.money[k] -= n;
+				if (to) to.money[k] = (to.money[k] || 0) + n;
+				left -= n * unit;
+			}
+		};
+		take("mon", 1);
+		take("silver", 16);
+		take("ryo", RYO_MON);
+		if (left < 0) {
+			from.money.mon += -left;
+			if (to) to.money.mon -= -left;
+		}
+		return paid;
+	}
+	const headOf = (L, a) => alive(L, a.household) || a;
+	const eldestSon = (L, p) => p ? livingChildren(L, p).find((c) => c.sex === "m") : null;
+	function wed(L, h, w, price = 0, r = null) {
+		const P = L.sys.people;
+		if (h.sex !== "m") [h, w] = [w, h];
+		const bridesHead = headOf(L, w), grooms = headOf(L, h);
+		if (price > 0 && bridesHead !== grooms) price = pay(grooms === h || worth(grooms.money) < price ? h : grooms, bridesHead, price);
+		const kind = w.culture != null && L.cultures[w.culture] ? L.cultures[w.culture].kind : null;
+		const father = act(L, w.parents[0]), fatherHead = father && father.alive && father.household === father.id ? father : null;
+		const younger = siblings(L, h).some((s) => s.alive && s.sex === "m" && s.born < h.born);
+		const muko = fatherHead && !eldestSon(L, fatherHead) && [
+			"clan",
+			"court",
+			"merchants"
+		].includes(kind) && younger && h.household !== h.id && !h.holds.length && h.id !== L.player && h.lord == null && !!r && r.chance(.6);
+		const wasFamily = w.family;
+		marry(h, w);
+		if (muko) {
+			h.family = w.family = wasFamily;
+			h.adoptedBy = fatherHead.id;
+			fatherHead.heir = h.id;
+			h.household = fatherHead.id;
+			if (zkey(h.home) !== zkey(fatherHead.home)) moveHome(L, h, fatherHead.home);
+			P.stats.adopted++;
+		} else {
+			if (h.household == null || h.id === L.player) {
+				h.household = h.id;
+				if (!h.home && w.home) moveHome(L, h, w.home);
+			}
+			if (w.household === w.id && w.holds.length && !h.holds.length && h.household !== h.id) {
+				h.household = w.id;
+				if (zkey(h.home) !== zkey(w.home)) moveHome(L, h, w.home);
+			} else {
+				const fatherH = act(L, h.parents[0]);
+				if (h.household !== h.id && !(fatherH && fatherH.alive && eldestSon(L, fatherH) === h) && h.home) {
+					const z = zoneAt(L, h.home[0], h.home[1]), pid = z ? freePlot(L, z) : null;
+					if (pid) {
+						h.household = h.id;
+						grantPlot(L, pid, h);
+						P.stats.granted++;
+					}
+				}
+				if (w.household === w.id && w.id !== h.household) {
+					for (const m of residents(L, zkey(w.home))) if (m.household === w.id && m !== w && m.parents.includes(w.id)) {
+						m.household = h.household;
+						if (h.home && zkey(m.home) !== zkey(h.home)) moveHome(L, m, h.home);
+					}
+				}
+				w.household = h.household;
+				if (h.home && zkey(w.home) !== zkey(h.home)) moveHome(L, w, h.home);
+			}
+		}
+		if (h.dynasty || w.dynasty || h.id === L.player || w.id === L.player) h.dynasty = w.dynasty = true;
+		P.stats.marriages++;
+		P.year.marriages++;
+		if (notable(L, h) || notable(L, w)) {
+			recordDeed(L, h.id, `married ${w.given} ${w.family}`);
+			recordDeed(L, w.id, `married ${h.given} ${h.family}`);
+			emit(L, "people.married", {
+				actor: h.id,
+				spouse: w.id,
+				zone: h.home,
+				price,
+				adopted: !!muko,
+				player: h.id === L.player || w.id === L.player
+			});
+		}
+	}
+	function judge(L, suitor, bride) {
+		const reasons = [];
+		if (!bride || !bride.alive) return {
+			ok: false,
+			accept: 0,
+			price: 0,
+			reasons: ["gone"]
+		};
+		if (bride.spouse != null) reasons.push("already married");
+		if (bride.sex === suitor.sex) reasons.push("not a match");
+		if (age(L, suitor) < AGE.ADULT) reasons.push("he is too young to wed");
+		if (age(L, bride) < AGE.ADULT) reasons.push("too young");
+		if (bride.cls === "monk") reasons.push("a nun keeps her vows");
+		if (closeKin(L, suitor, bride)) reasons.push("close kin");
+		const standing = bride.culture != null ? suitor.standing[bride.culture] ?? 0 : 0;
+		const rel = suitor.culture != null && bride.culture != null && suitor.culture !== bride.culture ? L.cultures[suitor.culture].relations[bride.culture] ?? 0 : 0;
+		const gap = bride.rank - suitor.rank;
+		const kind = bride.culture != null ? L.cultures[bride.culture].kind : null, despised = kind ? KINDS[kind].despise : [];
+		const hated = suitor.traits.filter(([t]) => despised.includes(t)).length;
+		let accept = .55 + standing * .5 + rel * .25 + Math.min(.2, (suitor.karma || 0) * .2) - Math.max(0, gap) * .22 - hated * .15;
+		if (gap >= 3 && standing < .8) reasons.push("her house is far above him");
+		if (kind !== "bandits" && (suitor.karma || 0) < -.4) reasons.push("his name is dark");
+		if (standing < -.2) reasons.push("her people do not trust him");
+		const price = Math.round((BRIDE_PRICE[bride.cls] || 1e3) * (1 + Math.max(0, gap) * .5) * (1 - Math.max(0, standing) * .4));
+		if (worth(suitor.money) < price) reasons.push(`the bride price is ${price} mon`);
+		const tie = tieValue(suitor, bride.id);
+		if (tie < .4) reasons.push("she hardly knows him");
+		accept = Math.max(0, Math.min(1, accept));
+		if (accept < .5 && !reasons.length) reasons.push("her family refuses");
+		return {
+			ok: !reasons.length,
+			accept: +accept.toFixed(2),
+			price,
+			tie: +tie.toFixed(2),
+			reasons
+		};
+	}
+	function court(L, suitorId, brideId, r) {
+		const s = alive(L, suitorId), b = alive(L, brideId);
+		if (!s || !b) return 0;
+		const shared = s.traits.filter(([t]) => b.traits.some(([u]) => u === t)).length;
+		const kind = b.culture != null ? L.cultures[b.culture].kind : null, hated = kind ? s.traits.filter(([t]) => KINDS[kind].despise.includes(t)).length : 0;
+		const v = Math.max(0, Math.min(1, tieValue(s, brideId) + .12 + shared * .06 - hated * .05 + (r ? r.range(-.04, .06) : 0)));
+		setTie(s, brideId, "lover", v);
+		setTie(b, suitorId, "lover", v);
+		return v;
+	}
+	function propose(L, suitorId, brideId) {
+		const s = alive(L, suitorId), b = alive(L, brideId), j = judge(L, s, b);
+		if (!j.ok) return j;
+		pay(s, headOf(L, b), j.price);
+		wed(L, s, b, 0);
+		return {
+			...j,
+			wed: true
+		};
+	}
+	function brides(L, suitorId, radius = 6) {
+		const s = alive(L, suitorId), at = s && (s.at || s.home);
+		if (!at) return [];
+		const P = L.sys.people, out = [];
+		for (const k in P.settle) {
+			const i = k.indexOf(","), x = +k.slice(0, i), y = +k.slice(i + 1), d = Math.max(Math.abs(x - at[0]), Math.abs(y - at[1]));
+			if (d > radius || !SETTLED.has(P.settle[k].kind)) continue;
+			for (const b of residents(L, k)) if (b.sex !== s.sex && b.spouse == null && b.id !== s.id && age(L, b) >= AGE.ADULT && age(L, b) < 45 && b.cls !== "monk") out.push([d, b]);
+		}
+		return out.sort((a, b) => a[0] - b[0] || (a[1].id < b[1].id ? -1 : 1)).map(([, b]) => b);
+	}
+	//#endregion
 	//#region src/sim/people/schedule.js
 	function activity(L, a, hour) {
 		const ag = age(L, a);
@@ -2960,7 +2992,6 @@
 					toNature: 0,
 					seats: 0,
 					granted: 0,
-					bought: 0,
 					migrated: 0,
 					recruited: 0
 				},
@@ -2973,8 +3004,8 @@
 				graves: [],
 				lineage: [],
 				over: null,
-				waiting: null,
-				wages: true
+				wages: true,
+				fadeAfter: 20
 			});
 			for (const id in L.actors) {
 				const a = L.actors[id];
@@ -3422,10 +3453,10 @@
 			"people.seatPassed": () => `The seat of ${esc(L.regions[e.region].name)} passed to <b>${nm(e.to)}</b> (${e.how})`,
 			"people.married": () => `<b>${nm(e.actor)}</b> married <b>${nm(e.spouse)}</b>${e.adopted ? ", taken into her house as its heir" : ""}${e.price ? ` (bride price ${e.price} mon)` : ""}`,
 			"people.born": () => `<b>${nm(e.actor)}</b> was born to ${nm(e.mother)}`,
-			"people.heir": () => `<b>${nm(e.actor)}</b> takes up the name of ${nm(e.from)}${e.waiting ? ` (aged ${e.age})` : ""}`,
+			"people.heir": () => `<b>${nm(e.actor)}</b>, ${e.age}, takes up the name of ${nm(e.from)}${e.regent ? `; ${nm(e.regent)} is regent` : ""}`,
+			"people.graveLooted": () => e.kin ? `<b>${nm(e.actor)}</b> took up ${nm(e.from)}'s ${e.weapon || "purse"} from his grave` : `<b>${nm(e.actor)}</b> robbed the grave of ${nm(e.from)}`,
 			"people.lineEnded": () => `<b>${nm(e.actor)}</b> died with no heir. The line has ended.`,
 			"people.cameOfAge": () => `<b>${nm(e.actor)}</b> came of age and holds ${plural(e.plots, "plot")}`,
-			"people.plotBought": () => `<b>${nm(e.actor)}</b> bought a plot from the lord for ${e.price} mon`,
 			"people.vendetta": () => `<b>${nm(e.actor)}</b> swore to avenge ${nm(e.victim)} on ${nm(e.target)}`,
 			"people.succession": () => `<b>${nm(e.actor)}</b> covets the seat meant for his brother ${nm(e.heir)}`,
 			"people.migrated": () => `${plural(e.n, "person")} left for a place with more land`,
@@ -3588,19 +3619,20 @@
       <div class="row"><button id="again" class="hot">Start a new world</button></div></div>`;
 			return;
 		}
-		const ag = ageOf(p), sp = p.spouse && L.actors[p.spouse], kids = livingChildren(L, p), heirs = playableHeirs(L, p), wait = waitingYears(L);
+		const ag = ageOf(p), sp = p.spouse && L.actors[p.spouse], kids = livingChildren(L, p), heirs = playableHeirs(L, p), minor = ag < 16;
 		const money = `${p.money.mon} mon${p.money.silver ? `, ${p.money.silver} monme` : ""}${p.money.ryo ? `, ${p.money.ryo} ryō` : ""}`;
 		let html = "";
 		if (note) html += `<div class="death flash"><h2>${esc(note.title)}</h2><p>${note.text}</p></div>`;
 		html += `<div class="row"><h2>${esc(p.given)} ${esc(p.family)}</h2><p>${P.lineage.length ? `the ${ord(P.lineage.length + 1)} of his line` : "the ronin"}, ${ag}, ${p.cls}</p></div>
-    <div class="stats"><span>purse <b>${money}</b></span><span>home <b>${p.home ? esc(zoneOfKey(keyOf(p.home)).name) : "the road"}</b></span><span>wife <b>${sp ? esc(nm(sp.id)) + (sp.alive ? "" : " (dead)") : "none"}</b></span>
+    <div class="stats"><span>purse <b>${money}</b></span><span>home <b>${p.home ? esc(zoneOfKey(keyOf(p.home)).name) : "the road"}</b></span><span>${p.sex === "m" ? "wife" : "husband"} <b>${sp ? esc(nm(sp.id)) + (sp.alive ? "" : " (dead)") : "none"}</b></span>
       <span>land <b>${plural(p.holds.length, "plot")}</b></span></div>`;
-		if (wait > 0) html += `<p>${esc(p.given)} is ${ag}. The world lives on for ${wait.toFixed(1)} years until ${p.sex === "m" ? "he" : "she"} comes of age; ${p.regent ? `${esc(nm(p.regent))} holds the land until then` : "nobody holds land for them"}.</p>
-    <div class="row"><button id="wait" class="hot">Let the years pass</button></div>`;
+		if (minor) html += `<p>${esc(p.given)} is ${ag} and is played now. ${p.regent ? `${esc(nm(p.regent))} is regent${p.holds.length ? " and holds the land" : ""}` : "Nobody is left to act as regent"} until ${p.sex === "m" ? "he" : "she"} turns 16.</p>`;
+		const last = P.lineage.length && L.actors[P.lineage.at(-1).actor], goods = last && last.grave && last.grave.goods, gw = goods ? worth(goods.money) : 0;
+		if (goods && (goods.weapon || gw)) html += `<div class="row"><button id="loot" class="hot">Go to ${esc(last.given)}'s grave</button><p style="font-size:13px">His ${esc(goods.weapon || "purse")} and ${gw} mon lie with him at zone ${last.grave.zone}. Finders keepers.</p></div>`;
 		if (kids.length) html += `<h3>Children</h3><div class="brides">${kids.map((c) => `<div class="bride"><span><button class="p dyn" data-f="${c.id}"><span class="ag">${ageOf(c)}</span><span class="nm">${esc(c.given)}</span><span class="job">${c.sex === "m" ? "son" : "daughter"}</span></button></span>
       <span class="acts">${heirs[0] === c ? "<span class=\"tag c\">heir</span>" : `<button data-heir="${c.id}">Name heir</button>`}</span></div>`).join("")}</div>`;
 		if (!sp || !sp.alive) {
-			const bs = wait > 0 ? [] : brides(L, p.id).slice(0, 6);
+			const bs = minor ? [] : brides(L, p.id).slice(0, 6);
 			html += `<h3>Court a bride near ${esc(zoneOfKey(keyOf(p.at || p.home)).name)}</h3>`;
 			html += bs.length ? `<div class="brides">${bs.map((b) => {
 				const j = judge(L, p, b), t = tieValue(p, b.id);
@@ -3609,7 +3641,7 @@
         <span class="why"><span style="display:inline-flex;gap:6px;align-items:center">fondness <span class="meter"><i style="width:${Math.round(Math.max(0, t) * 100)}%"></i></span></span>
           · her house's acceptance ${Math.round(j.accept * 100)}%${j.reasons.length ? " · " + esc(j.reasons.join("; ")) : " · ready to wed"}</span></div>`;
 			}).join("")}</div>
-        <div class="row"><button id="purse">Find 10 ryō (test)</button><p style="font-size:13px">Court until she knows him, then pay the bride price to her house.</p></div>` : `<p>${wait > 0 ? "Too young to court." : "No unmarried women near him."}</p>`;
+        <div class="row"><button id="purse">Find 10 ryō (test)</button><p style="font-size:13px">Court until she knows him, then pay the bride price to her house.</p></div>` : `<p>${minor ? "Too young to court." : "No unmarried women near him."}</p>`;
 		}
 		html += `<div class="row"><button id="fall" class="grave">He falls here</button><p style="font-size:13px">${heirs.length ? `${esc(heirs[0].given)} would carry on.` : "No heir: his death ends the run."}</p></div>`;
 		box.innerHTML = html;
@@ -3666,7 +3698,7 @@
 			const h = L.actors[L.player];
 			note = P.over ? null : {
 				title: `${p.given} ${p.family} has fallen`,
-				text: `He lies where he fell, zone ${p.grave.zone}, tile ${p.grave.tile}, a grave the world remembers. ${esc(nm(h.id))}, ${ageOf(h)}, carries on${heirs.length > 1 ? ` (${heirs.length - 1} other heir${heirs.length > 2 ? "s" : ""} stand behind)` : ""}.`
+				text: `He lies where he fell, zone ${p.grave.zone}, tile ${p.grave.tile}, a grave the world remembers, with what he carried. ${esc(nm(h.id))}, ${ageOf(h)}, carries on${heirs.length > 1 ? ` (${heirs.length - 1} other heir${heirs.length > 2 ? "s" : ""} stand behind)` : ""}.`
 			};
 			if (!P.over && h.home) {
 				vkey = keyOf(h.home);
@@ -3674,16 +3706,12 @@
 				follow = h.id;
 			}
 			render();
-		} else if (t.id === "wait") {
-			const h = L.actors[L.player];
-			stop();
-			note = null;
-			step(Math.ceil(waitingYears(L) * 4));
-			if (h.alive) note = {
-				title: `${h.given} comes of age`,
-				text: `${esc(nm(h.id))} is ${ageOf(h)} and takes up the sword. The land ${h.holds.length ? "is theirs to hold" : "was lost in the waiting"}.`
-			};
-			P.waiting = null;
+		} else if (t.id === "loot") {
+			const last = L.actors[P.lineage.at(-1).actor], got = lootGrave(L, last.id, p.id);
+			note = got ? {
+				title: "At the grave",
+				text: `${esc(p.given)} took up ${esc(last.given)}'s ${esc(got.weapon || "purse")} and ${worth(got.money)} mon.`
+			} : null;
 			render();
 		} else if (t.id === "again") newWorld();
 	});

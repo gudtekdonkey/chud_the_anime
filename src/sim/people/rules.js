@@ -39,8 +39,7 @@ export const WED_CHANCE = .65, REWED_CHANCE = .32;   // a widow or widower remar
 export const WED_RANK_GAP = 1;                      // families marry within one rank
 export const MUKOYOSHI = .6;                        // a sonless house of a clan, court or league takes a younger son in as its heir, under its name
 
-// a household needs a plot to stand on its own: the lord grants a free plot to a new couple, or sells one to an ambitious head
-export const PLOT_PRICE = { village: 3000, town: 6000 };  // mon
+// a household needs a plot to stand on its own: the lord grants a free plot to a new couple (buying and bidding for land is the economy lane's)
 export const HOUSE_PLOTS = 15;                             // plots 1..15 of a settlement zone are homes and fields; plot 0 is the lord's
 
 // what a settlement's land feeds, in people, from its biome (per zone); a town is a seat with a market and feeds more
@@ -54,6 +53,8 @@ export const KEEP = { fort: [5, 8], camp: [5, 8], shrine: [1, 3] };
 
 // bride price (yuinō) in mon, by the bride's class: the groom's house pays the bride's; a ronin's is small, a noble's a fortune
 export const BRIDE_PRICE = { royal: 500000, noble: 60000, retainer: 12000, shinobi: 3000, ashigaru: 2000, ronin: 1500, commoner: 1000, rebel: 800, outlaw: 500, monk: 0 };
+// the long dead who were nobody in particular are forgotten after this many years (owner 2026-09-26: ok); see life.js fadeTheDead
+export const FADE_AFTER = 20;
 export const SILVER_MON = 16, RYO_MON = 1000;   // 60 monme to the ryō, 1 ryō = 1,000 mon (docs/foundations.md)
 export const worth = m => (m.mon || 0) + (m.silver || 0) * SILVER_MON + (m.ryo || 0) * RYO_MON;
 
@@ -76,8 +77,8 @@ export const INHERIT = {
   rebels:    { order: ['named', 'widow', 'child', 'grandchild', 'sibling'], split: 'equal' },
   monastic:  { order: ['named', 'child', 'widow', 'grandchild', 'sibling'], split: 'equal' },
   bandits:   { order: ['son', 'child', 'widow', 'sibling'], split: 'equal' },
-  // the ronin's line (he has no culture): whom he names, else his children; a widow holds for a child but never plays
-  player:    { order: ['named', 'son', 'child', 'grandchild'], split: 'heir' },
+  // the ronin's line (he has no culture): whom he names, else his children, grandchildren, a brother; a widow holds for a child but never plays
+  player:    { order: ['named', 'son', 'child', 'grandchild', 'brother'], split: 'heir' },
 };
 
 // ---- daily lives, run only near him (onHour): [from hour, what, where] ----

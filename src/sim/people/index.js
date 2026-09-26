@@ -1,6 +1,6 @@
 import { system, on } from '../ledger.js';
 import { HOURS_PER_SEASON } from '../time.js';
-import { AGE } from './rules.js';
+import { AGE, FADE_AFTER } from './rules.js';
 import { age } from './kin.js';
 import { initSettlements, rebuildResidents, adoptNewcomers, feedSettlements, rollHarvests, migrate, recruit, foundHouses, starve } from './settle.js';
 import { liveBucket, yearOf } from './life.js';
@@ -17,8 +17,8 @@ export const PEOPLE = system({
   init(L) {
     const P = L.sys.people;
     Object.assign(P, {
-      stats: { births: 0, deaths: {}, marriages: 0, adopted: 0, inherited: 0, estates: 0, regencies: 0, toLord: 0, toNature: 0, seats: 0, granted: 0, bought: 0, migrated: 0, recruited: 0 },
-      year: { births: 0, deaths: 0, marriages: 0 }, census: [], graves: [], lineage: [], over: null, waiting: null, wages: true,
+      stats: { births: 0, deaths: {}, marriages: 0, adopted: 0, inherited: 0, estates: 0, regencies: 0, toLord: 0, toNature: 0, seats: 0, granted: 0, migrated: 0, recruited: 0 },
+      year: { births: 0, deaths: 0, marriages: 0 }, census: [], graves: [], lineage: [], over: null, wages: true, fadeAfter: FADE_AFTER,
     });
     for (const id in L.actors) {
       const a = L.actors[id]; if (!a.alive) continue;
@@ -45,11 +45,11 @@ on('econ.famine', (e, L) => {
   else if (e.region != null) for (const k in S) if (S[k].region === e.region) starve(L, k, .5, HOURS_PER_SEASON);
 });
 
-export { killActor, findHeir, passEstate, rulesFor, pickRegent } from './death.js';
+export { killActor, findHeir, passEstate, rulesFor } from './death.js';
 export { wed, judge, court, propose, brides, pay, single } from './marriage.js';
-export { playableHeirs, nameHeir, recordDeed, notable, waitingYears } from './player.js';
+export { playableHeirs, nameHeir, recordDeed, notable, lootGrave } from './player.js';
 export { residents, freePlot, grantPlot, starve, graveTile, moveHome } from './settle.js';
 export { activity } from './schedule.js';
 export { bond, tieOf, tieValue, setTie } from './ties.js';
-export { tree, founder, children, livingChildren, siblings, closeKin, nearKin } from './kin.js';
+export { tree, founder, children, livingChildren, siblings, closeKin, nearKin, pickRegent } from './kin.js';
 export * as PEOPLE_RULES from './rules.js';

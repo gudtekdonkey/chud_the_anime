@@ -22,7 +22,7 @@ node scripts/proto-bundle.mjs prototypes-src/38-people/index.html prototypes-src
 | `settle.js` | Settlements (what the land feeds, fed, danger), residents by zone, harvests, free plots and grants, new houses, migration, recruiting for forts, camps and shrines, grave tiles |
 | `ties.js` | Friends, rivals, grudges and lovers outside the family |
 | `schedule.js` | The daily schedule, run only around him |
-| `player.js` | His line: `notable`, `recordDeed`, `playableHeirs`, `nameHeir`, `handOff`, `waitingYears` |
+| `player.js` | His line: `notable`, `recordDeed`, `playableHeirs`, `nameHeir`, `layOut` and `lootGrave` (grave goods), `handOff` |
 
 ## When it runs (docs/sim-core.md rule 1, 7)
 
@@ -49,11 +49,11 @@ Cost (`scripts/people-test.mjs`, 60 years, ~7,000 living): about 0.55 ms a game 
 | `dynasty` | `true` on the ronin, his wives, his children and theirs |
 | `playedFrom` | the game hour the ronin (or his heir) became the played actor |
 | `deeds` | `[{ h, text }]`, at most 40, only for the notable (his house, lords, rank 5+). `recordDeed(L, id, text)` adds one; carved on the grave |
-| `died`, `cause`, `killer`, `grave` | set by `killActor`. `grave: { zone: [x, y], tile: [tx, ty] }`: where he fell, or his settlement's graveyard corner. `killer` only when there was one |
+| `died`, `cause`, `killer`, `grave` | set by `killActor`. `grave: { zone: [x, y], tile: [tx, ty], goods? }`: where he fell, or his settlement's graveyard corner. `goods: { weapon, money }` on the played actor's grave: what he carried (`lootGrave`). `killer` only when there was one |
 | `formerSpouses` | ids of dead spouses (on the widowed) |
 | `adoptedBy` | a son-in-law taken in as a house's heir (mukoyōshi): the head who took him |
 | `doing`, `where` | this hour's activity and place, only near him; stale elsewhere |
-| `faded` | only if forgetting is on (below) |
+| `faded` | a long-dead record that was forgotten (below): only the kept fields remain |
 
 Core fields this lane writes: `alive`, `spouse` (through core `marry`), `family` (marriage), `home`, `household`, `holds`, `money`, `job` (`'child'` under 12, then a trade), `cls`/`rank`/`job` on recruits, `born` (a newborn's is its birth hour; core `bear` backdates up to a year), `lord` and `job: 'lord'` on a new lord, `chief` on a new chief, `at` on a new played heir, `weapon` on a new played heir.
 
@@ -64,15 +64,14 @@ Core fields this lane writes: `alive`, `spouse` (through core `marry`), `family`
 | `settle["x,y"]` | `{ kind, region, cap, pop, fed, danger, fedCap? }` for towns, villages, forts, camps, shrines. `cap`: people the land feeds (towns and villages), `fed`: 0..1.3, `danger`: 0.3 per camp within 3 zones (other lanes may raise it). `fedCap: { fed, until }` is a famine another system imposed |
 | `res["x,y"]` | living actor ids whose `home` is that zone. Read it through `residents(L, key)` |
 | `harvest[region]` | this year's yield, around 1 |
-| `stats` | lifetime counts: `births`, `deaths: { cause: n }`, `marriages`, `adopted`, `inherited` (plots), `estates`, `regencies`, `toLord`, `toNature`, `seats`, `granted`, `bought`, `migrated`, `recruited` |
+| `stats` | lifetime counts: `births`, `deaths: { cause: n }`, `marriages`, `adopted`, `inherited` (plots), `estates`, `regencies`, `toLord`, `toNature`, `seats`, `granted`, `migrated`, `recruited` |
 | `year` | this year's `{ births, deaths, marriages }` |
 | `census` | one row a year `{ year, pop, houses, births, deaths, marriages }`, last 400 |
 | `graves` | the graves the world remembers: `{ actor, name, zone, tile, born, died, cause, by, player, deeds }` for the notable |
 | `lineage` | each played actor who died: `{ actor, from, died, cause, grave }` |
 | `over` | `{ h, actor, grave, cause }` when he died with no heir: the run is over |
-| `waiting` | `{ heir, until }` while the new played heir is under 16 |
 | `wages` | `true`: people earn and spend a season's living (`EARN`/`SPEND`). The economy lane sets `false` when it takes over |
-| `fadeAfter` | years; 0 or absent = off (below) |
+| `fadeAfter` | years after which the non-notable dead are forgotten (20; 0 = never) |
 | `seen`, `homeless` | bookkeeping for residents |
 
 ## Events (`people.*`)
@@ -86,13 +85,13 @@ Core fields this lane writes: `alive`, `spouse` (through core `marry`), `family`
 | `people.married` | `actor, spouse, zone, price, adopted, player` | the notable only (commoners are counted, not announced) |
 | `people.born` | `actor, mother, father, zone` | the notable only |
 | `people.cameOfAge` | `actor, regent, plots, zone` | a ward turns 16 and takes his land |
-| `people.heir` | `actor, from, zone, age, waiting` | the game continues as his heir |
+| `people.heir` | `actor, from, zone, age, regent` | the game continues as his heir |
+| `people.graveLooted` | `actor, from, zone, kin, weapon, money` | someone takes what lay in the played actor's grave |
 | `people.heirNamed` | `actor, heir` | he names an heir |
 | `people.lineEnded` | `actor, zone, cause` | he died with no heir |
 | `people.vendetta` | `actor` (avenger), `target, victim, zone` | a murder: the eldest grown kinsman swears revenge |
 | `people.succession` | `actor, lord, heir, region, zone` | an old lord's younger son covets the seat |
 | `people.ambition` | `actor, kind, zone` | a chief wants a zone |
-| `people.plotBought` | `actor, plot, price, zone` | a head buys a plot from the lord |
 | `people.migrated` | `zone, region, n` | a crowded settlement sends people away |
 | `people.turnedOutlaw` | `actor, zone, region` | a broke young man joins a band |
 | `people.hunger` | `zone, region, fed` | a settlement falls below `FAMINE_AT` |
@@ -105,7 +104,7 @@ Listens for `econ.famine` (`zone` or `region`): caps those settlements' `fed` at
 - `killActor(L, id, cause, by, { zone, tile })`: **the one way to kill anyone** (other lanes too). Causes used here: `age`, `illness`, `famine`, `violence`, `childbirth`; lanes add their own (`duel`, `execution`, `raid`...). Handles the body and grave, the widow, grudges and the vendetta, inheritance, the house, a lord's seat, a band's chief, a dead regent's wards, the event, and the ronin's hand-off. Returns `{ heir, rule, regent, plots }`, or `null` if already dead.
 - `findHeir(L, a)`, `passEstate(L, a)`, `rulesFor(L, a)`, `pickRegent(L, heir, dead)`.
 - `wed(L, a, b, price, r)`, `judge(L, suitor, bride)`, `court(L, suitorId, brideId, r?)`, `propose(L, suitorId, brideId)`, `brides(L, suitorId, radius = 6)`, `pay(from, to, mon)`.
-- `playableHeirs(L, p)`, `nameHeir(L, id)`, `waitingYears(L)`, `recordDeed(L, id, text)`, `notable(L, a)`.
+- `playableHeirs(L, p)`, `nameHeir(L, id)`, `lootGrave(L, deadId, finderId)`, `recordDeed(L, id, text)`, `notable(L, a)`.
 - `residents(L, "x,y")`, `freePlot(L, zone)`, `grantPlot(L, pid, a)`, `moveHome(L, a, [x, y])`, `starve(L, key, fed, hours)`, `graveTile(L, zone, id)`.
 - `activity(L, a, hour)` → `[what, where]`; `tieOf`, `tieValue`, `setTie`, `bond`; `tree(L, id, depth)`, `founder`, `children`, `livingChildren`, `siblings`, `closeKin`, `nearKin`; `PEOPLE_RULES`.
 
@@ -116,7 +115,7 @@ Listens for `econ.famine` (`zone` or `region`): caps those settlements' `fed` at
 - **Death, per year** (`hazard`): 12% under 1, 2.5% under 5, 0.5% to 16, then 0.7% + 0.5% × e^(0.1 (age − 40)): 1.2% at 40, 4.4% at 60, 10.7% at 70, 28% at 80. Royals ×0.7, nobles ×0.75, monks ×0.85, retainers ×0.9; a drunk up to ×1.3. A death is `age` past 55 three times in four, else `illness`.
 - **Violence** (per year, the baseline of the ledger's quiet fights; the crime and war lanes kill on top through `killActor`): outlaws 3.5%, ronin and shinobi 2%, ashigaru 1.2%, retainers 1%, rebels 0.8%, others 0.15%; brawlers, menacing and cocky up to ×1.5. None under 14.
 - **Famine:** 25% × (0.9 − fed) / 0.9 a year below fed 0.9, twice for children under 5 and elders past 60.
-- **The ronin:** the ledger never kills him young off screen (no violence, famine or illness); past 55 old age can take him while you are away (question 1).
+- **The ronin:** the ledger never kills him young off screen (no violence, famine or illness); past 55 old age can take him while you are away (owner, 2026-09-26: "yes he may die").
 - Resulting: life expectancy at birth about 35, at 16 about 49. Deaths over 60 years: illness ~50%, age ~19%, famine ~16%, violence ~13%, childbirth ~1%.
 
 ### Births
@@ -147,7 +146,7 @@ The first rule that finds a living person (never a monk) wins. `named`: the heir
 | free valleys (rebels) | named, widow, eldest child, grandchild, sibling | equal |
 | temple lands | named, eldest child, widow, grandchild, sibling | equal |
 | outlaw coast | son, child, widow, sibling | equal |
-| the ronin's line | named, son, eldest child, grandchild | heir |
+| the ronin's line | named, son, eldest child, grandchild, brother | heir (his purse is on his body, not in the estate) |
 
 - **Land:** every plot titled to the dead passes its title to the heir; where the dead also held it, possession passes too. A plot someone else holds by force keeps its holder (owner: raids take possession, never the title).
 - **A minor heir** (under 16) takes the title at once; possession goes to a regent (his living parent, else his eldest grown sibling, else the dead man's eldest grown kin) until he comes of age, when he takes it and, if his parent was regent, heads the house. A dead regent's wards get a new one.
@@ -162,7 +161,7 @@ The first rule that finds a living person (never a monk) wins. `named`: the heir
 ### Needs, living, ties, ambitions
 - A working adult under 65 earns `EARN[cls] × min(1, fed)` and spends `SPEND[cls]` mon a visit (commoner 55 / 45). The economy lane replaces this (`wages = false`).
 - Ties: each visit an adult has a 15% chance to meet a random neighbour outside their house: shared trait +0.25, same class +0.08, a trait their culture despises −0.4, plus −0.35..0.35; above 0.35 both warm by 0.25 (friends), below −0.35 both cool (rivals). Ties fade 0.02 a visit (grudges 0.004) and end below 0.08 or when the other dies. A murder gives the victim's near kin a grudge of −1 on the killer.
-- Ambitions (yearly, grown people): a small landed head (rank ≤ 2, 1–2 plots) wants `land` (12%, 22% if eager, proud or vain) and buys a free plot from the lord at 3,000 mon (village) or 6,000 (town) once he has 110% of it; a merchant head wants `wealth`; a chief a `zone`; an old lord's (55+) younger son the `seat` (20%, rivals with his brother, `people.succession`); a retainer `favour` (5%). Revenge ends when the target dies; the others are given up after 15 years.
+- Ambitions (yearly, grown people): a small landed head (rank ≤ 2, 1–2 plots) wants `land` (12%, 22% if eager, proud or vain); buying or bidding for a free plot is the economy lane's (owner, 2026-09-26), which reads `ambition`; a merchant head wants `wealth`; a chief a `zone`; an old lord's (55+) younger son the `seat` (20%, rivals with his brother, `people.succession`); a retainer `favour` (5%). Revenge ends when the target dies; the others are given up after 15 years.
 
 ### Daily schedules (near him only)
 Children play and help; elders sit. Field work (farmers, fishers, woodcutters, miners, rebels) 6–18; shops 7–18 then the inn; innkeepers 10–02; guards, ashigaru and retainers stand day or night watch by id; bandits, smugglers, thieves and shinobi prowl the road at night; monks pray at dawn and dusk; lords and magistrates hold court 9–17; couriers, ronin and bounty hunters travel. Lazy traits run an hour late, eager an hour early; drunks drink instead of resting; the hungry forage instead of work.
@@ -170,18 +169,23 @@ Children play and help; elders sit. Field work (farmers, fishers, woodcutters, m
 ### The ronin's line (owner 2026-09-26: death costs everything unless he has an heir)
 - `L.player` is always the played actor. Courting: `brides` lists unmarried women 16–44 in settlements within 6 zones; `court` is a visit that warms her by 0.12 (+0.06 a shared trait, −0.05 a trait her people despise). `judge` says whether her house accepts: acceptance 0.55 + her culture's standing of him × 0.5 + the cultures' relation × 0.25 + karma × 0.2 (at most 0.2) − 0.22 per rank she stands above him − 0.15 per despised trait; refused if she is married, under 16, a nun or close kin, if her house is 3+ ranks above him without standing 0.8, if his karma is below −0.4 (the outlaw coast does not mind), if her people's standing of him is below −0.2, if she hardly knows him (fondness under 0.4), or if he cannot pay. Bride price: `BRIDE_PRICE` × (1 + 0.5 per rank above him) × (1 − 0.4 × standing). He pays it all to her house head.
 - Married, he heads a house where she lives; her home becomes his. Children are born to them like anyone else's, and are his house (`dynasty`).
-- **When he dies** (`killActor` on `L.player`): his estate passes by the ronin rule; his grave lies at the zone and tile where he fell, is remembered with his deeds (`P.graves`), and the world keeps it. His playable heir (the named one, else sons, daughters, grandchildren) becomes `L.player`, takes the family blade (`weapon`), and starts at home. An heir under 16 sets `P.waiting` and the world lives on until they come of age (the page's "Let the years pass"). No heir: `P.over`, `people.lineEnded`, the run is over.
+- **When he dies** (`killActor` on `L.player`): what he carried (his weapon and his purse) becomes his grave's `goods` (owner, 2026-09-26: finders keepers; his heir can take it back if they reach the grave first, and anyone can rob it: `lootGrave`). His land and anything not on him pass by the ronin rule; his grave lies at the zone and tile where he fell and is remembered with his deeds (`P.graves`). His playable heir becomes `L.player` at once, whatever their age (owner): the named one if among his children, grandchildren or brothers, else sons, daughters, grandchildren, brothers. A child heir is played now; the widow, else the next of kin (a grown sibling, else the dead man's eldest grown kin), is regent and holds the land until 16. No heir: `P.over`, `people.lineEnded`, the run is over.
 
-### Forgetting the long dead (off)
-A save grows by the dead: about 3.2 MB fresh, about 11 MB after 60 years (13,000 dead). `L.sys.people.fadeAfter = years` turns on forgetting: once a year, the non-notable dead of more than that many years keep only `id, given, family, sex, born, died, alive, cause, killer, culture, cls, parents, children, spouse, grave` and get `faded: true`. It removes other lanes' fields from those records, so it stays off until the integrator decides (at 30 years it saves only about a tenth; the recently dead are most of the weight).
+### Forgetting the long dead (owner, 2026-09-26: ok)
+A save grows by the dead. Once a year, the dead of more than `fadeAfter` years (20) who are not notable (not his house, a lord or rank 5+) keep only `id, given, family, sex, born, died, alive, cause, killer, culture, cls, job, parents, children, spouse, grave` and get `faded: true`; other systems must not read any other field of a faded record. Family trees still reach them. Sizes: about 3.2 MB fresh, 9.5 MB after 60 years (11 MB without forgetting; most of the weight is the recently dead). Set `fadeAfter = 0` to keep everything.
 
-## Open questions for the owner
+## Owner decisions (2026-09-26)
 
-1. May the ledger kill the ronin of old age while you are away? (Built: yes past 55; never young.)
-2. Who can carry on after him: only his children and grandchildren (built), or also a widow, a brother, an adopted son or a sworn companion?
-3. An heir under 16: the world lives on until they come of age (built), or play the child, or let a regent (the widow) play?
-4. What passes with the name: land and money (built), the family blade (built as a proposal), the rest of his gear, his companions, his karma and standing?
-5. Can a daughter be the played heir? (Built: yes, after the sons.)
-6. Should he be able to court across all cultures and ranks (built: by standing, class and culture), and should a marriage change his standing with her people?
-7. Forgetting the long dead to keep saves small (see above): which fields may go?
-8. Plot sale: a land-hungry head buys a free plot from his lord (built). Is that how titles are sold, or is sale the economy lane's?
+- Old age may take him while you are away ("yes he may die").
+- Heirs: "only his children and grandchildren, maybe a brother or companion". Built: children, grandchildren, then brothers. A companion as heir is still open (the party lane's companions are not actors in the ledger yet).
+- A child heir is played at once; "widow/next of kin is regent".
+- "If his gear was on him and he died in an unrecoverable place, it's finders keepers": his weapon and purse lie in his grave for whoever reaches it.
+- Land is bought or bid for, and that belongs in the economy lane: the people lane keeps only the want (`ambition.kind === 'land'`) and the lord's grant of a free plot to a new household.
+- Forgetting the long dead is ok.
+
+## Still open
+
+1. May a sworn companion carry on as his heir?
+2. Can a daughter be the played heir? (Built: yes, after the sons.)
+3. Should marrying into a culture change his standing with it?
+4. Is a lord's grant of a free plot to a new couple the people lane's to keep, or should the economy lane price it too?

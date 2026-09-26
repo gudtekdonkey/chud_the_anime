@@ -175,3 +175,12 @@ The owner said the deaths still don't feel like someone dying, and the execution
 - Open: more paired executions, what else sets a companion up, the bleed-out time.
 - **In the game** (`src/party/`, 2026-09-26): all of the above runs in the room on main's systems. His kit is the game's own state (`P.weapon`, `wear.outfit`, `INV.charms`), so the kit screen and the pickers stay in step. Companions wear main's wardrobe (7 slots; the prototype's masks and hair are not on main yet). The camp board is at the west wall, the wanderer walks in on the west edge, the captive kneels among the samurai (guarded while one is within 50 px) and a new one comes with every other squad. Enemies do not attack yet, so `hurtAlly` waits for them; H cuts the nearest companion down for testing. Iron Oath takes a blow meant for him through `hurt()`. Thunder Bead counts on anyone in the party. He keeps INV's level; companions keep their own stats.
 - Owner idea (2026-09-26): press K during an execution to queue the next and chain straight into it. Built by the K assassinations work; the paired cut should chain the same way once it lands.
+
+## People, heirs and death (`prototypes/38-people.html`, `docs/sim-people.md`, 2026-09-26)
+
+- **Old age may take him while you are away** (owner: "yes he may die"). The ledger never kills him young off screen.
+- **Who carries on** (owner): his children and grandchildren, "maybe a brother or companion". Built: the named heir, sons, daughters, grandchildren, then brothers. A companion as heir is still open.
+- **A child heir is played at once** (owner); the widow, else the next of kin, is regent and holds the land until 16.
+- **What he carried stays with his body** (owner: "if his gear was on him and he died in an unrecoverable place, it's finders keepers"). His weapon and purse are his grave's goods; his heir can take them back by reaching the grave first, and anyone else can rob it. His land and everything not on him pass to the heir.
+- **Buying land belongs to the economy lane** (owner: they buy free plots or bid for them). The people lane keeps the want (a `land` ambition) and the lord's grant of a free plot to a new household.
+- **The long dead are forgotten** (owner: ok): after 20 years, the dead who were nobody in particular keep only their name, dates, family links and grave.

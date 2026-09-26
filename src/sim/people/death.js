@@ -1,8 +1,8 @@
 import { emit, zoneAt } from '../ledger.js';
 import { INHERIT } from './rules.js';
-import { act, alive, age, adult, livingChildren, siblings, grandchildren, nearKin, eldest } from './kin.js';
+import { act, alive, age, adult, livingChildren, siblings, grandchildren, nearKin, eldest, pickRegent } from './kin.js';
 import { residents, dropResident, moveHome, graveTile } from './settle.js';
-import { handOff, recordDeed, notable } from './player.js';
+import { handOff, layOut, recordDeed, notable } from './player.js';
 import { setTie } from './ties.js';
 
 // ---- Death: the one door every system kills through (docs/sim-people.md) ----
@@ -27,6 +27,7 @@ export function killActor(L, id, cause = 'illness', by = null, o = {}) {
     if (avenger && !avenger.ambition) { avenger.ambition = { kind: 'revenge', target: by, victim: a.id, since: L.hour };
       emit(L, 'people.vendetta', { actor: avenger.id, target: by, victim: a.id, zone: avenger.home || zone }); }
   }
+  if (isPlayer) layOut(L, a);   // what he carried stays on his body (owner: finders keepers)
   const est = passEstate(L, a);
   if (a.household === a.id) rehouse(L, a, est.heir);
   if (a.lord != null && L.regions[a.lord] && L.regions[a.lord].lord === a.id) passSeat(L, a, est.heir);
@@ -64,13 +65,6 @@ export function findHeir(L, a) {
     if (canInherit(L, c, a)) return { heir: c, rule: r };
   }
   return { heir: null, rule: 'none' };
-}
-// who holds a minor heir's land until he comes of age: his living parent, else his eldest grown sibling, else the dead man's grown kin
-export function pickRegent(L, heir, dead) {
-  const ok = p => p && p.alive && p.id !== dead.id && p.id !== heir.id && adult(L, p);
-  for (const pid of heir.parents) { const p = act(L, pid); if (ok(p)) return p; }
-  const sib = siblings(L, heir).find(ok); if (sib) return sib;
-  return nearKin(L, dead).filter(ok).sort((x, y) => x.born - y.born)[0] || null;
 }
 function setRegent(L, heir, regent) {
   const old = alive(L, heir.regent);
@@ -122,7 +116,7 @@ function rehouse(L, a, heir) {
   head = head || (alive(L, a.spouse) && members.includes(alive(L, a.spouse)) ? alive(L, a.spouse) : null) || grown.find(m => m.sex === 'm') || grown[0] || null;
   if (!head) {   // only children left: the heir's house, else a grown kinsman's, else the settlement's first house takes them in
     const kin = [heir, ...nearKin(L, a)].filter(k => k && k.alive && adult(L, k) && k.household)[0];
-    const host = kin ? act(L, kin.household) || kin : null;
+    const host = kin ? alive(L, kin.household) || kin : null;
     const fallback = host || (a.home ? residents(L, a.home[0] + ',' + a.home[1]).filter(m => m.household === m.id && m.id !== a.id).sort((x, y) => y.holds.length - x.holds.length)[0] : null);
     for (const m of members) { if (fallback) { m.household = fallback.household || fallback.id; if (fallback.home && (fallback.home[0] !== m.home[0] || fallback.home[1] !== m.home[1])) moveHome(L, m, fallback.home); } else m.household = m.id; }
     return;

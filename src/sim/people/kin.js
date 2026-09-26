@@ -50,3 +50,11 @@ export function tree(L, id, depth = 4) {
 }
 // the eldest ancestor up the father's line, up to n generations
 export function founder(L, a, n = 6) { let x = a; for (let i = 0; i < n; i++) { const f = act(L, x.parents[0]); if (!f) break; x = f; } return x; }
+
+// who holds a minor heir's land until he comes of age: his living parent, else his eldest grown sibling, else the dead man's grown kin
+export function pickRegent(L, heir, dead) {
+  const ok = p => p && p.alive && p.id !== dead.id && p.id !== heir.id && adult(L, p);
+  for (const pid of heir.parents) { const p = act(L, pid); if (ok(p)) return p; }
+  const sib = siblings(L, heir).find(ok); if (sib) return sib;
+  return nearKin(L, dead).filter(ok).sort((x, y) => x.born - y.born)[0] || null;
+}
