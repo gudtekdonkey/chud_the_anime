@@ -9,7 +9,7 @@ import { qiFill } from '../player/qi.js';
 import { setWeapon } from '../player/weapon.js';
 import { drawS, boxOf } from '../ui/sprites.js';
 import { WS, chestBody, chestLid } from './item-sprites.js';
-import { heal, showBanner } from './inventory.js';
+import { heal, showBanner, canOffer, offer } from './inventory.js';
 import { arc, cutLine, bit, chest } from './item-fx.js';
 import { loot } from './pickups.js';
 
@@ -29,6 +29,12 @@ export const BIG = [
 // ---- the acts, one step each; return true when done ----
 const ACT = {
   pray(it, T, dt) {   // kneel; the flame's light pours into him, health and Qi fill to full
+    if (it.offering) {   // a shrine already prayed at takes an offering of glitch shards instead: an upgrade, one step of power
+      if (once('lit', true)) it.relit = true;
+      if (T > .25 && T < 1.1 && (it.acc = (it.acc || 0) + dt) > .05) { it.acc -= .05; arc(it.x + rr(-2, 2), it.y - 8, { h: rr(8, 16), col: CY2, col2: WH }); }
+      if (once('amen', T >= 1.15)) { const [x, y] = chest(); if (offer()) { ring(P.x + P.face, P.y - 1, 4, 2, .3, 4, CY); burst(x, y, 10, 100); } }
+      if (once('out', T >= 1.25)) { it.relit = false; it.outT = 0; }
+      return; }
     if (once('start', true)) { it.hp0 = INV.hp; it.qi0 = P.qi; }
     if (T > .25 && T < 1.1 && (it.acc = (it.acc || 0) + dt) > .05) { it.acc -= .05; arc(it.x + rr(-2, 2), it.y - 8, { h: rr(8, 16) }); }
     const k = clamp01((T - .3) / .85); INV.hp = Math.max(INV.hp, it.hp0 + (1 - it.hp0) * k); qiFill(it.qi0 + (1 - it.qi0) * k - P.qi, false);
@@ -56,6 +62,9 @@ const ACT = {
   },
 };
 export const actBig = (it, T, dt) => ACT[it.state](it, T, dt);
+// a used shrine can still take an offering while he has the shards and upgrades are left
+export const usable = it => !it.used || (it.id === 'shrine' && canOffer());
+export const verbOf = it => it.used && it.id === 'shrine' ? 'OFFER' : it.verb;
 export function tickBig(dt) { for (const it of BIG) for (const k of ['outT', 'cutT', 'openT']) if (it[k] != null) it[k] += dt; }
 
 // ---- drawing each one on the floor ----
@@ -63,7 +72,7 @@ export function drawBig(it, t) {
   const T = P.item === it ? P.t : -1;
   if (it.id === 'shrine') { drawS(it.s, it.x, it.y);
     const fx = Math.round(it.x), fy = Math.round(it.y) - 6, fl = Math.floor(t * 10) % 3;   // the flame: a flicker, a flare while he prays, then out
-    if (!it.used) { const flare = T > .15 && T < 1.2;
+    if (!it.used || it.relit) { const flare = T > .15 && T < 1.2;
       if (flare) { g.fillStyle = CY; g.fillRect(fx - 1, fy - 3, 3, 3); g.fillStyle = CY2; g.fillRect(fx, fy - 4 - (fl === 1 ? 1 : 0), 1, 3); g.fillStyle = WH; g.fillRect(fx, fy - 2, 1, 2); }
       else { g.fillStyle = CY; g.fillRect(fx, fy - 2, 1, 2); g.fillStyle = fl ? CY2 : WH; g.fillRect(fx, fy - 3 - (fl === 2 ? 1 : 0), 1, 1); }
       g.save(); g.globalAlpha = .25; g.fillStyle = CY; g.fillRect(fx - 2, Math.round(it.y) - 4, 5, 1); g.restore(); }

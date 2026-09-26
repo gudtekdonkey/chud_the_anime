@@ -16,7 +16,7 @@ import { stageItems, drawStagesFloor, drawStagesTop } from '../assassin/assassin
 import { drawMarkers, drawPrompt } from '../assassin/markers.js';
 import { weapon } from '../weapons/weapons.js';
 import { drawHud } from '../ui/hud.js';
-import { itemDrawables, drawItemsOver } from '../items/items.js';
+import { itemDrawables, drawItemsOver, drawSmoke } from '../items/items.js';
 import { PILLARS, bg, drawPillar } from './room.js';
 
 export function render() {
@@ -25,7 +25,7 @@ export function render() {
   if (S.shake <= 0) P.shakeAmp = 2;
   g.drawImage(bg, 0, 0);
   const fade = ENEMIES[0].alpha;   // the fallen, their swords and their blood fade together before a new squad
-  drawBloodFloor(fade); drawFloorFx(); drawStagesFloor();
+  drawBloodFloor(fade); drawFloorFx(); drawStagesFloor(); drawSmoke(false);
   const t = performance.now() / 1000; drawMarkers(t);
   // depth-sort the pillars, the enemies, their dropped swords, the player and any execution by their feet
   const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), ...ENEMIES.map(e => ({ y: e.y - (e.alive ? 0 : .5), d: () => drawEnemy(e) })),
@@ -33,6 +33,7 @@ export function render() {
     ...mirrors.map(m => ({ y: m.y, d: () => drawMirror(m) })),
     ...debris.map(d => ({ y: d.state === 'in' ? d.cy + Math.sin(d.a) * d.r * .45 : d.py, d: () => drawDebris(d) }))];
   items.sort((a, b) => a.y - b.y).forEach(i => i.d());
+  drawSmoke(true);   // a thinner haze in front of everyone
   drawFx(); drawDrops(); drawStagesTop(); drawPrompt(t);
   for (const q of parts) {
     g.globalAlpha = Math.min(1, q.life / q.max * 1.6); g.fillStyle = cc(q.col);
@@ -47,7 +48,7 @@ export function render() {
   drawHud();
   const chg = P.charge != null && !P.cv ? ` · charge <b>${Math.round(P.charge * 100)}%</b>` : P.cv ? ` · ${P.cv.name} at <b>${Math.round(P.pow * 100)}%</b>` : '';
   const qi = P.storm > 0 ? ` · <b>STORM CHAIN ${P.storm.toFixed(1)} s</b>` : ` · qi <b>${Math.round(P.qi * 100)}%</b>`;
-  const inv = ` · hp <b>${Math.round(INV.hp * 100)}%</b> · mon ${INV.mon} · shards ${INV.shards} · LV ${INV.lv} (${Math.round(INV.exp)} exp)`;
+  const inv = ` · hp <b>${Math.round(INV.hp * 100)}%</b> · mon ${INV.mon} · shards ${INV.shards} · LV ${INV.lv} (${Math.round(INV.exp)} exp) · power ${INV.power}`;
   hud.innerHTML = `${weapon().name} · animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}${chg}${qi}${inv}`;
 }
 

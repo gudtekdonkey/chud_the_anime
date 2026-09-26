@@ -18,7 +18,7 @@ const RELIC_WS = { bead: 'bead', mirror: 'mirror', bell: 'bell', tsuba: 'tsuba',
 const at = (kind, x, y, i = 0) => ({ kind, x, y, ph: i * .4 });
 export const PICKUPS = [
   at('qi', 150, 212, 0), at('qi', 162, 219, 1), at('qi', 174, 213, 2), at('coin', 380, 142, 0), at('coin', 388, 149, 1), at('coin', 396, 141, 2),
-  at('rice', 40, 240), at('shard', 60, 172), at('shard', 452, 252, 1), at('talisman', 300, 252), at('bomb', 118, 196),
+  at('rice', 40, 240), at('shard', 60, 172), at('shard', 452, 252, 1), at('shard', 330, 104, 2), at('shard', 150, 92, 3), at('shard', 110, 104, 4), at('talisman', 300, 252), at('bomb', 118, 196),
   { ...at('tsuba', 446, 160), relic: true }];
 export const loot = [];   // what a chest spills: it arcs out, lands, then flies to him from anywhere
 

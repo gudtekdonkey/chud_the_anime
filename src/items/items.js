@@ -5,9 +5,10 @@ import { held } from '../input.js';
 import { setState, moveBy } from '../player/actions.js';
 import { hit } from '../player/hits.js';
 import { brackets, prompt } from '../ui/hud-kit.js';
-import { BIG, actBig, tickBig, drawBig, lockedItem, setLocked } from './big.js';
+import { BIG, actBig, tickBig, drawBig, lockedItem, setLocked, usable, verbOf } from './big.js';
 import { PICKUPS, updatePickups, drawPickup, drawFlying } from './pickups.js';
-import { USE, useQuick, updateQuickFx, quickDrawables, drawQuickOver } from './quick.js';
+import { USE, useQuick, updateQuickFx, quickDrawables, drawQuickOver, drawSmoke } from './quick.js';
+export { drawSmoke };
 import { startHarvest, harvest, fallenDrawables, tickHarvest } from './harvest.js';
 import { has, tickInv } from './inventory.js';
 import { updateItemFx, drawItemFx } from './item-fx.js';
@@ -19,13 +20,13 @@ export const ITEM_STATES = new Set([...BIG_STATES, ...Object.keys(USE), 'harvest
 let lockT = 0, clock = 0;
 function lockOn(free, dt) {
   let best = null, bd = LOCK_RANGE;
-  if (free) for (const it of BIG) { const d = Math.hypot(it.x - P.x, (it.y - P.y) * 1.6); if (!it.used && d < bd) { bd = d; best = it; } }
+  if (free) for (const it of BIG) { const d = Math.hypot(it.x - P.x, (it.y - P.y) * 1.6); if (usable(it) && d < bd) { bd = d; best = it; } }
   if (best !== lockedItem()) lockT = 0; else lockT += dt;
   if (best || !P.item) setLocked(best);
 }
 function interact(it) {
   P.face = Math.sign(it.x - P.x) || P.face; const walk = [it.x - P.face * it.gap, it.y];
-  setState(it.state); P.item = it; P.walkTo = walk; it.pressT = 0;
+  setState(it.state); P.item = it; P.walkTo = walk; it.pressT = 0; it.offering = it.used;
 }
 // E and 1-4; true when it started something this step
 export function itemInput(inp, free, dt) {
@@ -69,5 +70,5 @@ export function drawItemsOver() {
   const it = lockedItem(); if (!it) return;
   const gone = P.item === it ? it.pressT : -1;
   brackets(it.box, lockT, gone);
-  if (gone < .05) prompt(it.x, it.box.y0 - 13, it.verb, lockT - .1, gone >= 0 || P.ePress);
+  if (gone < .05) prompt(it.x, it.box.y0 - 13, verbOf(it), lockT - .1, gone >= 0 || P.ePress);
 }

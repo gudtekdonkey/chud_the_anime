@@ -7,6 +7,7 @@ import { setState } from './actions.js';
 import { hitOne } from './hits.js';
 import { ease } from '../rig/pose.js';
 import { ENEMIES } from '../world/enemies.js';
+import { T, powerCast } from './power.js';
 
 // ---- Mirror Meditation (N): he meditates while glitching mirror images step out of him and cut the nearest enemies ----
 const MS = .18, MD = .12, MC = .42, MF = .32; // step out, dash, cut, dissolve
@@ -15,7 +16,8 @@ export function meditate() {
   const near = ENEMIES.map((d, i) => ({ d, i, r: Math.hypot(d.x - P.x, (d.y - P.y) * 1.3) })).filter(q => q.d.alive).sort((a, b) => a.r - b.r);
   // nobody left standing: the images still step out and cut the air around him
   if (!near.length) for (let j = 0; j < 3; j++) near.push({ d: { x: P.x + (j % 2 ? -1 : 1) * 34, y: P.y + (j - 1) * 14 }, i: -1, r: 0 });
-  const n = Math.max(3, Math.min(5, near.filter(q => q.r < 200).length));
+  const more = T('mirror', 'more'), n = Math.max(3 + more, Math.min(5 + more, near.filter(q => q.r < 200).length));   // more images with power
+  powerCast();
   P.mq = Array.from({ length: n }, (_, j) => near[j % near.length]);   // spread across different enemies, nearest first
 }
 export function spawnMirror(j, q) {

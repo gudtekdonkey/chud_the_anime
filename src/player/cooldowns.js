@@ -1,5 +1,6 @@
 import { P } from '../state.js';
 import { threatNear } from './actions.js';
+import { pw } from './power.js';
 import { FLOW_KEYS, breakChain } from './combo.js';
 
 // ---- Cooldowns: every active has one, keyed by its input name; the skill bar draws them ----
@@ -11,7 +12,7 @@ export const ready = k => !(P.cd[k] > 0);
 // casting a skill breaks the Flow count; with Flow earned, a skill still cooling down casts anyway and spends it
 export function startCd(k, t = CD[k]) {
   if (FLOW_KEYS.has(k)) { breakChain(); if (P.cd[k] > 0 && P.flow > 0) { P.flow = 0; P.flowUsed = .3; P.cdPop[k] = .25; } }
-  if (k === 'tele' && !threatNear()) return; P.cd[k] = t; P.cdMax[k] = t; }
+  if (k === 'tele' && !threatNear()) return; t *= pw('cd'); P.cd[k] = t; P.cdMax[k] = t; }   // power shortens every cooldown (up to 20% at III)
 // call this when a K assassination kills: the flash is recastable after 0.2 s
 export function onAssassination() { P.cd.tele = P.cdMax.tele = FLASH_RESET; }
 // a key pressed while its skill is cooling down does nothing, and its slot blinks

@@ -79,16 +79,21 @@ Decisions made in the design sessions so far, newest last.
 ## Items and the HUD (`prototypes/20-items.html`, in the game)
 
 - **Owner:** "I love the whole UI … the HUD, everything, please do it." Built into `src/` as displayed: health and Qi top left (Qi notched in thirds, STORM when Storm Chain runs), mon and glitch shards top right, and the bottom bar (weapon slot, quick slots 1-4, four charm slots).
-- **Big items** (lock-on brackets and an E prompt): Wayside Shrine (PRAY), Grave Nodachi (TAKE), Sealed Chest (CUT), Rift Tablet (READ). **Small pickups** fly to him within about 22 px: Qi mote +10% Qi, rice ball +20% health, old mon +1, glitch shard +1. **Consumables** in the quick slots: static bomb, thunder talisman, whetstone (20 s cyan edge, Qi twice as fast), grave incense (60% over 1.5 s; moving or a hit puts it out). **Relics** in the charm slots: Thunder Bead, Cracked Mirror, Temple Bell, Split Tsuba, Paper Crane, Sageo Knot.
+- **Big items** (lock-on brackets and an E prompt): Wayside Shrine (PRAY), Grave Nodachi (TAKE), Sealed Chest (CUT), Rift Tablet (READ). **Small pickups** fly to him within about 22 px: Qi mote +10% Qi, rice ball +20% health, old mon +1, glitch shard +1. **Consumables** in the quick slots: static bomb (**owner:** its smoke fills the entire screen, and while it is up every enemy is K-targetable even in a group; built as 6 s, `S.smoke`), thunder talisman, whetstone (20 s cyan edge, Qi twice as fast), grave incense (60% over 1.5 s; moving or a hit puts it out). **Relics** in the charm slots: Thunder Bead, Cracked Mirror, Temple Bell, Split Tsuba, Paper Crane, Sageo Knot.
 - **E:** tap for the locked-on item's verb, hold 0.2 s near the fallen for Harvest (EXP, levels, LEVEL UP / LV n banner). 1-4 use the quick slots.
 - **The Grave Nodachi:** a 19 px blade (the katana's is 13), 1.3× reach on J and I, and 1.6× the hit pause and shake.
 - Proposed in the build, for the owner to confirm:
   - Qi from items and shrines fills the meter but does not wake Storm Chain; a full meter wakes it on the next landed hit.
   - The skill cooldowns from the League-style bar now sit as a row of small slots under health and Qi, in the items HUD's style (the prototype has no place for them).
   - The whetstone use is shortened to 0.8 s (the study's was 1.7 s) so every use stays under a second; he keeps the honed blade out, in guard.
-  - He starts at 60% health so healing shows; nothing damages him yet. Low health (below 35%) blinks the health bar red, as there is no HP label.
-  - Two placeholder remains lie in the room so Harvest can be tried; every real death (a kill or an execution) now leaves a body to harvest too. EXP needs 100 × the level.
-- **Open:** where the power tier (`INV.power`, I / II / III) comes from: level, relics or upgrades.
+  - He starts at 60% health so healing shows; nothing damages him yet (the samurai don't attack). Low health (below 35%) blinks the health bar red, as there is no HP label.
+  - Every kill leaves a body to Harvest (60 EXP) until the room is cleared and a new squad steps in; EXP needs 100 × the level.
+- **Power tier (owner): from relics and upgrades.** Built: I, plus one per upgrade, plus one per power relic worn, at most III; a POWER banner shows each step. Upgrades (proposed): a shrine he has already prayed at takes an OFFER of 3 glitch shards for one upgrade, two at most. Which relics raise power is still open (`POWER_RELICS` starts empty).
+- **What power does (owner): both skill tiers and a stat boost.** Every skill has an I, II and III version, and the tier also scales stats. The numbers and each skill's versions are proposed (`src/player/power.js`):
+  - Stats: Qi from hits ×1 / 1.15 / 1.3; cooldowns ×1 / .9 / .8; damage ×1 / 1.25 / 1.5 on the samurai's health.
+  - The look, from the Breath of Qi tiers: I is quiet; II lifts stone off the floor as a skill fires; III adds ribbons of light spiralling up. Nothing on the floor.
+  - Storm Chain 3 / 4 / 5 jumps and 8 / 9 / 10 s. Thousand Cuts 7 / 9 / 11 cuts in the same vanish. Cross Rift: a 15% bigger X at II; at III a second, smaller detonation 0.25 s later. Crescent Moon: at II the shatter cuts too; at III a smaller twin moon sweeps the other way. Mirror Meditation: one more image at II, two at III. Storm slam: 20% wider at II; at III bolts climb out of the cracks.
+  - The page has a power picker to try each tier. K, J, the slide and jump have no tiers yet.
 
 ## Deaths pass (approved: prototypes 29 to 31 and 33)
 
