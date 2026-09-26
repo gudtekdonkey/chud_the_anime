@@ -9,6 +9,7 @@ import { REMAINS } from './item-sprites.js';
 import { addExp, has } from './inventory.js';
 import { arc } from './item-fx.js';
 import { putOut } from './quick.js';
+import { num } from '../fx/numbers.js';
 import { living, onKill as onEnemyKill } from '../world/enemies.js';
 
 // ---- Harvest (hold E near the fallen): their remains stream into him as EXP ----
@@ -44,6 +45,7 @@ export const HURT_HOOKS = [];
 export function hurt(n) {
   if (HURT_HOOKS.some(fn => fn(n))) return;
   putOut(); if (P.state === 'incense') setState('idle');
+  num(P.x, P.y - 34, n * 100, 'take');
   if (INV.hp - n <= 0 && has('crane') && !P.craneUsed) { P.craneUsed = true; INV.hp = .02; P.glitchNow = .3; P.after = 1.5; return; }
   INV.hp = Math.max(0, INV.hp - n); S.shake = Math.max(S.shake, 1 / 60); P.flash = .034;
   if (INV.hp <= 0) setState('death');

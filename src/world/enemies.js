@@ -3,6 +3,7 @@ import { rr, sgn, ring, spark, residue } from '../fx/util.js';
 import { bleed, pool, clearBlood, updateBlood } from '../fx/blood.js';
 import { GUARD, FLINCH, FLINCH_T, STAGGER_T, THUD_T, staggerPose, deathPose, newBody, stepBody, thudBody, kick } from './enemy-body.js';
 import { collide } from './room.js';
+import { num, trail, chip } from '../fx/numbers.js';
 
 // ---- The enemies: topknot samurai on his rig, with health, hit reactions and deaths ----
 // The API other systems use (hits, Qi, mirrors, and K assassinations next):
@@ -20,7 +21,7 @@ export const HP = 4, ISOLATION = 36;
 export const DMG = { slash: 1, d: 1, sw: 2, tc: 2, cm: 3, cr: 1, crB: 2, mi: 1, chain: 1, burst: 1 };
 const SPAWNS = [[262, 170], [306, 196], [348, 178], [400, 192], [312, 118], [420, 244], [92, 208]];
 const fresh = (x, y) => ({ x, y, face: -1, view: 'E', hp: HP, maxHp: HP, alive: true, state: 'guard', t: 0, flash: 0, zap: 0, shk: 0, lastHit: -9, turnT: 0,
-  vx: 0, vy: 0, fd: -1, held: false, P0: GUARD, body: newBody(GUARD), pose: GUARD, alpha: 1 });
+  vx: 0, vy: 0, fd: -1, held: false, P0: GUARD, body: newBody(GUARD), pose: GUARD, alpha: 1, chip: trail(1) });
 export const ENEMIES = SPAWNS.map(([x, y]) => fresh(x, y));
 export const blades = [];   // swords dropped by the dead
 let clock = 0, emptyT = 0;
@@ -37,6 +38,7 @@ export const onKill = fn => kills.push(fn);
 
 export function damage(e, n, fx, fy) {
   if (!e.alive) return false;
+  num(e.x, e.y - 37, n * 10, e.hp - n <= 0 ? 'big' : 'deal');   // the killing blow reads bigger
   e.hp = Math.max(0, e.hp - n); e.flash = .05; e.shk = .1;
   e.face = Math.sign(fx - e.x) || e.face; e.turnT = 0;   // he turns to whoever hit him
   const away = Math.sign(e.x - fx) || -e.face, mag = Math.max(.4, Math.min(1.4, n / 2));
@@ -52,7 +54,7 @@ export function damage(e, n, fx, fy) {
 export function kill(e, o = {}) {
   if (!e.alive) return;
   const dir = o.dir || -e.face;
-  if (o.execution) { e.alive = false; e.hp = 0; e.state = 'gone'; e.held = false; for (const fn of kills) fn(e, o); return; }
+  if (o.execution) { num(e.x, e.y - 37, e.hp * 10, 'exec'); e.alive = false; e.hp = 0; e.state = 'gone'; e.held = false; for (const fn of kills) fn(e, o); return; }
   const shown = e.body.out;   // he dies from the pose he is seen in, not the one he was headed for
   e.alive = false; e.hp = 0; e.state = 'dead'; e.t = 0; e.fd = dir * e.face; e.P0 = shown; e.vx = o.vx != null ? o.vx : dir * 30; e.vy = 0;
   // his sword leaves his hands as he goes: it falls, turning, and lies where it lands
@@ -78,6 +80,7 @@ export function updateEnemies(dt, frozen) {
   for (const e of ENEMIES) { e.flash = Math.max(0, e.flash - dt); e.shk = Math.max(0, e.shk - dt); }
   if (frozen) return;
   clock += dt; updateBlood(dt);
+  for (const e of ENEMIES) chip(e.chip, e.hp / e.maxHp, dt);
   for (const e of ENEMIES) { if (e.held || e.state === 'gone') continue;
     const t = (e.t += dt);
     if (e.state === 'guard') { e.pose = GUARD;

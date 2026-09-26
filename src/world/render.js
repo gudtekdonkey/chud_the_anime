@@ -4,6 +4,7 @@ import { P, INV, parts, S, mirrors, debris } from '../state.js';
 import { SHEETS } from '../anims/sheets.js';
 import { drawDebris } from '../fx/debris.js';
 import { drawFloorFx, drawFx } from '../fx/fx.js';
+import { drawNums } from '../fx/numbers.js';
 import { sgn } from '../fx/util.js';
 import { cc } from '../fx/element.js';
 import { COL } from '../config.js';
@@ -47,6 +48,7 @@ export function render() {
     if (q.streak) g.fillRect(Math.round(q.x - q.vx * .012), Math.round(q.y - q.vy * .012), 1, 1);
   }
   g.globalAlpha = 1;
+  drawNums();   // over the effects, so a number is never lost in the flash of the hit it counts
   g.restore();
   drawItemsOver();   // unshaken, like the HUD: the lock-on and prompt stay put while the world shakes
   if (S.scr.t > 0) { g.globalAlpha = S.scr.a * S.scr.t / S.scr.max; g.fillStyle = COL.flash; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
