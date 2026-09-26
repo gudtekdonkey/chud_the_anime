@@ -180,3 +180,8 @@ The owner said the deaths still don't feel like someone dying, and the execution
 - Owner idea (2026-09-26): press K during an execution to queue the next and chain straight into it. Built by the K assassinations work; the paired cut should chain the same way once it lands.
 - **Crime and karma** (owner, 2026-09-26, the crime lane, `docs/sim-crime.md`, prototype 39): a legal title passes by sale, blood money, a lord's grant, inheritance, a court case, time with no claimant left, or a forged deed; a forged deed may come out each season, less likely every year. Blood money clears the bounty. A shrine can clear a bounty. Anyone 60 or older is an elder; killing royalty is never forgiven unless the killer is royal. A close witness sometimes sees through a mask. A violent time: about 30% of the people die by the sword every year. Open: "many men are slave to their masters".
 - **Births** (owner, 2026-09-26): there are births. Babies stay at home until 18 and are not seen: no crime, fight or witness involves anyone under 18. Built by the people lane; it has to keep up with 30% of grown people dying a year. The crime lane (prototype 39, `docs/sim-crime.md`) is approved as built.
+
+## Economy (2026-09-26)
+
+- **Hard times** (owner): about 40% of people short of rice on an average day; lords take half the crop; famine spreads before the harvest. Built in `src/sim/economy/` (`docs/sim-economy.md`).
+- The owner left the other economy choices to Claude: loot of 20–60 mon a samurai, coin weight tiers as built, koku ranks shown as they are, changer's notes between towns for 3%, a lord sets his own tax and pay, coloured silk a crime-lane hook. Recorded in `docs/sim-economy.md`, *Decided*.
