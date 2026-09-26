@@ -1,0 +1,969 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Ronin Items</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; margin: 0; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 64px; display: grid; gap: 26px; }
+  header { display: grid; gap: 8px; max-width: 72ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 22px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  h3 { font: 700 18px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  .bar { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+  .bar label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; color: var(--muted); font-size: 14px; }
+  .bar input { accent-color: var(--cyan); width: 16px; height: 16px; }
+  .hero { display: grid; gap: 10px; }
+  .hero canvas { width: 100%; max-width: 960px; aspect-ratio: 480 / 270; image-rendering: pixelated; display: block; border: 1px solid var(--rule); background: #474c4a; }
+  .hero p { font-size: 14px; max-width: 80ch; }
+  .sec { display: grid; gap: 14px; }
+  .sec > header { gap: 6px; }
+  .num { font: 700 13px/1 "Pixelify Sans", monospace; color: var(--cyan); letter-spacing: .06em; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 18px; }
+  .grid.relics { grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--rule); display: grid; align-content: start; }
+  .card > canvas { width: 100%; aspect-ratio: 192 / 108; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--rule); }
+  .relics .card > canvas { aspect-ratio: 128 / 72; }
+  .body { padding: 14px 16px 16px; display: grid; gap: 8px; }
+  .head { display: flex; gap: 12px; align-items: center; }
+  .slot { flex: none; width: 48px; height: 48px; padding: 3px; background: #0c0d11; border: 1px solid #565e66; box-sizing: content-box; }
+  .slot canvas { width: 48px; height: 48px; image-rendering: pixelated; display: block; }
+  .cat { font: 500 12px/1.2 "Pixelify Sans", monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .flav { font-style: italic; }
+  .eff { color: var(--ink); }
+  .eff b { font: 700 12px/1 "Pixelify Sans", monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--cyan); margin-right: 6px; }
+  .ask { background: var(--panel); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 10px; max-width: 80ch; }
+  .ask b { color: var(--ink); font-weight: 600; }
+  .ask ul { margin: 0; padding-left: 20px; color: var(--muted); display: grid; gap: 6px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Items · pickups, consumables, relics</div>
+    <h1>What the road leaves behind</h1>
+    <p>Everything the ronin finds and uses, except clothing, which is on its own page. There are four kinds. Big items get the lock-on brackets and a prompt when he is close enough. Small pickups fly to him when he walks near. Consumables sit in the quick slots and each has a short use animation. Relics go in the charm slots and change how his skills behave. Every scene runs at game scale, and every icon is 16×16.</p>
+    <div class="bar"><label for="slow"><input type="checkbox" id="slow"> Half speed</label></div>
+  </header>
+
+  <section class="hero">
+    <canvas id="hero" width="480" height="270" role="img" aria-label="Game-scale mock: the ronin walks past small pickups, locks on to a fallen katana, takes it, then walks on to a shrine"></canvas>
+    <p>The HUD at 480×270. Top left: health (white) and Qi (cyan, notched in thirds). Top right: mon and glitch shards. Bottom: the weapon slot, four quick slots (keys 1 to 4, with counts) and four charm slots. On the way he picks up Qi and coins without stopping. The sealed chest is out of range, so it gets no brackets. He locks on to the fallen katana, takes it, and the weapon slot swaps. Then the shrine ahead locks on.</p>
+  </section>
+
+  <section class="sec" id="s-big"><header><span class="num">01</span><h2>Big items</h2><p>The only things that get the lock-on brackets. They snap in when he is in range and breathe by a pixel. A prompt names the verb, and pressing it plays the interaction.</p></header><div class="grid" id="g-big"></div></section>
+  <section class="sec" id="s-small"><header><span class="num">02</span><h2>Small pickups</h2><p>No brackets and no button. They sit and idle until he comes within about two body-widths, then they fly to him and pop.</p></header><div class="grid" id="g-small"></div></section>
+  <section class="sec" id="s-cons"><header><span class="num">03</span><h2>Consumables</h2><p>Picked up like small items, and used from a quick slot. Each use is under a second, so it never breaks the flow of a fight.</p></header><div class="grid" id="g-cons"></div></section>
+  <section class="sec" id="s-relic"><header><span class="num">04</span><h2>Relics</h2><p>Passive charms. They hover a pixel off the floor, and walking into one sends it straight to an empty charm slot. Each one bends one of his skills.</p></header><div class="grid relics" id="g-relic"></div></section>
+
+  <div class="ask">
+    <h2>Your call</h2>
+    <p><b>Keep, tweak or cut</b> each item. A few questions:</p>
+    <ul>
+      <li>Should small pickups magnetise from farther away, or only when he is this close?</li>
+      <li>Four quick slots and four charm slots. Keep, or three and three?</li>
+      <li>The chest opens on the sheath click, like a kill. Keep it, or open it on the cut?</li>
+      <li>Two currencies (mon and glitch shards). Keep both, or fold them into one?</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+// ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
+const FW = 48, FH = 48, OX = 24, OY = 40;
+const RC = { K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', H: '#2a2f37', G: '#3b424c', B: '#1a1d24',
+  E: '#6ff3e4', W: '#e9eeee', S: '#7d868e', s: '#2c3037' };
+const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
+// angles in radians: limbs 0 = straight down, + swings forward; knee + folds the shin back; elbow + folds the forearm forward
+const REST = { hx: 0, hy: 0, lean: .04, chest: 0, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
+  sword: null, bsword: null, sheathing: false, bare: false, hat: 0, flutter: 0 };
+const pz = o => ({ ...REST, ...o });
+const HILT = [.42, 1.0];          // front hand resting on the hilt at the hip
+const lerpP = (a, b, k) => { const o = {}; for (const key in a) {
+  const x = a[key], y = b[key];
+  o[key] = Array.isArray(x) ? x.map((v, i) => v + (y[i] - v) * k) : typeof x === 'number' && typeof y === 'number' ? x + (y - x) * k : k < .5 ? x : y; }
+  return o; };
+
+function rig(g, fx, p) {
+  const put = (x, y, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
+  const blob = (x, y, w, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
+  const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
+    for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
+  const poly = (pts, c) => {
+    const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+    for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++)
+      for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+        let inside = false;
+        for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+          const [xi, yi] = pts[i], [xj, yj] = pts[j];
+          if ((yi > y + .5) !== (yj > y + .5) && x + .5 < (xj - xi) * (y + .5 - yi) / (yj - yi) + xi) inside = !inside;
+        }
+        if (inside) put(x, y, c);
+      }
+  };
+  const hip = [OX + p.hx, OY - 11 + p.hy];
+  const up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
+  // breath lifts the chest, shoulders and head but not the hips, so it reads as breathing, not bobbing
+  // the chest pivots at the waist (u = 4), so a cut can be driven by the hips and then the chest
+  const up2 = [Math.sin(p.lean + p.chest), -Math.cos(p.lean + p.chest)], fw2 = [Math.cos(p.lean + p.chest), Math.sin(p.lean + p.chest)];
+  const L = (u, v) => { const b = u > 4 ? p.breath * Math.min(1, (u - 4) / 3) : 0;
+    if (u <= 4) return [hip[0] + up[0] * u + fw[0] * v, hip[1] + up[1] * u + fw[1] * v];
+    const w = [hip[0] + up[0] * 4, hip[1] + up[1] * 4];
+    return [w[0] + up2[0] * (u - 4) + fw2[0] * v, w[1] + up2[1] * (u - 4) + fw2[1] * v - b]; };
+  const dir = a => [Math.sin(a), Math.cos(a)];
+  const add = (a, d, k) => [a[0] + d[0] * k, a[1] + d[1] * k];
+  const leg = ([th, kn], c, off) => { const h = L(0, off), k = add(h, dir(th), 5), f = add(k, dir(th - kn), 6);
+    seg(h, k, 2, c); seg(k, f, 2, c); seg(f, [f[0] + 2, f[1]], 1, c); };
+  const arm = ([sh, el], c) => { const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
+    seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
+  const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
+
+  // far side first: scabbard, far arm, far leg
+  seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
+  // the back hand can carry the blade too, for the counter stance
+  const bh = arm(p.ba, 'D');
+  if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
+  leg(p.bl, 'D', -.5);
+  // torso, near leg
+  poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
+  for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
+  leg(p.fl, 'K', .5);
+  // head and hat
+  const hc = L(10, .6);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
+  put(hc[0] + 1.5, hc[1], 'E');
+  if (p.bare) { for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] - 2, 'K'); put(hc[0] - 1, hc[1] - 3, 'K'); put(hc[0] - 2, hc[1] - 4, 'K'); put(hc[0] - 2, hc[1] - 3, 'D'); }
+  const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
+  if (!p.bare) HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x - fx + fx, hy0 + y, ch); }));
+  // mantle over the shoulders, its back tip lifting a hair with the flutter
+  const f = p.flutter;
+  // it drapes flat down the back instead of standing off it, so it no longer reads as a hump
+  if (!p.bare) { poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M');
+    seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
+    if (f > .5) put(...L(2.6, -3.4), 'M'); }
+  // near arm and the sword
+  const hand = arm(p.fa, 'K');
+  if (p.sword === null && !p.sheathing && p.bsword == null) {                    // sheathed: hilt pokes forward-up out of the scabbard
+    put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W');
+  } else if (p.sheathing) {                                  // sliding home: blade runs from the hand into the scabbard mouth
+    seg(hand, mouth, 1, 'W'); put(...hand, 'S'); put(...add(hand, [hand[0] - mouth[0], hand[1] - mouth[1]].map(v => v / (Math.hypot(hand[0] - mouth[0], hand[1] - mouth[1]) || 1)), 2), 'K');
+  } else if (p.sword !== null) {
+    const d = [Math.cos(p.sword), Math.sin(p.sword)];
+    seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S');
+    seg(add(hand, d, 1), add(hand, d, 13), 1, 'W');
+  }
+}
+
+// ---- Poses, one per frame ----
+const run8 = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);
+  return pz({ lean: .32, hy: Math.round(.5 - .5 * Math.cos(2 * a)), fl: [.95 * s, .3 + 1.1 * Math.max(0, c)], bl: [-.95 * s, .3 + 1.1 * Math.max(0, -c)],
+    fa: [-.7 * s + .3, .9], ba: [.7 * s - .5, .5], flutter: (i % 4) / 2 }); });
+// a calm breath: 16 frames, eased, with long rests at the top and bottom
+const BREATH = [0, 0, 0, .15, .45, .75, .95, 1, 1, 1, .85, .6, .3, .1, 0, 0];
+const FLUT = [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0];
+const idle16 = BREATH.map((b, i) => pz({ breath: b, fa: [.12 + b * .03, .18], ba: [-.08 - b * .03, .12], flutter: FLUT[i] }));
+const ease = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, lin = k => k;
+// sample eased keyframes [time, pose, easing?] into frames
+function keyed(keys, fps) {
+  const n = Math.round(keys[keys.length - 1][0] * fps) + 1;
+  return Array.from({ length: n }, (_, i) => { const t = i / fps; let j = 0;
+    while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+    const [t0, a] = keys[j], [t1, b, e] = keys[j + 1];
+    return lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0))))); });
+}
+// his battle stance: feet wide, hips low, both hands on the hilt, blade angled up at the enemy
+const GUARD = pz({ hy: 3, lean: .14, chest: .06, fl: [.6, 1.0], bl: [-.65, .4], fa: [1.2, .55], ba: [1.05, .75], sword: -.85 });
+const J1_WIND = pz({ hx: -1, hy: 4, lean: -.1, chest: -.4, fl: [.6, 1.05], bl: [-.75, .45], fa: [2.6, .6], ba: [2.3, .8], sword: -2.45 });
+const J1_FOLLOW = pz({ hx: 2, hy: 4, lean: .6, chest: .5, fl: [1.1, 1.25], bl: [-1.1, .1], fa: [1.0, .2], sword: 1.3, ba: [.6, .2], hat: 1 });
+const J1_TAIL = [
+  [.16, pz({ hx: 2, hy: 3, lean: .45, chest: .35, fl: [1.0, 1.1], bl: [-1.0, .1], fa: [1.8, .1], sword: .1, ba: [1.2, .3], hat: 1, flutter: 1 }), lin],
+  [.22, J1_FOLLOW],
+  [.36, pz({ ...J1_FOLLOW, lean: .56, chest: .46 })],
+  [.5, GUARD]];
+const LUNGE = pz({ hx: 3, hy: 2, lean: .55, fl: [1.0, .9], bl: [-.95, .1] });
+
+
+function at(keys, t) {
+  if (t <= keys[0][0]) return keys[0][1];
+  let j = 0; while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+  const [t0, a] = keys[j], [t1, b, e] = keys[j + 1];
+  return lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0)))));
+}
+const hold = k => 0;   // easing that stays on the first pose until the next key: a hard cut, no in-betweens
+const CY = '#6ff3e4', CY2 = '#b8fff6', WH = '#ffffff';
+const rr = (a, b) => a + Math.random() * (b - a), sgn = () => Math.random() < .5 ? -1 : 1;
+
+// ---------- drawing a rig figure (ronin or enemy) ----------
+const ENEMY_RC = { K: '#3a2e31', D: '#5a4a4e', E: '#ff5a4a', W: '#cfd4d6', S: '#7d868e', s: '#3a3033' };
+const off = document.createElement('canvas'); off.width = off.height = 48; const og = off.getContext('2d', { willReadFrequently: true });
+const tint = document.createElement('canvas'); tint.width = tint.height = 48; const tg = tint.getContext('2d');
+function paint(pose, enemy) {
+  og.clearRect(0, 0, 48, 48);
+  if (enemy) { const saved = { ...RC }; Object.assign(RC, ENEMY_RC); rig(og, 0, { ...pose, bare: true }); Object.assign(RC, saved); }
+  else rig(og, 0, pose);
+  return off;
+}
+// painted poses are cached: a walk cycle or a held pose is painted once, not every frame
+const PCACHE = new Map();
+function paintC(pose, enemy, W) {
+  let k = (enemy ? 'e' : 'r') + (W || '');
+  for (const key in pose) { const v = pose[key]; k += '|' + (Array.isArray(v) ? v.map(n => n.toFixed(2)).join(',') : typeof v === 'number' ? v.toFixed(2) : v); }
+  let c = PCACHE.get(k);
+  if (!c) { const saved = RC.W; if (W) RC.W = W; paint(pose, enemy); RC.W = saved;
+    c = document.createElement('canvas'); c.width = c.height = 48; c.getContext('2d').drawImage(off, 0, 0);
+    if (PCACHE.size > 900) PCACHE.delete(PCACHE.keys().next().value); PCACHE.set(k, c); }
+  return c;
+}
+function figure(g, R, alpha = 1) {
+  let img = paintC(R.pose, R.enemy, R.W);
+  if (R.col) { tg.clearRect(0, 0, 48, 48); tg.drawImage(img, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = R.col; tg.fillRect(0, 0, 48, 48); tg.globalCompositeOperation = 'source-over'; img = tint; }
+  g.save(); g.globalAlpha *= alpha; g.translate(Math.round(R.x), Math.round(R.y - (R.z || 0))); if (R.face < 0) g.scale(-1, 1);
+  if (R.glitch) { for (let y = 0; y < 48;) { const h = 1 + (Math.random() * 3 | 0), o = Math.random() < R.glitch ? Math.round(rr(-5, 5) * R.glitch) : 0; g.drawImage(img, 0, y, 48, h, -24 + o, y - 40, 48, h); y += h; } }
+  else g.drawImage(img, -24, -40);
+  g.restore();
+}
+const ronin = figure;   // the effects code draws ghosts through this name
+function withShadow(g, R) {
+  g.save(); g.globalAlpha = .17; g.translate(0, 2 * R.y + 1); g.scale(1, -1); figure(g, { ...R, glitch: 0, col: R.flash ? null : R.col }); g.restore();
+  g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(Math.round(R.x) - 5, Math.round(R.y) + 1, 10, 1);
+  figure(g, R.flash ? { ...R, col: WH } : R);
+}
+
+// ---------- pieces: the enemy cut apart along lines, each chunk tumbling and falling ----------
+function pixelsOf(E) {
+  const img = paint(E.pose, true), d = og.getImageData(0, 0, 48, 48).data, out = [];
+  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) { const i = (y * 48 + x) * 4; if (d[i + 3] < 10) continue;
+    out.push([E.x + E.face * (x - 24) + (E.face < 0 ? -1 : 0), E.y - (E.z || 0) + (y - 40), `rgb(${d[i]},${d[i + 1]},${d[i + 2]})`]); }
+  return out;
+}
+const side = (L, x, y) => (L[2] - L[0]) * (y - L[1]) - (L[3] - L[1]) * (x - L[0]) > 0 ? 1 : 0;
+function toPieces(pts, lines, floorY, push) {
+  const groups = new Map();
+  for (const p of pts) { const k = lines.map(L => side(L, p[0], p[1])).join(''); (groups.get(k) || groups.set(k, []).get(k)).push(p); }
+  const out = [];
+  for (const g of groups.values()) { if (g.length < 3) continue;
+    const cx = g.reduce((s, p) => s + p[0], 0) / g.length, cy = g.reduce((s, p) => s + p[1], 0) / g.length;
+    const P = { pts: g.map(p => [p[0] - cx, p[1] - cy, p[2]]), x: cx, fy: floorY, z: floorY - cy, vx: 0, vy: 0, vz: 0, a: 0, va: 0, rest: 0, life: 9 };
+    push(P, cx, cy); out.push(P); }
+  return out;
+}
+function splitPiece(S, P, L, kick) {   // cut an airborne chunk in two along a world line
+  const pts = P.pts.map(([dx, dy, c]) => { const ca = Math.cos(P.a), sa = Math.sin(P.a); return [P.x + dx * ca - dy * sa, P.fy - P.z + dx * sa + dy * ca, c]; });
+  const i = S.pieces.indexOf(P); if (i >= 0) S.pieces.splice(i, 1);
+  toPieces(pts, [L], P.fy, (Q, cx, cy) => { const s = side(L, cx, cy) ? 1 : -1; Q.vx = P.vx + s * kick * .6 + rr(-10, 10); Q.vz = P.vz + rr(-20, 30); Q.va = P.va + s * rr(4, 9); S.pieces.push(Q); });
+}
+function updatePieces(S, dt) {
+  for (const P of S.pieces) {
+    if (P.script) { P.st = (P.st || 0) + dt; const o = P.script(P.st); P.x = P.x0 + o.dx; P.a = o.a;
+      const low = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
+      P.z = Math.max(low, (P.z0 + (o.dz || 0)));
+      if (o.done) P.life -= dt; continue; }
+    if (P.rest < 1) { P.x += P.vx * dt; P.z += P.vz * dt; P.vz -= 320 * dt; P.a += P.va * dt;
+      if (P.maxA != null && Math.abs(P.a) > P.maxA) { P.a = Math.sign(P.a) * P.maxA; P.va = 0; }
+      const low = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
+      if (P.z - low <= 0 && P.vz < 0) { P.z = low; P.vz = -P.vz * .2; P.vx *= .45; P.va *= .4; if (Math.abs(P.vz) < 18) { P.vz = 0; P.rest += .5; } } }
+    else P.life -= dt;
+  }
+  for (let i = S.pieces.length - 1; i >= 0; i--) if (S.pieces[i].life <= 0) S.pieces.splice(i, 1);
+}
+function drawPieces(g, S) {
+  for (const P of S.pieces) { const ca = Math.cos(P.a), sa = Math.sin(P.a); g.globalAlpha = Math.min(1, P.life * 2);
+    for (const [dx, dy, c] of P.pts) { g.fillStyle = c; g.fillRect(Math.round(P.x + dx * ca - dy * sa), Math.round(P.fy - P.z + dx * sa + dy * ca), 1, 1); } }
+  g.globalAlpha = 1;
+}
+function shatter(S, E, lines, push) { S.pieces.push(...toPieces(pixelsOf(E), lines, E.y, push)); E.gone = true; }
+
+// ---------- per-scene effects ----------
+function FX() { return { sparks: [], frags: [], zaps: [], cuts: [], rings: [], cres: [], ghosts: [], cracks: [], dust: [] }; }
+function line(out, x0, y0, x1, y1) { if (!isFinite(x0 + y0 + x1 + y1)) { console.log('BADLINE', new Error().stack.split('\n').slice(1, 4).join(' | ')); return; } x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+  const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy;
+  for (;;) { out.push(x0, y0); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } } }
+function bolt(x0, y0, x1, y1, jit) { const out = [], L = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / L, ny = (x1 - x0) / L, n = Math.max(2, Math.round(L / 4)); let px = x0, py = y0;
+  for (let i = 1; i <= n; i++) { const t = i / n, o = i === n ? 0 : sgn() * rr(1, jit); const qx = x0 + (x1 - x0) * t + nx * o, qy = y0 + (y1 - y0) * t + ny * o; line(out, px, py, qx, qy); px = qx; py = qy; } return out; }
+const F = {
+  spark(S, x, y, vx, vy, life, col, streak) { S.fx.sparks.push({ x, y, vx, vy, life, max: life, col, streak }); },
+  burst(S, x, y, n, sp = 140) { for (let i = 0; i < n; i++) { const a = rr(0, 6.28), v = rr(sp * .5, sp); F.spark(S, x, y, Math.cos(a) * v, Math.sin(a) * v * .7, rr(.1, .22), [WH, CY2, CY][i % 3], true); } },
+  slivers(S, x, y, n, spread = 8) { for (let i = 0; i < n; i++) { const life = rr(.5, .9); S.fx.frags.push({ x: x + rr(-spread, spread), y: y - rr(0, 16), w: 1 + (Math.random() * 3 | 0), col: [CY, CY2, WH, '#0d1012'][i % 4], vx: rr(-6, 6), vy: rr(-12, -2), life, max: life }); } },
+  speed(S, x0, x1, y, n) { for (let i = 0; i < n; i++) { const life = rr(.07, .15); S.fx.frags.push({ x: rr(Math.min(x0, x1), Math.max(x0, x1)), y: y - rr(2, 24), w: 4 + (Math.random() * 10 | 0), col: i % 3 ? WH : CY2, vx: Math.sign(x1 - x0) * rr(20, 60), vy: 0, life, max: life }); } },
+  zap(S, x0, y0, x1, y1, life, jit = 2, col = CY) { S.fx.zaps.push({ x0, y0, x1, y1, life, max: life, jit, col, pts: bolt(x0, y0, x1, y1, jit), tick: 0 }); },
+  cut(S, x0, y0, x1, y1, life) { const pts = []; line(pts, x0, y0, x1, y1); S.fx.cuts.push({ pts, life, max: life }); },
+  ring(S, x, y, rx, ry, life, grow = 0, col = WH) { S.fx.rings.push({ x, y, rx, ry, life, max: life, grow, col }); },
+  cres(S, x, y, face, R, rot, flip, life = .2) { S.fx.cres.push({ x, y, face, R, rot, flip, life, max: life }); },
+  ghost(S, R, col = CY, life = .22) { S.fx.ghosts.push({ R: { ...R, pose: R.pose, col }, life, max: life }); },
+  crack(S, x, y) { for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + rr(-.3, .3), out = []; let px = x, py = y;
+    for (let k = 0; k < 3; k++) { const nx = px + Math.cos(a) * rr(4, 7), ny = py + Math.sin(a) * rr(2, 3); line(out, px, py, nx, ny); px = nx; py = ny; } S.fx.cracks.push({ pts: out, life: 1, max: 1 }); } },
+  dust(S, x, y, n) { for (let i = 0; i < n; i++) F.spark(S, x + rr(-5, 5), y, rr(-60, 60), -rr(4, 16), rr(.3, .5), '#8f9692'); },
+  hit(S, E, stop = .06, shake = 1 / 60) { E.flashT = .05; S.stop = Math.max(S.stop, stop); S.shake = Math.max(S.shake, shake); },
+};
+function updateFx(S, dt) {
+  const L = S.fx;
+  for (const q of L.sparks) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 40 * dt; q.life -= dt; }
+  for (const q of L.frags) { q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; q.on = Math.random() < .35 + .6 * q.life / q.max; }
+  for (const z of L.zaps) { z.life -= dt; if (--z.tick <= 0) { z.pts = bolt(z.x0, z.y0, z.x1, z.y1, z.jit); z.tick = 2; } z.on = Math.random() < .8; }
+  for (const k of ['cuts', 'rings', 'cres', 'ghosts', 'cracks']) for (const q of L[k]) q.life -= dt;
+  for (const k in L) for (let i = L[k].length - 1; i >= 0; i--) if (L[k][i].life <= 0) L[k].splice(i, 1);
+}
+function drawCres(g, c) {
+  const k = 1 - c.life / c.max, R = c.R, d = Math.max(1, 5 * (1 - k)), cs = Math.cos(c.rot), sn = Math.sin(c.rot);
+  g.globalAlpha = 1 - k * .6;
+  for (let py = -R - 1; py <= R + 1; py++) for (let px = -R - 1; px <= R + 1; px++) {
+    const lx0 = px * c.face, dy = py / .8, lx = lx0 * cs + dy * sn, ly = (-lx0 * sn + dy * cs) * c.flip, ro = Math.hypot(lx, ly);
+    if (ro > R || Math.hypot(lx + d, ly - d * .35) <= R) continue;
+    if (k > .4 && ((Math.atan2(ly, lx) * R / 5 + c.x) % 1 + 1) % 1 < (k - .4) * 1.6) continue;
+    g.fillStyle = R - ro < 1.2 ? CY : WH; g.fillRect(Math.round(c.x + px), Math.round(c.y + py), 1, 1);
+  }
+  g.globalAlpha = 1;
+}
+function drawFx(g, S, layer) {
+  const L = S.fx;
+  if (layer === 'floor') { for (const c of L.cracks) { g.globalAlpha = Math.min(1, c.life * 2); g.fillStyle = '#24282a'; for (let i = 0; i < c.pts.length; i += 2) g.fillRect(c.pts[i], c.pts[i + 1], 1, 1); } g.globalAlpha = 1; return; }
+  for (const gh of L.ghosts) ronin(g, gh.R, .55 * gh.life / gh.max);
+  for (const c of L.cuts) { const k = c.life / c.max; g.globalAlpha = Math.min(1, k * 1.5); g.fillStyle = k > .6 ? WH : CY2; for (let i = 0; i < c.pts.length; i += 2) g.fillRect(c.pts[i], c.pts[i + 1], 1, 1); }
+  g.globalAlpha = 1;
+  for (const c of L.cres) drawCres(g, c);
+  for (const r of L.rings) { const k = 1 - r.life / r.max, rx = r.rx + r.grow * k, ry = r.ry + r.grow * k * .5; g.globalAlpha = 1 - k; g.fillStyle = r.col;
+    for (let a = 0; a < 6.28; a += .5 / rx) g.fillRect(Math.round(r.x + Math.cos(a) * rx), Math.round(r.y + Math.sin(a) * ry), 1, 1); }
+  for (const z of L.zaps) { if (!z.on) continue; g.globalAlpha = Math.min(1, z.life / z.max * 1.8); g.fillStyle = z.col; for (let i = 0; i < z.pts.length; i += 2) g.fillRect(z.pts[i], z.pts[i + 1], 1, 1); }
+  for (const f of L.frags) { if (!f.on) continue; g.globalAlpha = Math.min(1, f.life / f.max * 1.5); g.fillStyle = f.col; g.fillRect(Math.round(f.x), Math.round(f.y), f.w, 1); }
+  for (const q of L.sparks) { g.globalAlpha = Math.min(1, q.life / q.max * 1.6); g.fillStyle = q.col; g.fillRect(Math.round(q.x), Math.round(q.y), 1, 1); if (q.streak) g.fillRect(Math.round(q.x - q.vx * .012), Math.round(q.y - q.vy * .012), 1, 1); }
+  g.globalAlpha = 1;
+}
+
+
+// ---------- poses ----------
+const IDLE = pz({ fa: [.15, .2] });
+const ROLL = (o) => pz(o);
+const EG = pz({ hy: 2, lean: .1, fl: [.4, .6], bl: [-.45, .3], fa: [1.2, .55], ba: [1.05, .75], sword: -.7 });   // enemy guard
+const EGUARD_BREATH = (t) => pz({ ...EG, breath: Math.sin(t * 3) * .5 + .5 });
+// each execution: side (where he lands), gap, dur, run(S, t, R, E). The ronin always ends sheathed and the kill lands on the click.
+const quickSheathe = (t0, from) => [[t0, from], [t0 + .08, pz({ hy: 2, lean: .2, fa: [1.45, .05], sword: 1.2, ba: [-.4, .3] }), lin],
+  [t0 + .2, pz({ hy: 1, lean: .12, fa: [1.0, .6], sheathing: true, ba: [.45, 1.1] })], [t0 + .34, pz({ hy: 1, lean: .06, fa: HILT, ba: [.3, 1.0] })], [t0 + .6, IDLE]];
+
+// ================= ITEMS =================
+// ---------- a 3x5 pixel font for the HUD, prompts and banners ----------
+const FONT = { A: '.#.|#.#|###|#.#|#.#', B: '##.|#.#|##.|#.#|##.', C: '.##|#..|#..|#..|.##', D: '##.|#.#|#.#|#.#|##.', E: '###|#..|##.|#..|###', F: '###|#..|##.|#..|#..',
+  G: '.##|#..|#.#|#.#|.##', H: '#.#|#.#|###|#.#|#.#', I: '###|.#.|.#.|.#.|###', J: '..#|..#|..#|#.#|.#.', K: '#.#|#.#|##.|#.#|#.#', L: '#..|#..|#..|#..|###',
+  M: '#.#|###|###|#.#|#.#', N: '##.|#.#|#.#|#.#|#.#', O: '.#.|#.#|#.#|#.#|.#.', P: '##.|#.#|##.|#..|#..', Q: '.#.|#.#|#.#|##.|.##', R: '##.|#.#|##.|#.#|#.#',
+  S: '.##|#..|.#.|..#|##.', T: '###|.#.|.#.|.#.|.#.', U: '#.#|#.#|#.#|#.#|###', V: '#.#|#.#|#.#|#.#|.#.', W: '#.#|#.#|###|###|#.#', X: '#.#|#.#|.#.|#.#|#.#',
+  Y: '#.#|#.#|.#.|.#.|.#.', Z: '###|..#|.#.|#..|###', 0: '###|#.#|#.#|#.#|###', 1: '.#.|##.|.#.|.#.|###', 2: '##.|..#|.#.|#..|###', 3: '##.|..#|.#.|..#|##.',
+  4: '#.#|#.#|###|..#|..#', 5: '###|#..|##.|..#|##.', 6: '.##|#..|###|#.#|###', 7: '###|..#|.#.|.#.|.#.', 8: '###|#.#|###|#.#|###', 9: '###|#.#|###|..#|##.',
+  '+': '...|.#.|###|.#.|...', '-': '...|...|###|...|...', '·': '...|...|.#.|...|...', x: '...|#.#|.#.|#.#|...', '%': '#..|..#|.#.|#..|..#', ':': '...|.#.|...|.#.|...' };
+function textW(s, sc = 1) { let w = 0; for (const ch of s) w += (ch === ' ' ? 3 : 4) * sc; return Math.max(0, w - sc); }
+function text(g, s, x, y, col, sc = 1) { g.fillStyle = col; let cx = Math.round(x); y = Math.round(y);
+  for (const ch of s) { if (ch === ' ') { cx += 3 * sc; continue; } const f = FONT[ch] || FONT[ch.toUpperCase()];
+    if (f) f.split('|').forEach((r, ry) => { for (let rx = 0; rx < 3; rx++) if (r[rx] === '#') g.fillRect(cx + rx * sc, y + ry * sc, sc, sc); });
+    cx += 4 * sc; }
+  return cx - sc - x; }
+const textC = (g, s, cx, y, col, sc = 1) => text(g, s, Math.round(cx - textW(s, sc) / 2), y, col, sc);
+
+// ---------- sprites: strings of palette letters, drawn once to small canvases ----------
+const PAL = { K: '#0c0d11', k: '#1b1e25', D: '#2c323b', G: '#3b424c', g: '#565e66', L: '#7d868e', l: '#a9b1b6', W: '#e9eeee', w: '#ffffff',
+  C: '#6ff3e4', c: '#52e8d6', B: '#b8fff6', P: '#d6dad6', p: '#9aa09c' };
+function sprite(name, rows) {
+  const w = Math.max(...rows.map(r => r.length));
+  if (rows.some(r => r.length !== w)) console.warn('ragged sprite', name, rows.map(r => r.length).join(','));
+  const c = document.createElement('canvas'); c.width = w; c.height = rows.length; const g = c.getContext('2d'); const marks = [];
+  rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === 'x') { marks.push([x, y]); ch = 'G'; } if (PAL[ch]) { g.fillStyle = PAL[ch]; g.fillRect(x, y, 1, 1); } }));
+  return { c, w, h: rows.length, marks, rows, name };
+}
+function psprite(name, w, h, fn) { const rows = Array.from({ length: h }, () => Array(w).fill('.'));
+  fn((x, y, ch) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < w && y < h) rows[y][x] = ch; }, rows);
+  return sprite(name, rows.map(r => r.join(''))); }
+function disc(put, cx, cy, r, shade) { for (let y = 0; y < 40; y++) for (let x = 0; x < 40; x++) { const d = Math.hypot(x + .5 - cx, y + .5 - cy); if (d <= r) put(x, y, shade(d, x + .5 - cx, y + .5 - cy)); } }
+const TINT = new Map();
+function tinted(s, col) { const k = s.name + col; let c = TINT.get(k); if (c) return c;
+  c = document.createElement('canvas'); c.width = s.w; c.height = s.h; const g = c.getContext('2d'); g.drawImage(s.c, 0, 0);
+  g.globalCompositeOperation = 'source-in'; g.fillStyle = col; g.fillRect(0, 0, s.w, s.h); TINT.set(k, c); return c; }
+// draw a world sprite standing on the floor at (x, y): its reflection in the polished floor, a contact shadow, then the sprite (z lifts it)
+function drawS(g, s, x, y, o = {}) {
+  const z = o.z || 0, x0 = Math.round(x - Math.floor(s.w / 2)), yb = Math.round(y), img = o.tint ? tinted(s, o.tint) : s.c;
+  if (o.refl !== false) { g.save(); g.globalAlpha = .17 * (o.alpha ?? 1) * Math.max(0, 1 - z / 14); g.translate(0, 2 * yb); g.scale(1, -1); g.drawImage(s.c, x0, yb - s.h - Math.round(z)); g.restore(); }
+  if (o.shadow !== false) { const sw = Math.max(2, s.w - 2 - Math.round(z / 2)); g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(Math.round(x - sw / 2), yb, sw, 1); }
+  g.save(); g.globalAlpha *= o.alpha ?? 1; g.drawImage(img, x0, yb - s.h - Math.round(z)); g.restore();
+  return { x0, y0: yb - s.h - Math.round(z) };
+}
+// a sprite's pixels as world points [x, y, colour], for pieces that fall
+function spritePts(s, x, y, keep) { const x0 = Math.round(x - Math.floor(s.w / 2)), y0 = Math.round(y) - s.h, out = [];
+  s.rows.forEach((r, ry) => [...r].forEach((ch, rx) => { if (keep(ch, rx, ry)) out.push([x0 + rx, y0 + ry, PAL[ch === 'x' ? 'G' : ch]]); })); return out; }
+
+// ---------- 16x16 inventory icons ----------
+const coinShade = (r) => (d, dx, dy) => d > r - 1 ? 'K' : dx + dy > 2.5 ? 'L' : dx + dy < -3.5 ? 'W' : 'l';
+const ICON = {
+  shrine: sprite('i-shrine', ['................', '......KKKK......', '....KKLLLLKK....', '..KKLggggggLKK..', 'KKLggggggggggLKK', '.KKKKKKKKKKKKKK.', '..KlKkkkkkkKlK..', '..KlKkkBBkkKlK..',
+    '..KlKkBCCBkKlK..', '..KLKkBCwBkKLK..', '..KLKkkCCkkKLK..', '..KLKkkkkkkKLK..', '.KKKKKKKKKKKKKK.', '.KllllllllllllK.', '.KggggggggggggK.', '.KKKKKKKKKKKKKK.']),
+  nodachi: sprite('i-nodachi', ['...............W', '..............Wl', '.............Wl.', '............Wl..', '...........Wl...', '..........Wl....', '.........Wl.....', '........Wl......',
+    '.......Wl.......', '...K..Wl........', '...KKLl.........', '....LLLK........', '...KgKKK........', '..KgKC..........', '.KgK.CC.........', '.KK...C.........']),
+  katana: sprite('i-katana', ['................', '..............W.', '.............Wl.', '............Wl..', '...........Wl...', '..........Wl....', '.........Wl.....', '........Wl......',
+    '.......Wl.......', '....K.Wl........', '....KLl.........', '.....LLK........', '....KgK.........', '...KgK..........', '..KgK...........', '..KK............']),
+  chest: sprite('i-chest', ['................', '................', '.KKKKKKKKKKKKKK.', '.KLLLLLPPLLLLLK.', '.KgggggPCgggggK.', '.KGGGGGPPGGGGGK.', '.KKKKKKPPKKKKKK.', '.KgggggPCgggggK.',
+    '.KgLgggPPgggLgK.', '.KgggggPCgggggK.', '.KGGGGGPPGGGGGK.', '.KLGGGGPPGGGGLK.', '.KggggggggggggK.', '.KKKKKKKKKKKKKK.', '..KK........KK..', '................']),
+  tablet: sprite('i-tablet', ['....KKKKKKKK....', '...KllllllllK...', '...KlgggggggK...', '...KlgCCgCggK...', '...KlggCgCCgK...', '...KlgggggggK...', '...KlgCgCCggK...', '...KlgCCgCggK...',
+    '...KlgggggggK...', '...KlggCCgCgK...', '...KlgCggCggK...', '...KlggggggGK...', '..KKGGGGGGGGKK..', '.KGGGGGGGGGGGGK.', '.KKKKKKKKKKKKKK.', '................']),
+  qi: psprite('i-qi', 16, 16, put => { disc(put, 8, 8, 5, d => d > 4.1 ? 'c' : d > 3 ? 'C' : d > 1.6 ? 'B' : 'w'); put(2, 3, 'B'); put(13, 12, 'B'); put(13, 3, 'c'); put(3, 13, 'c'); }),
+  rice: sprite('i-rice', ['................', '................', '.......KK.......', '......KWWK......', '.....KWwWWK.....', '.....KWWWWK.....', '....KWWWWWlK....', '....KWlWWWlK....',
+    '...KWWWWWlWlK...', '...KWWWWWWWlK...', '..KWWKKKKKWllK..', '..KWlKDDDKlllK..', '..KllKDDDKlllK..', '..KKKKKKKKKKKK..', '................', '................']),
+  mon: psprite('i-mon', 16, 16, put => { disc(put, 10.5, 6, 4.6, coinShade(4.6)); disc(put, 6.5, 9.5, 5.6, coinShade(5.6));
+    for (const [x, y] of [[6, 9], [7, 9], [6, 10], [7, 10]]) put(x, y, 'K'); put(5, 8, 'L'); put(8, 8, 'L'); put(3, 6, 'w'); }),
+  shard: sprite('i-shard', ['........K.......', '.......KBK......', '.......KBCK.....', '......KBwCK.....', '......KBwCcK....', '.....KBwBCcK....', '...KKBwBCCcK....', '.....KBBCCcK....',
+    '.....KBCCcK.....', '......KCccK.....', '....KKCcK.......', '......KcK.......', '.......K........', '................', '..B.........C...', '................']),
+  bomb: sprite('i-bomb', ['...........B....', '..........BwB...', '...........C....', '..........K.....', '.........K......', '......KKKK......', '....KKGGGGKK....', '...KGLgGGGGGK...',
+    '..KGLgGGGGGGGK..', '..KGgGGGGGGGGK..', '..KGCGCGCGCGGK..', '..KGGGGGGGGGGK..', '..KGGGGGGGGGDK..', '...KGGGGGGGDK...', '....KKGGGGKK....', '......KKKK......']),
+  talisman: sprite('i-talisman', ['.....KKKKKK.....', '.....KPPPPK.....', '.....KPPPCK.....', '.....KPPCPK.....', '.....KPCPPK.....', '.....KPCCCK.....', '.....KPPCPK.....', '.....KPCPPK.....',
+    '.....KCPPPK.....', '.....KPPPpK.....', '.....KPKKpK.....', '.....KPKKpK.....', '.....KPPPpK.....', '.....KPpPpK.....', '......KpKpK.....', '.......K.K......']),
+  whetstone: sprite('i-whet', ['................', '................', '..C.............', '.cB.............', '..c........KKK..', '.........KKlLLK.', '.......KKlLLLgK.', '.....KKlLLLLggK.',
+    '...KKlLLLLLggK..', '.KKlLLLLLLggK...', 'KlLLLLLLLggK....', 'KLLLLLLLggK.....', 'KggggggggK......', 'KKKKKKKKK.......', '................', '................']),
+  incense: sprite('i-incense', ['........l.......', '.......l....l...', '.......l...l....', '....l...l..l....', '....l..l....l...', '.....l.B...B....', '....B..C...C....', '....C..g...g....',
+    '....g..g...g....', '....g..g...g....', '..KKgKKgKKKgKK..', '.KLllllllllllLK.', '.KLLLLLLLLLLLLK.', '..KggggggggggK..', '...KKKKKKKKKK...', '................']),
+  bead: sprite('i-bead', ['................', '................', '......KKKK......', '.....KCBBCK.....', '....KCBwwBCK....', '....KCBwBCCcK...', '....KCCCCCCcK...', '....KcCCCCccK...',
+    '.....KccccccK...', '......KKKcccK...', '........KccK....', '.......KccK.....', '......KcKK......', '......KK........', '...B........B...', '................']),
+  mirror: psprite('i-mirror', 16, 16, put => { disc(put, 8, 7, 6.5, (d, dx, dy) => d > 5.6 ? 'K' : d > 4.6 ? 'L' : dx + dy < -2 ? 'W' : 'l');
+    for (const [x, y] of [[5, 2], [6, 3], [6, 4], [7, 5], [8, 6], [8, 7], [9, 8], [10, 9], [10, 10], [6, 7], [5, 8]]) put(x, y, 'K');
+    put(4, 4, 'C'); put(4, 5, 'C'); put(5, 3, 'B'); for (let y = 13; y < 16; y++) { put(7, y, 'g'); put(8, y, 'L'); put(6, y, 'K'); put(9, y, 'K'); } put(7, 15, 'K'); put(8, 15, 'K'); }),
+  bell: sprite('i-bell', ['.......KK.......', '.......KK.......', '......KggK......', '.....KgLLLK.....', '....KgLWLLLK....', '....KgLWLLLK....', '....KgLLLLLK....', '...KgLLLLLLgK...',
+    '...KgLLLLLLgK...', '..KllllllllllK..', '..KKKKKKKKKKKK..', '......KCCK......', '.......BB.......', '......KPPK......', '......KPPK......', '......KpPK......']),
+  tsuba: psprite('i-tsuba', 16, 16, (put, rows) => { disc(put, 8, 8, 7, (d, dx, dy) => d > 6.1 ? 'K' : d > 5.2 ? (dx + dy < 0 ? 'l' : 'L') : dx + dy < -3 ? 'g' : 'G');
+    for (let y = 5; y < 11; y++) { put(7, y, 'K'); put(8, y, y > 5 && y < 10 ? 'K' : 'D'); } put(4, 8, 'K'); put(11, 8, 'K');
+    put(8, 2, 'C'); put(8, 13, 'C'); put(2, 8, 'C'); put(13, 8, 'C');
+    // the crack: the right half drops a pixel
+    const crack = [9, 10, 9, 10, 11, 10, 9, 10, 11, 10, 9, 10, 9, 10, 9, 9];
+    for (let y = 15; y >= 1; y--) { const cx = crack[y]; for (let x = 15; x > cx; x--) rows[y][x] = rows[y - 1][x]; rows[y][cx] = rows[y][cx] === '.' ? '.' : 'K'; } }),
+  crane: sprite('i-crane', ['................', '........K.......', '.......KPK......', '......KPPpK.....', 'K.....KPPpK.....', 'PK...KPPPPpK..K.', 'KPK..KPPPPpK.KP.', '..PK.KPPPPpKKPK.',
+    '...PKPPPPPPpPK..', '....PPPPPPPPpK..', '....KpPPPPPppK..', '.....KppppppK...', '......KKKKKK....', '................', '................', '................']),
+  knot: sprite('i-knot', ['................', '.....KKKK.......', '....KLCLLK......', '...KLK..KLK.....', '...KCK..KCK.....', '...KLK..KLK.....', '....KLLCLK......', '.....KLLK.......',
+    '....KLKKLK......', '...KLK..KLK.....', '..KCK....KCK....', '..KLK.....KLK...', '..KLK......KLK..', '..KCK.......KC..', '..KK.........K..', '................']),
+};
+
+// ---------- world sprites (game scale) ----------
+const WS = {
+  shrine: sprite('w-shrine', ['......KKK......', '....KKLLLKK....', '..KKLgggggLKK..', 'KKLgggggggggLKK', '.KKKKKKKKKKKKK.', '..KlKkkkkkKlK..', '..KlKkkkkkKlK..', '..KLKkkkkkKLK..',
+    '..KLKkkkkkKLK..', '.KKKKKKKKKKKKK.', '.KlllllllllllK.', '.KgggggggggggK.', '.KKKKKKKKKKKKK.']),
+  blade: sprite('w-blade', ['......K..', '.....KgK.', '.....KgK.', '.....KgK.', '....KLLLK', '.....lW..', '.....lW..', '.....lW..', '....lW...', '....lW...', '....lW...',
+    '....lW...', '...lW....', '...lW....', '...lW....', '..KlWK...', '.KgGGgK..', 'KgGGGGgK.']),
+  mound: sprite('w-mound', ['..KkkK...', '.KgGGgK..', 'KgGGGGgK.']),
+  chest: sprite('w-chest', ['.KKKKKKKKKKKK.', 'KLLLLLPPLLLLLK', 'KgggggPCgggggK', 'KKKKKKPPKKKKKK', 'KgggggPCgggggK', 'KgLgggPPgggLgK', 'KgggggPCgggggK', 'KGGGGGPPGGGGGK',
+    'KggggggggggggK', 'KKKKKKKKKKKKKK', '.KK........KK.']),
+  tablet: sprite('w-tablet', ['...KKKKKKK...', '..KlllllllK..', '.KlggggggggK.', '.KlgxxgxgggK.', '.KlggxgxxggK.', '.KlggggggggK.', '.KlgxgxxgggK.', '.KlgxxgxgggK.', '.KlggggggggK.',
+    '.KlggxxgxggK.', '.KlgxggxgggK.', '.KlggggggggK.', '.KlggggggGGK.', 'KKGGGGGGGGGKK', 'KGGGGGGGGGGGK', 'KKKKKKKKKKKKK']),
+  rice: sprite('w-rice', ['...K...', '..KWK..', '.KWwWK.', '.KWWlK.', 'KWKDKlK', 'KKKKKKK']),
+  coin: sprite('w-coin', ['.KKK.', 'KlWlK', 'KlKLK', 'KllLK', '.KKK.']),
+  shard: sprite('w-shard', ['.K.', 'KBK', 'KwC', 'KBC', 'KCc', '.Kc', '..K']),
+  bomb: sprite('w-bomb', ['....B.', '...K..', '..K...', '.KKK..', 'KLgGK.', 'KGGGK.', '.KKK..']),
+  talisman: sprite('w-talisman', ['KKK', 'KPK', 'KCK', 'KPK', 'KCK', 'KpK', 'KKK']),
+  whet: sprite('w-whet', ['.KKKKK.', 'KlLLLgK', 'KKKKKKK']),
+  incense: sprite('w-incense', ['KKKKKKK.', 'KggggggC', 'KKKKKKK.']),
+  bead: sprite('w-bead', ['.KKK.', 'KCBCK', 'KBwCK', 'KCCcK', '.KKcK', '...K.']),
+  mirror: psprite('w-mirror', 7, 8, put => { disc(put, 3.5, 3.5, 3.5, (d, dx, dy) => d > 2.6 ? 'K' : dx + dy < -1 ? 'W' : 'l'); put(3, 2, 'K'); put(4, 3, 'K'); put(2, 4, 'C'); put(3, 6, 'K'); put(3, 7, 'g'); }),
+  bell: sprite('w-bell', ['..K..', '.KLK.', '.KWK.', 'KLLLK', 'KKKKK', '..C..', '..P..']),
+  tsuba: psprite('w-tsuba', 7, 7, put => { disc(put, 3.5, 3.5, 3.5, (d, dx, dy) => d > 2.6 ? 'K' : dx + dy < 0 ? 'l' : 'L'); put(3, 2, 'K'); put(3, 3, 'K'); put(3, 4, 'K'); put(4, 5, 'K'); put(3, 0, 'C'); }),
+  crane: sprite('w-crane', ['...K...', 'K.KPK.K', 'PKPPpKP', '.KPPPK.', '..KKK..']),
+  crane2: sprite('w-crane2', ['.......', 'K.....K', 'PKKPKKP', '.KPPPK.', '..KKK..']),
+  knot: sprite('w-knot', ['.KKK.', 'KC.CK', '.KLK.', 'KLKLK', 'C...C', 'K...K']),
+};
+
+// ---------- walking ----------
+const WALK = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);
+  return pz({ lean: .1, hy: Math.round(.5 - .5 * Math.cos(2 * a)), fl: [.5 * s, .15 + .6 * Math.max(0, c)], bl: [-.5 * s, .15 + .6 * Math.max(0, -c)],
+    fa: HILT, ba: [.35 * s - .15, .35], flutter: i % 4 < 2 ? 0 : 1 }); });
+const walkPose = x => WALK[((Math.floor(x / 2.5) % 8) + 8) % 8];
+const STAND = pz({ fa: HILT, ba: [-.1, .3] });
+const standB = t => pz({ ...STAND, breath: Math.sin(t * 3) * .5 + .5 });
+const clamp01 = k => Math.min(1, Math.max(0, k));
+function handOf(R, back) { const p = R.pose, lean = p.lean, ch = p.lean + p.chest;
+  const w = [p.hx + Math.sin(lean) * 4, -11 + p.hy - Math.cos(lean) * 4], s = [w[0] + Math.sin(ch) * 3, w[1] - Math.cos(ch) * 3 - p.breath];
+  const [sh, el] = back ? p.ba : p.fa, e = [s[0] + Math.sin(sh) * 4, s[1] + Math.cos(sh) * 4], h = [e[0] + Math.sin(sh + el) * 4, e[1] + Math.cos(sh + el) * 4];
+  return [R.x + R.face * h[0], R.y - (R.z || 0) + h[1]]; }
+// the blade's own pixels for a pose, found by painting it in a marker colour
+const BLADE = new Map();
+function bladePts(R) { const key = JSON.stringify(R.pose) + R.face; let pts = BLADE.get(key);
+  if (!pts) { const saved = RC.W; RC.W = '#ff00fe'; paint(R.pose, false); RC.W = saved; const d = og.getImageData(0, 0, 48, 48).data; pts = [];
+    for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) { const i = (y * 48 + x) * 4; if (d[i] === 255 && d[i + 1] === 0 && d[i + 2] === 254) pts.push([R.face * (x - 24) + (R.face < 0 ? -1 : 0), y - 40]); }
+    pts.sort((a, b) => R.face * (a[0] - b[0]) || b[1] - a[1]); BLADE.set(key, pts); }
+  return pts.map(([dx, dy]) => [Math.round(R.x) + dx, Math.round(R.y - (R.z || 0)) + dy]); }
+
+// ---------- HUD pieces ----------
+function panel(g, x, y, w, h) { g.fillStyle = 'rgba(12,13,17,.82)'; g.fillRect(x, y, w, h); g.fillStyle = '#2c323b';
+  g.fillRect(x, y, w, 1); g.fillRect(x, y + h - 1, w, 1); g.fillRect(x, y, 1, h); g.fillRect(x + w - 1, y, 1, h); }
+function meter(g, x, y, w, h, k, col, notches, flash) {
+  g.fillStyle = '#0c0d11'; g.fillRect(x - 1, y - 1, w + 2, h + 2); g.fillStyle = '#23272d'; g.fillRect(x, y, w, h);
+  const f = Math.round(w * clamp01(k)); g.fillStyle = flash > 0 ? WH : col; g.fillRect(x, y, f, h);
+  if (f > 0 && f < w) { g.fillStyle = WH; g.fillRect(x + f - 1, y, 1, h); }
+  g.fillStyle = '#0c0d11'; for (let i = 1; i < notches; i++) g.fillRect(x + Math.round(w * i / notches), y, 1, h); }
+function slot(g, x, y, s, kind, icon, o = {}) {
+  g.fillStyle = 'rgba(12,13,17,.88)'; g.fillRect(x, y, s, s);
+  const fc = o.flash > 0 ? WH : kind === 'charm' ? '#3b424c' : kind === 'weapon' ? '#7d868e' : '#565e66';
+  g.fillStyle = fc; g.fillRect(x, y, s, 1); g.fillRect(x, y + s - 1, s, 1); g.fillRect(x, y, 1, s); g.fillRect(x + s - 1, y, 1, s);
+  if (kind === 'charm') { g.fillStyle = '#7d868e'; const m = Math.floor(s / 2); g.fillRect(x + m - 1, y - 1, 2, 1); g.fillRect(x + m - 1, y + s, 2, 1); g.fillRect(x - 1, y + m - 1, 1, 2); g.fillRect(x + s, y + m - 1, 1, 2); }
+  if (icon) { g.save(); g.globalAlpha = o.dim ? .35 : 1; g.drawImage(icon.c, x + Math.floor((s - 16) / 2), y + Math.floor((s - 16) / 2)); g.restore(); }
+  if (o.cd > 0) { g.fillStyle = 'rgba(12,13,17,.7)'; const h = Math.round((s - 2) * o.cd); g.fillRect(x + 1, y + 1 + (s - 2 - h), s - 2, h); }
+  if (o.flash > 0) { g.fillStyle = `rgba(255,255,255,${.5 * o.flash})`; g.fillRect(x + 1, y + 1, s - 2, s - 2); }
+  if (o.key) text(g, o.key, x + 2, y + 2, '#7d868e');
+  if (o.count != null) { const tw = textW(String(o.count)); g.fillStyle = '#0c0d11'; g.fillRect(x + s - tw - 3, y + s - 7, tw + 2, 6); text(g, String(o.count), x + s - tw - 2, y + s - 6, WH); }
+}
+// the lock-on: four cyan corners that snap in from 8px out, then breathe by one pixel
+function brackets(g, b, c, gone) {
+  if (gone > .06) return;
+  const p = c < .12 ? Math.round((1 - c / .12) * 8) : Math.round(Math.sin(c * 6) * .6 + .6);
+  g.fillStyle = gone > 0 ? WH : CY;
+  const x0 = b.x0 - p, x1 = b.x1 + p, y0 = b.y0 - p, y1 = b.y1 + p;
+  for (const [x, y, sx, sy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) {
+    g.fillRect(Math.round(sx > 0 ? x : x - 2), Math.round(y), 3, 1); g.fillRect(Math.round(x), Math.round(sy > 0 ? y : y - 2), 1, 3); } }
+// the prompt: a key cap and the verb, above the item
+function prompt(g, cx, y, word, c, pressed) {
+  if (c < 0) return; const w = 7 + 3 + textW(word) + 3, x0 = Math.round(cx - w / 2), yy = Math.round(y + (c < .08 ? 2 : 0));
+  g.save(); if (c < .08) g.globalAlpha = .5;
+  panel(g, x0, yy, w, 9);
+  g.fillStyle = pressed ? CY : '#e9eeee'; g.fillRect(x0 + 1, yy + 1, 7, 7); text(g, 'E', x0 + 3, yy + 2, '#0c0d11');
+  text(g, word, x0 + 10, yy + 2, pressed ? CY : '#e9eeee'); g.restore(); }
+// a banner: a small cyan label over a big white name, rules drawing out to each side
+function banner(g, cx, y, small, big, c, dur, sc = 2) {
+  if (c < 0 || c > dur) return;
+  const a = c < .1 ? c / .1 : c > dur - .25 ? (dur - c) / .25 : 1, bw = textW(big, sc), rl = Math.round(Math.min(1, c / .25) * 18);
+  g.save(); g.globalAlpha = a;
+  textC(g, small, cx, y, CY); textC(g, big, cx, y + 8, WH, sc);
+  g.fillStyle = CY; g.fillRect(Math.round(cx - bw / 2 - 5 - rl), y + 8 + Math.round(5 * sc / 2) - 1, rl, 1); g.fillRect(Math.round(cx + bw / 2 + 5), y + 8 + Math.round(5 * sc / 2) - 1, rl, 1);
+  g.restore(); }
+function glint(g, x, y, r = 2, col = WH) { g.fillStyle = col; g.fillRect(x, y, 1, 1); for (let i = 1; i <= r; i++) { g.fillRect(x - i, y, 1, 1); g.fillRect(x + i, y, 1, 1); g.fillRect(x, y - i, 1, 1); g.fillRect(x, y + i, 1, 1); } }
+function plusMark(g, x, y, col) { g.fillStyle = col; g.fillRect(x - 1, y, 3, 1); g.fillRect(x, y - 1, 1, 3); }
+
+// ---------- small pickups: sit and idle, then fly to him when he is close ----------
+function drawSmall(S, g, it, t) {
+  const ph = it.ph || 0;
+  if (it.got) return;
+  if (it.pull) { const x = Math.round(it.sx), y = Math.round(it.sy);
+    g.save(); g.globalAlpha = .5; g.fillStyle = it.kind === 'rice' || it.kind === 'coin' ? WH : CY; g.fillRect(Math.round(it.px ?? x), Math.round(it.py ?? y), 1, 1); g.restore();
+    if (it.kind === 'qi') { g.fillStyle = CY; g.fillRect(x - 1, y, 3, 1); g.fillRect(x, y - 1, 1, 3); g.fillStyle = WH; g.fillRect(x, y, 1, 1); }
+    else g.drawImage(WS[it.kind].c, x - Math.floor(WS[it.kind].w / 2), y - Math.floor(WS[it.kind].h / 2));
+    return; }
+  if (it.kind === 'qi') {   // a mote: a cross of cyan with a white heart, bobbing, with a ring that pulses out
+    const z = 4 + Math.round(Math.sin(t * 3 + ph) * 1), x = Math.round(it.x), y = Math.round(it.y) - z;
+    g.fillStyle = 'rgba(18,22,22,.35)'; g.fillRect(x - 1, Math.round(it.y), 3, 1);
+    g.save(); g.globalAlpha = .17; g.fillStyle = CY; g.fillRect(x, Math.round(it.y) + z, 1, 1); g.restore();
+    g.fillStyle = CY; g.fillRect(x - 1, y, 3, 1); g.fillRect(x, y - 1, 1, 3); g.fillStyle = WH; g.fillRect(x, y, 1, 1);
+    const k = ((t + ph) % 1.4) / .5; if (k < 1) { g.save(); g.globalAlpha = 1 - k; g.fillStyle = CY2; const r = 2 + Math.round(k * 2);
+      g.fillRect(x - r, y, 1, 1); g.fillRect(x + r, y, 1, 1); g.fillRect(x, y - r, 1, 1); g.fillRect(x, y + r, 1, 1); g.restore(); }
+    return; }
+  const s = WS[it.kind];
+  if (it.kind === 'shard') {   // it will not sit still: a slice of it slips sideways now and then
+    const x0 = Math.round(it.x - 1), z = 2 + Math.round(Math.sin(t * 2.2 + ph)), y0 = Math.round(it.y) - s.h - z;
+    g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(x0, Math.round(it.y), 3, 1);
+    const jit = (Math.floor((t + ph) * 12) % 9) === 0;
+    for (let r = 0; r < s.h; r++) g.drawImage(s.c, 0, r, s.w, 1, x0 + (jit && r > 2 && r < 5 ? sgn() : 0), y0 + r, s.w, 1);
+    if (Math.floor((t + ph) * 8) % 7 === 0) { g.fillStyle = CY2; g.fillRect(x0 + 4, y0 + 2, 2, 1); }
+    return; }
+  drawS(g, s, it.x, it.y);
+  const k = ((t + ph) % 1.8);   // a glint that crosses it
+  if (k < .12) { const gx = Math.round(it.x - Math.floor(s.w / 2)) + 1 + Math.round(k / .12 * (s.w - 2)), gy = Math.round(it.y) - s.h + 1;
+    g.fillStyle = WH; g.fillRect(gx, gy, 1, 1); if (k > .04 && k < .08) glint(g, gx, gy - 1, 1, WH); }
+}
+function pickupSim(S, it, R, dt, radius, onGet) {
+  if (it.got) return;
+  if (!it.pull) { if (!R.hidden && Math.hypot(R.x - it.x, (R.y - it.y) * 1.6) < radius) { it.pull = true; it.sx = it.x; it.sy = it.y - (it.kind === 'qi' ? 4 : 3); it.v = 10; it.age = 0; } else return; }
+  it.age += dt; it.v += 700 * dt; it.px = it.sx; it.py = it.sy;
+  const tx = R.x + 1, ty = R.y - 13, dx = tx - it.sx, dy = ty - it.sy, d = Math.hypot(dx, dy);
+  if (d < 3 || d < it.v * dt) { it.got = true; onGet(it); return; }
+  it.sx += dx / d * it.v * dt; it.sy += dy / d * it.v * dt - (it.age < .1 ? 40 * dt : 0);
+}
+function collectFx(S, it, R) {
+  const x = R.x + 1, y = R.y - 13;
+  if (it.kind === 'qi') { F.ring(S, x, y, 2, 2, .18, 5, CY); for (let i = 0; i < 3; i++) F.spark(S, x, y, rr(-50, 50), rr(-60, -10), .15, i % 2 ? CY : CY2, true); }
+  if (it.kind === 'rice') { S.st.pops.push({ x: x - 3, y: y - 2, t: 0, col: WH, plus: true }, { x: x + 4, y: y + 1, t: -.08, col: WH, plus: true }); F.ring(S, x, y, 3, 3, .2, 4, WH); }
+  if (it.kind === 'coin') { S.st.pops.push({ x, y: y - 4, t: 0, col: WH, txt: '+1' }); S.st.glints.push({ x: Math.round(x), y: Math.round(y), t: 0 }); }
+  if (it.kind === 'shard') { F.slivers(S, x, R.y, 8, 3); S.st.glitchT = .12; S.st.pops.push({ x, y: y - 4, t: 0, col: CY, txt: '+1' }); }
+}
+function drawPops(S, g, dt) {
+  for (const p of S.st.pops) { p.t += dt; if (p.t < 0 || p.t > .55) continue; const yy = Math.round(p.y - p.t * 22); g.save(); g.globalAlpha = p.t > .35 ? 1 - (p.t - .35) / .2 : 1;
+    if (p.plus) plusMark(g, Math.round(p.x), yy, p.col); else textC(g, p.txt, p.x, yy, p.col); g.restore(); }
+  for (const q of S.st.glints) { q.t += dt; if (q.t < .1) glint(g, q.x, q.y, q.t < .05 ? 2 : 1, WH); }
+}
+
+// ---------- scenes and cards ----------
+function floorTex(w, h, seed) { const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d'); let r = seed;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  g.fillStyle = '#474c4a'; g.fillRect(0, 0, w, h);
+  for (let i = 0; i < w * h / 40; i++) { g.fillStyle = rnd() < .5 ? '#434846' : '#4b504e'; g.fillRect(rnd() * w | 0, rnd() * h | 0, 2, 1); }
+  for (let i = 0; i < w * h / 1400; i++) { g.fillStyle = '#3f4442'; const x = rnd() * w | 0, y = rnd() * h | 0; g.fillRect(x, y, 1, 1); g.fillRect(x + 1, y, 1, 1); if (rnd() < .5) g.fillRect(x + 2, y + 1, 1, 1); }
+  return c; }
+const scenes = [];
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.target._S) e.target._S.vis = e.isIntersecting; }), { rootMargin: '80px' });
+function newScene(canvas, def, seed) {
+  const S = { g: canvas.getContext('2d'), W: canvas.width, H: canvas.height, def, floor: floorTex(canvas.width, canvas.height, seed), clock: 0, stop: 0, shake: 0, vis: true };
+  resetScene(S); canvas._S = S; io.observe(canvas); scenes.push(S); return S; }
+function resetScene(S) { S.clock = 0; S.ev = new Set(); S.fx = FX(); S.pieces = []; S.st = { pops: [], glints: [] }; S.def.init && S.def.init(S); }
+function cardFor(gridId, def, w, h, i) {
+  const card = document.createElement('section'); card.className = 'card';
+  card.innerHTML = `<canvas width="${w}" height="${h}" role="img" aria-label="${def.name}: ${def.aria}, looping"></canvas>
+    <div class="body"><div class="head"><div class="slot"><canvas width="16" height="16" role="img" aria-label="${def.name} icon"></canvas></div>
+    <div><div class="cat">${def.cat}</div><h3>${def.name}</h3></div></div><p class="flav">${def.flav}</p><p class="eff"><b>Effect</b>${def.eff}</p></div>`;
+  document.getElementById(gridId).append(card);
+  card.querySelector('.slot canvas').getContext('2d').drawImage(def.icon.c, 0, 0);
+  return newScene(card.querySelector('canvas'), def, 23 + i * 37);
+}
+const drawR = (S, R) => { if (!R.hidden) S.L.push({ y: R.y, d: () => withShadow(S.g, R) }); };
+const drawE = (S, E) => S.L.push({ y: E.y, d: () => withShadow(S.g, { ...E, flash: E.flash }) });
+
+// ================= 01 BIG ITEMS =================
+// shared: he walks in, the brackets lock on in range, the prompt shows, he presses E, and the item's own act plays
+const KNEEL = pz({ hy: 6, lean: .2, chest: .08, fl: [1.2, 1.9], bl: [-.2, 2.3], fa: [.55, 2.1], ba: [.62, 2.0] });
+function bigRun(S, t, it, o) {
+  const g = S.g, x0 = o.x0 ?? 18, stopX = it.x - it.gap, spd = o.spd ?? 50, T = o.T0 + (stopX - x0) / spd, P = T + (o.wait ?? .45), ta = t - P;
+  const R = { x: x0, y: it.y, face: 1, pose: standB(t) };
+  if (t < o.T0) { R.x = x0; } else if (t < T) { R.x = x0 + spd * (t - o.T0); R.pose = walkPose(R.x); } else R.x = stopX;
+  S.once('lock' + it.id, R.x >= it.x - (it.range ?? 42), () => { S.st['lock' + it.id] = t; });
+  const lock = S.st['lock' + it.id];
+  it.act(S, t, R, ta, it);
+  if (lock != null) S.over.push(() => { brackets(g, it.box, t - lock, ta); if (ta < .05) prompt(g, it.x, it.box.y0 - 13, it.verb, t - lock - .1, ta >= 0); });
+  return R;
+}
+const boxOf = (s, x, y, pad = 2) => ({ x0: Math.round(x - Math.floor(s.w / 2)) - pad, x1: Math.round(x - Math.floor(s.w / 2)) + s.w - 1 + pad, y0: Math.round(y) - s.h - pad, y1: Math.round(y) + pad - 1 });
+
+// ---- the shrine: kneel and pray; its light pours into him ----
+function shrineAct(S, t, R, ta, it) {
+  const g = S.g, st = S.st, used = ta > 1.25;
+  if (ta >= 0) R.pose = ta < 1.4 ? at([[0, standB(t)], [.14, KNEEL], [1.4, pz({ ...KNEEL, breath: 1 })]], ta) : at([[1.4, KNEEL], [1.62, STAND]], ta);
+  S.L.push({ y: it.y, d: () => { drawS(g, WS.shrine, it.x, it.y);
+    const fx = Math.round(it.x), fy = Math.round(it.y) - 6;   // the flame: a flicker, a flare while he prays, then out
+    if (!used) { const fl = Math.floor(t * 10) % 3, flare = ta > .15 && ta < 1.2;
+      if (flare) { g.fillStyle = CY; g.fillRect(fx - 1, fy - 3, 3, 3); g.fillStyle = CY2; g.fillRect(fx, fy - 4 - (fl === 1 ? 1 : 0), 1, 3); g.fillStyle = WH; g.fillRect(fx, fy - 2, 1, 2); }
+      else { g.fillStyle = CY; g.fillRect(fx, fy - 2, 1, 2); g.fillStyle = fl ? CY2 : WH; g.fillRect(fx, fy - 3 - (fl === 2 ? 1 : 0), 1, 1); }
+      g.save(); g.globalAlpha = .25; g.fillStyle = CY; g.fillRect(fx - 2, Math.round(it.y) - 4, 5, 1); g.restore(); }
+    else if (ta < 1.5) { g.fillStyle = '#7d868e'; g.fillRect(fx, fy - 3 - Math.round((ta - 1.25) * 16), 1, 1); } } });
+  // the light: motes leave the shrine and arc into his chest
+  if (ta > .25 && ta < 1.1) { st.acc = (st.acc || 0) + S.dt; while (st.acc > .05) { st.acc -= .05; (st.motes = st.motes || []).push({ t: 0, x0: it.x + rr(-2, 2), y0: it.y - 8, h: rr(8, 16) }); } }
+  for (const m of st.motes || []) m.t += S.dt;
+  st.motes = (st.motes || []).filter(m => m.t < .4);
+  S.over.push(() => { for (const m of st.motes) { const k = ease(m.t / .4), hx = R.x + 1, hy = R.y - 14;
+    const x = m.x0 + (hx - m.x0) * k, y = m.y0 + (hy - m.y0) * k - Math.sin(k * Math.PI) * m.h;
+    g.fillStyle = k < .8 ? CY : CY2; g.fillRect(Math.round(x), Math.round(y), 1, 1); if (m.t > .03) { g.fillStyle = CY2; g.fillRect(Math.round(x), Math.round(y) + 1, 1, 1); } } });
+  S.once('amen', ta >= 1.15, () => { F.ring(S, R.x + 1, R.y - 1, 4, 2, .3, 16, CY); F.burst(S, R.x + 1, R.y - 14, 8, 90); });
+  st.hp = .35 + .65 * clamp01((ta - .3) / .85); st.qi = .1 + .9 * clamp01((ta - .3) / .85);
+  if (!S.hero) S.over.push(() => { panel(g, 4, 4, 48, 13); meter(g, 7, 7, 42, 3, st.hp, WH, 0, ta > 1.15 && ta < 1.22); meter(g, 7, 12, 42, 2, st.qi, CY, 3, ta > 1.15 && ta < 1.22); });
+}
+// ---- the fallen blade: grip the hilt and pull it from the grave ----
+const REACH = pz({ hy: 3, lean: .32, chest: .12, fl: [.5, .8], bl: [-.45, .3], fa: [1.45, .05], ba: [1.2, .35] });
+const PULL = pz({ hy: 0, lean: -.1, chest: -.22, fl: [.3, .2], bl: [-.35, .2], fa: [2.95, .05], ba: [.35, .55], sword: -1.5, flutter: 1 });
+const FLICK = pz({ hx: 1, hy: 3, lean: .35, chest: .25, fl: [.7, 1.0], bl: [-.7, .3], fa: [1.2, .1], sword: 1.0, ba: [-.6, .3], hat: 1 });
+function bladeAct(S, t, R, ta, it) {
+  const g = S.g, st = S.st, out = ta >= .1;
+  if (ta >= 0) R.pose = at([[0, REACH], [.1, PULL, hold], [.12, PULL], [.7, pz({ ...PULL, breath: 1 })], [.78, FLICK, lin], [.86, FLICK], ...quickSheathe(.86, FLICK).slice(1)], ta);
+  S.L.push({ y: it.y, d: () => {
+    if (!out) { const o = drawS(g, WS.blade, it.x, it.y);
+      const f = Math.floor(t * 4) % 2;   // the cord still tied to the hilt, lifting in the wind
+      g.fillStyle = '#7d868e'; g.fillRect(o.x0 + 7, o.y0 + 2, 1, 1); g.fillRect(o.x0 + 8, o.y0 + 2 + f, 1, 1); g.fillRect(o.x0 + 9, o.y0 + 3, 1, 1); if (f) g.fillRect(o.x0 + 10, o.y0 + 3, 1, 1);
+      const k = (t % 2.2) / .35; if (k < 1) { const r = 5 + Math.floor(k * 11); g.fillStyle = WH; g.fillRect(o.x0 + (r < 8 ? 6 : r < 12 ? 5 : 4), o.y0 + r, 1, 1); } }
+    else drawS(g, WS.mound, it.x, it.y); } });
+  S.once('pull', out, () => { const top = it.y - 17; F.cut(S, it.x + 1, it.y - 2, it.x, top - 10, .12); F.dust(S, it.x, it.y, 10); F.crack(S, it.x, it.y);
+    F.burst(S, it.x, it.y - 4, 8, 90); S.stop = Math.max(S.stop, .06); S.shake = Math.max(S.shake, 1 / 60); F.ghost(S, { ...R, pose: REACH }, CY2, .12); });
+  if (ta > .2 && ta < .7) { const k = (ta - .3) / .12; if (k > 0 && k < 1) S.over.push(() => { const pts = bladePts(R); const p = pts[pts.length - 1]; if (p) glint(g, p[0], p[1], k < .5 ? 2 : 1, WH); }); }
+  st.newW = ta >= .2; st.wFlash = ta >= .2 && ta < .32;
+  if (!S.hero) S.over.push(() => { slot(g, 4, 4, 20, 'weapon', st.newW ? ICON.nodachi : ICON.katana, { flash: st.wFlash ? 1 : 0 }); banner(g, S.W / 2 + 10, 6, 'NEW WEAPON', 'GRAVE NODACHI', ta - .15, 1.5, 1); });
+}
+// ---- the sealed chest: one draw cuts the seal; it opens on the sheath click and spills ----
+const DRAW = pz({ hy: 3, lean: .35, chest: .1, fl: [.7, 1.1], bl: [-.6, .4], fa: HILT, ba: [-.05, .8] });
+const CUT = pz({ hx: 2, hy: 4, lean: .55, chest: .45, fl: [1.05, 1.2], bl: [-1.05, .1], fa: [1.25, .1], sword: .9, ba: [-1.3, .1], hat: 1, flutter: 1 });
+const chestLid = sprite('w-lid', WS.chest.rows.slice(0, 3).map(r => r.slice(0, 6) + r[5] + r[8] + r.slice(8)));
+const chestBody = sprite('w-cbody', WS.chest.rows.slice(3).map(r => r.slice(0, 6) + r[5] + r[8] + r.slice(8)));
+function chestAct(S, t, R, ta, it) {
+  const g = S.g, st = S.st, CLICK = .79, open = ta >= CLICK;
+  if (ta >= 0) R.pose = at([[0, DRAW], [.08, CUT, hold], [.1, CUT], [.45, pz({ ...CUT, lean: .5, chest: .4, flutter: 0 })], ...quickSheathe(.45, CUT).slice(1)], ta);
+  const flash = ta > .08 && ta < .13;
+  S.L.push({ y: it.y, d: () => {
+    if (!open) drawS(g, WS.chest, it.x + (ta > .08 && ta < .5 ? (Math.floor(ta * 30) % 2 ? 1 : 0) * (ta < .3 ? 1 : 0) : 0), it.y, { tint: flash ? WH : null });
+    else { const k = ta - CLICK, lift = k < .08 ? -Math.round(k / .08 * 6) : k < .16 ? -4 : -2;
+      drawS(g, chestBody, it.x, it.y);
+      g.fillStyle = '#0c0d11'; g.fillRect(Math.round(it.x) - 6, Math.round(it.y) - 8, 12, 1);
+      if (k < .5) { g.save(); g.globalAlpha = 1 - k / .5; g.fillStyle = CY; for (let i = 0; i < 5; i++) g.fillRect(Math.round(it.x) - 4 + i * 2, Math.round(it.y) - 9 - Math.round(rr(0, 8 * (1 - k))), 1, 2); g.restore(); }
+      drawS(g, chestLid, it.x + 2, it.y - 8 + lift, { refl: false, shadow: false }); } } });
+  S.once('cut', ta >= .08, () => { F.cres(S, it.x - 2, it.y - 7, 1, 10, .4, 1, .14); F.cut(S, it.x - 9, it.y - 11, it.x + 9, it.y - 2, .5); S.stop = Math.max(S.stop, .08); S.shake = 1 / 60;
+    F.burst(S, it.x, it.y - 6, 8, 110); F.ghost(S, { ...R, pose: DRAW }, WH, .12); });
+  S.once('open', open, () => {   // the seal falls in two pieces, the lid pops, and it spills
+    const seal = spritePts(WS.chest, it.x, it.y, (ch, x) => (ch === 'P' || ch === 'C') && x >= 6 && x <= 7);
+    toPieces(seal, [[it.x - 9, it.y - 11, it.x + 9, it.y - 2]], it.y, (P, cx, cy) => { P.x0 = P.x; P.z0 = P.z; const s = cy < it.y - 6 ? -1 : 1;
+      P.script = tt => { const k = ease(Math.min(1, tt / .45)); return { dx: s * k * 4 + k * 3, dz: -k * 20, a: s * k * 1.5, done: tt > 1.2 }; }; S.pieces.push(P); });
+    F.burst(S, it.x, it.y - 8, 10, 100); F.ring(S, it.x, it.y - 1, 6, 3, .25, 10, CY);
+    st.loot = [];
+    for (let i = 0; i < 7; i++) { const kind = i < 4 ? 'coin' : 'qi'; st.loot.push({ kind, x: it.x, y: it.y, bx: it.x, h: 0, vx: rr(-38, 30) + (i % 2 ? 10 : -10), vz: rr(55, 85), z: 8, ph: i * .3, land: 0 }); } });
+  if (st.loot) for (const l of st.loot) {
+    if (!l.landed) { l.x += l.vx * S.dt; l.z += l.vz * S.dt; l.vz -= 300 * S.dt; l.y = it.y + 4 + (l.ph % 1) * 6; if (l.z <= 0 && l.vz < 0) { l.z = 0; l.landed = true; l.wait = .1; } }
+    else if ((l.wait -= S.dt) < 0) pickupSim(S, l, R, S.dt, 999, q => { collectFx(S, q, R); if (q.kind === 'coin') st.mon = (st.mon || 12) + 1; else st.qiUp = (st.qiUp || 0) + .1; });
+    if (!l.landed) S.over.push(() => { const s = l.kind === 'coin' ? WS.coin : null, x = Math.round(l.x), y = Math.round(l.y - l.z - 3);
+      if (s) g.drawImage(s.c, x - 2, y - 2); else { g.fillStyle = CY; g.fillRect(x - 1, y, 3, 1); g.fillRect(x, y - 1, 1, 3); g.fillStyle = WH; g.fillRect(x, y, 1, 1); } });
+    else S.L.push({ y: l.y, d: () => drawSmall(S, g, l, t) });
+  }
+  S.over.push(() => drawPops(S, g, S.dt));
+  if (!S.hero) S.over.push(() => { panel(g, 4, 4, 48, 15); meter(g, 7, 7, 42, 2, .3 + (st.qiUp || 0), CY, 3, 0); g.drawImage(WS.coin.c, 7, 11); text(g, String(st.mon || 12).padStart(4, '0'), 14, 11, WH); });
+}
+// ---- the stone tablet: a palm on the stone, the glyphs light in order, then leave it for him ----
+const PALM = pz({ hy: 1, lean: .15, chest: .05, fl: [.4, .5], bl: [-.4, .3], fa: [1.55, -.05], ba: [-.2, .3] });
+function tabletAct(S, t, R, ta, it) {
+  const g = S.g, st = S.st, s = WS.tablet, marks = st.marks || (st.marks = [...s.marks].sort((a, b) => a[1] - b[1] || a[0] - b[0]));
+  if (ta >= 0) R.pose = at([[0, standB(t)], [.1, PALM], [1.15, pz({ ...PALM, breath: 1 })], [1.35, STAND]], ta);
+  const lock = S.st['lock' + it.id], near = lock != null;
+  S.L.push({ y: it.y, d: () => { const o = drawS(g, s, it.x, it.y);
+    marks.forEach(([mx, my], i) => { const lit = ta - .1 - i * .03; let col;
+      if (ta >= .75) col = ta < .8 ? CY2 : '#1b1e25';
+      else if (lit >= 0) col = lit < .05 ? WH : CY;
+      else col = near ? ((Math.sin(t * 4) > .2) ? '#52e8d6' : '#2c6f68') : (Math.sin(t * 1.5 + i * .5) > .7 ? '#3f7d77' : '#2c323b');
+      g.fillStyle = col; g.fillRect(o.x0 + mx, o.y0 + my, 1, 1); }); } });
+  S.once('lift', ta >= .75, () => { const x0 = Math.round(it.x - Math.floor(s.w / 2)), y0 = Math.round(it.y) - s.h;
+    st.gl = marks.map(([mx, my], i) => ({ x: x0 + mx, y: y0 + my, d: i * .012, t: 0 })); F.burst(S, it.x, it.y - 9, 6, 80); });
+  if (st.gl) { for (const q of st.gl) q.t += S.dt;
+    S.over.push(() => { for (const q of st.gl) { const k = clamp01((q.t - q.d) / .35); if (k >= 1) continue; const e = ease(k), hx = R.x + 1, hy = R.y - 14;
+      const x = q.x + (hx - q.x) * e, y = q.y + (hy - q.y) * e - Math.sin(e * Math.PI) * 10; g.fillStyle = k < .6 ? CY : WH; g.fillRect(Math.round(x), Math.round(y), 1, 1); } }); }
+  S.once('learn', ta >= 1.18, () => { F.ring(S, R.x + 1, R.y - 1, 4, 2, .3, 16, CY); F.burst(S, R.x + 1, R.y - 14, 10, 100); });
+  if (!S.hero) S.over.push(() => banner(g, S.W / 2, 6, 'SKILL LEARNED', 'CROSS RIFT', ta - 1.18, 1.6, 2));
+}
+const BIG = [
+  { id: 'shrine', name: 'Wayside Shrine', cat: 'Big item · shrine', aria: 'the ronin kneels at a stone shrine and its light flows into him', icon: ICON.shrine,
+    flav: 'Someone still keeps a light here. Nobody remembers who for.', eff: 'Pray (E): kneel, and health and Qi fill to full. One prayer per shrine; the light goes out after.',
+    item: { s: WS.shrine, gap: 20, verb: 'PRAY', act: shrineAct }, dur: 4.4 },
+  { id: 'blade', name: 'Grave Nodachi', cat: 'Big item · weapon', aria: 'the ronin pulls a fallen warrior\'s long blade out of the ground', icon: ICON.nodachi,
+    flav: 'Planted where its owner fell. His cord is still tied to the hilt.', eff: 'Take (E): swaps your blade. Longer reach, and every cut lands a beat heavier.',
+    item: { s: WS.blade, gap: 11, verb: 'TAKE', act: bladeAct }, dur: 4.4 },
+  { id: 'chest', name: 'Sealed Chest', cat: 'Big item · chest', aria: 'the ronin cuts the paper seal of a chest; on the sheath click it opens and spills coins and Qi', icon: ICON.chest,
+    flav: 'Bound with a paper seal that no key will open.', eff: 'Cut (E): one draw splits the seal. It opens on the sheath click and spills mon and Qi.',
+    item: { s: WS.chest, gap: 19, verb: 'CUT', act: chestAct }, dur: 4.9 },
+  { id: 'tablet', name: 'Rift Tablet', cat: 'Big item · skill', aria: 'the ronin lays a palm on a carved stone; the glyphs light and fly into him', icon: ICON.tablet,
+    flav: 'Older than the road. The carving wakes when a blade comes near.', eff: 'Read (E): the glyphs leave the stone and teach you a skill. This one teaches Cross Rift.',
+    item: { s: WS.tablet, gap: 14, verb: 'READ', act: tabletAct }, dur: 4.6 },
+];
+BIG.forEach((d, i) => {
+  d.run = (S, t) => { const it = S.st.it || (S.st.it = { ...d.item, id: d.id, x: 132, y: 74 }); it.box = it.box || boxOf(it.s, it.x, it.y);
+    drawR(S, Object.assign(bigRun(S, t, it, { T0: .15 }), S.st.Rx || {})); };
+  cardFor('g-big', d, 192, 108, i);
+});
+
+// ================= 02 SMALL PICKUPS =================
+function smallRun(S, t, items, hudFn) {
+  const R = { x: -14 + 52 * t, y: 70, face: 1, pose: null }; R.pose = walkPose(R.x);
+  if (S.st.glitchT > 0) { S.st.glitchT -= S.dt; R.glitch = .8; }
+  for (const it of items) { pickupSim(S, it, R, S.dt, 22, q => { collectFx(S, q, R); hudFn.get(q); });
+    if (it.pull) S.over.push(() => drawSmall(S, S.g, it, t)); else S.L.push({ y: it.y, d: () => drawSmall(S, S.g, it, t) }); }
+  S.over.push(() => drawPops(S, S.g, S.dt));
+  S.over.push(() => hudFn.draw(S.g));
+  drawR(S, R);
+}
+const SMALL = [
+  { name: 'Qi Mote', cat: 'Small pickup · Qi', aria: 'three cyan motes fly to the ronin as he walks past', icon: ICON.qi,
+    flav: 'What is left of a clean cut, still humming.', eff: 'Each one fills a tenth of the Qi meter.',
+    init: S => { S.st.items = [[84, 64], [96, 72], [110, 66]].map(([x, y], i) => ({ kind: 'qi', x, y, ph: i * .45 })); S.st.qi = .2; },
+    hud: S => ({ get: () => { S.st.qi += .1; S.st.fl = .06; }, draw: g => { panel(g, 4, 4, 48, 8); meter(g, 7, 7, 42, 2, S.st.qi, CY, 3, (S.st.fl -= S.dt) > 0); } }) },
+  { name: 'Rice Ball', cat: 'Small pickup · health', aria: 'a rice ball flies to the ronin and white plus marks rise off him', icon: ICON.rice,
+    flav: 'Wrapped by someone who meant to come back for it.', eff: 'Restores a fifth of your health.',
+    init: S => { S.st.items = [{ kind: 'rice', x: 100, y: 68, ph: .3 }]; S.st.hp = .45; },
+    hud: S => ({ get: () => { S.st.hp += .2; S.st.fl = .06; }, draw: g => { panel(g, 4, 4, 48, 9); meter(g, 7, 7, 42, 3, S.st.hp, WH, 0, (S.st.fl -= S.dt) > 0); } }) },
+  { name: 'Old Mon', cat: 'Small pickup · currency', aria: 'three square-holed coins fly to the ronin, each with a glint and a plus one', icon: ICON.mon,
+    flav: 'Square-holed coins from a mint that burned down.', eff: 'Currency. Spent with wandering merchants and on shrine offerings.',
+    init: S => { S.st.items = [[88, 67], [95, 73], [104, 66]].map(([x, y], i) => ({ kind: 'coin', x, y, ph: i * .5 })); S.st.mon = 340; },
+    hud: S => ({ get: () => { S.st.mon++; S.st.fl = .08; }, draw: g => { panel(g, 4, 4, 30, 11); g.drawImage(WS.coin.c, 7, 7); text(g, String(S.st.mon).padStart(4, '0'), 14, 7, (S.st.fl -= S.dt) > 0 ? CY2 : WH); } }) },
+  { name: 'Glitch Shard', cat: 'Small pickup · rare currency', aria: 'a flickering cyan shard flies to the ronin, who glitches for a moment', icon: ICON.shard,
+    flav: 'A piece of the world that did not load right.', eff: 'Rare currency. Opens locked charm slots and rerolls a shrine\'s offering.',
+    init: S => { S.st.items = [{ kind: 'shard', x: 102, y: 68, ph: .2 }]; S.st.sh = 6; },
+    hud: S => ({ get: () => { S.st.sh++; S.st.fl = .08; }, draw: g => { panel(g, 4, 4, 22, 11); g.drawImage(WS.shard.c, 7, 6); text(g, String(S.st.sh).padStart(2, '0'), 13, 7, (S.st.fl -= S.dt) > 0 ? CY2 : WH); } }) },
+];
+SMALL.forEach((d, i) => { d.dur = 4.3; d.run = (S, t) => smallRun(S, t, S.st.items, S.st.hf || (S.st.hf = d.hud(S))); cardFor('g-small', d, 192, 108, i + 4); });
+
+// ================= 03 CONSUMABLES =================
+function consRun(S, t, d) {
+  const g = S.g, st = S.st, ta = t - .7, R = { x: 58, y: 70, face: 1, pose: standB(t) };
+  d.act(S, t, R, ta);
+  // the floor copy of the item, idling where it would lie in the world
+  S.L.push({ y: 86, d: () => d.idle(g, 168, 86, t) });
+  const count = ta >= 0 ? d.count - 1 : d.count, press = ta >= 0 && ta < .1, cd = ta > 0 ? clamp01(1 - (ta - .05) / (d.dur - .75)) : 0;
+  S.over.push(() => { slot(g, 5, S.H - 25, 20, 'quick', d.icon, { key: '1', count, flash: press ? 1 : 0, cd: d.timer ? 0 : cd });
+    if (d.timer && ta > .7) { g.fillStyle = '#0c0d11'; g.fillRect(5, S.H - 4, 20, 2); g.fillStyle = CY; g.fillRect(5, S.H - 4, Math.round(20 * clamp01(1 - (ta - .7) / 6)), 2); } });
+  drawR(S, R);
+}
+// ---- static bomb ----
+const THROW_UP = pz({ hy: 1, lean: -.05, chest: -.1, fl: [.3, .3], bl: [-.3, .2], fa: [2.7, .35], ba: [-.3, .3] });
+const THROW_DN = pz({ hx: 1, hy: 4, lean: .42, chest: .3, fl: [.75, 1.1], bl: [-.6, .4], fa: [.55, .1], ba: [-.7, .3], hat: 1, flutter: 1 });
+const CROUCH_L = pz({ hy: 5, lean: .45, chest: .2, fl: [1.1, 1.7], bl: [-.5, 1.2], fa: HILT, ba: [-.2, .6] });
+function bombAct(S, t, R, ta) {
+  const g = S.g, st = S.st, X0 = 58, IMP = .15;
+  if (ta >= 0 && ta < IMP) { R.pose = ta < .07 ? THROW_UP : THROW_DN; const h = handOf({ ...R, pose: THROW_UP });
+    const k = clamp01((ta - .07) / .08), bx = h[0] + (R.x + 7 - h[0]) * k, by = h[1] + (R.y - 1 - h[1]) * k * k;
+    S.over.push(() => g.drawImage(WS.bomb.c, Math.round(bx) - 3, Math.round(by) - 4)); }
+  if (ta >= IMP) { if (ta < .32) R.hidden = true; else { R.x = 24; R.pose = at([[.32, CROUCH_L], [.7, CROUCH_L], [.95, standB(t)]], ta); R.glitch = ta < .4 ? (.4 - ta) * 14 : 0; } }
+  S.once('boom', ta >= IMP, () => { F.slivers(S, X0, R.y, 10); S.stop = .04; S.shake = .05; F.ring(S, X0 + 6, R.y - 1, 4, 2, .2, 14, WH);
+    st.cloud = Array.from({ length: 320 }, (_, i) => { const a = rr(0, 6.28), r = Math.sqrt(Math.random());
+      return { dx: Math.cos(a) * r * 24, dy: -Math.abs(Math.sin(a)) * r * 20 + rr(-2, 3), c: ['#0c0d11', '#1b1e25', '#2c323b', '#1b1e25', '#565e66'][i % 5], die: rr(1.05, 1.7), w: 1 + (i % 2 === 0) }; }); });
+  S.once('back', ta >= .32, () => F.slivers(S, 24, R.y, 6));
+  if (st.cloud) { const k = ease(clamp01((ta - IMP) / .12)), cx = X0 + 6, cy = R.y - 2;
+    S.L.push({ y: R.y + 1, d: () => { const f = Math.floor(ta * 30);
+      for (const [i, p] of st.cloud.entries()) { if (ta > p.die || ((i * 7 + f) % 11 === 0)) continue;
+        const j = (i + f) % 4 === 0 ? sgn() : 0; g.fillStyle = p.c; g.fillRect(Math.round(cx + p.dx * k + j), Math.round(cy + p.dy * k - (ta - IMP) * 3), p.w, 1); } } });
+    if (ta < 1.2) { st.za = (st.za || 0) + S.dt; if (st.za > .07) { st.za = 0; const a = rr(0, 6.28), x = cx + Math.cos(a) * rr(0, 14), y = cy - rr(2, 12); F.zap(S, x, y, x + rr(-7, 7), y + rr(-4, 4), .06, 1.2, Math.random() < .5 ? CY : CY2); } } }
+}
+// ---- thunder talisman ----
+const RAISE = pz({ hy: 0, lean: -.08, chest: -.12, fl: [.25, .25], bl: [-.35, .2], fa: [3.0, 0], ba: [.25, .45], flutter: 1 });
+const STAG = pz({ ...EG, hx: 1, lean: -.32, chest: -.3, fa: [1.9, .9], ba: [-.7, .4], sword: -2.1, fl: [.25, .45], bl: [-.8, .55] });
+function talismanAct(S, t, R, ta) {
+  const g = S.g, st = S.st, E1 = st.E1 || (st.E1 = { x: 124, y: 68, face: -1, enemy: true }), E2 = st.E2 || (st.E2 = { x: 156, y: 73, face: -1, enemy: true });
+  if (ta >= 0) R.pose = at([[0, RAISE, hold], [.02, RAISE], [.45, pz({ ...RAISE, breath: 1 })], [.7, standB(t)]], ta);
+  for (const [E, hitT] of [[E1, .24], [E2, .36]]) { const k = ta - hitT; E.pose = k < 0 ? pz({ ...EG, breath: Math.sin(t * 3 + E.x) * .5 + .5 }) : at([[0, STAG], [.14, STAG], [.6, EG]], k);
+    E.flash = k >= 0 && k < .05; E.x = (E === E1 ? 124 : 156) + (k >= 0 && k < .6 ? Math.round(2 * (1 - k / .6)) : 0); drawE(S, E); }
+  if (ta >= 0 && ta < .24) { const h = handOf(R); S.over.push(() => g.drawImage(ta > .1 && ta < .16 && Math.floor(ta * 60) % 2 ? tinted(WS.talisman, WH) : WS.talisman.c, Math.round(h[0]) - 1, Math.round(h[1]) - 8)); }
+  S.once('call', ta >= .2, () => { const h = handOf(R); F.slivers(S, h[0], h[1] + 4, 6, 2); F.zap(S, h[0], h[1] - 7, h[0] + 3, -4, .08, 2, CY2); });
+  S.once('hit1', ta >= .24, () => { F.zap(S, E1.x + 2, -4, E1.x, E1.y - 16, .22, 3, WH); F.zap(S, E1.x - 2, -4, E1.x, E1.y - 16, .2, 3, CY);
+    F.ring(S, E1.x, E1.y, 5, 2, .25, 14, CY); F.burst(S, E1.x, E1.y - 14, 10); S.stop = .07; S.shake = .05; });
+  S.once('hit2', ta >= .36, () => { F.zap(S, E1.x, E1.y - 14, E2.x, E2.y - 14, .2, 2.5, CY); F.zap(S, E1.x, E1.y - 14, E2.x, E2.y - 14, .14, 3, CY2);
+    F.burst(S, E2.x, E2.y - 14, 8); S.stop = .05; S.shake = 1 / 60; });
+}
+// ---- whetstone ----
+const HONE = pz({ hy: 2, lean: .06, chest: -.05, fl: [.3, .4], bl: [-.35, .3], fa: [1.4, .2], sword: -.02, ba: [1.25, .5] });
+const ADMIRE = pz({ hy: 1, lean: .02, chest: -.1, fl: [.3, .35], bl: [-.35, .3], fa: [1.9, .35], sword: -.62, ba: [.2, .5] });
+function whetAct(S, t, R, ta) {
+  const g = S.g, st = S.st, LIT = .64;
+  if (ta >= 0) R.pose = at([[0, DRAW], [.08, HONE, hold], [.1, HONE], [LIT, HONE], [LIT + .08, ADMIRE, lin], [1.1, pz({ ...ADMIRE, breath: 1 })], ...quickSheathe(1.1, ADMIRE).slice(1)], ta);
+  if (ta >= LIT + .02) R.W = CY;
+  if (ta >= .12 && ta < LIT) { const pts = bladePts({ ...R, pose: HONE }), k = ((ta - .12) % .26) / .26, i = Math.min(pts.length - 1, Math.floor(k * pts.length)), p = pts[i];
+    if (p) S.over.push(() => { g.fillStyle = '#0c0d11'; g.fillRect(p[0] - 2, p[1] - 3, 4, 3); g.fillStyle = '#7d868e'; g.fillRect(p[0] - 1, p[1] - 2, 3, 1); g.fillStyle = '#a9b1b6'; g.fillRect(p[0] - 1, p[1] - 2, 1, 1); });
+    st.sp = (st.sp || 0) + S.dt; if (p && st.sp > .03) { st.sp = 0; F.spark(S, p[0] + 1, p[1], rr(10, 60), rr(-50, -10), rr(.08, .16), Math.random() < .5 ? WH : CY2, true); } }
+  S.once('lit', ta >= LIT, () => { for (const p of bladePts({ ...R, pose: HONE })) if (Math.random() < .4) F.spark(S, p[0], p[1], rr(-20, 20), rr(-40, -5), rr(.12, .25), Math.random() < .5 ? CY : CY2, false);
+    S.stop = .05; F.ring(S, R.x + 8, R.y - 16, 2, 2, .18, 8, CY); });
+  if (ta > .8 && ta < 1.1) { const pts = bladePts({ ...R, pose: ADMIRE }), k = (ta - .8) / .22; if (k < 1) { const p = pts[Math.floor(k * pts.length)]; if (p) S.over.push(() => glint(g, p[0], p[1], 1, WH)); } }
+}
+// ---- grave incense ----
+const KNEEL_P = pz({ hy: 6, lean: .38, chest: .15, fl: [1.2, 1.9], bl: [-.2, 2.3], fa: [.95, .15], ba: [.3, .6] });
+const KNEEL_R = pz({ hy: 6, lean: .15, chest: .05, fl: [1.2, 1.9], bl: [-.2, 2.3], fa: [.5, 1.3], ba: [.4, 1.1] });
+function incenseAct(S, t, R, ta) {
+  const g = S.g, st = S.st, sx = R.x + 12, HEAL0 = .3, HEAL1 = 1.6;
+  if (ta >= 0) R.pose = at([[0, standB(t)], [.12, KNEEL_P], [.25, KNEEL_P], [.36, KNEEL_R], [HEAL1, pz({ ...KNEEL_R, breath: 1 })], [HEAL1 + .22, standB(t)]], ta);
+  if (ta >= .2) { const burn = clamp01((ta - .25) / (HEAL1 - .25)), h = Math.round(6 - 4 * burn), lit = ta > .25 && ta < HEAL1 + .1;
+    S.L.push({ y: R.y + 2, d: () => { g.fillStyle = '#0c0d11'; g.fillRect(sx - 1, R.y + 1, 3, 1); g.fillStyle = '#565e66'; g.fillRect(sx, R.y + 1 - h, 1, h);
+      if (lit) { g.fillStyle = Math.floor(t * 12) % 2 ? CY : WH; g.fillRect(sx, R.y - h, 1, 1); } } });
+    if (lit) { st.acc = (st.acc || 0) + S.dt; while (st.acc > .025) { st.acc -= .025; (st.th = st.th || []).push({ t: 0, ph: ta * 5, x: sx, y: R.y - h - 1 }, { t: -.12, ph: ta * 5 + 2, x: sx, y: R.y - h - 1 }); } } }
+  for (const q of st.th || []) q.t += S.dt; st.th = (st.th || []).filter(q => q.t < .9);
+  S.over.push(() => { for (const q of st.th) { if (q.t < 0) continue; const k = q.t / .9, rise = Math.min(q.t, .3) / .3 * 9, pull = ease(clamp01((q.t - .3) / .6));
+    const bx = q.x + Math.sin(q.ph + q.t * 6) * 1.5 * (1 - pull), by = q.y - rise, x = bx + (R.x + 2 - bx) * pull, y = by + (R.y - 11 - by) * pull;
+    g.save(); g.globalAlpha = k > .75 ? (1 - k) / .25 : .9; g.fillStyle = pull > .6 ? CY2 : '#d6dad6'; g.fillRect(Math.round(x), Math.round(y), 1, 1); g.restore(); } });
+  st.hp = .3 + .6 * clamp01((ta - HEAL0) / (HEAL1 - HEAL0));
+  if (ta > HEAL0 && ta < HEAL1) { st.pa = (st.pa || 0) + S.dt; if (st.pa > .32) { st.pa = 0; st.pops.push({ x: R.x + rr(-4, 5), y: R.y - 18, t: 0, col: WH, plus: true }); } }
+  S.over.push(() => { drawPops(S, g, S.dt); panel(g, 4, 4, 48, 9); meter(g, 7, 7, 42, 3, st.hp, WH, 0, 0); });
+}
+const CONS = [
+  { name: 'Static Bomb', cat: 'Consumable · quick slot', aria: 'the ronin dashes a clay ball at his feet; it bursts into black static and he glitches a few steps back', icon: ICON.bomb, count: 3, act: bombAct,
+    idle: (g, x, y, t) => { drawS(g, WS.bomb, x, y); if (Math.floor(t * 6) % 3 === 0) { g.fillStyle = WH; g.fillRect(Math.round(x) + 1, Math.round(y) - 7, 1, 1); } },
+    flav: 'Clay, black powder, and one trapped storm.', eff: 'Dash it at your feet: a cloud of black static. Enemies lose you, and you glitch a few steps back.' },
+  { name: 'Thunder Talisman', cat: 'Consumable · quick slot', aria: 'the ronin raises a paper talisman; lightning strikes one enemy and jumps to the next', icon: ICON.talisman, count: 2, act: talismanAct,
+    idle: (g, x, y, t) => { drawS(g, WS.talisman, x, y, { z: 0 }); if (Math.sin(t * 5) > .8) { g.fillStyle = WH; g.fillRect(Math.round(x) - 1 + 1, Math.round(y) - 5, 1, 1); } },
+    flav: 'Written in one stroke, during a storm.', eff: 'Raise it: lightning strikes the nearest enemy and jumps once, like Storm Chain, at no Qi cost.' },
+  { name: 'Whetstone', cat: 'Consumable · quick slot', aria: 'the ronin draws his blade and hones it; the blade turns cyan', icon: ICON.whetstone, count: 2, act: whetAct, timer: true,
+    idle: (g, x, y, t) => { drawS(g, WS.whet, x, y); if ((t % 2) < .1) { g.fillStyle = WH; g.fillRect(Math.round(x) - 2 + Math.round((t % 2) * 40), Math.round(y) - 2, 1, 1); } },
+    flav: 'Wet it, three strokes, and do not stare at the edge.', eff: 'Hone the blade: a cyan edge for 20 seconds. Cuts with it build Qi twice as fast.' },
+  { name: 'Grave Incense', cat: 'Consumable · quick slot', aria: 'the ronin kneels and lights incense; pale threads rise and curl into him as he heals', icon: ICON.incense, count: 3, act: incenseAct,
+    idle: (g, x, y, t) => { drawS(g, WS.incense, x, y); const k = (t * 14) % 10; g.save(); g.globalAlpha = .6; g.fillStyle = '#a9b1b6';
+      for (let i = 0; i < 4; i++) g.fillRect(Math.round(x) + 4 + Math.round(Math.sin(t * 3 + i) * 1), Math.round(y) - 4 - i * 2 - Math.floor(k / 5), 1, 1); g.restore(); },
+    flav: 'Burned for the dead. It works on the living too.', eff: 'Kneel and light it: heals 60% over a second and a half. Taking a hit puts it out.' },
+];
+CONS.forEach((d, i) => { d.dur = 3.4; d.run = (S, t) => consRun(S, t, d); cardFor('g-cons', d, 192, 108, i + 8); });
+
+// ================= 04 RELICS =================
+function relicRun(S, t, d) {
+  const g = S.g, st = S.st, RX = 60, RY = 60, R = { x: -12 + 46 * t, y: RY, face: 1, pose: null }; R.pose = walkPose(R.x);
+  const tp = st.tp != null ? t - st.tp : -1;
+  S.once('touch', R.x >= RX - 3, () => { st.tp = t; });
+  const SL = [S.W - 64, S.W - 42, S.W - 20], sy = 4, target = [SL[1] + 1 + 8, sy + 1 + 8];
+  if (tp < 0) S.L.push({ y: RY, d: () => { const z = 3 + Math.round(Math.sin(t * 2.4)); // hovering over a faint cyan pool
+      g.save(); g.globalAlpha = .35 + .15 * Math.sin(t * 2.4); g.fillStyle = CY; g.fillRect(RX - 3, RY, 7, 1); g.fillRect(RX - 1, RY + 1, 3, 1); g.restore();
+      d.idle(g, RX, RY, z, t); } });
+  else if (tp < .52) S.over.push(() => { const s = d.ws;
+    if (tp < .28) { const z = 4 + ease(clamp01(tp / .12)) * 18, sc = Math.abs(Math.cos(clamp01((tp - .1) / .18) * Math.PI * 2)), w = Math.max(1, Math.round(s.w * sc));
+      g.drawImage(tp > .18 && tp < .22 ? tinted(s, WH) : s.c, Math.round(RX - w / 2), Math.round(RY - s.h - z), w, s.h);
+      if (tp > .18 && tp < .24) glint(g, RX, Math.round(RY - s.h / 2 - z), 3, WH); }
+    else { const k = ease(clamp01((tp - .28) / .22)), x0 = RX, y0 = RY - 22 - s.h / 2, x = x0 + (target[0] - x0) * k, y = y0 + (target[1] - y0) * k - Math.sin(k * Math.PI) * 10;
+      g.fillStyle = CY2; for (let i = 1; i < 5; i++) { const kk = ease(clamp01((tp - .28 - i * .012) / .22)); g.fillRect(Math.round(x0 + (target[0] - x0) * kk), Math.round(y0 + (target[1] - y0) * kk - Math.sin(kk * Math.PI) * 10), 1, 1); }
+      g.drawImage(s.c, Math.round(x - s.w / 2), Math.round(y - s.h / 2)); } });
+  S.once('stamp', tp >= .5, () => { F.ring(S, target[0], target[1], 7, 7, .2, 4, CY); });
+  S.over.push(() => { panel(g, SL[0] - 3, 1, S.W - SL[0] + 1, 24);
+    slot(g, SL[0], sy + 1, 18, 'charm', d.other); slot(g, SL[1], sy + 1, 18, 'charm', tp >= .5 ? d.icon : null, { flash: tp >= .5 && tp < .62 ? 1 - (tp - .5) / .12 : 0 }); slot(g, SL[2], sy + 1, 18, 'charm', null); });
+  drawR(S, R);
+}
+const RELICS = [
+  { name: 'Thunder Bead', icon: ICON.bead, ws: WS.bead, other: ICON.knot, flav: 'A comma of glass with lightning asleep in it.', eff: 'Storm Chain jumps to one more enemy.',
+    idle: (g, x, y, z, t) => { drawS(g, WS.bead, x, y, { z }); if ((t % 1.3) < .08) { g.fillStyle = CY2; g.fillRect(Math.round(x) + 3, Math.round(y) - 8 - z, 1, 1); g.fillRect(Math.round(x) + 4, Math.round(y) - 9 - z, 1, 1); g.fillRect(Math.round(x) + 4, Math.round(y) - 10 - z, 1, 1); g.fillStyle = WH; g.fillRect(Math.round(x) + 5, Math.round(y) - 11 - z, 1, 1); } } },
+  { name: 'Cracked Mirror', icon: ICON.mirror, ws: WS.mirror, other: ICON.bead, flav: 'It shows you a half-second late.', eff: 'Each glitch teleport leaves an afterimage that cuts once.',
+    idle: (g, x, y, z, t) => { const o = drawS(g, WS.mirror, x, y, { z }); const k = (t % 1.8) / .25; if (k < 1) { g.fillStyle = WH; g.fillRect(o.x0 + 1 + Math.round(k * 4), o.y0 + 4 - Math.round(k * 3), 1, 1); } } },
+  { name: 'Temple Bell', icon: ICON.bell, ws: WS.bell, other: ICON.mirror, flav: 'It never rang for the living.', eff: 'Every execution rings it: +25% Qi.',
+    idle: (g, x, y, z, t) => { const sw = Math.round(Math.sin(t * 2.2)); drawS(g, WS.bell, x + (sw > 0 ? 1 : sw < 0 ? -1 : 0) * 0, y, { z }); const o = { x0: Math.round(x) - 2, y0: Math.round(y) - 7 - z }; g.fillStyle = '#0c0d11'; g.fillRect(o.x0 + 2, o.y0 + 5, 1, 2); g.fillStyle = CY; g.fillRect(o.x0 + 2 + sw, o.y0 + 5, 1, 1); g.fillStyle = '#d6dad6'; g.fillRect(o.x0 + 2 + sw, o.y0 + 6, 1, 1); } },
+  { name: 'Split Tsuba', icon: ICON.tsuba, ws: WS.tsuba, other: ICON.crane, flav: 'The guard broke. The hand behind it did not.', eff: 'Landed hits build 25% more Qi.',
+    idle: (g, x, y, z, t) => { const s = WS.tsuba, gap = Math.sin(t * 2) > .5 ? 1 : 0, x0 = Math.round(x) - 3, y0 = Math.round(y) - s.h - z;
+      g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(x0 + 1, Math.round(y), 5, 1); g.drawImage(s.c, 0, 0, 4, 7, x0 - gap, y0, 4, 7); g.drawImage(s.c, 4, 0, 3, 7, x0 + 4 + gap, y0 + gap, 3, 7);
+      if (gap) { g.fillStyle = CY; g.fillRect(x0 + 4, y0 + 3, 1, 1); } } },
+  { name: 'Paper Crane', icon: ICON.crane, ws: WS.crane, other: ICON.tsuba, flav: 'Folded a thousand times. It only has to fly once.', eff: 'Once per area, a killing blow glitches you out instead, at 1 health.',
+    idle: (g, x, y, z, t) => drawS(g, Math.floor(t * 3) % 2 ? WS.crane : WS.crane2, x, y, { z: z + 1 }) },
+  { name: 'Sageo Knot', icon: ICON.knot, ws: WS.knot, other: ICON.bell, flav: 'Tied by a master who never wasted the click.', eff: 'The sheath click after a kill sends a shock through enemies close by.',
+    idle: (g, x, y, z, t) => { const o = drawS(g, WS.knot, x, y, { z }); const path = [[1, 0], [2, 0], [3, 0], [4, 1], [3, 2], [2, 2], [1, 2], [0, 1]], p = path[Math.floor(t * 8) % 8]; g.fillStyle = CY2; g.fillRect(o.x0 + p[0], o.y0 + p[1], 1, 1); } },
+];
+RELICS.forEach((d, i) => { d.cat = 'Relic · charm slot'; d.aria = 'a relic hovers over the floor; the ronin walks into it and it flies to a charm slot'; d.dur = 3.4; d.run = (S, t) => relicRun(S, t, d); cardFor('g-relic', d, 128, 72, i + 12); });
+
+// ================= THE HUD MOCK (480x270) =================
+const HERO = { dur: 9.8, hero: true,
+  init(S) { S.hero = true; const st = S.st;
+    st.blade = { s: WS.blade, id: 'blade', x: 252, y: 150, gap: 11, verb: 'TAKE', act: bladeAct }; st.blade.box = boxOf(WS.blade, 252, 150);
+    st.shrine = { s: WS.shrine, id: 'shrine', x: 418, y: 150, gap: 20, verb: 'PRAY', act: shrineAct }; st.shrine.box = boxOf(WS.shrine, 418, 150);
+    st.items = [[96, 146, 'qi'], [108, 153, 'qi'], [120, 145, 'qi'], [160, 154, 'coin'], [168, 148, 'coin'], [175, 155, 'coin']].map(([x, y, kind], i) => ({ x, y, kind, ph: i * .4 }));
+    Object.assign(st, { hp: .62, qi: .3, mon: 342, sh: 7, fq: 0, fm: 0 }); },
+  run(S, t) {
+    const g = S.g, st = S.st;
+    // chest: out of range the whole time, so it never gets brackets
+    S.L.push({ y: 214, d: () => { drawS(g, WS.chest, 128, 214); } });
+    S.L.push({ y: 96, d: () => { drawS(g, WS.tablet, 330, 96); } });
+    let R;
+    const b = st.blade, ta1 = t - (.2 + (241 - 30) / 55 + .5);
+    if (ta1 < 1.5) R = bigRun(S, t, b, { T0: .2, x0: 30, spd: 55, wait: .5 });
+    else { const t2 = t - (.2 + (241 - 30) / 55 + .5 + 1.5); const sh = st.shrine;
+      // keep the pulled blade's mound on the floor
+      S.L.push({ y: b.y, d: () => drawS(g, WS.mound, b.x, b.y) });
+      R = bigRun(S, t2, { ...sh, act: (S2, tt, RR, ta, it) => { S.L.push({ y: it.y, d: () => { drawS(g, WS.shrine, it.x, it.y); const fx = it.x, fy = it.y - 6, fl = Math.floor(tt * 10) % 3;
+        g.fillStyle = CY; g.fillRect(fx, fy - 2, 1, 2); g.fillStyle = fl ? CY2 : WH; g.fillRect(fx, fy - 3 - (fl === 2 ? 1 : 0), 1, 1); } }); } }, { T0: 0, x0: 241, spd: 55, wait: 9 }); }
+    if (ta1 < 1.5) S.L.push({ y: st.shrine.y, d: () => { drawS(g, WS.shrine, st.shrine.x, st.shrine.y); const fx = st.shrine.x, fy = st.shrine.y - 6; g.fillStyle = CY; g.fillRect(fx, fy - 2, 1, 2); g.fillStyle = Math.floor(t * 10) % 3 ? CY2 : WH; g.fillRect(fx, fy - 3, 1, 1); } });
+    for (const it of st.items) { pickupSim(S, it, R, S.dt, 22, q => { collectFx(S, q, R); if (q.kind === 'qi') { st.qi += .1; st.fq = .06; } else { st.mon++; st.fm = .08; } });
+      if (it.pull) S.over.push(() => drawSmall(S, g, it, t)); else S.L.push({ y: it.y, d: () => drawSmall(S, g, it, t) }); }
+    drawR(S, R);
+    S.over.push(() => drawPops(S, g, S.dt));
+    S.over.push(() => { banner(g, 240, 34, 'NEW WEAPON', 'GRAVE NODACHI', ta1 - .15, 1.7, 2); heroHud(S, g, t, ta1); });
+  } };
+function heroHud(S, g, t, ta1) {
+  const st = S.st; st.fq -= S.dt; st.fm -= S.dt;
+  panel(g, 5, 5, 80, 18); meter(g, 10, 9, 70, 4, st.hp, WH, 0, 0); meter(g, 10, 16, 70, 3, st.qi, CY, 3, st.fq > 0);
+  panel(g, 480 - 5 - 64, 5, 64, 13); g.drawImage(WS.coin.c, 480 - 64, 9); text(g, String(st.mon).padStart(4, '0'), 480 - 57, 9, st.fm > 0 ? CY2 : WH);
+  g.drawImage(WS.shard.c, 480 - 30, 8); text(g, String(st.sh).padStart(2, '0'), 480 - 24, 9, WH);
+  const y = 270 - 30, x0 = 138; panel(g, x0 - 5, y - 5, 214, 33);
+  const newW = ta1 >= .2; slot(g, x0, y, 22, 'weapon', newW ? ICON.nodachi : ICON.katana, { flash: ta1 >= .2 && ta1 < .34 ? 1 : 0 });
+  [[ICON.bomb, 2], [ICON.talisman, 1], [ICON.whetstone, 1], [ICON.incense, 3]].forEach(([ic, n], i) => slot(g, x0 + 28 + i * 22, y + 1, 20, 'quick', ic, { key: String(i + 1), count: n }));
+  [ICON.bead, ICON.mirror, ICON.knot, null].forEach((ic, i) => slot(g, x0 + 28 + 88 + 6 + i * 22, y + 1, 20, 'charm', ic));
+}
+newScene(document.getElementById('hero'), HERO, 7);
+
+// ================= one loop for every canvas =================
+let slow = false, last = performance.now();
+document.getElementById('slow').addEventListener('change', e => slow = e.target.checked);
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function frame(now) {
+  let dt = Math.max(0, Math.min(.05, (now - last) / 1000)); last = now; if (slow) dt /= 2; if (still) dt = 0;
+  for (const S of scenes) {
+    if (!S.vis) continue;
+    const { g, def } = S;
+    S.once = (k, cond, fn) => { if (cond && !S.ev.has(k)) { S.ev.add(k); fn(); } };
+    updateFx(S, dt); updatePieces(S, dt); S.shake = Math.max(0, S.shake - dt);
+    if (S.stop > 0) { S.stop -= dt; S.dt = 0; } else { S.clock += dt; S.dt = dt; }
+    if (S.clock > def.dur) resetScene(S);
+    S.L = []; S.over = [];
+    g.save(); if (S.shake > 0) g.translate(sgn(), sgn() * (S.hero ? 1 : 0));
+    g.drawImage(S.floor, 0, 0); drawFx(g, S, 'floor');
+    def.run(S, S.clock);
+    S.L.push({ y: 999, d: () => drawPieces(g, S) });
+    S.L.sort((a, b) => a.y - b.y).forEach(i => i.d());
+    drawFx(g, S, 'top');
+    S.over.forEach(f => f());
+    const c = S.clock, fa = c < .15 ? 1 - c / .15 : c > def.dur - .2 ? (c - (def.dur - .2)) / .2 : 0;
+    if (fa > 0) { g.fillStyle = `rgba(12,13,17,${fa.toFixed(2)})`; g.fillRect(0, 0, S.W, S.H); }
+    g.restore();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
