@@ -2,6 +2,8 @@ import { pz, HILT, lin, keyed } from '../rig/pose.js';
 
 // ---- The yari: a spear slung across his back. Thrusts where the katana cuts, and the reach shows ----
 const along = a => [Math.cos(a), Math.sin(a)];
+// the angle it hangs at on his back (head up, a little behind), so a hand on the haft there lines up with the slung spear
+const SLUNG = -1.8;
 const stowed = p => p.sword === null && !p.sheathing && p.bsword == null;
 // the spear through a hand: `back` px of haft behind the grip, `front` px ahead of it to the collar, then the 4 px head
 function spear(k, hand, a, back, front) { const d = along(a);
@@ -14,8 +16,8 @@ const ART = {
   stowed() {},
   held(k, hand, a) { spear(k, hand, a, 9, 11); },
   backHeld(k, bh, a) { k.blob(bh[0], bh[1], 2, 'D'); spear(k, bh, a, 12, 6); },
-  // swung back up over the shoulder onto the back
-  sheathing(k, hand) { spear(k, hand, -2.2, 8, 10); },
+  // on its way to the back: upright at the slung angle, gripped low on the haft
+  sheathing(k, hand) { spear(k, hand, SLUNG, 4, 15); },
   // opened to the camera: planted upright beside him, taller than he is
   front: [...Array.from({ length: 24 }, (_, i) => [7, i - 1, 'T']), [7, -2, 'S'], [7, -3, 'W'], [7, -4, 'W'], [7, -5, 'W'], [7, 23, 'S']],
   // sitting: laid on the floor beside him
@@ -45,7 +47,22 @@ export const YARI = { id: 'yari', name: 'Yari', about: 'A spear slung across his
     ...Object.fromEntries(STANCES.map((q, k) => ['ready' + k, BREATH.map((b, i) => pz({ ...q, breath: b, flutter: i === 5 || i === 13 ? 1 : 0 }))])),
     ready: BREATH.map((b, i) => pz({ ...GUARD, breath: b, sword: GUARD.sword + b * .03, flutter: i === 5 || i === 13 ? 1 : 0 })),
     // J: the reach back over the shoulder for the haft, the draw-back, the thrust
-    slash1: keyed([[0, pz({ fa: [-2.6, .6], ba: [-.1, .6] })], [.09, WIND], ...TAIL], 30),
+    // shoulder angles past pi (3.58 = -2.7 + 2 pi) keep the arm going over the top between keys, never swinging down through the front
+    // J from the back: the hand goes up behind the shoulder, takes the haft where it hangs, and brings the spear over and down level
+    slash1: keyed([[0, pz({ fa: [3.7, .6], ba: [-.1, .6] })],
+      [.035, pz({ hy: 1, lean: -.02, fa: [3.58, .5], ba: [-.1, .6], sword: SLUNG, flutter: 1 })],
+      [.065, pz({ hx: -1, hy: 3, lean: -.06, chest: -.15, fl: [.5, .9], bl: [-.7, .4], fa: [2.6, .4], ba: [.6, 1.2], sword: -.9 }), lin],
+      [.09, WIND], ...TAIL], 30),
+    // the stow, on the katana's beats: a twirl upright, a beat, the spear lifted high behind the shoulder, let down onto the back
+    //   as the katana clicks home, then the hand drops away
+    sheathe: keyed([[0, GUARD],
+      [.12, pz({ hy: 2, lean: .06, fl: [.45, .7], bl: [-.5, .35], fa: [.7, 1.1], ba: [-.3, .3], sword: -1.62 }), lin],
+      [.3, pz({ hy: 2, lean: .05, fl: [.45, .7], bl: [-.5, .35], fa: [.72, 1.08], ba: [-.3, .3], sword: -1.6 })],
+      [.5, pz({ hy: 1, lean: .02, fl: [.3, .4], bl: [-.3, .2], fa: [2.9, .2], ba: [-.2, .3], sword: -1.7 })],
+      [.72, pz({ hy: 1, lean: .02, fl: [.25, .35], bl: [-.25, .2], fa: [3.58, .5], ba: [-.2, .3], sword: SLUNG })],
+      [.82, pz({ hy: 1, lean: .04, fl: [.2, .3], bl: [-.25, .15], fa: [3.68, .6], ba: [-.15, .3] })],
+      [1.0, pz({ hy: 1, lean: .04, fl: [.2, .3], bl: [-.25, .15], fa: [5.88, .8], ba: [-.1, .3] })],
+      [1.2, pz({ fa: [6.48, .3] })]], 15),
     slash1r: keyed([[0, GUARD], [.09, WIND], ...TAIL], 30),
     // the answer: the haft whips round low, then the head rises through a sweep that ends overhead
     slash2: keyed([[0, THRUST],
