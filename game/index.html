@@ -27,6 +27,8 @@
   .hud b { color: var(--cyan); font-weight: 500; }
   .keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 18px; color: var(--muted); font-size: 14px; }
   kbd { font: 500 13px/1 "Pixelify Sans", monospace; background: var(--panel); border: 1px solid var(--rule); padding: 3px 6px; color: var(--ink); }
+  .clear { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; cursor: pointer; }
+  .clear input { accent-color: var(--cyan); width: 16px; height: 16px; }
   .pad { display: flex; flex-wrap: wrap; gap: 8px; }
   .pad button { font: 500 15px/1 "Pixelify Sans", monospace; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); min-width: 48px; height: 44px; padding-inline: 12px; touch-action: none; user-select: none; }
   .pad .act { border-color: var(--cyan); }
@@ -72,6 +74,7 @@
       <span><kbd>C</kbd> sit and rest</span>
       <span><kbd>X</kbd> die (to test)</span>
     </div>
+    <label class="clear" for="clear"><input type="checkbox" id="clear"> Room is clear: the dummies don't count as enemies, so after an attack he sheathes at once</label>
     <div class="pad" aria-label="Touch controls">
       <button data-k="left" aria-label="Move left">←</button><button data-k="up" aria-label="Move up">↑</button>
       <button data-k="down" aria-label="Move down">↓</button><button data-k="right" aria-label="Move right">→</button>
@@ -691,6 +694,11 @@ function drawFx() {
 }
 
 // a different one of the six counter stances each time he stops with the blade out
+// no enemy within two screens: nothing left to guard against, so he puts the blade away at once, unbothered
+const THREAT_RANGE = 960;
+let roomClear = false;   // page checkbox: treat the training dummies as props, not enemies
+const threatNear = () => !roomClear && DUMMIES.some(d => Math.hypot(d.x - P.x, d.y - P.y) < THREAT_RANGE);
+function afterAttack(moving) { if (!threatNear()) { P.armed = true; return 'sheathe'; } return moving ? 'runArmed' : pickStance(); }
 function pickStance() { let k; do k = Math.random() * 6 | 0; while (k === P.lastStance); P.lastStance = k; return 'ready' + k; }
 function setState(s) { if (s === 'idle' || s === 'run') P.armed = false; P.state = s; P.t = 0; P.hitDone = {}; P.ev = {}; P.combo = false; P.struck = new Set();
   P.charge = null; P.cv = null; P.fr = null; P.trem = 0; }
@@ -1130,7 +1138,7 @@ function update(dt, inp) {
       if (T >= SK && T < SK + .1) hit(s === 'slash2' ? 'slash2' : 'slash1', P.x + P.face * 14, P.y - 12, 22);
       if (s !== 'slash2' && inp.slash && T > .15) P.combo = true;
       if (s !== 'slash2' && P.combo && T >= .3) { setState('slash2'); break; }   // flow straight out of the follow-through
-      if (T >= D) { P.armed = true; P.still = 0; setState(moving ? 'runArmed' : pickStance()); }
+      if (T >= D) { P.armed = true; P.still = 0; setState(afterAttack(moving)); }
       break;
     }
     case 'tele': {
@@ -1200,7 +1208,7 @@ function update(dt, inp) {
       if (T >= SLAM && T < SLAM + .1) hit('sw', cx + P.face * 8, P.y - 6, 60);
       if (T > SLAM + .04 && Math.random() < (1 - (T - SLAM) / .4) * .7) { const a = rr(0, 6.28), R = rr(10, 55), x = cx + Math.cos(a) * R, y = P.y + Math.sin(a) * R * .5;
         zap(x, y, x + rr(-7, 7), y + rr(-4, 4), rr(.06, .12), 2, Math.random() < .7 ? COL.fx : COL.fx2); }
-      if (T >= D) { P.z = 0; P.armed = true; P.still = 0; setState(pickStance()); }
+      if (T >= D) { P.z = 0; P.armed = true; P.still = 0; setState(afterAttack(false)); }
       break;
     }
     case 'moonHold': { // O held: he charges in place, blade raised; letting go brings it down
@@ -1209,7 +1217,7 @@ function update(dt, inp) {
     }
     case 'moon': {
       if (once('cut', T >= .04)) { unleashMoon(P.pow); ghost(); }
-      if (T >= D) { P.armed = true; P.still = 0; setState(moving ? 'runArmed' : pickStance()); }
+      if (T >= D) { P.armed = true; P.still = 0; setState(afterAttack(moving)); }
       break;
     }
     case 'meditate': { // he cannot move; the mirror images step out of him one by one
@@ -1340,6 +1348,7 @@ function render() {
   hud.innerHTML = `animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}${chg}${qi}`;
 }
 
+document.getElementById('clear').addEventListener('change', e => { roomClear = e.target.checked; game.focus(); });
 // ---- Input ----
 const hud = document.getElementById('hud');
 const held = new Set(), taps = new Set();
