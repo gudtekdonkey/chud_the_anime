@@ -29,7 +29,7 @@ export function update(dt, inp) {
 
   P.t += dt;
   const s = P.state, T = P.t, D = dur(s), u = T / D;
-  const free = s === 'idle' || s === 'run' || s === 'idleGlitch' || s === 'sit' || s === 'sitDown';
+  const free = s === 'idle' || s === 'run' || s === 'walk' || s === 'idleGlitch' || s === 'sit' || s === 'sitDown';
   const canAttack = free || s === 'land' || s === 'sheathe' || s.startsWith('ready') || s === 'runArmed';
   if (inp.mx) P.face = Math.sign(inp.mx);
   const moving = inp.mx || inp.my;
@@ -65,15 +65,16 @@ export function update(dt, inp) {
       else { if (s === 'runArmed') setState(pickStance()); P.still += dt; if (P.still > 2) { P.still = 0; setState('sheathe'); } }
       break;
     }
-    case 'idle': case 'run': case 'idleGlitch': case 'sit': case 'sitDown': {
+    case 'idle': case 'run': case 'walk': case 'idleGlitch': case 'sit': case 'sitDown': {
       if (moving) {
-        const [dx, dy] = inputDir(inp);
-        moveBy(dx * 78 * dt, dy * 78 * dt);
-        if (s !== 'run') setState('run');
+        // hold V to walk; both speeds come from his personality
+        const [dx, dy] = inputDir(inp), gait = held.has('walk') ? 'walk' : 'run';
+        moveBy(dx * P.gait[gait] * dt, dy * P.gait[gait] * dt);
+        if (s !== gait) setState(gait);
         P.still = 0;
       } else {
         P.still += dt;
-        if (s === 'run') setState('idle');
+        if (s === 'run' || s === 'walk') setState('idle');
         if (s === 'idle' && P.still > 4) { setState('idleGlitch'); P.still = 0; }
         if (s === 'idleGlitch' && T >= D) setState('idle');
         if (s === 'sitDown' && T >= D) setState('sit');

@@ -11,7 +11,7 @@ const threatNear = () => !S.roomClear && DUMMIES.some(d => Math.hypot(d.x - P.x,
 export function afterAttack(moving) { if (!threatNear()) { P.armed = true; return 'sheathe'; } return moving ? 'runArmed' : pickStance(); }
 // a different one of the six counter stances each time he stops with the blade out
 export function pickStance() { let k; do k = Math.random() * 6 | 0; while (k === P.lastStance); P.lastStance = k; return 'ready' + k; }
-export function setState(s) { if (s === 'idle' || s === 'run') P.armed = false; P.state = s; P.t = 0; P.hitDone = {}; P.ev = {}; P.combo = false; P.struck = new Set();
+export function setState(s) { if (s === 'idle' || s === 'run' || s === 'walk') P.armed = false; P.state = s; P.t = 0; P.hitDone = {}; P.ev = {}; P.combo = false; P.struck = new Set();
   P.charge = null; P.cv = null; P.fr = null; P.trem = 0; }
 // true the first time an in-state beat is reached, so a strike fires once even if a frame skips past it
 export const once = (k, when) => when && !P.ev[k] && (P.ev[k] = true);

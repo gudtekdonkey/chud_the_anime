@@ -3,6 +3,7 @@ export const ANIMS = {
   idle:     { n: 16, fps: 6,  loop: true,  about: 'A calm breath, about 2.7 s: the chest and shoulders rise a pixel while the hips stay planted, and the mantle barely stirs. His hands hang free and the katana stays sheathed at his hip.' },
   idleGlitch:{ n: 8, fps: 14, loop: false, about: 'After 4 s standing still he glitches once, then back to idle.' },
   run:      { n: 8,  fps: 14, loop: true,  about: 'Leaning into the run with the arms swinging and the katana sheathed at the hip. Faces left or right by the last sideways input.' },
+  walk:     { n: 8,  fps: 8,  loop: true,  about: 'Hold V to walk: an unhurried step, 40 px/s, his front hand resting on the hilt. How he walks, stands and runs comes from his personality (the traits picked under the game).' },
   slide:    { n: 10, fps: 20, loop: false, about: 'Replaces wall slide: a push-off step, then he drops and glides leaning back, lead leg straight, back leg folded under, back arm raised behind for balance while the hat slips back. Momentum carries him up out of it.' },
   jump:     { n: 4,  fps: 12, loop: false, about: 'A hop off the floor with the knees tucked. You can steer in the air. His shadow and reflection stay on the ground.' },
   fall:     { n: 3,  fps: 12, loop: true,  about: 'The way down from a jump, the back arm up.' },

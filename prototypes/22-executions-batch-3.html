@@ -176,14 +176,29 @@ const rr = (a, b) => a + Math.random() * (b - a), sgn = () => Math.random() < .5
 const ENEMY_RC = { K: '#3a2e31', D: '#5a4a4e', E: '#ff5a4a', W: '#cfd4d6', S: '#7d868e', s: '#3a3033' };
 const off = document.createElement('canvas'); off.width = off.height = 48; const og = off.getContext('2d', { willReadFrequently: true });
 const tint = document.createElement('canvas'); tint.width = tint.height = 48; const tg = tint.getContext('2d');
-function paint(pose, enemy, eye) {
+// feet on the floor: a pose's lowest point (knee, foot, a hand on the floor, the torso or head when he lies down) is set on the floor row,
+// so a planted foot never floats and never sinks, in the key poses and every in-between. Airborne figures (z, rot, air) are left alone.
+function lowest(p) {
+  const hip = [0, OY - 11 + p.hy], up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)], a2 = p.lean + p.chest;
+  const Ly = (u, v) => u <= 4 ? hip[1] + up[1] * u + fw[1] * v : hip[1] + up[1] * 4 - Math.cos(a2) * (u - 4) + Math.sin(a2) * v;
+  let m = -99; const leg = ([th, kn], off) => { const h = Ly(0, off), k = h + Math.cos(th) * 5, f = k + Math.cos(th - kn) * 6; m = Math.max(m, k + .25, f + .25); };
+  leg(p.fl, .5); leg(p.bl, -.5);
+  if (!p.noUpper) { for (const [u, v] of [[0, -2], [0, 2], [7, 2.3], [8.2, 1.4], [8.2, -1.6], [7, -2.4]]) m = Math.max(m, Ly(u, v) - 1);
+    if (!p.noHead) m = Math.max(m, Ly(10, .6) + 1);
+    for (const [sh, el] of [p.fa, p.ba]) m = Math.max(m, Ly(7, 0) + Math.cos(sh) * 4 + Math.cos(sh + el) * 4 + .25); }
+  else for (const [u, v] of [[0, -2], [0, 2], [2.6, 2.2], [2.6, -2.2]]) m = Math.max(m, Ly(u, v) - 1);
+  return m;
+}
+const ground = p => ({ ...p, hy: p.hy + (OY - lowest(p)) });
+function paint(pose, enemy, eye, air) {
+  if (!air && !pose.air) pose = ground(pose);
   og.clearRect(0, 0, 48, 48);
   if (enemy) { const saved = { ...RC }; Object.assign(RC, ENEMY_RC); if (eye) RC.E = eye; rig(og, 0, { ...pose, bare: true }); Object.assign(RC, saved); }
   else rig(og, 0, pose);
   return off;
 }
 function figure(g, R, alpha = 1) {
-  let img = paint(R.pose, R.enemy, R.eye);
+  let img = paint(R.pose, R.enemy, R.eye, R.z > .5 || !!R.rot || R.mir && R.z);
   if (R.col) { tg.clearRect(0, 0, 48, 48); tg.drawImage(img, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = R.col; tg.fillRect(0, 0, 48, 48); tg.globalCompositeOperation = 'source-over'; img = tint; }
   g.save(); g.globalAlpha *= alpha;
   if (R.mir) { g.translate(Math.round(R.x), Math.round(R.y) + 1 + Math.round(R.z || 0)); g.scale(1, -1); } else g.translate(Math.round(R.x), Math.round(R.y - (R.z || 0)));
@@ -202,7 +217,7 @@ function withShadow(g, R) {
 
 // ---------- pieces: the enemy cut apart along lines, each chunk tumbling and falling ----------
 function pixelsOf(E) {
-  const img = paint(E.pose, true, E.eye), d = og.getImageData(0, 0, 48, 48).data, out = [], c = Math.cos(E.rot || 0), sn = Math.sin(E.rot || 0);
+  const img = paint(E.pose, true, E.eye, E.z > .5 || !!E.rot), d = og.getImageData(0, 0, 48, 48).data, out = [], c = Math.cos(E.rot || 0), sn = Math.sin(E.rot || 0);
   for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) { const i = (y * 48 + x) * 4; if (d[i + 3] < 10) continue;
     let lx = E.face * (x - 24) + (E.face < 0 ? -1 : 0), ly = y - 40;
     if (E.rot) { const dy = ly + 11; [lx, ly] = [Math.round(lx * c - dy * sn), Math.round(lx * sn + dy * c - 11)]; }
@@ -216,7 +231,9 @@ function toPieces(pts, lines, floorY, push) {
   const out = [];
   for (const g of groups.values()) { if (g.length < 3) continue;
     const cx = g.reduce((s, p) => s + p[0], 0) / g.length, cy = g.reduce((s, p) => s + p[1], 0) / g.length;
-    const P = { pts: g.map(p => [p[0] - cx, p[1] - cy, p[2]]), x: cx, fy: floorY, z: floorY - cy, vx: 0, vy: 0, vz: 0, a: 0, va: 0, rest: 0, life: 9 };
+    let sxx = 0, syy = 0, sxy = 0; for (const p of g) { const dx = p[0] - cx, dy = p[1] - cy; sxx += dx * dx; syy += dy * dy; sxy += dx * dy; }
+    const P = { pts: g.map(p => [p[0] - cx, p[1] - cy, p[2]]), x: cx, fy: floorY, z: floorY - cy, vx: 0, vy: 0, vz: 0, a: 0, va: 0, rest: 0, life: 9,
+      axis: .5 * Math.atan2(2 * sxy, sxx - syy) };   // its long axis: it comes to rest with this lying flat
     push(P, cx, cy); out.push(P); }
   return out;
 }
@@ -228,6 +245,8 @@ function splitPiece(S, P, L, kick) {   // cut an airborne chunk in two along a w
 function updatePieces(S, dt) {
   for (const P of S.pieces) {
     if (P.script) { P.st = (P.st || 0) + dt; const o = P.script(P.st); P.x = P.x0 + o.dx; P.a = o.a;
+      if (P.axis != null && P.st > .45) { const base = -P.axis, flat = base + Math.round((o.a - base) / Math.PI) * Math.PI, k = Math.min(1, (P.st - .45) / .35);   // once down, it settles onto its long side
+        P.a = o.a + (flat - o.a) * k * k * (3 - 2 * k); }
       const low = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
       P.z = Math.max(low, (P.z0 + (o.dz || 0)));
       if (o.done) P.life -= dt; continue; }
@@ -237,7 +256,11 @@ function updatePieces(S, dt) {
       if (P.z - low <= 0 && P.vz < 0) { P.z = low; P.vz = -P.vz * .06; P.vx *= .55; P.va *= .3; if (Math.abs(P.vz) < 25) { P.vz = 0; P.va = 0; P.vx *= .6; P.rest += .34; } } }
     else {
       if (P.flatA == null) { const xs = P.pts.map(q => q[0]), ys = P.pts.map(q => q[1]), w = Math.max(...xs) - Math.min(...xs), h = Math.max(...ys) - Math.min(...ys);
-        const q = h > w * 1.2 ? Math.PI / 2 : Math.PI; P.flatA = Math.round(P.a / q) * q; if (h > w * 1.2 && Math.abs(Math.round(P.a / Math.PI) * Math.PI - P.a) < .01) P.flatA = P.a >= 0 ? Math.PI / 2 : -Math.PI / 2; }
+        // a long piece (a blade, a half of him) settles with its long axis flat on the floor, whatever angle it was cut at
+        let sxx = 0, syy = 0, sxy = 0; for (const [x, y] of P.pts) { sxx += x * x; syy += y * y; sxy += x * y; }
+        const th = .5 * Math.atan2(2 * sxy, sxx - syy), l1 = (sxx + syy) / 2 + Math.hypot((sxx - syy) / 2, sxy), l2 = (sxx + syy) / 2 - Math.hypot((sxx - syy) / 2, sxy);
+        if (l1 > 2.2 * Math.max(l2, .01)) P.flatA = Math.round((P.a + th) / Math.PI) * Math.PI - th;
+        else { const q = h > w * 1.2 ? Math.PI / 2 : Math.PI; P.flatA = Math.round(P.a / q) * q; if (h > w * 1.2 && Math.abs(Math.round(P.a / Math.PI) * Math.PI - P.a) < .01) P.flatA = P.a >= 0 ? Math.PI / 2 : -Math.PI / 2; } }
       P.a += (P.flatA - P.a) * Math.min(1, dt * 10);   // tip over onto its long side
       P.z = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
       P.life -= dt;
@@ -253,7 +276,10 @@ function drawPieces(g, S) {
 const fallScript = (dir, turn, delay = 0) => t => { const u = Math.max(0, t - delay), g = Math.min(1, u / .42);
   return { dx: dir * (u * 9 + g * 4), dz: -46 * g * g, a: turn * 1.55 * ease(Math.min(1, u / .5)), done: t > 1.3 + delay }; };
 const buckle = (dir, delay = .06) => t => { const k = ease(Math.min(1, Math.max(0, (t - delay) / .5))); return { dx: dir * 2 * k, dz: -40, a: dir * 1.45 * k, done: t > 1.3 }; };
-function shatter(S, E, lines, push) { S.pieces.push(...toPieces(pixelsOf(E), lines, E.y, push)); E.gone = true; }
+function shatter(S, E, lines, push) {
+  let body = E;
+  if (E.pose.sword != null && !E.keepSword) { dropSword(S, E, E.pose, E.face); body = { ...E, pose: pz({ ...E.pose, sword: null, empty: true }) }; }   // his hands open as he comes apart
+  S.pieces.push(...toPieces(pixelsOf(body), lines, E.y, push)); E.gone = true; }
 
 // ---------- per-scene effects ----------
 function FX() { return { sparks: [], frags: [], zaps: [], cuts: [], rings: [], cres: [], ghosts: [], cracks: [], dust: [] }; }
@@ -363,7 +389,17 @@ function topple(S, E, dir, dur = .5, slide = 3) {
 function dropSword(S, E, pose, dir = -1) {
   const withS = pixelsOf({ ...E, pose }), without = new Set(pixelsOf({ ...E, pose: pz({ ...pose, sword: null }) }).map(q => q[0] + ',' + q[1]));
   S.pieces.push(...toPieces(withS.filter(q => !without.has(q[0] + ',' + q[1])), [], E.y, P => { P.x0 = P.x; P.z0 = P.z;
-    P.script = tt => { const k = Math.min(1, tt / .3); return { dx: dir * k * 3, dz: -k * k * 40, a: -dir * k * 1.1, done: tt > 1.6 }; }; }));
+    const drop = Math.max(40, P.z0 + 10), T = .3 * Math.sqrt(drop / 40);   // from wherever it was let go, all the way down
+    P.script = tt => { const k = Math.min(1, tt / T); return { dx: dir * k * 3, dz: -k * k * drop, a: -dir * k * 1.1, done: tt > 1.6 + T }; }; }));
+}
+// a shuriken: four points round a dark eye, turning between a cross and a saltire as it spins; a stuck one shows a point in the floor
+function shuriken(g, x, y, spin, a = 1, stuck = false) {
+  x = Math.round(x); y = Math.round(y); g.globalAlpha = a;
+  const px = (dx, dy, c) => { g.fillStyle = c; g.fillRect(x + dx, y + dy, 1, 1); };
+  if (stuck) { for (const [dx, dy] of [[-2, -1], [-1, -1], [1, -1], [2, -1], [0, -3], [0, -2]]) px(dx, dy, '#7d868e'); px(0, -1, '#0c0d11'); px(-1, -2, '#e9eeee'); px(0, 0, '#565e66'); g.globalAlpha = 1; return; }
+  const cross = (Math.floor(spin) % 2) === 0, arms = cross ? [[0, -1], [1, 0], [0, 1], [-1, 0]] : [[1, -1], [1, 1], [-1, 1], [-1, -1]];
+  for (const [ax, ay] of arms) { px(ax, ay, '#a9b1b6'); px(ax * 2, ay * 2, '#e9eeee'); }
+  px(0, 0, '#0c0d11'); g.globalAlpha = 1;
 }
 // each execution: side (where he lands), gap, dur, run(S, t, R, E). The ronin always ends sheathed and the kill lands on the click.
 const quickSheathe = (t0, from) => [[t0, from], [t0 + .08, pz({ hy: 2, lean: .2, fa: [1.45, .05], sword: 1.2, ba: [-.4, .3] }), lin],
@@ -511,49 +547,52 @@ const EXECS = [
     } },
 
   // ---------------- 20 ----------------
-  { name: 'Blade Rain', note: 'A crouch, and he leaps straight up out of the frame. The enemy looks up and raises his guard over his head. Glitch blades rain down around him, each one sticking in the floor with a spark, and he flinches from every one that lands close, ducking lower. The last and biggest comes down through him and pins him to the floor: he jolts, his sword falls, and he sags onto his knees on it. The ronin drops back down behind him, blade low. On the click every blade breaks into slivers, and with nothing holding him up he slides forward off it, catches himself on his hands and goes down on his face.',
+  { name: 'Shuriken Rain', note: 'A crouch, and he leaps straight up out of the frame. The enemy looks up and raises his guard over his head. Shuriken come down at a slant from where the ronin went, spinning, and thunk into the floor all round him, each with a spark; he flinches from every one that lands close. The last three find him: chest, shoulder, thigh, and he jolts with each one, his sword falls, and he sags onto his knees. The ronin drops back down behind him. On the click every star bursts into sparks, and he falls forward onto his face.',
     side: -1, gap: 16, dur: 2.0,
     run(S, t, R, E) {
       const crouch = pz({ hy: 5, lean: .45, chest: .25, fl: [.95, 1.7], bl: [-.6, 1.3], fa: [.4, .7], ba: [-.7, .5] });
       const leap = pz({ hy: -1, lean: -.05, chest: -.25, fl: [.25, .5], bl: [-.35, 1.0], fa: [2.7, .2], ba: [-2.4, .3], hat: 1, flutter: 1 });
-      const drop = pz({ lean: .3, chest: .2, fl: [.6, .8], bl: [-.5, 1.0], fa: [1.6, .2], sword: 1.45, ba: [-1.6, .3], hat: 1, flutter: 1 });
-      const UP = .07, GONE = .15, BIG = .7, DOWN = .84, LAND = .88, SH = 1.02, CLICK = SH + .34, M = S.my;
+      const drop = pz({ lean: .3, chest: .2, fl: [.6, .8], bl: [-.5, 1.0], fa: [1.6, .2], ba: [-1.6, .3], hat: 1, flutter: 1 });
+      const land = pz({ hx: 1, hy: 5, lean: .45, chest: .2, fl: [1.1, 1.5], bl: [-.7, .6], fa: HILT, ba: [-.9, .4] });   // no blade drawn: the stars did it
+      const UP = .07, GONE = .15, HIT = [.66, .72, .78], DOWN = .9, LAND = .94, CLICK = 1.32, M = S.my;
       if (t < UP) { R.face = 1; R.pose = crouch; }
       else if (t < GONE) { R.face = 1; R.pose = leap; R.z = 110 * eIn((t - UP) / (GONE - UP)); }
       R.hidden = t >= GONE && t < DOWN;
-      if (t >= DOWN) { R.x = E.x + 31; R.face = -1;
+      if (t >= DOWN) { R.x = E.x + 26; R.face = -1;
         if (t < LAND) { R.pose = drop; R.z = 110 * (1 - (t - DOWN) / (LAND - DOWN)); }
-        else R.pose = at([[LAND, B3.land], [SH, pz({ ...B3.land, hy: 5, lean: .6 })], ...quickSheathe(SH, B3.land).slice(1)], t); }
-      S.once('up', t >= UP, () => { F.ghost(S, { ...R, z: 0, pose: crouch }, CY, .22); F.dust(S, R.x, R.y, 12); F.ring(S, R.x, R.y, 4, 2, .2, 14);
-        for (let k = 0; k < 6; k++) { const x = R.x + rr(-6, 6); F.cut(S, x, R.y - rr(4, 10), x, R.y - rr(30, 60), rr(.06, .12)); } });
+        else R.pose = at([[LAND, land], [LAND + .2, pz({ ...land, hy: 3, lean: .25 })], [CLICK - .1, pz({ ...land, hy: 2, lean: .15 })], [CLICK, pz({ ...land, hy: 2, lean: .1, ba: [-.4, .5] })], [CLICK + .5, IDLE]], t); }
+      S.once('up', t >= UP, () => { F.ghost(S, { ...R, z: 0, pose: crouch }, CY, .22); F.dust(S, R.x, R.y, 12); F.ring(S, R.x, R.y, 4, 2, .2, 14); });
       S.once('init', true, () => { const dx = [-20, 14, -9, 23, -15, 8, -25, 18, -5, 11, -13], dy = [3, -5, 6, -2, -6, 5, 1, -4, 7, 4, -3];
-        M.blades = dx.map((x, k) => ({ x: E.x + x, y: E.y + dy[k], ti: .22 + k * .037 + rr(-.01, .01), len: 11 }));
-        M.blades.push({ x: E.x, y: E.y + 1, ti: BIG, len: 30, big: true }); });
-      for (const b of M.blades || []) S.once('b' + b.x + b.y, t >= b.ti, () => {
-        if (b.big) { F.hit(S, E, .14, .2); F.crack(S, b.x, b.y); F.ring(S, b.x, b.y, 5, 2, .3, 22); F.dust(S, b.x, b.y, 16); F.burst(S, b.x, E.y - 14, 16, 170); return; }
+        M.stars = dx.map((x, k) => ({ x: E.x + x, y: E.y + dy[k], ti: .22 + k * .037 + rr(-.01, .01) }));
+        [[-2, 17], [1, 22], [0, 7]].forEach(([ox, h], k) => M.stars.push({ x: E.x + ox, y: E.y - h, ti: HIT[k], body: true, ox, h })); });   // chest, shoulder, thigh
+      for (const b of M.stars || []) S.once('b' + b.x + b.y, t >= b.ti, () => {
+        if (b.body) { F.hit(S, E, .06, .05); for (let k = 0; k < 4; k++) F.spark(S, b.x, b.y, rr(-50, 20), -rr(10, 50), .12, k % 2 ? WH : CY2, true); M.hitT = t; M.hitDir = 1; return; }
         for (let k = 0; k < 5; k++) F.spark(S, b.x, b.y, rr(-50, 50), -rr(10, 50), rr(.08, .16), k % 2 ? WH : CY2, true);
         smallCrack(S, b.x, b.y); S.shake = Math.max(S.shake, .03);
         if (Math.abs(b.x - E.x) < 16) M.hitT = t, M.hitDir = Math.sign(E.x - b.x); });
-      // he looks up, raises his guard overhead, ducks from every blade that lands close, and the big one pins him
+      // he looks up, raises his guard overhead, flinches from every star that lands close; three find him, and he sags onto his knees
       const lookUp = pz({ ...EG, lean: -.2, chest: -.45, fa: [2.3, .5], ba: [2.0, .7], sword: -2.0, hy: 3 });
       const cower = pz({ ...EG, lean: .1, chest: .2, fl: [.6, 1.0], bl: [-.5, .7], fa: [2.1, .8], ba: [1.9, 1.0], sword: -1.7, hy: 5 });
-      const pinned = pz({ hy: 6, lean: .45, chest: .55, fl: [1.0, 1.7], bl: [-.35, 1.5], fa: [.35, .2], ba: [.1, .2], sword: null });
+      const struck = pz({ hy: 4, lean: -.25, chest: -.3, fl: [.4, .6], bl: [-.6, .5], fa: [1.4, .9], ba: [1.1, 1.1], sword: null });
+      const sag = pz({ hy: 6, lean: .35, chest: .5, fl: [1.0, 1.7], bl: [-.35, 1.5], fa: [.6, 1.1], ba: [.4, 1.2], sword: null });
       E.face = -1;
-      if (!E.gone) E.pose = at([[0, EG], [.05, RX.flinch], [.12, RX.flinch], [.24, lookUp], [.4, lookUp], [.62, cower], [BIG, cower], [BIG + .04, pz({ ...RX.jolt, sword: null }), lin], [BIG + .2, pinned], [CLICK, pz({ ...pinned, hy: 7, chest: .6 })],
+      if (!E.gone) E.pose = at([[0, EG], [.05, RX.flinch], [.12, RX.flinch], [.24, lookUp], [.4, lookUp], [.6, cower], [HIT[0], cower], [HIT[0] + .03, struck, lin], [HIT[1] + .03, pz({ ...struck, lean: -.35 }), lin],
+        [HIT[2] + .04, pz({ ...struck, hy: 6, fl: [.6, 1.1] }), lin], [HIT[2] + .3, sag], [CLICK, pz({ ...sag, hy: 7, chest: .6 })],
         [CLICK + .14, pz({ ...RX.kneel, lean: .7 })], [CLICK + .3, RX.handsDown], [CLICK + .52, RX.prone]], t);
       E.jit = M.hitT != null && t - M.hitT < .04 ? M.hitDir : 0;
-      S.once('drop', t >= BIG, () => dropSword(S, E, cower, 1));
+      S.once('drop', t >= HIT[0], () => dropSword(S, E, cower, 1));
       S.once('click', t >= CLICK, () => {
-        for (const b of M.blades) { F.slivers(S, b.x, b.y - (b.big ? 6 : 2), b.big ? 12 : 4, 2); }
-        M.blades = []; F.burst(S, E.x, E.y - 14, 10); S.shake = .06; });
+        for (const b of M.stars) { const p = b.body ? [E.x + b.ox, E.y - b.h] : [b.x, b.y]; for (let k = 0; k < (b.body ? 6 : 3); k++) F.spark(S, p[0], p[1], rr(-40, 40), -rr(10, 60), rr(.1, .2), [WH, CY2, CY][k % 3], true); }
+        M.stars = []; F.burst(S, E.x, E.y - 14, 10); S.shake = .06; });
       S.once('down', t >= CLICK + .5, () => { S.shake = .06; F.dust(S, E.x - 8, E.y, 8); });
     },
     items(g, S, items, t, R, E) { const M = S.my;
-      for (const b of M.blades || []) { const v = b.big ? 900 : 700, h = (b.ti - t) * v;
-        if (h > 120) continue;
-        if (h > 0) items.push({ y: 999, d: () => { drawBlade(g, b.x, b.y - h, b.len, b.big, 1, true, false);
-          g.globalAlpha = .5; g.fillStyle = CY; for (let k = 1; k < 7; k++) g.fillRect(b.x, Math.round(b.y - h - b.len - (b.big ? 8 : 4) - k * 2), 1, 1); g.globalAlpha = 1; } });
-        else items.push({ y: b.big ? E.y + .6 : b.y, d: () => drawBlade(g, b.x, b.y, b.len - 3, b.big, 1, t - b.ti < .08, true) }); } } },
+      for (const b of M.stars || []) { const v = 520, h = (b.ti - t) * v;
+        if (h > 140) continue;
+        if (h > 0) items.push({ y: 999, d: () => { const x = b.x - h * .42, y = b.y - h;   // thrown from up and behind, at a slant
+          shuriken(g, x, y, t * 40, 1); g.globalAlpha = .45; g.fillStyle = CY2; for (let k = 1; k < 5; k++) g.fillRect(Math.round(x - k * 1.3), Math.round(y - k * 3), 1, 1); g.globalAlpha = 1; } });
+        else if (b.body) { if (!E.gone) items.push({ y: E.y + .6, d: () => shuriken(g, E.x + b.ox + (E.jit || 0), E.y - b.h + (E.pose.hy - 3), 0, 1, true) }); }
+        else items.push({ y: b.y, d: () => shuriken(g, b.x, b.y - 1, 0, 1, true) }); } } },
 
   // ---------------- 21 ----------------
   { name: 'Still Heart', note: 'No blade at all. He is simply there, close, and before the enemy can finish flinching two fingers touch his chest. One cyan pulse ripples out through him and across the floor. The man jerks back half a step, then goes slack: the red eye flickers and goes dark, his arms hang and his sword slips out of his hand. The ronin lowers his hand to the hilt, his thumb clicks the guard, and the man drops where he stands: knees, hips, the hands catching behind him, and he lies back.',
