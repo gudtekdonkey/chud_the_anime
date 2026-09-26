@@ -1,7 +1,7 @@
 // node scripts/sim-crime.mjs [seed] [years]: live a world with the crime system for some years (10 by default) and print what happened:
 // crimes by kind, bounties, land that changed hands by force vs by title. Asserts the lane's rules and exits 1 if one breaks.
 import { generateWorld, advance, hoursFromYears, serialize, deserialize, HOURS_PER_YEAR, ownerOf } from '../src/sim/index.js';
-import { crimeState, commit, takePlotByMurder, bountyOf, karmaName, payOff, claimantOf, courtCase, heirOf } from '../src/sim/crime/index.js';
+import { crimeState, commit, takePlotByMurder, bountyOf, karmaName, payOff, claimantOf, courtCase, heirOf, payBloodPrice, fadeOf } from '../src/sim/crime/index.js';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 10);
 let fails = 0; const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if (!ok) fails++; };
 
@@ -26,15 +26,24 @@ check(claimantOf(L, pid) === heirOf(L, head, me.id), `the heir claims it: ${clai
 check(courtCase(L, pid).won === 'claimant' && ownerOf(L, pid).holder !== me.id, 'the heir sues with living witnesses and wins possession back');
 console.log(`him: karma ${me.karma} (${karmaName(me.karma)}), bounty ${bountyOf(L, me.id, c)} mon, standing ${me.standing[c]}`);
 me.money.ryo = 10; check(payOff(L, me.id, c, 'magistrate').ok && bountyOf(L, me.id, c) === 0, 'paid off at the magistrate');
+const v4 = folk.find(a => a.alive && a.id !== v3.id && !a.holds.length && a.id !== v2.id && a.id !== v1.id && (L.hour - a.born) / HOURS_PER_YEAR < 60);
+commit(L, 'murder', { by: me.id, victim: v4.id, witnesses: w });
+check(bountyOf(L, me.id, c) >= 1000 && payBloodPrice(L, me.id, v4.id).ok && bountyOf(L, me.id, c) === 0, 'blood money to the heir clears a murder bounty');
+const cl = w.filter(id => L.actors[id].alive); let seenThrough = 0;
+for (let i = 0; i < 40; i++) seenThrough += commit(L, 'trespass', { by: me.id, witnesses: cl, close: cl, masked: true, culture: c }).unmasked ? 1 : 0;
+check(seenThrough > 5 && seenThrough < 40, `masked, close witnesses see through it sometimes (${seenThrough} of 40)`);
+check(fadeOf(me, 'regicide') === 0 && fadeOf({ cls: 'royal' }, 'regicide') > 0, 'killing royalty is forgiven only a royal');
 
 // ---- the world lives ----
 const days = [], H = hoursFromYears(years);
 t0 = performance.now();
-for (let y = 0; y < years; y++) { const t = performance.now(); advance(L, HOURS_PER_YEAR); days.push((performance.now() - t) / 112); }
+const aliveNow = () => Object.values(L.actors).filter(a => a.alive).length, slain = [];
+for (let y = 0; y < years; y++) { const n = aliveNow(), t = performance.now(); advance(L, HOURS_PER_YEAR); days.push((performance.now() - t) / 112); slain.push((n - aliveNow()) / n); }
 const ms = performance.now() - t0;
 const C = crimeState(L), s = C.stats;
 console.log(`\nlived ${years} years (${H / 24} days) in ${ms.toFixed(0)} ms: ${(ms / (H / 24)).toFixed(3)} ms a day on average (per year: ${days.map(d => d.toFixed(3)).join(' ')})`);
 console.log('crimes by kind', s.byKind);
+console.log(`died by the sword each year (share of the living): ${slain.map(x => (x * 100).toFixed(0) + '%').join(' ')}`);
 console.log(`known ${s.known} · unseen ${s.unseen} · masked ${s.masked} · justice (the victim was wanted) ${s.justice}`);
 console.log(`bounties raised ${s.bounties} · paid ${s.paid} · faded ${s.faded} · caught ${s.caught} (fined ${s.fined}, executed ${s.executed}) · raids ${s.raids} · feuds ${s.feuds} · hunters ${s.hunters}`);
 const open = Object.entries(C.bounty).flatMap(([id, bs]) => Object.values(bs).map(b => b.mon));
@@ -46,6 +55,7 @@ const alive = Object.values(L.actors).filter(a => a.alive).length, dead = Object
 console.log(`people alive ${alive} of ${alive0} (by the sword: murder ${dead.filter(a => a.cause === 'murder').length}, executed ${dead.filter(a => a.cause === 'executed').length})`);
 const ks = Object.values(L.actors).map(a => a.karma || 0); console.log(`karma: lowest ${Math.min(...ks)}, people below 0: ${ks.filter(k => k < 0).length}`);
 
+check(slain[0] > .25 && slain[0] < .35, `a violent time: ${(slain[0] * 100).toFixed(0)}% died by the sword in the first year (owner: about 30%)`);
 check(ms / (H / 24) < 1, 'under a millisecond a game day on average');
 check(split.length > 0 && s.land.force > 0, 'possession and title split somewhere');
 check(Object.keys(s.land.title).length >= 3, 'titles passed by several lawful mechanics');

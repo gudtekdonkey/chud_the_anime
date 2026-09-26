@@ -2,13 +2,13 @@
 // The page holds only what is on screen (where people stand, what is selected); everything else is the ledger.
 import { generateWorld, advance, calendar, tilesOf, TERRAIN, ownerOf, plotId, PLOT, PLOTS, nameOf, ageOf, on, zoneAt, rngFor, HOURS_PER_SEASON, HOURS_PER_YEAR } from '../../src/sim/index.js';
 import { crimeState, commit, takePlotByMurder, seize, bountiesOf, standingOf, karmaName, payOff, onSight, outlawDoors, companionVerdict, honourOf,
-  claimantOf, buyTitle, priceOf, payBloodMoney, petitionGrant, courtCase, forgeDeed, purse, isElderOrRoyal, CRIMES, LAND } from '../../src/sim/crime/index.js';
+  claimantOf, buyTitle, priceOf, payBloodMoney, payBloodPrice, petitionGrant, courtCase, forgeDeed, purse, isElderOrRoyal, CRIMES, LAND } from '../../src/sim/crime/index.js';
 
 const $ = id => document.getElementById(id);
 const L = generateWorld(12345, 0), me = L.actors[L.player];
 me.money.ryo = 3;   // enough to try buying, paying off and blood money
 const S = { zone: me.at.slice(), pos: [32, 40], target: null, plot: null, spots: {}, log: [] };
-const SIGHT = 12, TILE = 6;
+const SIGHT = 12, CLOSE = 3, TILE = 6;   // CLOSE: near enough to see through a mask
 const cultureAt = (x, y) => L.regions[zoneAt(L, x, y).region].culture;
 const who = id => id == null ? 'nobody' : id === me.id ? 'him' : L.actors[id] ? nameOf(L.actors[id]) : id;
 const fmt = mon => { mon = Math.round(mon); return mon >= 1000 ? `${Math.floor(mon / 1000)} ryō ${mon % 1000} mon` : `${mon} mon`; };
@@ -65,7 +65,7 @@ $('map').addEventListener('click', e => {
 
 // ---- his crimes ----
 function say(msg, bad = false) { const t = $('toast'); t.textContent = msg; t.className = 'toast' + (bad ? ' bad' : ''); }
-const base = () => ({ by: me.id, zone: S.zone.slice(), masked: $('mask').checked });
+const base = () => ({ by: me.id, zone: S.zone.slice(), masked: $('mask').checked, close: folk().filter(a => dist(spotOf(a), S.pos) <= CLOSE).map(a => a.id) });
 function act(kind) {
   const v = S.target && L.actors[S.target], w = witnesses(S.target);
   let rec;
@@ -86,7 +86,7 @@ function act(kind) {
   if (!v?.alive) S.target = null;
   const seen = rec.seen.length, names = rec.known.map(cname).join(', ');
   say(`${CRIMES[rec.kind] ? rec.kind : kind}: karma ${CRIMES[rec.kind].karma < 0 ? 'fell' : 'moved'} to ${me.karma}. ` +
-    (!seen ? 'Nobody saw it: no bounty.' : rec.masked ? 'Seen, but masked: nobody knows it was him.' : rec.known.length ? `Seen by ${rec.witnesses.length}: wanted by ${names}.` : 'Seen, but the victim was a wanted man: justice, no bounty.'));
+    (!seen ? 'Nobody saw it: no bounty.' : rec.unmasked ? `Masked, but someone close saw through it: wanted by ${names}.` : rec.masked ? 'Seen, but masked: nobody knows it was him.' : rec.known.length ? `Seen by ${rec.witnesses.length}: wanted by ${names}.` : 'Seen, but the victim was a wanted man: justice, no bounty.'));
   render();
 }
 for (const [id, k] of [['cTrespass', 'trespass'], ['cTheft', 'theft'], ['cAssault', 'assault'], ['cMurder', 'murder'], ['cDrive', 'drive'], ['cPlot', 'plot']]) $(id).onclick = () => act(k);
@@ -112,7 +112,7 @@ $('goto').onchange = e => { S.zone = e.target.value.split(',').map(Number); me.a
 
 // ---- the log: every crime.* event about him or this zone, and a count of the rest of the world ----
 const TEXT = {
-  'crime.committed': e => `${e.actor == null ? 'a masked man' : who(e.actor)}: ${e.kind}${e.victim ? ` of ${who(e.victim)}` : ''}${e.witnesses ? `, ${e.witnesses} saw` : ', unseen'}`,
+  'crime.committed': e => `${e.actor == null ? 'a masked man' : who(e.actor) + (e.unmasked ? ' (seen through the mask)' : '')}: ${e.kind}${e.victim ? ` of ${who(e.victim)}` : ''}${e.witnesses ? `, ${e.witnesses} saw` : ', unseen'}`,
   'crime.bounty': e => `${cname(e.culture)} want ${who(e.actor)}: ${fmt(e.mon)}`,
   'crime.bountyFaded': e => `the bounty of ${cname(e.culture)} faded away`,
   'crime.bountyPaid': e => `paid off ${cname(e.culture)} at a ${e.where}: ${fmt(e.mon)}`,
@@ -136,6 +136,8 @@ on('*', e => {
   S.log.length = Math.min(S.log.length, 80);
 });
 
+// his last killing of someone of this people: blood money goes to that man's heir
+const victimOf = c => { const r = crimeState(L).recent.slice().reverse().find(x => x.by === me.id && x.victim && !L.actors[x.victim].alive && L.actors[x.victim].culture === c && /murder|regicide/i.test(x.kind)); return r?.victim; };
 // ---- the panels ----
 const esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
 function render() {
@@ -159,8 +161,9 @@ function render() {
       <td><span class="pill ${sight || 'ok'}">${sight || 'welcome'}</span></td></tr>`; }).join('');
   const bs = bountiesOf(L, me.id);
   $('bounties').innerHTML = Object.keys(bs).map(k => `<tr><td>${esc(cname(k))}</td><td>${bs[k].worst}</td><td class="num">${Math.round(bs[k].mon)}</td>
-    <td><button data-pay="${k}" data-where="magistrate">magistrate</button> <button data-pay="${k}" data-where="shrine">shrine ×${1.5}</button></td></tr>`).join('') || '<tr><td colspan="4" class="hint">Nobody wants him.</td></tr>';
+    <td><button data-pay="${k}" data-where="magistrate">magistrate</button> <button data-pay="${k}" data-where="shrine">shrine ×${1.5}</button>${victimOf(+k) ? ` <button data-blood="${victimOf(+k)}">blood money</button>` : ''}</td></tr>`).join('') || '<tr><td colspan="4" class="hint">Nobody wants him.</td></tr>';
   for (const b of document.querySelectorAll('[data-pay]')) b.onclick = () => { const r = payOff(L, me.id, +b.dataset.pay, b.dataset.where); say(r.ok ? `Paid ${fmt(r.cost)}.` : `${r.reason}${r.cost ? ` (${fmt(r.cost)})` : ''}.`, !r.ok); render(); };
+  for (const b of document.querySelectorAll('[data-blood]')) b.onclick = () => { const r = payBloodPrice(L, me.id, b.dataset.blood); say(r.ok ? `Paid ${fmt(r.price)} to ${who(r.heir)}: the bounty is cleared.` : r.reason + '.', !r.ok); render(); };
   const hs = crimeState(L).hunters;
   $('hunters').innerHTML = hs.length ? hs.map(h => `Hunter ${esc(who(h.actor))} of ${esc(cname(h.culture))}: ${h.found ? '<b style="color:var(--blood)">here</b>' : `${Math.max(Math.abs(h.at[0] - me.at[0]), Math.abs(h.at[1] - me.at[1]))} zones away`}`).join('<br>') : 'No hunters on his trail. A bounty of 500 mon or more sends them.';
   const d = outlawDoors(L, me.id);

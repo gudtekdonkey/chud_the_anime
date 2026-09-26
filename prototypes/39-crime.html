@@ -111,7 +111,7 @@
       <div class="row" style="justify-content: space-between"><h2 id="zoneName">The village</h2><select id="goto" aria-label="Go to another place"></select></div>
       <canvas id="map" width="384" height="384"></canvas>
       <div class="legend"><span><i style="background:#6ff3e4"></i>him</span><span><i style="background:#c9c2b0"></i>villager</span><span><i style="background:#d8b25a"></i>lord, elder</span><span><i style="background:#8f98a0"></i>soldier, monk</span><span><i style="background:#c4574d"></i>dead</span><span><i style="border:1px solid #6ff3e4"></i>witness</span></div>
-      <p class="hint">Click the ground to walk there. Click a person to step up to them. Anyone inside the circle sees what he does (half as far at night).</p>
+      <p class="hint">Click the ground to walk there. Click a person to step up to them. Anyone inside the circle sees what he does (half as far at night). Someone within 3 tiles sees through a mask about a third of the time.</p>
       <div class="row"><label><input type="checkbox" id="mask"> Masked</label><label><input type="checkbox" id="night"> Night</label><span class="num hint" id="seen"></span></div>
       <div class="target" id="target"></div>
       <div class="row">
@@ -1580,6 +1580,7 @@
 		MONSTER: -40,
 		JUSTICE: .3,
 		THEFT_SHARE: .5,
+		MASK_SEE: .3,
 		ELDER_AGE: 60,
 		STANDING_DRIFT: .02,
 		STANDING_FROM_KARMA: 1 / 200,
@@ -1621,23 +1622,25 @@
 		COURT: .1,
 		FORGE: .02,
 		EXPOSE: .15,
+		EXPOSE_YEARLY: .7,
 		GRANT: .25,
 		WITNESS_KEEP: 5
 	};
 	const WORLD = {
 		NORM: 70,
+		VIOLENCE: .3,
+		MURDER_SHARE: .9,
 		THEFT: .055,
 		ASSAULT: .02,
-		MURDER: .002,
 		PLOT_MURDER: 5e-4,
 		REGICIDE: 3e-5,
 		FEUD: .004,
 		FEUD_ACT: .03,
-		FEUD_MURDER: .1,
+		FEUD_MURDER: .3,
 		FEUD_COOL: .01,
-		RAID: .01,
+		RAID: .02,
 		RAID_REACH: 10,
-		RAID_KILL: .1,
+		RAID_KILL: .3,
 		RAID_SEIZE: .05,
 		RAID_TAKE: [.2, .4],
 		KIND: {
@@ -1664,6 +1667,7 @@
 			shinobi: .6
 		},
 		MASK_ELSE: .08,
+		CLOSE: .5,
 		CATCH: .004,
 		CATCH_HOME: .004,
 		CATCH_CHIEF: .3,
@@ -1808,6 +1812,7 @@
 			worst: b.worst
 		});
 	}
+	const fadeOf = (a, worst) => CRIMES[worst].fade || (a?.cls === "royal" ? CRIMES.murder.fade : 0);
 	function clearBounty(L, id, c) {
 		const bs = crimeState(L).bounty[id];
 		if (!bs) return;
@@ -1818,7 +1823,7 @@
 		const C = crimeState(L);
 		each(L, C.bounty, day, (id, n) => {
 			for (const c in C.bounty[id]) {
-				const b = C.bounty[id][c], f = CRIMES[b.worst].fade;
+				const b = C.bounty[id][c], f = fadeOf(L.actors[id], b.worst);
 				if (!f) continue;
 				b.mon = +(b.mon * (1 - f) ** n).toFixed(1);
 				if (b.mon < K.BOUNTY_GONE) {
@@ -1838,7 +1843,7 @@
 			ok: false,
 			reason: "no bounty"
 		};
-		if (!CRIMES[b.worst].fade) return {
+		if (!fadeOf(a, b.worst)) return {
 			ok: false,
 			reason: "killing royalty is never forgiven"
 		};
@@ -1878,6 +1883,9 @@
 		const cultures = [...new Set(seen.map((id) => L.actors[id].culture).filter((c) => c != null))];
 		const known = cultures.filter((c) => !(wanted[c]?.mon > 0));
 		const just = !!victim && (cultures.length ? !known.length : Object.values(wanted).some((b) => b.mon >= CRIMES.assault.bounty));
+		const rr = o.rng || rngFor(L.seed, "crime", L.hour, L.ids.cr || 0);
+		const saw = o.masked ? seen.filter((id) => (o.close || []).includes(id) && rr.chance(K.MASK_SEE)) : seen;
+		const blamed = known.filter((c) => saw.some((id) => L.actors[id].culture === c));
 		let dk = def.karma;
 		if (victim && (victim.karma || 0) <= K.MONSTER) dk *= .5;
 		if (just) dk *= K.JUSTICE;
@@ -1889,18 +1897,16 @@
 			give(by, taken);
 		}
 		if (killing && victim) kill(L, victim, "murder");
-		if (!o.masked) {
-			for (const c of known) {
-				addBounty(L, by.id, c, def.bounty + taken * K.THEFT_SHARE, kind);
-				addStanding(L, by, c, def.standing);
-			}
-			const vc = victim?.culture;
-			if (vc != null && known.includes(vc) && isPlayer(L, by.id)) for (const d of L.cultures) {
-				if (known.includes(d.id) || d.id === vc) continue;
-				const rel = d.relations[vc] ?? 0;
-				if (rel >= K.REL_STRONG) addStanding(L, by, d.id, def.standing * K.ALLY_HEARS);
-				else if (rel <= -K.REL_STRONG) addStanding(L, by, d.id, -def.standing * K.FOE_CHEERS);
-			}
+		for (const c of blamed) {
+			addBounty(L, by.id, c, def.bounty + taken * K.THEFT_SHARE, kind);
+			addStanding(L, by, c, def.standing);
+		}
+		const vc = victim?.culture;
+		if (vc != null && blamed.includes(vc) && isPlayer(L, by.id)) for (const d of L.cultures) {
+			if (known.includes(d.id) || d.id === vc) continue;
+			const rel = d.relations[vc] ?? 0;
+			if (rel >= K.REL_STRONG) addStanding(L, by, d.id, def.standing * K.ALLY_HEARS);
+			else if (rel <= -K.REL_STRONG) addStanding(L, by, d.id, -def.standing * K.FOE_CHEERS);
 		}
 		const rec = {
 			id: newId(L, "cr"),
@@ -1909,9 +1915,10 @@
 			by: by.id,
 			victim: victim?.id ?? null,
 			zone: o.zone || by.at || by.home || null,
-			known: o.masked ? [] : known,
+			known: blamed,
 			seen: cultures,
 			masked: !!o.masked,
+			unmasked: !!o.masked && blamed.length > 0,
 			witnesses: seen.slice(0, 5),
 			taken,
 			plot: o.plot ?? null,
@@ -1921,18 +1928,19 @@
 		if (C.recent.length > RECENT) C.recent.splice(0, C.recent.length - RECENT);
 		const s = C.stats;
 		s.byKind[kind] = (s.byKind[kind] || 0) + 1;
-		if (o.masked && cultures.length) s.masked++;
-		else if (known.length) s.known++;
+		if (o.masked && known.length && !blamed.length) s.masked++;
+		else if (blamed.length) s.known++;
 		else if (cultures.length) s.justice++;
 		else s.unseen++;
 		if (cultures.length || isPlayer(L, by.id) || isPlayer(L, rec.victim)) emit(L, "crime.committed", {
 			crime: rec.id,
 			kind,
-			actor: o.masked ? null : by.id,
+			actor: blamed.length || !o.masked ? by.id : null,
 			victim: rec.victim,
 			zone: rec.zone,
 			known: rec.known,
 			masked: rec.masked,
+			unmasked: rec.unmasked,
 			witnesses: seen.length
 		});
 		return rec;
@@ -2128,6 +2136,21 @@
 			price
 		};
 	}
+	function settleBlood(L, payer, heir, culture) {
+		if (!spend(L.actors[payer], LAND.BLOOD_MONEY)) return false;
+		give(L.actors[heir], LAND.BLOOD_MONEY);
+		const b = crimeState(L).bounty[payer]?.[culture];
+		if (b && fadeOf(L.actors[payer], b.worst)) {
+			clearBounty(L, payer, culture);
+			emit(L, "crime.bountyPaid", {
+				actor: payer,
+				culture,
+				mon: LAND.BLOOD_MONEY,
+				where: "blood"
+			});
+		}
+		return true;
+	}
 	function payBloodMoney(L, pid, payer) {
 		const k = crimeState(L).contested[pid];
 		if (!k || k.how !== "murder") return {
@@ -2139,17 +2162,37 @@
 			ok: false,
 			reason: "nobody left to pay"
 		};
-		if (!spend(L.actors[payer], LAND.BLOOD_MONEY)) return {
+		if (!settleBlood(L, payer, heir, L.actors[heir].culture)) return {
 			ok: false,
 			reason: "not enough money",
 			price: LAND.BLOOD_MONEY
 		};
-		give(L.actors[heir], LAND.BLOOD_MONEY);
 		settleHeir(L, pid, heir);
 		passTitle(L, pid, payer, "bloodMoney");
 		return {
 			ok: true,
 			price: LAND.BLOOD_MONEY
+		};
+	}
+	function payBloodPrice(L, payer, victim) {
+		const v = L.actors[victim], heir = heirOf(L, v, payer);
+		if (!v || v.alive) return {
+			ok: false,
+			reason: "nobody was killed"
+		};
+		if (heir == null) return {
+			ok: false,
+			reason: "nobody left to pay"
+		};
+		if (!settleBlood(L, payer, heir, v.culture)) return {
+			ok: false,
+			reason: "not enough money",
+			price: LAND.BLOOD_MONEY
+		};
+		return {
+			ok: true,
+			price: LAND.BLOOD_MONEY,
+			heir
 		};
 	}
 	function petitionGrant(L, pid, id) {
@@ -2239,7 +2282,7 @@
 				continue;
 			}
 			const real = L.actors[f.real]?.alive ? f.real : heirOf(L, L.actors[f.real], f.forger);
-			if (real == null || !r.chance(LAND.EXPOSE)) continue;
+			if (real == null || !r.chance(LAND.EXPOSE * LAND.EXPOSE_YEARLY ** ((L.hour - f.h) / HOURS_PER_YEAR))) continue;
 			delete C.forged[pid];
 			passTitle(L, pid, real, "exposed");
 			const c = L.actors[real].culture;
@@ -2291,10 +2334,11 @@
 	}
 	//#endregion
 	//#region src/sim/crime/world.js
+	const DAYS_PER_YEAR = HOURS_PER_YEAR / TIME.HOURS_PER_DAY;
 	const INDEX = /* @__PURE__ */ new WeakMap();
-	function index(L, year) {
+	function index(L, season) {
 		let X = INDEX.get(L);
-		if (X && X.year === year) return X;
+		if (X && X.season === season) return X;
 		const w = L.size.w, byRegion = L.regions.map(() => []), heads = L.regions.map(() => []), byZone = /* @__PURE__ */ new Map();
 		for (const id in L.actors) {
 			const a = L.actors[id];
@@ -2308,7 +2352,7 @@
 		}
 		const places = L.zones.filter((z) => z.kind === "town" || z.kind === "village");
 		X = {
-			year,
+			season,
 			byRegion,
 			heads,
 			byZone,
@@ -2354,19 +2398,22 @@
 		return out;
 	}
 	const masked = (L, r, id) => r.chance(WORLD.MASK[L.actors[id].cls] ?? WORLD.MASK_ELSE);
+	const close = (r, ws) => ws.filter(() => r.chance(WORLD.CLOSE));
 	function one(L, r, X, kind, perp, victim, o = {}) {
-		const zone = L.actors[victim].home;
+		const zone = L.actors[victim].home, ws = witnesses$1(L, r, X, zone, [perp, victim]);
 		return commit(L, kind, {
 			by: perp,
 			victim,
 			zone,
-			witnesses: witnesses$1(L, r, X, zone, [perp, victim]),
+			witnesses: ws,
+			close: close(r, ws),
 			masked: masked(L, r, perp),
+			rng: r,
 			...o
 		});
 	}
 	function worldDay(L, cal, r) {
-		const C = crimeState(L), X = index(L, cal.year);
+		const C = crimeState(L), X = index(L, cal.seasonIndex + cal.year * 4);
 		for (const g of L.regions) {
 			const ids = X.byRegion[g.id];
 			if (!ids.length) continue;
@@ -2379,16 +2426,22 @@
 				const p = culprit(L, r, ids), v = p && living(L, r, ids, [p]);
 				if (v) one(L, r, X, "assault", p, v);
 			}
-			if (r.chance(WORLD.MURDER * f)) {
+			const e = ids.length * WORLD.VIOLENCE * WORLD.MURDER_SHARE / DAYS_PER_YEAR * (WORLD.KIND[L.cultures[g.culture].kind] ?? 1);
+			for (let n = Math.floor(e) + (r.chance(e % 1) ? 1 : 0); n > 0; n--) {
 				const p = culprit(L, r, ids), v = p && living(L, r, ids, [p]);
 				if (v) one(L, r, X, "murder", p, v);
 			}
 			if (r.chance(WORLD.PLOT_MURDER * f)) {
 				const v = living(L, r, X.heads[g.id]), p = v && culprit(L, r, ids, [v]), pid = v && L.actors[v].holds.find((q) => L.plots[q]?.holder === v);
-				if (p && pid && !L.actors[p].holds.length) takePlotByMurder(L, p, v, pid, {
-					witnesses: witnesses$1(L, r, X, L.actors[v].home, [p, v]),
-					masked: masked(L, r, p)
-				});
+				if (p && pid && !L.actors[p].holds.length) {
+					const ws = witnesses$1(L, r, X, L.actors[v].home, [p, v]);
+					takePlotByMurder(L, p, v, pid, {
+						witnesses: ws,
+						close: close(r, ws),
+						masked: masked(L, r, p),
+						rng: r
+					});
+				}
 			}
 			if (r.chance(WORLD.REGICIDE) && g.lord != null && L.actors[g.lord]?.alive) {
 				const p = culprit(L, r, ids, [g.lord]);
@@ -2457,13 +2510,15 @@
 				zone: [tz.x, tz.y],
 				witnesses: wit,
 				victimSaw: true,
+				rng: r,
 				value: L.actors[v].money.mon * r.range(...WORLD.RAID_TAKE)
 			});
 			if (r.chance(WORLD.RAID_KILL)) commit(L, "murder", {
 				by: raider,
 				victim: v,
 				zone: [tz.x, tz.y],
-				witnesses: wit
+				witnesses: wit,
+				rng: r
 			});
 		}
 		emit(L, "crime.raid", {
@@ -2524,7 +2579,7 @@
 		}
 	}
 	function huntersDay(L, cal, r) {
-		const X = index(L, cal.year), C = crimeState(L), me = L.actors[L.player];
+		const X = index(L, cal.seasonIndex + cal.year * 4), C = crimeState(L), me = L.actors[L.player];
 		if (!me) return;
 		C.hunters = C.hunters.filter((h) => {
 			if (!L.actors[h.actor]?.alive || !me.alive || bountyOf(L, me.id, h.culture) < K.HUNT_GIVE_UP || L.hour - h.since > K.HUNT_DAYS * 24) {
@@ -2609,6 +2664,7 @@
 		log: []
 	};
 	const SIGHT = 12;
+	const CLOSE = 3;
 	const TILE = 6;
 	const cultureAt = (x, y) => L.regions[zoneAt(L, x, y).region].culture;
 	const who = (id) => id == null ? "nobody" : id === me.id ? "him" : L.actors[id] ? nameOf(L.actors[id]) : id;
@@ -2741,7 +2797,8 @@
 	const base = () => ({
 		by: me.id,
 		zone: S.zone.slice(),
-		masked: $("mask").checked
+		masked: $("mask").checked,
+		close: folk().filter((a) => dist(spotOf(a), S.pos) <= CLOSE).map((a) => a.id)
 	});
 	function act(kind) {
 		const v = S.target && L.actors[S.target], w = witnesses(S.target);
@@ -2795,7 +2852,7 @@
 		}
 		if (!v?.alive) S.target = null;
 		const seen = rec.seen.length, names = rec.known.map(cname).join(", ");
-		say(`${CRIMES[rec.kind] ? rec.kind : kind}: karma ${CRIMES[rec.kind].karma < 0 ? "fell" : "moved"} to ${me.karma}. ` + (!seen ? "Nobody saw it: no bounty." : rec.masked ? "Seen, but masked: nobody knows it was him." : rec.known.length ? `Seen by ${rec.witnesses.length}: wanted by ${names}.` : "Seen, but the victim was a wanted man: justice, no bounty."));
+		say(`${CRIMES[rec.kind] ? rec.kind : kind}: karma ${CRIMES[rec.kind].karma < 0 ? "fell" : "moved"} to ${me.karma}. ` + (!seen ? "Nobody saw it: no bounty." : rec.unmasked ? `Masked, but someone close saw through it: wanted by ${names}.` : rec.masked ? "Seen, but masked: nobody knows it was him." : rec.known.length ? `Seen by ${rec.witnesses.length}: wanted by ${names}.` : "Seen, but the victim was a wanted man: justice, no bounty."));
 		render();
 	}
 	for (const [id, k] of [
@@ -2855,7 +2912,7 @@
 		render();
 	};
 	const TEXT = {
-		"crime.committed": (e) => `${e.actor == null ? "a masked man" : who(e.actor)}: ${e.kind}${e.victim ? ` of ${who(e.victim)}` : ""}${e.witnesses ? `, ${e.witnesses} saw` : ", unseen"}`,
+		"crime.committed": (e) => `${e.actor == null ? "a masked man" : who(e.actor) + (e.unmasked ? " (seen through the mask)" : "")}: ${e.kind}${e.victim ? ` of ${who(e.victim)}` : ""}${e.witnesses ? `, ${e.witnesses} saw` : ", unseen"}`,
 		"crime.bounty": (e) => `${cname(e.culture)} want ${who(e.actor)}: ${fmt(e.mon)}`,
 		"crime.bountyFaded": (e) => `the bounty of ${cname(e.culture)} faded away`,
 		"crime.bountyPaid": (e) => `paid off ${cname(e.culture)} at a ${e.where}: ${fmt(e.mon)}`,
@@ -2884,6 +2941,9 @@
 		});
 		S.log.length = Math.min(S.log.length, 80);
 	});
+	const victimOf = (c) => {
+		return crimeState(L).recent.slice().reverse().find((x) => x.by === me.id && x.victim && !L.actors[x.victim].alive && L.actors[x.victim].culture === c && /murder|regicide/i.test(x.kind))?.victim;
+	};
 	const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({
 		"&": "&amp;",
 		"<": "&lt;",
@@ -2926,10 +2986,15 @@
 		}).join("");
 		const bs = bountiesOf(L, me.id);
 		$("bounties").innerHTML = Object.keys(bs).map((k) => `<tr><td>${esc(cname(k))}</td><td>${bs[k].worst}</td><td class="num">${Math.round(bs[k].mon)}</td>
-    <td><button data-pay="${k}" data-where="magistrate">magistrate</button> <button data-pay="${k}" data-where="shrine">shrine ×1.5</button></td></tr>`).join("") || "<tr><td colspan=\"4\" class=\"hint\">Nobody wants him.</td></tr>";
+    <td><button data-pay="${k}" data-where="magistrate">magistrate</button> <button data-pay="${k}" data-where="shrine">shrine ×1.5</button>${victimOf(+k) ? ` <button data-blood="${victimOf(+k)}">blood money</button>` : ""}</td></tr>`).join("") || "<tr><td colspan=\"4\" class=\"hint\">Nobody wants him.</td></tr>";
 		for (const b of document.querySelectorAll("[data-pay]")) b.onclick = () => {
 			const r = payOff(L, me.id, +b.dataset.pay, b.dataset.where);
 			say(r.ok ? `Paid ${fmt(r.cost)}.` : `${r.reason}${r.cost ? ` (${fmt(r.cost)})` : ""}.`, !r.ok);
+			render();
+		};
+		for (const b of document.querySelectorAll("[data-blood]")) b.onclick = () => {
+			const r = payBloodPrice(L, me.id, b.dataset.blood);
+			say(r.ok ? `Paid ${fmt(r.price)} to ${who(r.heir)}: the bounty is cleared.` : r.reason + ".", !r.ok);
 			render();
 		};
 		const hs = crimeState(L).hunters;

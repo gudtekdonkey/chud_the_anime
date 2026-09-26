@@ -23,7 +23,7 @@ Import `src/sim/crime/index.js` once, before `generateWorld` or `loadWorld` (it 
 
 ## A crime
 
-`commit(L, kind, { by, victim?, zone, witnesses, masked, value, victimSaw, provoked, culture, plot })`. The same call for his crimes (the live game passes who its senses say saw it, `docs/enemy-behavior.md` section 3) and for NPC crimes off screen.
+`commit(L, kind, { by, victim?, zone, witnesses, close, masked, value, victimSaw, provoked, culture, plot, rng })`. The same call for his crimes (the live game passes who its senses say saw it, `docs/enemy-behavior.md` section 3) and for NPC crimes off screen.
 
 | Crime (light to worst) | Karma | Bounty (mon) | Standing | Bounty fades a day |
 |---|---|---|---|---|
@@ -33,16 +33,16 @@ Import `src/sim/crime/index.js` once, before `generateWorld` or `loadWorld` (it 
 | assault | −6 | 150 | −0.15 | 1.2% |
 | murder | −15 | 1,000 (1 ryō) | −0.35 | 0.4% (half in about 170 days) |
 | plotMurder: taking a plot by murder | −25 | 3,000 | −0.5 | 0.3% |
-| regicide: killing an elder or royalty | −35 | 10,000 | −0.8 | never, and never paid off |
+| regicide: killing an elder or royalty | −35 | 10,000 | −0.8 | never, and never paid off, unless the killer is royal himself (then as a murder) |
 
 Rules, in order:
 1. **Self-defence** (`provoked`) is no crime.
-2. **Killing an elder or royalty**: a killing whose victim is royal (class `royal`, or his region's lord) or 60 or older becomes `regicide`.
+2. **Killing an elder or royalty**: a killing whose victim is royal (class `royal`, or his region's lord) or 60 or older becomes `regicide` (owner, 2026-09-26: anyone 60 or older is an elder).
 3. **Witnesses** are the living people passed in, never the doer. The victim of a crime he survives saw it (a theft only when `victimSaw`). A murder victim tells no one.
 4. **Justice**: a culture that already has a bounty on the victim does not count the crime. If every culture that saw it wants the victim, or nobody saw it and the victim was wanted for 150 mon or more anywhere, karma costs only 30%.
 5. **Monsters**: killing someone of karma −40 or less costs half the karma.
 6. **Karma** is paid always.
-7. **Unseen**: no bounty, no standing. **Masked**: seen, known to have happened, but the bounty and standing land on nobody.
+7. **Unseen**: no bounty, no standing. **Masked**: seen, known to have happened, but the bounty and standing land on nobody, unless a witness standing close (`close`, the ones the live game's senses put within reach) sees through the mask: each does 30% of the time (`K.MASK_SEE`, owner 2026-09-26), and his people then know it was him. Off screen, half the witnesses count as close.
 8. **Known**: each witnessing culture raises its bounty on him by the crime's bounty and lowers its standing by the crime's hit.
 9. A theft moves the money (`value`, capped at what the victim carries). A killing marks the victim dead (`alive: false`, `died`, `cause: 'murder'`).
 
@@ -50,7 +50,8 @@ Rules, in order:
 
 - Per culture, on anyone: `L.sys.crime.bounty[actorId][cultureId] = { mon, worst, h }`. `worst` is the worst crime in it, and sets how fast it fades.
 - **Fading**: his fade every day; everyone else's every 28 days, compounded (the same rate, cheaper). Under 5 mon it is gone.
-- **Paying off** (`payOff`): at a magistrate, the bounty itself, and that people's standing +0.1; at a shrine, 1.5 times the bounty, and karma +2. A regicide is never paid off.
+- **Paying off** (`payOff`): at a magistrate, the bounty itself, and that people's standing +0.1; at a shrine, 1.5 times the bounty, and karma +2 (owner, 2026-09-26: a shrine can clear a bounty). A regicide is never paid off unless he is royal.
+- **Blood money** (`payBloodPrice(L, payer, victim)`, and `payBloodMoney` for land taken by murder): 1,000 mon to the dead man's heir clears the bounty the victim's people put on the killer (owner, 2026-09-26). Not for killing royalty.
 - **Penance** (`penance`): an offering without a bounty, 100 mon a point of karma, at most 5 points a season.
 - **Guards** (`onSight(L, culture, id)`): `attack` on sight at a bounty of 500 or standing ≤ −0.6; `arrest` (stop him and demand the bounty) at any bounty; `wary` (watch him, refuse trade) at standing ≤ −0.3.
 - **Hunters**: while his bounty with a people is 500 or more, each day there is a chance of mon ÷ 20,000 (at most 20%) that it sends one: a bounty hunter of that people, else a ronin, else a fighting man. At most three at once, one per people. A hunter walks one zone a day from a seat of that people toward `actor.at`; on reaching his zone the event `crime.hunterFound` fires (the live game spawns him there). A hunter gives up after 112 days, when the bounty falls under 200, or when either dies.
@@ -82,12 +83,12 @@ By force:
 | Way | Rule | In play |
 |---|---|---|
 | **Sale** | whoever can claim the title sells it. 2,000 mon; 40% of that when someone else holds the land (the seller cannot use it). A seller will not sell to a man his people want | `buyTitle`; NPC holders with the money buy out 5% of seasons |
-| **Blood money** | on land taken by murder: 1,000 mon to the dead man's heir buys the title and ends his kin's claim | `payBloodMoney`; NPCs 4% of seasons |
+| **Blood money** | on land taken by murder: 1,000 mon to the dead man's heir buys the title, ends his kin's claim and clears the bounty his people put on the killer | `payBloodMoney`; NPCs 4% of seasons |
 | **Grant** | the region's lord grants a plot nobody alive can claim to a holder his people think well of (standing ≥ 0.3) and who is not wanted | `petitionGrant`; NPCs 25% of seasons |
 | **Inheritance** | the dead title holder's heir takes the title: living children eldest first, the spouse, a brother or sister, the household head | each season on contested land (the people lane owns inheritance everywhere else) |
 | **Court** | the claimant sues. With a living witness of the taking, the court gives the land back. With none left and the land held 3 years, the court confirms the holder and gives him the title | `courtCase`; each contested plot 10% of seasons |
 | **Time** (prescription) | held 3 years with nobody alive to claim it: the title passes to the holder | each season |
-| **Forged deed** | a crime (−4 karma; a bounty only if someone watched him forge it). The title moves on paper; each season while the real claimant or his heir lives there is a 15% chance it comes out: the title goes back and his people put the forgery bounty on him | `forgeDeed`; NPC holders of low karma 2% of seasons |
+| **Forged deed** | a crime (−4 karma; a bounty only if someone watched him forge it). The title moves on paper; each season while the real claimant or his heir lives it may come out, 15% the first year and less every year after (× 0.7 a year, owner 2026-09-26): the title goes back and his people put the forgery bounty on him | `forgeDeed`; NPC holders of low karma 2% of seasons |
 
 Contested land means: the claimant's kin may raid it back, his lord may help, the claimant may sue, and while the dispute stands the holder has the land but not the right to it (the land lane decides what a holder may do there: work it, yes; sell it, no).
 
@@ -99,7 +100,7 @@ Once a game day, per region (rates are for a region of 70 people, scaled by its 
 |---|---|
 | theft (10–40% of the victim's coins) | 5.5% |
 | assault | 2% |
-| murder | 0.2% |
+| murder | as many as make 90% of the violence: 30% of the people a year × 0.9 ÷ 112 days, per person living there |
 | a man murders a neighbour for his plot | 0.05% |
 | the region's lord is murdered | 0.003% (not scaled) |
 | a feud starts between two households | 0.4% |
@@ -111,9 +112,11 @@ Once a game day, per region (rates are for a region of 70 people, scaled by its 
 - **Magistrates**: once a week, each wanted NPC is caught with a chance of 0.4% a day (0.8% if he lives among the people who want him; a camp chief a third as often). A killer (murder or worse) is executed 70% of the time; anyone else pays the bounty as a fine, as far as his purse goes, and is free.
 - **The dead**: `kill` marks a death; the people lane handles what follows (heirs, graves). A holder who dies ends his contested record; his land then follows the people lane's inheritance.
 
-Cost: seed 12345, 10 years, about 0.55 ms a game day on average in Node (the budget is 1 ms). The people index (who lives in which region and zone) is a cache rebuilt once a game year, never saved.
+**A violent time** (owner, 2026-09-26): about 30% of the people die by the sword each year (`WORLD.VIOLENCE`): murders are 90% of it, and feuds, raids and executions make up the rest. The crime lane kills; it makes nobody. Without births from the people lane the land empties: seed 12345 falls from 6,741 people to under 600 in 10 years (about 30% a year while grown men and women are left, less once only children remain, since children are never picked as victims or culprits). The people lane's births have to be tuned against this number.
 
-A typical 10 years (seed 12345): about 7,000 thefts, 3,000 assaults, 450 murders, 40 plots taken by murder, 30 elders or royals killed, 900 raids, 400 feuds; two thirds of crimes seen; about 3,000 caught (120 executed); 80 to 90 plots seized by force, about 60 retaken; titles passed mostly by inheritance, then forgery (each one exposed), prescription and now and then a sale. NPC holders are rarely rich or well enough thought of to buy, pay blood money or be granted land: those ways are mostly his.
+Cost: seed 12345, 10 years, about 0.4 ms a game day on average in Node (the budget is 1 ms), more in the first years while the world is full. The people index (who lives in which region and zone) is a cache rebuilt once a game season, never saved.
+
+A typical 10 years (seed 12345, no births): about 5,400 murders, 330 elders or royals killed, 3,000 thefts, 1,000 assaults, 700 raids, 150 feuds; about 1,900 caught (750 executed); a few dozen plots seized by force and taken back. Titles passed mostly by inheritance, then prescription, forgery and now and then a sale. NPC holders are rarely rich or well enough thought of to buy, pay blood money or be granted land: those ways are mostly his.
 
 ## Events
 
@@ -121,10 +124,10 @@ Every event carries `h` (the game hour). Names are `crime.*`.
 
 | Event | Data | When |
 |---|---|---|
-| `crime.committed` | `crime, kind, actor (null if masked), victim, zone, known: [cultures], masked, witnesses (count)` | any crime someone saw, and every crime of his or against him. An NPC crime nobody saw only counts in the stats |
+| `crime.committed` | `crime, kind, actor (null if masked and nobody saw through it), victim, zone, known: [cultures], masked, unmasked, witnesses (count)` | any crime someone saw, and every crime of his or against him. An NPC crime nobody saw only counts in the stats |
 | `crime.bounty` | `actor, culture, mon, worst` | a bounty on him rises, or anyone's reaches 1,000 |
 | `crime.bountyFaded` | `actor, culture` | his bounty faded to nothing |
-| `crime.bountyPaid` | `actor, culture, mon, where` | paid off at a magistrate or shrine |
+| `crime.bountyPaid` | `actor, culture, mon, where` | paid off at a magistrate or shrine, or cleared by blood money (`where: 'blood'`) |
 | `crime.penance` | `actor, karma` | karma bought back at a shrine |
 | `crime.caught` / `crime.executed` | `actor, culture, worst, fine?, zone` | a magistrate caught a wanted NPC |
 | `crime.feud` | `actor, victim, region` | a feud starts |
@@ -138,15 +141,20 @@ Every event carries `h` (the game hour). Names are `crime.*`.
 
 ## State (`L.sys.crime`)
 
-`{ bounty, contested, forged, feuds: [{ a, b, region, heat, since }], hunters: [{ id, actor, target, culture, at, since, found }], recent: [the last 300 crimes], stood: { actorId: 1 } (whose standing differs from the baseline), penance: { actorId: { season, got } }, stats }`. A crime record: `{ id, h, kind, by, victim, zone, known, seen (cultures that saw), masked, witnesses (up to 5), taken, plot, culture }`. `stats`: crimes by kind; known, unseen, masked, justice; bounties raised, paid, faded; caught, fined, executed; raids, feuds, hunters; land seized, retaken, and titles passed by way.
+`{ bounty, contested, forged, feuds: [{ a, b, region, heat, since }], hunters: [{ id, actor, target, culture, at, since, found }], recent: [the last 300 crimes], stood: { actorId: 1 } (whose standing differs from the baseline), penance: { actorId: { season, got } }, stats }`. A crime record: `{ id, h, kind, by, victim, zone, known, seen (cultures that saw), masked, unmasked, witnesses (up to 5), taken, plot, culture }`. `stats`: crimes by kind; known, unseen, masked, justice; bounties raised, paid, faded; caught, fined, executed; raids, feuds, hunters; land seized, retaken, and titles passed by way.
 
-## Questions for the owner
+## Owner decisions (2026-09-26)
 
-1. **The title mechanic.** Are these the right seven ways (sale, blood money, grant, inheritance, court, time, forged deed)? Should any go? The numbers: 3 years of possession for time and for the court, 2,000 mon a title, 1,000 blood money.
-2. **Blood money.** Should it also clear the murder's bounty with the victim's people, or only buy the land and end the kin's claim, as now?
-3. **Paying off.** Magistrate at the bounty's price, shrine at 1.5× with a little karma back. Should a shrine be able to clear a bounty at all, or only karma?
-4. **Can karma be bought back?** Penance buys at most 5 karma a season. Or should karma rise only by deeds (helping, protecting, sparing)?
-5. **Elders.** Is anyone 60 or older an elder, or only a village's head? Should killing royalty ever be forgiven?
-6. **Masks.** A masked crime puts nothing on him. Should a witness close by have a chance to see through it, or should a mask itself be a crime for guards?
-7. **Karma's reach.** Standing drifts back to karma ÷ 200: should low karma alone make peoples wary of him even without a crime seen?
-8. **NPC crime level.** About 1% of the people die by the sword each year, and one in two is below 0 karma after 10 years. Is that the right amount of violence for the world?
+- The seven title ways stand as proposed: sale, blood money, grant, inheritance, court, time, forged deed.
+- A forged deed can come out each season, less and less likely every year.
+- Blood money clears the bounty.
+- A shrine can clear a bounty; penance stays.
+- Anyone 60 or older is an elder. Killing royalty is never forgiven, unless the killer is royal.
+- A close witness sometimes sees through a mask.
+- A violent time: about 30% of the people die every year.
+
+## Still open
+
+1. **"Many men are slave to their masters"** (owner, 2026-09-26). Not built yet; see the question in the lane's report.
+2. **Karma's reach.** Standing drifts back to karma ÷ 200: should low karma alone make peoples wary of him even without a crime seen?
+3. **Births against 30% deaths**: the people lane's birth rate has to match, or the world empties within a decade.

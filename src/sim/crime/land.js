@@ -2,7 +2,7 @@ import { emit, zoneAt } from '../ledger.js';
 import { ownerOf } from '../zone.js';
 import { HOURS_PER_YEAR } from '../time.js';
 import { LAND, K, CRIMES } from './rules.js';
-import { crimeState, commit, isPlayer, spend, give, purse, standingOf, bountyOf, wantedBy, cultureOfZone, addBounty, addStanding } from './law.js';
+import { crimeState, commit, isPlayer, spend, give, purse, standingOf, bountyOf, wantedBy, cultureOfZone, addBounty, addStanding, clearBounty, fadeOf } from './law.js';
 
 // ---- Land: possession (holder) and title (owner 2026-09-26: raids take possession, never the legal title) ----
 // Force moves only the holder. The title moves only by a lawful mechanic (all proposals for the owner, docs/sim-crime.md):
@@ -88,15 +88,31 @@ export function buyTitle(L, pid, buyer) {
   give(s, price); settleHeir(L, pid, seller); passTitle(L, pid, buyer, 'sale');
   return { ok: true, price };
 }
-// blood money: paid to the dead man's heir, it buys the title of land taken by murder and ends his kin's claim
+// blood money: paid to the dead man's heir, it clears the bounty his people put on the killer (owner 2026-09-26), unless that
+// bounty can never be forgiven (killing royalty). On land taken by murder it also buys the title and ends his kin's claim
+function settleBlood(L, payer, heir, culture) {
+  if (!spend(L.actors[payer], LAND.BLOOD_MONEY)) return false;
+  give(L.actors[heir], LAND.BLOOD_MONEY);
+  const b = crimeState(L).bounty[payer]?.[culture];
+  if (b && fadeOf(L.actors[payer], b.worst)) { clearBounty(L, payer, culture); emit(L, 'crime.bountyPaid', { actor: payer, culture, mon: LAND.BLOOD_MONEY, where: 'blood' }); }
+  return true;
+}
 export function payBloodMoney(L, pid, payer) {
   const k = crimeState(L).contested[pid];
   if (!k || k.how !== 'murder') return { ok: false, reason: 'not land taken by murder' };
   const heir = claimantOf(L, pid);
   if (!heir) return { ok: false, reason: 'nobody left to pay' };
-  if (!spend(L.actors[payer], LAND.BLOOD_MONEY)) return { ok: false, reason: 'not enough money', price: LAND.BLOOD_MONEY };
-  give(L.actors[heir], LAND.BLOOD_MONEY); settleHeir(L, pid, heir); passTitle(L, pid, payer, 'bloodMoney');
+  if (!settleBlood(L, payer, heir, L.actors[heir].culture)) return { ok: false, reason: 'not enough money', price: LAND.BLOOD_MONEY };
+  settleHeir(L, pid, heir); passTitle(L, pid, payer, 'bloodMoney');
   return { ok: true, price: LAND.BLOOD_MONEY };
+}
+// blood money for a killing with no land in it: paid to the victim's heir
+export function payBloodPrice(L, payer, victim) {
+  const v = L.actors[victim], heir = heirOf(L, v, payer);
+  if (!v || v.alive) return { ok: false, reason: 'nobody was killed' };
+  if (heir == null) return { ok: false, reason: 'nobody left to pay' };
+  if (!settleBlood(L, payer, heir, v.culture)) return { ok: false, reason: 'not enough money', price: LAND.BLOOD_MONEY };
+  return { ok: true, price: LAND.BLOOD_MONEY, heir };
 }
 // a lord grants an unclaimed plot in his region to a holder his people think well of and who is not wanted
 export function petitionGrant(L, pid, id) {
@@ -132,7 +148,7 @@ export function landSeason(L, r) {
   for (const pid of Object.keys(C.forged)) { const f = C.forged[pid], p = plotRec(L, pid);
     if (p.title !== f.forger) { delete C.forged[pid]; continue; }
     const real = L.actors[f.real]?.alive ? f.real : heirOf(L, L.actors[f.real], f.forger);
-    if (real == null || !r.chance(LAND.EXPOSE)) continue;
+    if (real == null || !r.chance(LAND.EXPOSE * LAND.EXPOSE_YEARLY ** ((L.hour - f.h) / HOURS_PER_YEAR))) continue;
     delete C.forged[pid]; passTitle(L, pid, real, 'exposed');
     // the karma was paid when he forged it; now his people know
     const c = L.actors[real].culture; if (c != null) { addBounty(L, f.forger, c, CRIMES.forgery.bounty, 'forgery'); addStanding(L, L.actors[f.forger], c, CRIMES.forgery.standing); }

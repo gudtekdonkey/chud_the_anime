@@ -1,6 +1,7 @@
 import { emit, newId, zoneAt } from '../ledger.js';
 import { ageOf } from '../actors.js';
-import { TIME } from '../time.js';
+import { TIME, HOURS_PER_YEAR } from '../time.js';
+const DAYS_PER_YEAR = HOURS_PER_YEAR / TIME.HOURS_PER_DAY;
 import { WORLD, K, CRIMES } from './rules.js';
 import { crimeState, commit, kill, isPlayer, honourOf, bountyOf, clearBounty, spend, purse, WEEK } from './law.js';
 import { seize, takePlotByMurder } from './land.js';
@@ -8,11 +9,11 @@ import { seize, takePlotByMurder } from './land.js';
 // ---- The world without him: NPC crime and justice, off screen, once a game day (docs/sim-crime.md) ----
 // Worked by region (100) and camp (~90), never by person or tile: a few dice per region a day, so a day costs well under a millisecond.
 
-// ---- who lives where: derived from the ledger, rebuilt each year (a cache, not state: nothing here is saved; the dead are skipped) ----
+// ---- who lives where: derived from the ledger, rebuilt each season (a cache, not state: nothing here is saved; the dead are skipped) ----
 const INDEX = new WeakMap();
-function index(L, year) {
+function index(L, season) {
   let X = INDEX.get(L);
-  if (X && X.year === year) return X;
+  if (X && X.season === season) return X;
   const w = L.size.w, byRegion = L.regions.map(() => []), heads = L.regions.map(() => []), byZone = new Map();
   for (const id in L.actors) { const a = L.actors[id]; if (!a.alive || !a.home || isPlayer(L, id)) continue;
     const z = zoneAt(L, a.home[0], a.home[1]); if (!z || z.region < 0) continue; const zi = z.y * w + z.x;
@@ -21,7 +22,7 @@ function index(L, year) {
   const places = L.zones.filter(z => z.kind === 'town' || z.kind === 'village');
   const camps = L.zones.filter(z => z.kind === 'camp').map(z => ({ zi: z.y * w + z.x,
     targets: places.filter(v => Math.abs(v.x - z.x) + Math.abs(v.y - z.y) <= WORLD.RAID_REACH).map(v => v.y * w + v.x) })).filter(c => c.targets.length);
-  X = { year, byRegion, heads, byZone, camps };
+  X = { season, byRegion, heads, byZone, camps };
   INDEX.set(L, X); return X;
 }
 const living = (L, r, ids, not = []) => { if (!ids || !ids.length) return null;
@@ -45,22 +46,26 @@ function witnesses(L, r, X, zone, not) {
 }
 const masked = (L, r, id) => r.chance(WORLD.MASK[L.actors[id].cls] ?? WORLD.MASK_ELSE);
 
+// half the witnesses stand close enough to see through a mask
+const close = (r, ws) => ws.filter(() => r.chance(WORLD.CLOSE));
 function one(L, r, X, kind, perp, victim, o = {}) {
-  const v = L.actors[victim], zone = v.home;
-  return commit(L, kind, { by: perp, victim, zone, witnesses: witnesses(L, r, X, zone, [perp, victim]), masked: masked(L, r, perp), ...o });
+  const v = L.actors[victim], zone = v.home, ws = witnesses(L, r, X, zone, [perp, victim]);
+  return commit(L, kind, { by: perp, victim, zone, witnesses: ws, close: close(r, ws), masked: masked(L, r, perp), rng: r, ...o });
 }
 
 export function worldDay(L, cal, r) {
-  const C = crimeState(L), X = index(L, cal.year);
+  const C = crimeState(L), X = index(L, cal.seasonIndex + cal.year * 4);
   for (const g of L.regions) {
     const ids = X.byRegion[g.id]; if (!ids.length) continue;
     const f = ids.length / WORLD.NORM * (WORLD.KIND[L.cultures[g.culture].kind] ?? 1);
     if (r.chance(WORLD.THEFT * f)) { const p = culprit(L, r, ids), v = p && living(L, r, ids, [p]); if (v) one(L, r, X, 'theft', p, v, { value: L.actors[v].money.mon * r.range(.1, .4) }); }
     if (r.chance(WORLD.ASSAULT * f)) { const p = culprit(L, r, ids), v = p && living(L, r, ids, [p]); if (v) one(L, r, X, 'assault', p, v); }
-    if (r.chance(WORLD.MURDER * f)) { const p = culprit(L, r, ids), v = p && living(L, r, ids, [p]); if (v) one(L, r, X, 'murder', p, v); }
+    // a violent time (owner 2026-09-26): murders make up MURDER_SHARE of the VIOLENCE a year, by how many live here
+    const e = ids.length * WORLD.VIOLENCE * WORLD.MURDER_SHARE / DAYS_PER_YEAR * (WORLD.KIND[L.cultures[g.culture].kind] ?? 1);
+    for (let n = Math.floor(e) + (r.chance(e % 1) ? 1 : 0); n > 0; n--) { const p = culprit(L, r, ids), v = p && living(L, r, ids, [p]); if (v) one(L, r, X, 'murder', p, v); }
     if (r.chance(WORLD.PLOT_MURDER * f)) {   // a man who wants his neighbour's land
       const v = living(L, r, X.heads[g.id]), p = v && culprit(L, r, ids, [v]), pid = v && L.actors[v].holds.find(q => L.plots[q]?.holder === v);
-      if (p && pid && !L.actors[p].holds.length) takePlotByMurder(L, p, v, pid, { witnesses: witnesses(L, r, X, L.actors[v].home, [p, v]), masked: masked(L, r, p) }); }
+      if (p && pid && !L.actors[p].holds.length) { const ws = witnesses(L, r, X, L.actors[v].home, [p, v]); takePlotByMurder(L, p, v, pid, { witnesses: ws, close: close(r, ws), masked: masked(L, r, p), rng: r }); } }
     if (r.chance(WORLD.REGICIDE) && g.lord != null && L.actors[g.lord]?.alive) { const p = culprit(L, r, ids, [g.lord]); if (p) one(L, r, X, 'murder', p, g.lord); }
     if (r.chance(WORLD.FEUD * f)) { const a = living(L, r, X.heads[g.id]), b = a && living(L, r, X.heads[g.id], [a]);
       if (b) { C.feuds.push({ a, b, region: g.id, heat: 1, since: L.hour }); C.stats.feuds++; emit(L, 'crime.feud', { actor: a, victim: b, region: g.id }); } }
@@ -96,8 +101,8 @@ function raid(L, r, X, camp) {
   const heads = folk.filter(id => L.actors[id].alive && L.actors[id].holds.length), n = Math.min(heads.length, r.int(1, 3)), hit = [];
   for (let i = 0; i < n; i++) { const v = r.pick(heads), raider = r.pick(band); if (hit.includes(v)) continue; hit.push(v);
     const wit = witnesses(L, r, X, [tz.x, tz.y], [raider, v]);
-    commit(L, 'theft', { by: chief.id, victim: v, zone: [tz.x, tz.y], witnesses: wit, victimSaw: true, value: L.actors[v].money.mon * r.range(...WORLD.RAID_TAKE) });
-    if (r.chance(WORLD.RAID_KILL)) commit(L, 'murder', { by: raider, victim: v, zone: [tz.x, tz.y], witnesses: wit }); }
+    commit(L, 'theft', { by: chief.id, victim: v, zone: [tz.x, tz.y], witnesses: wit, victimSaw: true, rng: r, value: L.actors[v].money.mon * r.range(...WORLD.RAID_TAKE) });
+    if (r.chance(WORLD.RAID_KILL)) commit(L, 'murder', { by: raider, victim: v, zone: [tz.x, tz.y], witnesses: wit, rng: r }); }
   emit(L, 'crime.raid', { actor: chief.id, zone: [tz.x, tz.y], from: [z.x, z.y], victims: hit, culture: L.regions[tz.region].culture });
   if (r.chance(WORLD.RAID_SEIZE)) { const v = L.actors[r.pick(hit)], pid = v && v.holds.find(q => L.plots[q]?.holder === v.id);
     if (pid) seize(L, pid, chief.id, { how: 'raid', witnesses: folk.slice(0, 5) }); }
@@ -123,7 +128,7 @@ function catchDay(L, r, day) {
 
 // ---- hunters: a big enough bounty on him sends someone looking. They walk a zone a day toward where he is ----
 export function huntersDay(L, cal, r) {
-  const X = index(L, cal.year), C = crimeState(L), me = L.actors[L.player]; if (!me) return;
+  const X = index(L, cal.seasonIndex + cal.year * 4), C = crimeState(L), me = L.actors[L.player]; if (!me) return;
   C.hunters = C.hunters.filter(h => {
     const a = L.actors[h.actor];
     if (!a?.alive || !me.alive || bountyOf(L, me.id, h.culture) < K.HUNT_GIVE_UP || L.hour - h.since > K.HUNT_DAYS * 24) {

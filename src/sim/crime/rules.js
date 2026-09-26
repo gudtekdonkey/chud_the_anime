@@ -10,7 +10,7 @@ export const CRIMES = {
   assault:   { rank: 3, karma: -6,  bounty: 150,   standing: -.15, fade: .012 },
   murder:    { rank: 4, karma: -15, bounty: 1000,  standing: -.35, fade: .004 },
   plotMurder:{ rank: 5, karma: -25, bounty: 3000,  standing: -.5,  fade: .003 },   // taking a plot by murder
-  regicide:  { rank: 6, karma: -35, bounty: 10000, standing: -.8,  fade: 0 },      // killing an elder or royalty
+  regicide:  { rank: 6, karma: -35, bounty: 10000, standing: -.8,  fade: 0 },      // killing an elder (60 or older) or royalty; forgiven only a royal killer
 };
 export const KINDS_BY_RANK = Object.keys(CRIMES).sort((a, b) => CRIMES[a].rank - CRIMES[b].rank);
 export const worse = (a, b) => (!a ? b : !b ? a : CRIMES[a].rank >= CRIMES[b].rank ? a : b);
@@ -19,7 +19,8 @@ export const K = {
   KARMA_MIN: -100, KARMA_MAX: 100,
   MONSTER: -40,          // killing someone this low costs half the karma: nobody mourns a monster
   JUSTICE: .3,           // killing a man his own witnesses want: this share of the karma, and no bounty from them
-  THEFT_SHARE: .5,       // a theft's bounty grows by this share of what was taken
+  THEFT_SHARE: .5,
+  MASK_SEE: .3,          // a witness close by sees through a mask this often (owner 2026-09-26)       // a theft's bounty grows by this share of what was taken
   ELDER_AGE: 60,         // killing someone this old is killing an elder
   // standing: fast. It moves toward a baseline set by karma (who he is) by this share of the gap each day
   STANDING_DRIFT: .02, STANDING_FROM_KARMA: 1 / 200,
@@ -44,21 +45,25 @@ export const LAND = {
   COURT_YEARS: 3,          // a claimant with no living witness loses in court after this long
   GRANT_STANDING: .3,      // a lord grants an unclaimed plot to a holder his people think this well of
   // seasonal chances for contested land off screen
-  KIN_RAID: .12, LORD_RAID: .1, SALE: .05, BLOOD: .04, COURT: .1, FORGE: .02, EXPOSE: .15, GRANT: .25,
+  KIN_RAID: .12, LORD_RAID: .1, SALE: .05, BLOOD: .04, COURT: .1, FORGE: .02, EXPOSE: .15, EXPOSE_YEARLY: .7, GRANT: .25,
+  // a forged deed comes out each season with EXPOSE × EXPOSE_YEARLY ^ years since: less and less likely every year (owner 2026-09-26)
   WITNESS_KEEP: 5,         // witnesses of a taking remembered by the contested record
 };
 
 // Off-screen crime, per region per day, for a region of NORM people (docs/sim-crime.md "The world without him")
 export const WORLD = {
   NORM: 70,
-  THEFT: .055, ASSAULT: .02, MURDER: .002, PLOT_MURDER: .0005, REGICIDE: .00003, FEUD: .004,
-  FEUD_ACT: .03, FEUD_MURDER: .1, FEUD_COOL: .01,
-  RAID: .01, RAID_REACH: 10, RAID_KILL: .1, RAID_SEIZE: .05, RAID_TAKE: [.2, .4],
+  // a violent time (owner 2026-09-26): about this share of the people die by the sword each year (murders, feuds, raids, executions).
+  // The people lane's births must keep up, or the land empties
+  VIOLENCE: .3, MURDER_SHARE: .9,
+  THEFT: .055, ASSAULT: .02, PLOT_MURDER: .0005, REGICIDE: .00003, FEUD: .004,
+  FEUD_ACT: .03, FEUD_MURDER: .3, FEUD_COOL: .01,
+  RAID: .02, RAID_REACH: 10, RAID_KILL: .3, RAID_SEIZE: .05, RAID_TAKE: [.2, .4],
   // how much crime each culture kind breeds
   KIND: { clan: 1, court: .7, rebels: 1.2, monastic: .4, bandits: 2, shinobi: 1.1, merchants: 1.3, fishers: .8, miners: 1 },
   // the chance someone sees it, by the place
   SEEN: { town: .8, village: .6, fort: .9, shrine: .5, camp: .3, wild: .15 },
-  MASK: { outlaw: .5, shinobi: .6 }, MASK_ELSE: .08,
+  MASK: { outlaw: .5, shinobi: .6 }, MASK_ELSE: .08, CLOSE: .5,
   CATCH: .004, CATCH_HOME: .004, CATCH_CHIEF: .3, EXECUTE: .7,
 };
 
