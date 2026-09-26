@@ -94,6 +94,11 @@ Decisions made in the design sessions so far, newest last.
   - The look, from the Breath of Qi tiers: I is quiet; II lifts stone off the floor as a skill fires; III adds ribbons of light spiralling up. Nothing on the floor.
   - Storm Chain 3 / 4 / 5 jumps and 8 / 9 / 10 s. Thousand Cuts 7 / 9 / 11 cuts in the same vanish. Cross Rift: a 15% bigger X at II; at III a second, smaller detonation 0.25 s later. Crescent Moon: at II the shatter cuts too; at III a smaller twin moon sweeps the other way. Mirror Meditation: one more image at II, two at III. Storm slam: 20% wider at II; at III bolts climb out of the cracks.
   - The page has a power picker to try each tier. K, J, the slide and jump have no tiers yet.
+- **Power, approved (owner, 2026-09-26):** "power tiers good": the skill versions and stat numbers above stand. Also decided:
+  - Stats come from items as well as the tier.
+  - Each skill should also grow **by use** (a skill tree fed by casting it), not only by the power tier.
+  - At the very start he has no skills: when the Qi meter fills he casts a random spell by himself mid-fight, and then talks to himself ("What's happening to me?").
+  - Harvest's streams are the effect cyan, not grey.
 
 ## Deaths pass (approved: prototypes 29 to 31 and 33)
 
