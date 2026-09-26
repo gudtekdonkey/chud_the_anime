@@ -28,6 +28,12 @@ Decisions made in the design sessions so far, newest last.
 - **Executions, batch 1 (approved):** behind the back, through and past, rising launch, whirlwind, far behind, peek-a-boo, and peek-a-boo from behind (a neck snap).
 - **Executions, batch 2 (all approved):** standoff (amazing), hat throw, shadow step, bare hand, three of me, topknot (amazing), pommel, the bow, overload (great death, idea and execution), vault (perfect, creative).
   - **Hat throw** needs him to be wearing a hat. Reworked: he glitches behind the enemy and the hat is left behind, hanging where his head was; it catches up through the enemy's neck and lands on his head, and the head falls on the click.
+  - **Hat throw only with certain hats**: the wide-brimmed ones he can fling like a disc (the straw hat, the kasa). Hat items carry `throwable: true`.
+- **Executions, batch 3:** lattice (amazing), kick launch (great, creative), reflection, scabbard, half moon, fault line (amazing: "more deaths like this, imaginative") all approved.
+  - **Blade Rain → Shuriken Rain**: the falling glitch blades become shuriken.
+  - **Still Heart and Walk By are endings only**: only when no other enemy is on screen.
+  - **Rewind only on stronger enemies** (elite and boss), never a minion; every samurai so far is a minion.
+- **Execution rules** (`src/assassin/rules.js`): every execution declares what it needs: which weapons (anything drawn from a scabbard and sheathed on the click needs katana, nodachi or tanto; Scabbard and Pommel need a long scabbard, katana or nodachi; the yari has none), a throwable hat, ending-only, and enemy tiers. `pick()` offers only the ones that fit, never the same twice running. With the yari only Hat throw, Bare hand and Shuriken Rain fit today, so the spear needs executions of its own.
 - **Skills, round two** (`prototypes/18-skills-ideas.html`):
   - Approved as they are: Counter, Glitch Dodge, Static Trail, Lightning Chain, and Lingering Blades (its spectral blades turn to whichever enemy is nearest when they fire).
   - Iai Focus: approved, and its stance is the movement bar for every other skill and execution. As Focus builds he settles into the draw: hand to the hilt, rear foot slides back, body hunched over the sheath.
