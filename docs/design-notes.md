@@ -26,6 +26,16 @@ Decisions made in the design sessions so far, newest last.
 - **Sword out:** after an attack he waits with the blade out in one of six stances, picked at random each time and never the same twice running: four side-on counter stances with the blade in his back hand pointing at the ground, and two opened to the camera.
 - **Skills:** hold I for Thousand Cuts; hold O for Crescent Moon, cast in place; P for Cross Rift, a tear in reality; N for Mirror Meditation, where mirror images attack the nearest enemies. Storm Chain is a passive that runs for 8 s whenever the Qi meter fills from landing hits.
 - **Executions, batch 1 (approved):** behind the back, through and past, rising launch, whirlwind, far behind, peek-a-boo, and peek-a-boo from behind (a neck snap).
+- **Executions, batch 2 (all approved):** standoff (amazing), hat throw, shadow step, bare hand, three of me, topknot (amazing), pommel, the bow, overload (great death, idea and execution), vault (perfect, creative).
+  - **Hat throw** needs him to be wearing a hat. Reworked: he glitches behind the enemy and the hat is left behind, hanging where his head was; it catches up through the enemy's neck and lands on his head, and the head falls on the click.
+  - **Hat throw only with certain hats**: the wide-brimmed ones he can fling like a disc (the straw hat, the kasa). Hat items carry `throwable: true`.
+- **Executions, batch 3:** lattice (amazing), kick launch (great, creative), reflection, scabbard, half moon, fault line (amazing: "more deaths like this, imaginative") all approved.
+  - **Blade Rain → Shuriken Rain**: the falling glitch blades become shuriken.
+  - **Still Heart and Walk By are endings only**: only when no other enemy is on screen.
+  - **Rewind only on stronger enemies** (elite and boss), never a minion; every samurai so far is a minion.
+- **Execution rules** (`src/assassin/rules.js`): every execution declares what it needs: which weapons (anything drawn from a scabbard and sheathed on the click needs katana, nodachi or tanto; Scabbard and Pommel need a long scabbard, katana or nodachi; the yari has none), a throwable hat, ending-only, and enemy tiers. `pick()` offers only the ones that fit, never the same twice running. With the yari only Hat throw, Bare hand and Shuriken Rain fit today, so the spear needs executions of its own.
+  - **Rarity** (owner): some executions are common, some rare, depending on his level, his power, and whether a Qi boost is running. Proposed: common / uncommon / rare / legendary, weighting the pick 10 / 5 / 2 / 0.6. Rare needs power II and legendary power III, unless a Qi boost is running, which opens them all and favours rare ×4 and legendary ×8. Legendary for now: Overload, Fault Line. Rare: Three of me, Vault, Lattice, Kick Launch, Shuriken Rain, Rewind.
+  - **Openers** (owner: "some should only be used at start"): only as the first kill of a fight. Proposed: Standoff, The bow. Endings are the other bookend.
 - **Skills, round two** (`prototypes/18-skills-ideas.html`):
   - Approved as they are: Counter, Glitch Dodge, Static Trail, Lightning Chain, and Lingering Blades (its spectral blades turn to whichever enemy is nearest when they fire).
   - Iai Focus: approved, and its stance is the movement bar for every other skill and execution. As Focus builds he settles into the draw: hand to the hilt, rear foot slides back, body hunched over the sheath.
@@ -38,7 +48,8 @@ Decisions made in the design sessions so far, newest last.
   - Three power tiers each: I is quiet (a trickle of motes); II adds matter lifting off the floor; III adds ribbons of light. Nothing on the floor (no ripples, no sigils) and nothing over his head.
   - **Harvest** splits off onto its own key (E proposed): hold near the fallen to turn their remains into EXP. Healing stays on C. Approved. He should face **north** (back to the camera) and let it come to him; that needs the 8-direction rig (see Next).
   - **Glitch Dodge power:** at power II it dodges again if another blow comes within 0.5 s; at power III within 1 s.
-- **Counters by attack** (`prototypes/23-counters.html`): the enemy has several attacks, each with a readable tell (a glint running up the blade, the eye flashing, plus the wind-up itself). A blow that lands while he holds F plays the counter that answers that attack: overhead chop → receive and flow; horizontal sweep → under the sweep; thrust → along the blade; diagonal cut → disarm; low rising cut → pin the blade; charge → matador; leaping strike → under the leap; three-cut flurry → break the rhythm.
+- **Counters by attack** (`prototypes/23-counters.html`): the enemy has several attacks, each with a readable tell (a glint running up the blade, the eye flashing, plus the wind-up itself). A blow that lands while he holds F plays the counter that answers that attack: overhead chop → receive and flow; horizontal sweep → under the sweep; thrust → along the blade; diagonal cut → disarm; low rising cut → pin the blade; charge → matador; leaping strike → under the leap; three-cut flurry → break the rhythm. Added (loved, "can we add more"): quick-draw → stop the draw; spinning cut → into the turn; front kick → sweep the leg; feint then thrust → don't bite; sword throw → return to sender; shoulder barge → give way.
+  - **The counter window (agreed):** tap F. A blow landing within 0.2 s of the press is countered; an earlier press is only a block (pushed back, no counter). Four indicators prototyped; recommended A, the glint running up the enemy's blade and a star on the point while the window is open, with B, a closing ring, as an assist option. Not yet picked.
 - **Nothing left to fight:** if no enemy is within two screens (960 px) when an attack or execution ends, he skips the blade-out stance and sheathes at once, unbothered.
 
 ## Personality traits (`prototypes/26-personalities.html`, awaiting the owner's review)
@@ -62,6 +73,10 @@ Decisions made in the design sessions so far, newest last.
      - **Lock-on brackets** are reserved for big items you can pick up.
    - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, in a darker red-grey.
    - Executions are short and brutal, show only the key frames (each one leaning into the motion), and cut the enemy into real pieces.
-3. **Clothing redesign.** The mantle was flattened because it read as a hump; the rest still needs a pass.
-4. **Front, back and diagonal views** for every move. Everything uses the side view today. The 8-direction rig (`prototypes/19-rig-v2-and-clothing.html`) is the path: port each move's key poses onto it, starting with walk, idle and the stances. Harvest facing north waits on this.
+3. **Clothing** (`prototypes/19-rig-v2-and-clothing.html`, loved: "great job on the clothing system", "let's do more"):
+   - **All fifteen items stay**, and **the slots are good as they are**. More items to come.
+   - **Lamellar and samurai armour may be coloured, but only faintly** (muted, low-saturation tints over the blacks). Cloth stays shades of black, never bright red.
+   - Still open: the default outfit; his true left side or a mirror when facing left; whether the hat brim shows more of its top when he faces the camera.
+   - Earlier: the mantle was flattened because it read as a hump.
+4. **Front, back and diagonal views** for every move: **the port system is built** (`src/rig/port.js`, `prototypes/27-port-system.html`, `docs/port-system.md`). It turns every existing side-view animation, and every personality bake, into all eight directions on rig v2 automatically. Wiring it into the game waits on the clothing branch, which brings rig v2's skeleton into `src/wardrobe/`. Harvest facing north waits on that too.
 5. **Real enemies** with health, needed by K.
