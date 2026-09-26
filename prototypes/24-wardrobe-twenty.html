@@ -127,7 +127,7 @@
         <div><div class="lbl">Cloth colour (by rarity)</div><div class="chips" role="group" aria-label="Cloth colour" id="robes"></div>
           <div class="chips"><button type="button" class="chip" id="roll">Roll a drop</button></div><p id="drop" class="note" aria-live="polite"></p></div>
         <div><div class="lbl">Armour dye (plate and mail only)</div><div class="chips" role="group" aria-label="Armour dye" id="dyes"></div></div>
-        <div><div class="lbl">Bandana (rare)</div><div class="chips"><button type="button" class="chip" id="bandcol">Tie on a bandana in a random colour</button></div></div>
+        <div><div class="lbl">Bandana and headband (rare)</div><div class="chips"><button type="button" class="chip" id="bandcol">Tie on a bandana in a random colour</button><button type="button" class="chip" id="headcol">Tie on a headband in a random colour</button></div></div>
         <div><div class="lbl">Hair colour</div><div class="chips" role="group" aria-label="Hair colour" id="haircols"></div></div>
         <div class="chips" role="group" aria-label="Outfits" id="presets"></div>
         <div id="slots"></div>
@@ -152,8 +152,8 @@
   </section>
 
   <section aria-labelledby="heads-h">
-    <div class="intro"><h2 id="heads-h">Hats and hair</h2><p>The hat is an item now, not part of him, so he can go bareheaded. Hair sits on his scalp, and long styles have cloth tails that swing. Under a hat, whatever is above the brim hides, and the sides and tails still show. Twenty-two styles. The rare bandana is the one headwear in any colour, and it only fits styles with nothing on the crown: knots, buns, crests and volume don't go under it. Tick a box to see every style under the straw hat or the bandana.</p></div>
-    <div class="chips"><label class="check" for="underhat"><input type="checkbox" id="underhat"> Hair under the straw hat</label> <label class="check" for="underband"><input type="checkbox" id="underband"> Hair under the bandana</label></div>
+    <div class="intro"><h2 id="heads-h">Hats and hair</h2><p>The hat is an item now, not part of him, so he can go bareheaded. Hair sits on his scalp, and long styles have cloth tails that swing. Under a hat, whatever is above the brim hides, and the sides and tails still show. Twenty-two styles. The rare bandana is the one headwear in any colour, and it only fits styles with nothing on the crown: knots, buns, crests and volume don't go under it. The rare headband is tied like a sweatband and open on top, so it goes with every style and the hair above it shows. Tick a box to see every style under the straw hat, the bandana or the headband.</p></div>
+    <div class="chips"><label class="check" for="underhat"><input type="checkbox" id="underhat"> Hair under the straw hat</label> <label class="check" for="underband"><input type="checkbox" id="underband"> Hair under the bandana</label> <label class="check" for="underhead"><input type="checkbox" id="underhead"> Hair with the headband</label></div>
     <div id="heads"></div>
   </section>
 
@@ -4420,6 +4420,13 @@
 			about: "Rare. A cloth tied round the head, knotted at the back, the ends trailing. Any colour at all, picked when it drops. Only fits hair with nothing on the crown."
 		},
 		{
+			id: "hachimaki",
+			name: "Headband",
+			rare: true,
+			band: "open",
+			about: "Rare. Tied round the brow like a sweatband, open on top, so every hairstyle shows over it; long ends fly behind. Any colour, picked when it drops."
+		},
+		{
 			id: "kabuto",
 			name: "Kabuto",
 			drop: 3,
@@ -4438,6 +4445,7 @@
 		}
 	];
 	const HAT_ALLOWS = {
+		hachimaki: "all",
 		bandana: "all",
 		straw: "all",
 		kasa: "all",
@@ -4552,6 +4560,55 @@
 			bias: 2.69
 		}
 	];
+	const HEADBAND = [
+		{
+			kind: "bandana",
+			rows: [
+				"",
+				"",
+				"",
+				".aAAAAAA.."
+			]
+		},
+		{
+			kind: "chain",
+			f: "c",
+			u: 10.4,
+			v: -2.4,
+			b: .3,
+			n: 7,
+			seg: 1.2,
+			dir: [
+				-.8,
+				-.7,
+				.2
+			],
+			w: [1, 1],
+			col: ["nA", "nA"],
+			stiff: .02,
+			catch: 1.3,
+			bias: 2.7
+		},
+		{
+			kind: "chain",
+			f: "c",
+			u: 10.4,
+			v: -2.4,
+			b: -.3,
+			n: 5,
+			seg: 1.2,
+			dir: [
+				-.6,
+				-.9,
+				-.2
+			],
+			w: [1, 1],
+			col: ["na", "na"],
+			stiff: .02,
+			catch: 1.2,
+			bias: 2.69
+		}
+	];
 	const ITEMS = [
 		...ITEMS$1.map((it) => {
 			const lo = Math.min(...it.parts.map((p) => p.bias || 0));
@@ -4598,7 +4655,7 @@
 			name: h.name,
 			about: h.about,
 			rare: h.rare,
-			parts: h.band ? BANDANA : [{
+			parts: h.band === "open" ? HEADBAND : h.band ? BANDANA : [{
 				kind: h.drop ? "deephat" : "sidehat",
 				rows: h.rows,
 				drop: h.drop,
@@ -5222,6 +5279,17 @@
 			]
 		},
 		{
+			name: "Brawler",
+			items: [
+				"hachimaki",
+				"hair-spikes",
+				"rhakama",
+				"wraps",
+				"obi",
+				"tasuki"
+			]
+		},
+		{
 			name: "Bare",
 			items: []
 		}
@@ -5268,7 +5336,7 @@
 				hero.outfit.delete(gone);
 				note = `The bandana only fits hair with nothing on the crown. The ${BY_ID[gone].name.toLowerCase()} came off.`;
 			}
-			if (it.id === "bandana") hero.band = randomTint();
+			if (it.id === "bandana" || it.id === "hachimaki") hero.band = randomTint();
 		}
 		syncRoom();
 	});
@@ -5307,6 +5375,13 @@
 	});
 	const syncDyes = () => document.querySelectorAll("[data-dye]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.dye === hero.dye)));
 	syncDyes();
+	$("headcol").addEventListener("click", () => {
+		hero.band = randomTint();
+		hero.outfit.delete(hatOf(hero));
+		hero.outfit.add("hachimaki");
+		note = "";
+		syncRoom();
+	});
 	$("bandcol").addEventListener("click", () => {
 		hero.band = randomTint();
 		if (!hero.outfit.has("bandana")) {
@@ -5362,9 +5437,14 @@
 	document.querySelectorAll("#heads canvas").forEach((cv, i) => {
 		headCards[i].g = cv.getContext("2d");
 	});
-	for (const c of headCards) if (c.it.id === "bandana") c.F.band = randomTint();
+	for (const c of headCards) if (c.it.rare) c.F.band = randomTint();
+	const UNDER = {
+		underhat: "straw",
+		underband: "bandana",
+		underhead: "hachimaki"
+	};
 	const underHead = () => {
-		const h = $("underhat").checked ? "straw" : $("underband").checked ? "bandana" : null;
+		const h = UNDER[Object.keys(UNDER).find((k) => $(k).checked)] || null;
 		for (const c of headCards) if (c.it.slot === "hair") {
 			c.F.outfit = new Set(h && (h !== "bandana" || BANDANA_HAIR.has(c.it.id.slice(5))) ? [c.it.id, h] : [c.it.id]);
 			if (!c.F.bandSet) {
@@ -5373,12 +5453,10 @@
 			}
 		}
 	};
-	$("underhat").addEventListener("change", () => {
-		if ($("underhat").checked) $("underband").checked = false;
-		underHead();
-	});
-	$("underband").addEventListener("change", () => {
-		if ($("underband").checked) $("underhat").checked = false;
+	for (const k in UNDER) $(k).addEventListener("change", () => {
+		if ($(k).checked) {
+			for (const o in UNDER) if (o !== k) $(o).checked = false;
+		}
 		underHead();
 	});
 	const hatIds = [null, ...ITEMS.filter((i) => i.slot === "head").map((i) => i.id)];
