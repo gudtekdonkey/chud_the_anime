@@ -68,7 +68,10 @@ try {
     await page.evaluate(() => { window.__eLog = []; const e = window.__game.E[0];
       const tick = () => { if (window.__eLog[window.__eLog.length - 1] !== e.state) window.__eLog.push(e.state); requestAnimationFrame(tick); }; tick(); });
     await kb.down('d'); await until('walking up to him', () => window.__game.P.x > 236); await kb.up('d'); await reach(FREE);
-    for (let i = 0; i < 10 && await page.evaluate(() => window.__game.E[0].alive); i++) { await kb.press('j'); await reach(/^slash/); await reach(FREE); }
+    // J, J each round: the answer cut lands inside 0.5 s of the first, so he staggers wherever the steps before left the ronin
+    for (let i = 0; i < 10 && await page.evaluate(() => window.__game.E[0].alive); i++) {
+      await kb.press('j'); await reach(/^slash1/); await until('slash 1 follow-through', () => window.__game.P.t > .18);
+      await kb.press('j'); await reach(FREE); }
     const e = await page.evaluate(() => ({ alive: window.__game.E[0].alive, hp: window.__game.E[0].hp, log: window.__eLog }));
     if (e.alive) fail(`the samurai is still standing after 10 cuts (hp ${e.hp}, states ${e.log.join(' > ')})`);
     for (const st of ['flinch', 'stagger', 'dead']) if (!e.log.includes(st)) fail(`the samurai never went through ${st} (states ${e.log.join(' > ')})`);
