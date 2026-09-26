@@ -17,19 +17,17 @@ The proof is `prototypes/27-port-system.html`. It reads the game's real `POSES` 
 
 `DIRS` lists the eight facings as rig v2 yaws: 0 faces screen-right, 90° faces the camera (south).
 
-## Plugging it into the game (after the branches merge)
+## In the game
 
-The clothing branch (`claude/project-thread-fblw73`) already brings rig v2's skeleton into `src/wardrobe/skeleton.js`. It has a simple `fromSide(p)` and solves at yaw 0 only, with a comment saying the port system swaps in there. So:
-
-1. **Skeleton:** in `wardrobe/skeleton.js`, use `port(p)` wherever `fromSide(p)` is used, and pass the facing's yaw instead of 0. The clothing items are measured from the bones and need no change.
-2. **Body:** the side rig (`rig/rig.js`) can only draw side-on. For the other seven facings, draw the body with rig v2's `drawBody` and `drawHat` (in `prototypes/19-rig-v2-and-clothing.html`) into the wardrobe's `Raster`. From the side, keep today's rig, so nothing changes where it already looks right.
-3. **Sheets:** `anims/sheets.js` bakes one strip per animation today. Bake one per animation per facing (`SHEETS[name][dir]`), lazily on first use. Keep each frame's glitch slices.
-4. **Facing:** the player keeps `P.dir` (one of `DIRS`) from the last movement input instead of `P.face` ±1. West is his true left side, not a mirror. Whether to mirror instead is still the owner's call.
-5. **Enemies** share the rig, so the samurai get eight directions the same way, with the red-grey palette.
-6. **Effects** stay in world space, so crescents, cuts and bolts only need to know the facing's direction.
+- **Skeleton:** `wardrobe/skeleton.js` is rig v2's full solver again (IK hands, the head, the scabbard, the blades). From the side it still solves `fromSide(p)` flat, on the side rig's pixels.
+- **Body:** `dress(R, F, p, dt, yaw)`: yaw 0 draws today's side rig; any other facing solves `port(p)` at that yaw and draws `rig/body3d.js` (rig v2's `drawBody` and `drawHat`) into the same raster, and the clothes hang from those bones. The straw hat has a 3D form (`hat3d`), and the flat mantle becomes a close shell over the shoulders.
+- **Facing:** `P.view` is E, SE, S, NE or N, from the last movement input; `P.face` mirrors it for the west side. `player/draw.js` turns idle, walk, run and runArmed, and Harvest faces N. Attacks, skills and stances stay side on.
+- **Sheets:** no extra baking. The player is dressed live every frame (`dressed()`), so the facing is just a yaw passed along. The baked sheets (mirror images, afterimages) stay side on.
+- **Tuning:** `port()` rests the feet a little wider than rig v2 did (leg spread .15), so a stride seen from the front shows two legs.
+- **Not yet:** the samurai, and weapons other than the katana off the side.
 
 ## Still open
 
-- True left side or a mirror when facing W, SW and NW.
-- Harvest facing north (back to the camera) is the first move that needs a direction of its own. With the port it is `DIRS` N plus the harvest poses.
+- True left side or a mirror when facing W, SW and NW (mirrored for now).
+- Whether attacks and skills should turn too (their hits aim along x today).
 - Moves drawn by hand (sit, the two open stances) stay hand-drawn. They face the camera or away and need no port.

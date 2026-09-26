@@ -5,6 +5,7 @@ import { GLITCHY } from '../anims/anims.js';
 import { SHEETS, sliceGlitch, glitchSeed } from '../anims/sheets.js';
 import { Raster } from '../wardrobe/raster.js';
 import { dress, turnCloth } from '../wardrobe/dress.js';
+import { DIRS } from '../rig/port.js';
 import { frameOf } from './actions.js';
 import { glowK } from './body.js';
 import { spriteTo, solid } from '../world/sprite.js';
@@ -22,6 +23,10 @@ function rim(sheet, f, x, y, face, k) {
 // his frame drawn live in what he wears, the cloth stepped by the time since the last draw (held still in the hit pause).
 // A dropped-in strip or a hand-drawn frame (the views the side rig cannot pose) is used as it is.
 const R = new Raster(FW, FH, OX, OY), last = { t: 0, x: 0, y: 0, face: 1 };
+// the moves that turn with him (P.view, from the way he last moved); every attack and skill is still drawn side on.
+// Harvest faces north: he stands with his back to the camera and lets it come to him (owner).
+const YAW = Object.fromEntries(DIRS.map(d => [d.id, d.yaw])), TURNS = new Set(['idle', 'idleGlitch', 'walk', 'run', 'runArmed']);
+export const viewYaw = () => P.state === 'harvest' ? YAW.N : TURNS.has(P.state) ? YAW[P.view] || 0 : 0;
 function dressed(sheet, f) {
   const now = performance.now() / 1000, dt = S.hitstop > 0 ? 0 : Math.min(.05, Math.max(0, now - last.t));
   if (P.face !== last.face) turnCloth(wear);
@@ -31,7 +36,7 @@ function dressed(sheet, f) {
   Object.assign(last, { t: now, x: P.x, y: P.y, face: P.face }); wear.t += dt;
   const p = !sheet.custom && sheet.poses && sheet.poses[f];
   if (!p) return [sheet, f];
-  const cv = dress(R, wear, p, dt);
+  const cv = dress(R, wear, p, dt, viewYaw());
   if (sheet.glf[f]) sliceGlitch(R.g, 0, sheet.glf[f], glitchSeed(sheet.name, f));
   return [{ img: cv, fw: FW, fh: FH, ox: OX, oy: OY }, 0];
 }
