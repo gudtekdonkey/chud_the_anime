@@ -67,6 +67,11 @@ Decisions made in the design sessions so far, newest last.
 - **Approved:** keep all 52 traits as they are ("they're all great"). Merged to main.
 - **Decided:** the ronin keeps the personality he has: no traits by default, so he stands, walks and runs as drawn. The picker stays for trying mixes.
 
+## HUD
+
+- **Skill bar, like League of Legends:** bottom centre. The Storm Chain passive on the left (the Qi fills its icon; during the storm its 8 s drain as a sweep), then I, O, P, N and U, then K (the flash) and slide as the two summoner-style slots. Each slot shows its cooldown as a dark clockwise sweep with the seconds left, whole seconds then tenths under one.
+- **Cooldowns on every active.** The flash (K) is recastable after an assassination: its cooldown drops to 0.2 s. Starting values, to tune: K 3 s, I 2 s (Thousand Cuts 8 s), O 10 s, P 12 s, N 14 s, U 8 s, slide 1 s. K keeps the old rule that with no enemy near you can spam it.
+
 ## Next
 
 2. **K assassinations:**
@@ -80,6 +85,7 @@ Decisions made in the design sessions so far, newest last.
      - **Lock-on brackets** are reserved for big items you can pick up.
    - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, in a darker red-grey.
    - Executions are short and brutal, show only the key frames (each one leaning into the motion), and cut the enemy into real pieces.
+   - **In the game** (`src/assassin/`): the markers, the seven approved batch 1 executions and the 0.2 s K reset. Claude's guesses, open to tuning: K reaches 120 px; the bubbles are drawn at half the isolation distance so two overlap exactly when the enemies guard each other; the prototype's 0.75 s lock-on beat before he flashes is cut to 0.2 s; the execution is picked at random, never the same twice running. Decapitation (the eighth in prototype 14) is not in the approved list, so it is left out.
 3. **Clothing** (`prototypes/19-rig-v2-and-clothing.html`, loved: "great job on the clothing system", "let's do more"):
    - **All fifteen items stay**, and **the slots are good as they are**. More items to come.
    - **Lamellar and samurai armour may be coloured, but only faintly** (muted, low-saturation tints over the blacks). Cloth stays shades of black, never bright red.

@@ -35,6 +35,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `player/skills.js` | Charging (`chargeUp`), Thousand Cuts (`TC`), Cross Rift (`RIFT`), the dash, `release`/`charged` |
 | `player/mirror.js` | Mirror Meditation: the mirror images' timeline |
 | `player/hits.js` | Hit tests against the enemies, `burst` (the sheath-click payoff) |
+| `player/cooldowns.js` | `CD` (every active's cooldown), `startCd`, `gate` (refuses a key on cooldown), `onAssassination` (K back in 0.2 s) |
 | `player/qi.js` | The Qi meter's gains and Storm Chain (`chainFrom`) |
 | `player/body.js` | His silhouette points (sparks and bolts land on his body), `motes`, `glowK` |
 | `player/personality.js` | `setPersonality()`: bakes a trait mix into his idle, walk and run and their speeds (`P.gait`) |
@@ -52,13 +53,22 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `fx/moon.js` | The Crescent Moon: sweep, hang, shatter, its light on the floor |
 | `fx/void.js` | Cross Rift's tear in reality |
 | `fx/blood.js` | Blood drops, floor stains and pools |
+| `assassin/targets.js` | The one place K reads enemies from (the enemy API): `targets`, `faceOf`, `hold` (an execution takes one over), `roomFade` |
+| `assassin/markers.js` | Isolation bubbles, link lines, the kill line and the K prompt; `K.pick` (whom K would execute now), `K_RANGE` |
+| `assassin/assassinate.js` | K on a lone enemy: the execution stage (both bodies, pieces, effects, mirrored when he faces right), handing the ronin back, `onAssassination` |
+| `assassin/executions.js` | `EXECS`: the approved batch 1 executions, ported from prototype 14 |
+| `assassin/enemy-poses.js` | The enemy's guard and reaction poses the executions share, `at` (pose at time t), `quickSheathe` |
+| `assassin/pieces.js` | The rig drawn live (`figure`, `withShadow`), the enemy cut into pieces of his own pixels, `dropSword`, `sever`, `shatter` |
+| `assassin/stage-fx.js` | An execution's own effects (`F`: sparks, slivers, cuts, crescents, bolts, ghosts, cracks) |
 | `world/room.js` | Floor bounds, pillars, the baked background, `collide` |
 | `world/enemies.js` | The samurai and the enemy API: `ENEMIES`, `living`, `nearest`, `isolated`, `damage`, `kill`, `onKill`; `DMG`, health, reactions, respawn |
 | `world/enemy-body.js` | The samurai's poses (guard, flinch, stagger, death) and the deaths pass's spring joints, floor thud, twitch, eye going out |
 | `world/enemy-draw.js` | Drawing a samurai (red-grey palette, topknot), his health bar, dropped swords |
 | `world/sprite.js` | `spriteTo`, `solid` (a frame recoloured solid) |
-| `world/render.js` | `render()`: depth sort by feet, effects, particles, screen flash, Qi meter, HUD text |
+| `world/render.js` | `render()`: depth sort by feet, effects, particles, screen flash, Qi meter, skill bar, HUD text |
 | `ui/qi-meter.js` | The pixel-font Qi meter, bottom left |
+| `ui/skill-bar.js` | The League-style skill bar, bottom centre: passive, I O P N U, then K and slide, with cooldown sweeps and seconds |
+| `ui/pixfont.js` | The 5-row pixel font the HUD draws with (`pixText`, `textW`) |
 | `ui/moveset.js` | The moveset table under the game (from `ANIMS` "about" rows + skill rows) |
 | `ui/personality.js` | The personality picker under the game (remembered in localStorage) |
 | `ui/strip-tester.js` | "Test a sprite strip": drop a PNG strip in place of any animation |
@@ -81,7 +91,8 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, a darker red-grey.
 - Executions are short and brutal, show only the key frames (each leaning into the motion), and cut the enemy into real pieces.
 - Assassination markers: every enemy has an isolation bubble (empty glows cyan; overlapping ones go grey and are joined by a link line); a kill line runs to the nearest enemy he can dash to; the K prompt appears only when that enemy is in range AND outside every other enemy's bubble; lock-on brackets are reserved for big pickups.
-- Skills and keys: move WASD / arrows · hold V walk · J slash (again for the answer cut) · Shift or L slide · Space jump · K glitch teleport · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing). Storm Chain is passive: 8 s whenever the Qi meter fills.
+- Skills and keys: move WASD / arrows · hold V walk · J slash (again for the answer cut) · Shift or L slide · Space jump · K glitch teleport, or on a lone enemy in reach an execution · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing). Storm Chain is passive: 8 s whenever the Qi meter fills.
+- Cooldowns (`player/cooldowns.js`): K 3 s (none with no enemy near; 0.2 s after an assassination) · I 2 s, Thousand Cuts 8 s · O 10 s · P 12 s · N 14 s · U 8 s · slide 1 s. J and jump have none.
 
 ## Working conventions
 

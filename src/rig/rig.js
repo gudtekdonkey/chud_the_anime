@@ -37,6 +37,9 @@ export function rig(g, fx, p, pal = RC) {
     seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
   const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
 
+  if (p.noUpper) {   // cut in two: only the pelvis and legs are left, and they fold on their own
+    leg(p.bl, 'D', -.5); poly([L(0, -2), L(0, 2), L(2.6, 2.2), L(2.6, -2.2)], 'K'); leg(p.fl, 'K', .5); return;
+  }
   // far side first: scabbard, far arm, far leg
   seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
   // the back hand can carry the blade too, for the counter stances
@@ -49,9 +52,12 @@ export function rig(g, fx, p, pal = RC) {
   // head and hat
   // neck: the head lags and lolls on it (+ forward), carried by the chest
   const nk = p.neck || 0, hc = L(10 - p.bow * .7 - Math.abs(nk) * 1.2, .6 + p.bow * 1.1 + nk * 2.2);
-  for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
-  put(hc[0] + 1.5, hc[1], p.dim ? 'e' : 'E');
-  if (p.bare) { for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] - 2, 'K'); put(hc[0] - 1, hc[1] - 3, 'K'); put(hc[0] - 2, hc[1] - 4, 'K'); put(hc[0] - 2, hc[1] - 3, 'D'); }
+  if (!p.noHead) {   // noHead: the head has come off and is its own piece now
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
+    const hf = p.headFlip ? -1 : 1;   // headFlip: the head is wrenched round to face backward
+    put(hc[0] + 1.5 * hf, hc[1], p.dim ? 'e' : 'E');
+    if (p.bare) { for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] - 2, 'K'); put(hc[0] - hf, hc[1] - 3, 'K'); put(hc[0] - 2 * hf, hc[1] - 4, 'K'); put(hc[0] - 2 * hf, hc[1] - 3, 'D'); }
+  }
   const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
   if (!p.bare) HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x - fx + fx, hy0 + y, ch); }));
   // mantle over the shoulders, its back tip lifting a hair with the flutter
