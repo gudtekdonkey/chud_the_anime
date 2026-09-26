@@ -4,7 +4,7 @@ import { S } from './state.js';
 // ---- Input ----
 export const held = new Set(), taps = new Set();
 const KEYS = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down',
-  j: 'slash', ' ': 'jump', Shift: 'slide', l: 'slide', k: 'tele', i: 'double', u: 'sweep', c: 'sit', x: 'die', o: 'moon', p: 'rift', n: 'mirror' };
+  j: 'slash', ' ': 'jump', Shift: 'slide', l: 'slide', k: 'tele', i: 'double', u: 'sweep', c: 'sit', x: 'die', o: 'moon', p: 'rift', n: 'mirror', q: 'weapon' };
 game.addEventListener('keydown', e => { const k = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (!k) return; e.preventDefault(); if (!held.has(k)) taps.add(k); held.add(k); });
 game.addEventListener('keyup', e => { const k = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (k) held.delete(k); });
 game.addEventListener('blur', () => held.clear());
@@ -18,7 +18,7 @@ export function readInput() {
   const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0), my: (held.has('down') ? 1 : 0) - (held.has('up') ? 1 : 0),
     slash: taps.has('slash'), jump: taps.has('jump'), slide: taps.has('slide'), tele: taps.has('tele'),
     double: taps.has('double'), sweep: taps.has('sweep'), sit: taps.has('sit'), die: taps.has('die'),
-    moon: taps.has('moon'), rift: taps.has('rift'), mirror: taps.has('mirror') };
+    moon: taps.has('moon'), rift: taps.has('rift'), mirror: taps.has('mirror'), weapon: taps.has('weapon') };
   taps.clear();
   return inp;
 }

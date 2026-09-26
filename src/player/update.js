@@ -14,9 +14,11 @@ import { hit, burst } from './hits.js';
 import { meditate, spawnMirror, updateMirrors } from './mirror.js';
 import { TAP, chargeUp, TC, RIFT, release, charged } from './skills.js';
 import { DUMMIES } from '../world/dummies.js';
+import { nextWeapon } from '../weapons/weapons.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
+  if (inp.weapon) nextWeapon();   // Q: the next weapon, at once and mid-move (every weapon's moves share the timeline)
   for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; q.life -= dt; }
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
   P.ghosts.forEach(g => { g.age += dt; g.white -= dt; }); P.ghosts = P.ghosts.filter(g => g.age < g.hold + .25);

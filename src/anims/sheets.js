@@ -24,14 +24,15 @@ function sliceGlitch(g, fx, s, seed) {
   for (let k = 0; k < 3 * s; k++) g.fillRect(fx + 14 + (rnd() * 20 | 0), 14 + (rnd() * 24 | 0), 3 + (rnd() * 8 | 0), 1);
 }
 
-function placeholderSheet(name) {
+// frames: the poses to bake (a weapon's, src/weapons/); art: the weapon's art for the hand-drawn rows, null for the katana
+export function placeholderSheet(name, frames = POSES[name], art = null) {
   const { n } = ANIMS[name];
   const c = document.createElement('canvas'); c.width = FW * n; c.height = FH;
   const g = c.getContext('2d');
   for (let i = 0; i < n; i++) {
-    if (name === 'sit' || name === 'sitDown' || name === 'standUp') { sitFrame(g, i * FW, name, i); continue; }
-    if (name === 'ready4' || name === 'ready5') { frontFrame(g, i * FW, name === 'ready4' ? OPEN_FRONT : INVITE_FRONT, i); continue; }
-    const p = POSES[name][i % POSES[name].length];
+    if (name === 'sit' || name === 'sitDown' || name === 'standUp') { sitFrame(g, i * FW, name, i, art); continue; }
+    if (name === 'ready4' || name === 'ready5') { frontFrame(g, i * FW, name === 'ready4' ? OPEN_FRONT : INVITE_FRONT, i, art); continue; }
+    const p = frames[i % frames.length];
     if (p) rig(g, i * FW, p);
     const gl = GLF[name] && GLF[name][i];
     if (gl) sliceGlitch(g, i * FW, gl, i + name.length * 7);

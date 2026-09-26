@@ -8,6 +8,7 @@ import { sgn } from '../fx/util.js';
 import { frameOf } from '../player/actions.js';
 import { drawPlayer, drawMirror } from '../player/draw.js';
 import { drawQi } from '../ui/qi-meter.js';
+import { weapon } from '../weapons/weapons.js';
 import { DUMMIES, drawDummy } from './dummies.js';
 import { PILLARS, bg, drawPillar } from './room.js';
 
@@ -34,5 +35,5 @@ export function render() {
   drawQi();
   const chg = P.charge != null && !P.cv ? ` · charge <b>${Math.round(P.charge * 100)}%</b>` : P.cv ? ` · ${P.cv.name} at <b>${Math.round(P.pow * 100)}%</b>` : '';
   const qi = P.storm > 0 ? ` · <b>STORM CHAIN ${P.storm.toFixed(1)} s</b>` : ` · qi <b>${Math.round(P.qi * 100)}%</b>`;
-  hud.innerHTML = `animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}${chg}${qi}`;
+  hud.innerHTML = `${weapon().name} · animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}${chg}${qi}`;
 }

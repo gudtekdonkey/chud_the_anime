@@ -1,4 +1,5 @@
 import { OX, OY, RC } from '../config.js';
+import { KATANA_ART } from '../weapons/katana.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
@@ -36,10 +37,13 @@ export function rig(g, fx, p) {
     seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
   const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
 
+  // the weapon's art draws itself through these hooks (src/weapons/); a pose carries it as p.wp, the katana if none
+  const wp = p.wp || KATANA_ART, kit = { put, seg, blob, add, L };
   // far side first: scabbard, far arm, far leg
-  seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
+  wp.far(kit, p, mouth, sd);
   // the back hand can carry the blade too, for the counter stances
   const bh = arm(p.ba, 'D');
+  if (wp.offHand) wp.offHand(kit, p, bh);                  // a second weapon in the back hand (twin blades)
   leg(p.bl, 'D', -.5);
   // torso, near leg
   poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
@@ -58,16 +62,10 @@ export function rig(g, fx, p) {
   seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
   if (f > .5) put(...L(2.6, -3.4), 'M');
   // the back hand's blade is drawn over the body and the sash, so it is never lost behind them
-  if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; blob(bh[0], bh[1], 2, 'D'); seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
-  // near arm and the sword
+  if (p.bsword != null) wp.backHeld(kit, bh, p.bsword);
+  // near arm and the weapon: stowed, sliding home, or in the hand
   const hand = arm(p.fa, 'K');
-  if (p.sword === null && !p.sheathing && p.bsword == null) {                    // sheathed: hilt pokes forward-up out of the scabbard
-    put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W');
-  } else if (p.sheathing) {                                  // sliding home: blade runs from the hand into the scabbard mouth
-    seg(hand, mouth, 1, 'W'); put(...hand, 'S'); put(...add(hand, [hand[0] - mouth[0], hand[1] - mouth[1]].map(v => v / (Math.hypot(hand[0] - mouth[0], hand[1] - mouth[1]) || 1)), 2), 'K');
-  } else if (p.sword !== null) {
-    const d = [Math.cos(p.sword), Math.sin(p.sword)];
-    seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S');
-    seg(add(hand, d, 1), add(hand, d, 13), 1, 'W');
-  }
+  if (p.sword === null && !p.sheathing && p.bsword == null) wp.stowed(kit, p, mouth, sd);
+  else if (p.sheathing) wp.sheathing(kit, hand, mouth);
+  else if (p.sword !== null) wp.held(kit, hand, p.sword);
 }
