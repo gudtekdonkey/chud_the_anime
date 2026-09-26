@@ -26,3 +26,5 @@ export function readInput() {
 }
 
 document.getElementById('clear').addEventListener('change', e => { S.roomClear = e.target.checked; game.focus(); });
+// a testing override for the power tier: 0 is as earned
+document.getElementById('power').addEventListener('change', e => { S.powerTest = +e.target.value; game.focus(); });

@@ -107,6 +107,14 @@ try {
   await run('hold E by the fallen: Harvest turns them to EXP', async () => {
     await walkTo(160, 152); await kb.down('e'); await reach(/^harvest$/); await until('EXP', () => window.__game.INV.exp > 10 || window.__game.INV.lv > 1);
     await shot('14-harvest'); await kb.up('e'); await reach(FREE); });
+  await run('power III (the test picker): the Crescent Moon comes with its twin and the slam with its pillars', async () => {
+    await page.selectOption('#power', '3'); await until('power III', () => window.__game.INV.power === 3);
+    await until('O ready', () => !(window.__game.P.cd.moon > 0), null, 12000);
+    await kb.down('o'); await reach(/^moonHold$/); await until('the O charge', () => window.__game.P.charge > .9);
+    await kb.up('o'); await reach(/^moon$/); await sleep(200); await shot('15-power-III-moon'); await reach(FREE);
+    await until('U ready', () => !(window.__game.P.cd.sweep > 0), null, 10000);
+    await kb.press('u'); await reach(/^sweep$/); await until('the slam', () => window.__game.P.t > 1.9); await shot('16-power-III-slam'); await reach(FREE, 8000);
+    await page.selectOption('#power', '0'); });
   await run('C: sit, then a key to stand', async () => {
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });

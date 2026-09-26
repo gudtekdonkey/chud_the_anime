@@ -8,6 +8,7 @@ import { drawSlash } from './slash.js';
 import { rr, sgn, FRAG_COLS, residue } from './util.js';
 import { drawVoid } from './void.js';
 import { updateQi } from '../player/qi.js';
+import { updateRibbons, drawRibbons } from '../player/power.js';
 import { DUMMIES } from '../world/dummies.js';
 
 // ---- Engine effects: drawn in world space, never in the sheets, so they survive real art replacing the placeholder ----
@@ -15,7 +16,7 @@ export function storm(x, y) {
   P.flurry = .55; P.after = 3;   // the flurry of bolts, then a few seconds of random glitching as the jump settles
 }
 export function updateFx(dt) {
-  updateDebris(dt);
+  updateDebris(dt); updateRibbons(dt);
   P.glitchNow = Math.max(0, (P.glitchNow || 0) - dt);
   if (P.after > 0) { P.after -= dt;
     if (Math.random() < dt * 2.2 * Math.min(1, P.after / 1.5 + .3)) { P.glitchNow = rr(.05, .12);
@@ -65,6 +66,7 @@ export function drawFx() {
     for (let a = 0; a < Math.PI * 2; a += .5 / rx) g.fillRect(Math.round(r.x + Math.cos(a) * rx), Math.round(r.y + Math.sin(a) * ry), 1, 1); }
   for (const v of voids) drawVoid(v);
   for (const m of moons) drawMoon(m);
+  drawRibbons();
   for (const z of zaps) { if (!z.on) continue;
     g.globalAlpha = Math.min(1, z.life / z.max * 1.8); g.fillStyle = z.col;
     for (let i = 0; i < z.pts.length; i += 2) g.fillRect(z.pts[i], z.pts[i + 1], 1, 1); }

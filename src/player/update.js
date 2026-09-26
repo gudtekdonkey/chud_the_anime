@@ -6,7 +6,7 @@ import { gather, debrisXY, fling, crack } from '../fx/debris.js';
 import { storm, updateFx } from '../fx/fx.js';
 import { unleashMoon } from '../fx/moon.js';
 import { strike, updateCuts } from '../fx/slash.js';
-import { rr, residue, spark, dust } from '../fx/util.js';
+import { rr, residue, spark, dust, after } from '../fx/util.js';
 import { held } from '../input.js';
 import { afterAttack, pickStance, setState, once, moveBy, blink, ghost, inputDir } from './actions.js';
 import { motes } from './body.js';
@@ -17,6 +17,7 @@ import { gate, startCd, updateCds } from './cooldowns.js';
 import { updateItems, itemInput, itemState, mirrorCut } from '../items/items.js';
 import { sheathClick } from '../items/harvest.js';
 import { DUMMIES } from '../world/dummies.js';
+import { T as pT, powerCast } from './power.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
@@ -154,7 +155,7 @@ export function update(dt, inp) {
       break;
     }
     case 'sweep': {
-      const cx = P.x, cy = P.y - 13, KNEEL = .3, RISE = 1.3, TOP = 1.7, SLAM = 1.8;
+      const cx = P.x, cy = P.y - 13, W = pT('sweep', 'r'), KNEEL = .3, RISE = 1.3, TOP = 1.7, SLAM = 1.8;
       // the gather: stone chips lift off the floor all around, drift in and start circling him
       if (T >= KNEEL && T < RISE) { const k = (T - KNEEL) / (RISE - KNEEL);
         if (Math.random() < .35 + k * .5) gather(P.x, P.y);
@@ -169,17 +170,18 @@ export function update(dt, inp) {
         if (Math.random() < .5) { const a = rr(0, 6.28); spark(cx + Math.cos(a) * 30, P.y - 1, -Math.cos(a) * 60, -rr(5, 20), .3, '#8f9692'); } }
       if (T >= TOP && T < SLAM) P.z = 8;
       if (once('slam', T >= SLAM)) {
-        fling(P.x, P.y);
+        fling(P.x, P.y); powerCast();
         P.z = 0; P.flash = .05; S.hitstop = .08; S.shake = .3; P.shakeAmp = 3;
         const n = 10 + (Math.random() * 4 | 0);
-        for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + rr(-.2, .2), R = rr(48, 60);
+        for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + rr(-.2, .2), R = rr(48, 60) * W;
           zap(cx + P.face * 8, P.y - 2, cx + P.face * 8 + Math.cos(a) * R, P.y - 2 + Math.sin(a) * R * .5, rr(.12, .2), 3.2, i % 2 ? '#ffffff' : COL.fx2, { every: 1, fork: true }); }
-        rings.push({ x: cx + P.face * 8, y: P.y - 2, rx: 56, ry: 28, life: 1 / 60 });
+        rings.push({ x: cx + P.face * 8, y: P.y - 2, rx: 56 * W, ry: 28 * W, life: 1 / 60 });
         rings.push({ x: cx + P.face * 8, y: P.y - 2, rx: 30, ry: 15, life: 2 / 60 });
         crack(cx + P.face * 10, P.y);
+        if (pT('sweep', 'pillars')) pillars(cx + P.face * 10, P.y, W);
         dust(24);
       }
-      if (T >= SLAM && T < SLAM + .1) hit('sw', cx + P.face * 8, P.y - 6, 60);
+      if (T >= SLAM && T < SLAM + .1) hit('sw', cx + P.face * 8, P.y - 6, 60 * W);
       if (T > SLAM + .04 && Math.random() < (1 - (T - SLAM) / .4) * .7) { const a = rr(0, 6.28), R = rr(10, 55), x = cx + Math.cos(a) * R, y = P.y + Math.sin(a) * R * .5;
         zap(x, y, x + rr(-7, 7), y + rr(-4, 4), rr(.06, .12), 2, Math.random() < .7 ? COL.fx : COL.fx2); }
       if (T >= D) { P.z = 0; P.armed = true; P.still = 0; setState(afterAttack(false)); }
@@ -216,4 +218,9 @@ export function update(dt, inp) {
       break;
     }
   }
+}
+// power III: bolts climb out of the cracks one after another, straight up, round the slam
+function pillars(x, y, W) {
+  for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28 + rr(-.3, .3), R = rr(22, 40) * W, px = x + Math.cos(a) * R, py = y + Math.sin(a) * R * .5;
+    after(.05 + i * .035, () => { zap(px, py, px + rr(-3, 3), py - rr(26, 38), rr(.12, .18), 2.5, i % 2 ? '#ffffff' : COL.fx2, { every: 1, fork: true }); spark(px, py - 2, 0, -20, .2, COL.fx2, false, 0); }); }
 }

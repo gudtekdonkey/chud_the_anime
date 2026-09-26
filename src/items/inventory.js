@@ -26,7 +26,7 @@ export const powerTier = () => Math.min(3, 1 + INV.upgrades + INV.charms.filter(
 export const canOffer = () => INV.shards >= OFFER_COST && INV.upgrades < MAX_UPGRADES;
 export function offer() { if (!canOffer()) return false; INV.shards -= OFFER_COST; INV.fx.shards = .08; INV.upgrades++; return true; }
 export function tickInv(dt) {
-  const p = powerTier(); if (p > INV.power) showBanner('POWER', ['I', 'II', 'III'][p - 1]); INV.power = p;
+  const p = S.powerTest || powerTier(); if (p > INV.power) showBanner('POWER', ['I', 'II', 'III'][p - 1]); INV.power = p;
   const f = INV.fx; for (const k of ['qi', 'mon', 'shards', 'weapon', 'hp']) f[k] = Math.max(0, f[k] - dt);
   for (const L of [f.quick, f.charms]) for (let i = 0; i < L.length; i++) L[i] = Math.max(0, L[i] - dt);
   INV.edge = Math.max(0, INV.edge - dt);

@@ -2,15 +2,17 @@ import { COL, SQ } from '../config.js';
 import { g } from '../screen.js';
 import { P, S, frags, moons } from '../state.js';
 import { crescent } from './slash.js';
-import { rr, FRAG_COLS, ring, spark, dust, scrFlash } from './util.js';
+import { rr, FRAG_COLS, ring, spark, dust, scrFlash, after } from './util.js';
 import { hit, burst } from '../player/hits.js';
+import { T, powerCast } from '../player/power.js';
 
 // ---- Crescent Moon (O): charge in place, release one giant crescent that sweeps into being along its arc ----
 const arcA = sw => -1.75 + 3.5 * sw;                                     // the arc's reach: it sweeps from overhead down through the front
 const moonPt = (m, a, r) => [m.x + m.face * Math.cos(a) * r, m.y + Math.sin(a) * r * SQ];
-export function unleashMoon(pow) {
-  const k = .35 + .65 * pow, R = Math.round(23 * (1 + 2 * k)), cx = P.x + P.face * R * .25, cy = P.y - 13;
-  moons.push({ x: cx, y: cy, fy: P.y, face: P.face, R, d: 6 + 9 * k, k, age: 0, SW: .15, HOLD: .3 + .14 * k, GLOW: .55, seed: Math.random(), echo: 0, shat: false, hit: false, struck: [] });
+export function unleashMoon(pow, twin = false) {
+  const face = twin ? -P.face : P.face, k = .35 + .65 * pow, R = Math.round(23 * (1 + 2 * k) * (twin ? .75 : 1)), cx = P.x + face * R * .25, cy = P.y - 13;
+  if (!twin) { powerCast(); if (T('moon', 'twin')) after(.1, () => unleashMoon(pow, true)); }   // power III: a smaller second moon sweeps the other way
+  moons.push({ x: cx, y: cy, fy: P.y, face, R, d: 6 + 9 * k, k, age: 0, SW: .15, HOLD: .3 + .14 * k, GLOW: .55, seed: Math.random(), echo: 0, shat: false, hit: false, struck: [], twin });
   P.flash = .05; scrFlash(.08, .12 + .16 * pow); S.shake = .1; P.shakeAmp = 1 + Math.round(2 * pow);
   ring(P.x + P.face * R * .3, P.y + 1, R * .35, R * .12, .5, 2.2, COL.fx2); ring(P.x, P.y + 1, 12, 5, 2 / 60);
   dust(10 + 10 * pow | 0);
@@ -22,7 +24,7 @@ export function updateMoons(dt) {
       if ((m.echo -= dt) <= 0) { m.echo = .035; crescent(m.x - m.face * rr(5, 12), m.y + rr(-4, 4), m.face, rr(-.35, .35), 1, m.R * rr(.4, .65), 4, .03, .22, .5); }
       for (let i = 0; i < 3; i++) { const [x, y] = moonPt(m, A, m.R - rr(0, m.d)), life = rr(.25, .5);
         frags.push({ x, y, w: 1 + (Math.random() * 2 | 0), col: i % 2 ? '#ffffff' : COL.fx2, vx: -m.face * rr(10, 40), vy: rr(-20, 4), life, max: life, jx: 0, on: true }); } }
-    if (!m.hit && sw >= .5) { m.hit = true; const before = new Set(P.struck); hit('cm', m.x + m.face * m.R * .45, m.y, m.R * 1.05); m.struck = [...P.struck].filter(d => !before.has(d)); }
+    if (!m.hit && sw >= .5) { m.hit = true; const before = new Set(P.struck); hit(m.twin ? 'cmT' : 'cm', m.x + m.face * m.R * .45, m.y, m.R * 1.05); m.struck = [...P.struck].filter(d => !before.has(d)); }
     if (m.age >= m.SW && m.age < m.SW + m.HOLD && Math.random() < .7) { const [x, y] = moonPt(m, rr(-1.6, 1.6), m.R - rr(0, 3)), life = rr(.3, .6);
       frags.push({ x, y, w: 1, col: Math.random() < .5 ? COL.fx2 : '#ffffff', vx: m.face * rr(2, 10), vy: -rr(6, 16), life, max: life, jx: 0, on: true }); }
     if (!m.shat && m.age >= m.SW + m.HOLD) { m.shat = true; shatter(m); } }
@@ -35,6 +37,7 @@ function shatter(m) {
   for (let i = 0; i < 16 + 12 * m.k; i++) { const a = rr(-1.6, 1.6), [x, y] = moonPt(m, a, m.R - rr(0, m.d));
     spark(x, y, m.face * Math.cos(a) * rr(20, 70), Math.sin(a) * rr(10, 40) - rr(10, 30), rr(.4, .8), ['#ffffff', COL.fx2, COL.fx][i % 3], true, 90); }
   ring(m.x + m.face * m.R * .4, m.fy + 1, m.R * .5, m.R * .16, .3, 1.2, '#ffffff');
+  if (T('moon', 'shards')) { const before = new Set(P.struck); hit('cmS' + (m.twin ? 't' : ''), m.x + m.face * m.R * .45, m.fy - 6, m.R * .9); for (const d of P.struck) if (!before.has(d) && !m.struck.includes(d)) m.struck.push(d); }   // power II: the shatter cuts too
   if (m.struck.length) { S.hitstop = .06; S.shake = 2 / 60; for (const d of m.struck) burst(d, 1 + .5 * m.k); }
 }
 export function drawMoon(m) {

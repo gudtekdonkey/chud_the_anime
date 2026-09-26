@@ -4,6 +4,7 @@ import { rr, residue, spark } from '../fx/util.js';
 import { QI_GAIN, qiAdd, chainFrom } from './qi.js';
 import { reach, weight } from './weapon.js';
 import { has } from '../items/inventory.js';
+import { pw } from './power.js';
 import { DUMMIES } from '../world/dummies.js';
 
 // ---- Hits: each dummy once per kind per move; P.struck remembers them for the sheath-click burst ----
@@ -19,8 +20,8 @@ export function hitOne(dummy, i, kind, fx = P.x, fy = P.y) {
     spark(dummy.x + rr(-2, 2), dummy.y - 16 + rr(-4, 4), Math.cos(a) * v, Math.sin(a) * v * .7, rr(.09, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
   if (P.storm > 0) chainFrom(dummy); else qiAdd((QI_GAIN[kind.match(/^[a-zA-Z]+/)[0]] || 0) * qiMul());
 }
-// Split Tsuba: +25%; a whetstone edge: twice as fast
-const qiMul = () => (has('tsuba') ? 1.25 : 1) * (INV.edge > 0 ? 2 : 1);
+// Split Tsuba: +25%; a whetstone edge: twice as fast; power: up to +30%
+const qiMul = () => (has('tsuba') ? 1.25 : 1) * (INV.edge > 0 ? 2 : 1) * pw('qi');
 // the blade's own cuts (J, and I's two) reach further with a longer weapon
 const BLADE_CUT = /^(slash|d\d)/;
 export function hit(kind, cx, cy, r) {

@@ -6,7 +6,7 @@ export const P = { x: 200, y: 180, z: 0, vz: 0, vx: 0, vy: 0, face: 1, state: 'i
 export const parts = [];
 // reassigned from many modules, so they live on one object: screen shake, hit pause, the pale screen flash,
 // and roomClear (page checkbox: treat the training dummies as props, not enemies)
-export const S = { shake: 0, hitstop: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false, banner: null,
+export const S = { shake: 0, hitstop: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false, banner: null, powerTest: 0,
   smoke: 0 };   // seconds of the static bomb's smoke left: while it is up every enemy counts as isolated, so K can take any of them
 
 // ---- The inventory: the HUD reads only this, and every system writes to it. Qi stays on P.qi (0..1) ----
@@ -22,4 +22,4 @@ export const pops = [], glints = [];
 // ---- Engine effects: drawn in world space, never in the sheets, so they survive real art replacing the placeholder ----
 export const frags = [], slashes = [], cuts = [], zaps = [], rings = [], timers = [], moons = [], voids = [], mirrors = [];
 // he lands inside a burst of electric smoke: dark puffs that swell and rise, and bolts swirling round him
-export const smoke = [], cracks = [], debris = [];
+export const smoke = [], cracks = [], debris = [], ribbons = [];

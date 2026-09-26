@@ -60,6 +60,11 @@ Decisions made in the design sessions so far, newest last.
   - He starts at 60% health so healing shows; nothing damages him yet. Low health (below 35%) blinks the health bar red, as there is no HP label.
   - Two placeholder remains lie in the room so Harvest can be tried before real kills exist; EXP needs 100 × the level.
 - **Power tier (owner): from relics and upgrades.** Built: I, plus one per upgrade, plus one per power relic worn, at most III; a POWER banner shows each step. Upgrades (proposed): a shrine he has already prayed at takes an OFFER of 3 glitch shards for one upgrade, two at most. Which relics raise power is still open (`POWER_RELICS` starts empty).
+- **What power does (owner): both skill tiers and a stat boost.** Every skill has an I, II and III version, and the tier also scales stats. The numbers and each skill's versions are proposed (`src/player/power.js`):
+  - Stats: Qi from hits ×1 / 1.15 / 1.3; cooldowns ×1 / .9 / .8; damage ×1 / 1.25 / 1.5, waiting on enemies with health.
+  - The look, from the Breath of Qi tiers: I is quiet; II lifts stone off the floor as a skill fires; III adds ribbons of light spiralling up. Nothing on the floor.
+  - Storm Chain 3 / 4 / 5 jumps and 8 / 9 / 10 s. Thousand Cuts 7 / 9 / 11 cuts in the same vanish. Cross Rift: a 15% bigger X at II; at III a second, smaller detonation 0.25 s later. Crescent Moon: at II the shatter cuts too; at III a smaller twin moon sweeps the other way. Mirror Meditation: one more image at II, two at III. Storm slam: 20% wider at II; at III bolts climb out of the cracks.
+  - The page has a power picker to try each tier. K, J, the slide and jump have no tiers yet.
 
 ## Next
 
