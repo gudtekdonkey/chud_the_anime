@@ -37,7 +37,7 @@ system({ id: 'travel', order: 60,
 
 // ---- what we hear from the other lanes (docs/sim-travel.md: what travel reads) ----
 on('econ.famine', (e, L) => { const s = L.sys.travel?.regions[e.region]; if (s) s.famine = 28; });
-on('crime.bounty', (e, L) => { const st = L.sys.travel; if (!st || e.actor !== L.player || e.culture == null) return; st.heat[e.culture] = (st.heat[e.culture] || 0) + (e.mon ?? e.amount ?? 50); });
+on('crime.bounty', (e, L) => { const st = L.sys.travel; if (!st || e.actor !== L.player || e.culture == null) return; st.heat[e.culture] = e.mon ?? (st.heat[e.culture] || 0) + (e.amount ?? 50); });   // the crime lane sends the whole bounty
 on('crime.bountyCleared', (e, L) => { const st = L.sys.travel; if (st && e.actor === L.player) delete st.heat[e.culture]; });
 on('travel.bountyPaid', (e, L) => { delete L.sys.travel.heat[e.culture]; });
 

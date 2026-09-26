@@ -1,6 +1,7 @@
 import { emit, zoneAt } from '../ledger.js';
 import { ownerOf } from '../zone.js';
 import { findHeir } from '../people/index.js';
+import { raidKura } from '../economy/vault.js';
 import { HOURS_PER_YEAR } from '../time.js';
 import { LAND, K, CRIMES } from './rules.js';
 import { crimeState, commit, isPlayer, spend, give, purse, standingOf, bountyOf, wantedBy, cultureOfZone, addBounty, addStanding, clearBounty, fadeOf } from './law.js';
@@ -51,7 +52,7 @@ export function seize(L, pid, by, o = {}) {
   if (p.title !== by) { C.contested[pid] = { title: p.title, holder: by, from, since: L.hour, how: o.how || 'force', crime: o.crime ?? null, witnesses: (o.witnesses || []).slice(0, LAND.WITNESS_KEEP) };
     addTo(L.actors[p.title], 'claims', pid); }
   else delete C.contested[pid];
-  C.stats.land.force++;
+  C.stats.land.force++; raidStore(L, pid, by);
   emit(L, 'crime.seized', { plot: pid, actor: by, from, title: p.title, how: o.how || 'force', zone: zoneOfPlot(pid) });
   return p;
 }
@@ -61,6 +62,8 @@ export function takePlotByMurder(L, killer, victim, pid, o = {}) {
   seize(L, pid, killer, { how: 'murder', crime: rec.id, witnesses: rec.witnesses });
   return rec;
 }
+// land taken by force empties its storehouse into the taker's hands (the economy lane's kura), when the economy runs
+export function raidStore(L, pid, by) { if (L.sys.economy && by != null && L.actors[by]) raidKura(L, pid, by); }
 // possession back to the claimant (kin raid, lord's men, court order)
 export function restore(L, pid, to, how) {
   const C = crimeState(L), p = plotRec(L, pid), from = p.holder;
@@ -99,7 +102,7 @@ function settleBlood(L, payer, heir, culture) {
   if (!spend(L.actors[payer], LAND.BLOOD_MONEY)) return false;
   give(L.actors[heir], LAND.BLOOD_MONEY);
   const b = crimeState(L).bounty[payer]?.[culture];
-  if (b && fadeOf(L.actors[payer], b.worst)) { clearBounty(L, payer, culture); emit(L, 'crime.bountyPaid', { actor: payer, culture, mon: LAND.BLOOD_MONEY, where: 'blood' }); }
+  if (b && fadeOf(L.actors[payer], b.worst, b.forever)) { clearBounty(L, payer, culture); emit(L, 'crime.bountyPaid', { actor: payer, culture, mon: LAND.BLOOD_MONEY, where: 'blood' }); }
   return true;
 }
 export function payBloodMoney(L, pid, payer) {

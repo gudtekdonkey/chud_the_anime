@@ -130,19 +130,40 @@ Every event carries `h` (the game hour). Names are `crime.*`.
 | Event | Data | When |
 |---|---|---|
 | `crime.committed` | `crime, kind, actor (null if masked and nobody saw through it), victim, zone, known: [cultures], masked, unmasked, witnesses (count)` | any crime someone saw, and every crime of his or against him. An NPC crime nobody saw only counts in the stats |
-| `crime.bounty` | `actor, culture, mon, worst` | a bounty on him rises, or anyone's reaches 1,000 |
+| `crime.bounty` | `actor, culture, mon (the whole bounty), added, worst, why (the crime), forever` | a bounty on him rises, or anyone's reaches 300 (the story posts it; travel mirrors his) |
+| `crime.bountyCleared` | `actor, culture` | his bounty (or anyone's of 300+) is gone: paid, faded, caught, blood money, the hunters paid on the road |
+| `crime.robbery` | `victim, by (null if masked and not seen through), mon, zone` | a theft that took money (not a raid's) |
+| `crime.murder` | `victim, by, zone` | a killing whose killer someone can name |
+| `crime.jailed` | `actor, culture, fine, days, forever, zone` | he surrendered on the road (`travel.surrender`): fined what he carries, the rest worked off in jail at 50 mon a day |
 | `crime.bountyFaded` | `actor, culture` | his bounty faded to nothing |
 | `crime.bountyPaid` | `actor, culture, mon, where` | paid off at a magistrate or shrine, or cleared by blood money (`where: 'blood'`) |
 | `crime.penance` | `actor, karma` | karma bought back at a shrine |
 | `crime.caught` / `crime.executed` | `actor, culture, worst, fine?, zone` | a magistrate caught a wanted NPC |
 | `crime.feud` | `actor, victim, region` | a feud starts |
-| `crime.raid` | `actor (chief), zone, from, victims, culture` | bandits raid a settlement |
+| `crime.raid` | `camp: [x, y], by (the chief), actor, victim, mon, killed, zone, culture` | one household hit in a bandit raid |
 | `crime.seized` | `plot, actor, from, title, how, zone` | possession taken by force |
 | `crime.retaken` | `plot, actor, from, how, zone` | possession back (kin, lord, court) |
 | `crime.title` | `plot, actor, from, how, zone` | the title passed (sale, bloodMoney, grant, inheritance, court, prescription, forgery, exposed) |
 | `crime.court` | `plot, actor, won` | a court case decided |
 | `crime.forgeryExposed` | `plot, actor (forger), to` | a forged deed came out |
 | `crime.hunterSent` / `crime.hunterFound` / `crime.hunterGone` | `actor (hunter), target, culture?, mon?, zone?` | the hunt for him |
+
+## What crime hears from the other lanes (`hooks.js`)
+
+| Event | From | What crime does |
+|---|---|---|
+| `story.deed` | story: something he did in a quest | His karma is already moved. The crime is recorded (theft, robbery → theft; banditry, treachery, robbery of royalty → assault; fraud → forgery; murder); seen, the region's people and a royal victim's put the bounty on him and think less of him |
+| `story.wanted` | story: a manhunt | A bounty with that people: 1,000 mon, or 10,000 that never fades and is never paid off when `forever` (owner). Hunters follow from 500 mon (world.js). Renewals change nothing |
+| `story.seized` | story moved possession | The contested record, `holds`, and the storehouse (below) |
+| `travel.deed` | travel never writes karma or standing | Crime applies its `karma` (on crime's −100..100 scale, as sent) and `standing`. Raided, robbed a merchant, pilgrims or the wounded, kept a horse → theft; killed guards → murder; fled guards → trespass: each witness's people raise the bounty |
+| `travel.bountyPaid` | he paid the hunters on the road | That people's bounty is cleared |
+| `travel.surrender` | he went quietly | Fined what he carries, the rest in jail days (`crime.jailed`); a `forever` bounty stays |
+
+`travel.slain` (a death on the road) is not charged as a murder: road fights are ambushes and self-defence, and travel's deeds already carry the karma. Travel's `heat` now mirrors the whole bounty `crime.bounty` sends (a one-line change in `src/sim/travel/index.js`).
+
+**Storehouses:** land taken by force (a raid, a murder, the story's seizures) empties its kura into the taker's hands through the economy lane's `raidKura`, when the economy runs.
+
+**Everyone together:** `node scripts/sim-all.mjs [seed] [years]` lives a world with the people, economy, crime, story and travel lanes, prints each lane's events and cost, and checks they work together.
 
 ## State (`L.sys.crime`)
 
