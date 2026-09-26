@@ -1,10 +1,12 @@
 import { newId, zoneAt } from '../ledger.js';
 import { rngFor } from '../rng.js';
+import { HOURS_PER_YEAR } from '../time.js';
 import { ST, today, clamp, announce, kill, setLordFell, who, alive, actor, ageIn, regName, cultName, census, villagesOf } from './state.js';
 import { post } from './quests.js';
 
 // ---- Politics: lords fall ill and die, sons fight for the seat, cultures go to war, peasants rise, taxes climb, royals travel ----
-// Titles never move here except by succession: a war or a rising takes possession (region.occupier), never the title (owner, 2026-09-26).
+// A war or a rising takes possession (region.occupier), never the title (owner, 2026-09-26); the title moves by succession, or after
+// OCCUPATION_YEARS of holding it (owner: a long occupation can pass the title).
 
 const MALE_HEIR_AGE = 15;
 const sonsOf = (L, a) => a.children.map(id => actor(L, id)).filter(c => c && c.alive && c.sex === 'm' && ageIn(L, c) >= MALE_HEIR_AGE).sort((x, y) => x.born - y.born);
@@ -88,6 +90,7 @@ export function politicsDay(L, cal, r) {
 }
 export function politicsYear(L, cal, r) {
   const S = ST(L);
+  titleByOccupation(L, r);
   for (const g of L.regions) { const a = actor(L, g.lord), R = S.reg[g.id]; if (!a) continue;
     const greedy = a.traits.some(([t]) => ['proud', 'vain', 'regal', 'cocky'].includes(t)) || Object.values(S.wars).some(w => w.a === g.culture || w.b === g.culture);
     if (greedy && R.tax < .7 && r.chance(.14)) { R.tax = +(R.tax + .1).toFixed(2);
@@ -116,14 +119,25 @@ function war(L, cal, r, cen) {
     const fa = cen.fightersOf[w.a] + 5, fb = cen.fightersOf[w.b] + 5, pa = .15 + .7 * fa / (fa + fb), win = r.chance(pa) ? w.a : w.b, lose = win === w.a ? w.b : w.a;
     const at = r.pick(w.fronts.filter(f => L.regions[f].culture === lose)) ?? r.pick(w.fronts);
     w.score += win === w.a ? 1 : -1; w.battles++;
-    let dead = 0; const pool = cen.byRegion[at].fighters.filter(id => actor(L, id).culture === lose);
-    for (let k = r.int(2, 5); k > 0 && pool.length; k--) if (kill(L, pool.splice(r.int(0, pool.length - 1), 1)[0], 'battle')) dead++;
+    let dead = 0;
+    // owner (2026-09-26): where there is war, about 30% of the people die of it in a year. Every front region loses WAR_TOLL a season,
+    // soldiers first, then the villagers caught in it; the battle region counts its dead in the battle's line
+    const lost = [];
+    for (const f of w.fronts) { const n = warToll(L, r, cen, f, w.id); if (f === at) dead += n; else if (n) lost.push(`${n} in ${regName(L, f)}`); }
     S.reg[at].harvest = +(S.reg[at].harvest * .85).toFixed(3); S.reg[at].danger = clamp(S.reg[at].danger + .2);
     announce(L, 'event.battle', { war: w.id, region: at, winner: win, loser: lose, dead, effects: { danger: .2, harvest: .85 } },
-      `Battle at ${regName(L, at)}: ${cultName(L, win)} beat ${cultName(L, lose)}${dead ? `, ${dead} dead on the field` : ''}. Smoke over the villages.`, ['smoke', 'messenger'], [at, ...S.adj[at]]);
+      `Battle at ${regName(L, at)}: ${cultName(L, win)} beat ${cultName(L, lose)}${dead ? `, ${dead} dead on the field and in the villages` : ''}. Smoke over the villages.${lost.length ? ` The war also took ${lost.join(', ')}.` : ''}`, ['smoke', 'messenger'], [at, ...S.adj[at]]);
     if (r.chance(.4)) front(L, r, w, r.chance(.5) ? 'defend' : 'message');
     if (Math.abs(w.score) >= 3 || w.battles >= 8) endWar(L, r, w);
   }
+}
+export const WAR_DEATHS_A_YEAR = .3, WAR_TOLL = 1 - Math.pow(1 - WAR_DEATHS_A_YEAR, 1 / 4);   // about 8.5% a season
+function warToll(L, r, cen, region, war) {
+  const C = cen.byRegion[region], fighters = C.fighters.filter(id => alive(L, id)), rest = C.all.filter(id => alive(L, id) && !fighters.includes(id));
+  let n = Math.round((fighters.length + rest.length) * WAR_TOLL * r.range(.7, 1.3)), dead = 0;
+  while (n-- > 0 && (fighters.length || rest.length)) { const pool = fighters.length && r.chance(.7) ? fighters : rest.length ? rest : fighters;
+    if (kill(L, pool.splice(r.int(0, pool.length - 1), 1)[0], 'war')) dead++; }
+  return dead;
 }
 function front(L, r, w, kind) {
   const S = ST(L), side = r.chance(.5) ? w.a : w.b, mine = w.fronts.filter(f => L.regions[f].culture === side); if (!mine.length) return;
@@ -199,4 +213,25 @@ export function routeOf(L, [x0, y0], [x1, y1]) {
   const out = [], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
   for (let i = 0; i <= n; i++) { const z = zoneAt(L, Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n)); if (z && z.region >= 0 && !out.includes(z.region)) out.push(z.region); }
   return out;
+}
+
+// ---- a long occupation becomes title (owner, 2026-09-26: "long occupation can, sure") ----
+// After OCCUPATION_YEARS held by force, the deed follows the land: the occupier (or, after a war, a noble of the occupying culture)
+// becomes lord, the region joins the occupier's culture, and the dispossessed house keeps a grudge.
+export const OCCUPATION_YEARS = 5;
+function titleByOccupation(L, r) {
+  const S = ST(L), cen = census(L);
+  for (const g of L.regions) { const o = g.occupier; if (!o || L.hour - o.since < OCCUPATION_YEARS * HOURS_PER_YEAR) continue;
+    let heir = o.actor && alive(L, o.actor) ? o.actor : null;
+    if (!heir) { const pool = L.cultures[o.culture].regions.flatMap(i => cen.byRegion[i].nobles.concat(cen.byRegion[i].fighters)).filter(id => alive(L, id) && actor(L, id).culture === o.culture && actor(L, id).lord == null);
+      heir = pool.length ? r.pick(pool) : null; }
+    if (!heir) continue;
+    const was = g.lord, from = g.culture;
+    if (o.culture !== g.culture) { const a = L.cultures[from], b = L.cultures[o.culture]; a.regions = a.regions.filter(i => i !== g.id); if (!b.regions.includes(g.id)) b.regions.push(g.id); g.culture = o.culture; }
+    delete g.occupier; g.titled = { from: was, how: o.how, since: L.hour };
+    if (was && alive(L, was)) S.grudges.push({ by: was, against: heir, why: 'stolen seat', d: today(L) });
+    announce(L, 'event.titlePasses', { region: g.id, actor: heir, was, from, culture: g.culture, how: 'occupation' },
+      `${OCCUPATION_YEARS} years held by force, and now by law: ${who(L, heir)} is lord of ${g.name}${from !== g.culture ? `, and ${g.name} belongs to ${cultName(L, g.culture)}` : ''}. ${was ? `The house of ${who(L, was)} has only its grudge.` : ''}`.trim(), ['messenger', 'bell'], [g.id, ...S.adj[g.id]]);
+    setLord(L, g.id, heir, 'by long occupation');
+  }
 }

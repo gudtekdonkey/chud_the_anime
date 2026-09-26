@@ -89,6 +89,8 @@ export function questsDay(L, cal, r, rivalTakes) {
     const def = KINDS[q.kind];
     const gone = def.check ? def.check(L, q) : (q.target != null && !alive(L, q.target) ? 'The one it was about is dead; nothing is left to do.' : null);
     if (gone) { end(L, q, gone, 'overtaken'); continue; }
+    // a rival may beat him to one he has taken, before its due day (owner: rivals race him)
+    if (d < q.due && q.state === 'taken' && d % 7 === 0 && rivalTakes) { const rv = rivalTakes(L, q, r, .08); if (rv) { resolveQuest(L, id, rv.way, { by: rv.id }); continue; } }
     if (d < q.due) continue;
     const rival = rivalTakes && rivalTakes(L, q, r);
     if (rival) { resolveQuest(L, id, rival.way, { by: rival.id }); continue; }

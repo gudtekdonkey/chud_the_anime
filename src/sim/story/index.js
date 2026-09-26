@@ -8,6 +8,7 @@ import { onFamine } from './kinds-world.js';
 import { jobsWeek } from './kinds-jobs.js';
 import { initFrame, frameSeason, arcDay, rivalTakes, onKilled } from './frame.js';
 import { hear } from './board.js';
+import { serviceSeason, onQuestOver, wantedYear } from './service.js';
 
 // ---- The story lane: quests and world events on the simulation core (docs/sim-story.md) ----
 // Registered as the 'story' system: all its state is L.sys.story; it announces event.* (the world's big moves) and story.*
@@ -22,8 +23,8 @@ system({
     if (cal.day % 7 === 0) { orderWeek(L, cal, r); jobsWeek(L, cal, r); }
     questsDay(L, cal, r, rivalTakes); arcDay(L, cal);
   },
-  onSeason(L, cal, r) { natureSeason(L, cal, r); politicsSeason(L, cal, r); orderSeason(L, cal, r); frameSeason(L, cal, r); },
-  onYear(L, cal, r) { politicsYear(L, cal, r); },
+  onSeason(L, cal, r) { natureSeason(L, cal, r); politicsSeason(L, cal, r); orderSeason(L, cal, r); frameSeason(L, cal, r); serviceSeason(L, cal, r); },
+  onYear(L, cal, r) { politicsYear(L, cal, r); wantedYear(L, cal, r); },
 });
 
 // ---- listening: our own events that make quests, and the other lanes' events by name ----
@@ -32,6 +33,7 @@ const when = (type, fn) => on(type, (e, L) => { if (live(L)) fn(e, L); });
 when('event.famine', onFamine);
 when('story.killed', onKilled);
 when('econ.famine', onEconFamine);
+when('story.questResolved', onQuestOver); when('story.questEnded', onQuestOver);
 when('people.died', onPeopleDied);
 for (const t of ['crime.raid', 'crime.robbery', 'crime.murder', 'crime.bounty']) when(t, onCrime);
 // glitch storms belong to the travel lane: we only pass the word along to the boards (a bell at the shrine)
@@ -43,3 +45,4 @@ export { takeQuest, resolveQuest, waysOf, openQuests, quest, KINDS, WAYS } from 
 export { boardOf, newsSince } from './board.js';
 export { taleOf, chapterOf, rivalName, CHAPTERS } from './frame.js';
 export { ST as storyOf } from './state.js';
+export { breakOath, WARNINGS } from './service.js';

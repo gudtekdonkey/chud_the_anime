@@ -1,7 +1,7 @@
 // Prototype 40: a world's events over time, a region's notice board, and ledger-born quests you can resolve different ways.
 // Bundled into prototypes/40-story.html by scripts/proto-bundle.mjs. Everything shown is read from the ledger (src/sim/, src/sim/story/).
 import { generateWorld, advance, serialize, deserialize, calendar, on, nameOf } from '../../src/sim/index.js';
-import { storyOf, boardOf, openQuests, quest, waysOf, takeQuest, resolveQuest, chapterOf, rivalName } from '../../src/sim/story/index.js';
+import { storyOf, boardOf, openQuests, quest, waysOf, takeQuest, resolveQuest, chapterOf, rivalName, breakOath, WARNINGS } from '../../src/sim/story/index.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -131,6 +131,8 @@ function drawHim() {
     <div><div class="label">Chapter ${c.n}</div><b>${esc(c.title)}</b></div>
     <div><div class="label">Karma</div><span class="num">${p.karma}</span></div><div><div class="label">Mon</div><span class="num">${p.money.mon}</span> <button id="purse" title="For testing: ways that cost money">+500</button></div>
     <div><div class="label">Renown</div><span class="num">${S.arc.renown}</span></div>
+    <div><div class="label">Service</div><span>${p.master ? `sworn to ${esc(who(p.master))} · warnings ${S.service ? S.service.warnings || 0 : 0}/${WARNINGS} <button id="oath">Break the oath</button>`
+      : `<button id="swear" title="For testing: swear to the lord of the region on the board">Swear to ${esc(who(L.regions[sel].lord))}</button>`}</span>${(S.wanted || []).length ? ` <span class="down">wanted by ${S.wanted.map(w => esc(w.by != null ? who(w.by) : L.cultures[w.culture].name)).join(', ')}</span>` : ''}</div>
     <div><div class="label">Standing</div><span>${st.map(([k, v]) => `${esc(L.cultures[k].name.replace(/^the /, ''))} ${sign(Math.round(v * 100))}`).join(', ') || 'unknown to all'}</span></div>`;
 }
 function draw() {
@@ -144,13 +146,15 @@ $('d7').onclick = () => live(24 * 7); $('season').onclick = () => live(24 * 28);
 $('map').onclick = e => { const r = e.target.getBoundingClientRect(), x = Math.floor((e.clientX - r.left) / r.width * 100), y = Math.floor((e.clientY - r.top) / r.height * 100), z = L.zones[y * 100 + x];
   if (z && z.region >= 0) { sel = z.region; draw(); } };
 document.addEventListener('click', e => {
-  const t = e.target.closest('[data-q],[data-way],[data-cat],#compare,#untouched,#take,#purse'); if (!t) return;
+  const t = e.target.closest('[data-q],[data-way],[data-cat],#compare,#untouched,#take,#purse,#oath,#swear'); if (!t) return;
   const q = qsel && quest(L, qsel);
   if (t.dataset.q) { qsel = t.dataset.q; cmp = null; draw(); }
   else if (t.dataset.cat) { cats.has(t.dataset.cat) ? cats.delete(t.dataset.cat) : cats.add(t.dataset.cat); drawChart(); }
   else if (t.dataset.way && q) { if (q.state === 'open') takeQuest(L, q.id); resolveQuest(L, q.id, t.dataset.way); cmp = null; draw(); }
   else if (t.id === 'take' && q) { takeQuest(L, q.id); draw(); }
   else if (t.id === 'purse') { me().money.mon += 500; draw(); }
+  else if (t.id === 'oath') { breakOath(L); draw(); }
+  else if (t.id === 'swear' && L.regions[sel].lord) { const S = storyOf(L); me().master = L.regions[sel].lord; S.arc.sworn = me().master; S.arc.chapter = Math.max(S.arc.chapter, 3); S.service = { lord: me().master, since: today(), warnings: 0, orders: [] }; draw(); }
   else if (t.id === 'untouched' && q) { live(Math.max(1, q.due - today() + 1) * 24); }
   else if (t.id === 'compare' && q) { $('cmpOut').innerHTML = '<p class="busy">Living it out on copies of the world…</p>'; setTimeout(() => { compare(q); drawQuest(); }, 20); }
 });

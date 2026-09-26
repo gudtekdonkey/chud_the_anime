@@ -4,6 +4,16 @@ The story lane on the simulation core (`docs/sim-core.md`). It owns `L.sys.story
 
 Everything below is Claude's proposal unless marked as the owner's. Every number is a starting value to tune.
 
+## Owner decisions (2026-09-26, answers to this lane's first questions)
+
+- **A long occupation passes the title** ("long occupation can, sure"). Built: after `OCCUPATION_YEARS` (5 game years, Claude's number) held by force, the occupier (a rebel leader, or a noble of the occupying culture) becomes lord, a conquered region joins the occupier's culture, and the dispossessed lord keeps a grudge (`event.titlePasses`).
+- **Rivals race him** for quests he has taken, not only the ones he ignores ("sure"). Built: each week before the due day, a rival nearby may finish a quest he has taken (8% a week), and the rival's grudge against him grows.
+- **Sworn service:** yes. **If he breaks the oath, that lord wants him forever, after a few warnings.** Built: the lord gives an order each season (`story.order`); an order let go, or done a way the lord did not want, is a warning; the third (`WARNINGS`) breaks the oath (`story.oathBroken`), and he is wanted in every region of that lord's culture forever (`story.wanted` with `forever: true`, a manhunt re-posted every year, never lapsing, never paid off). He can also break it himself (`breakOath`). A dead lord's oath passes to his heir in the seat.
+- **Robbing a royal procession raises a manhunt across the kingdom.** Built: robbing it openly makes him wanted by the court and every culture allied to it (relation .3+) for two years; stealing the silk unseen starts a search with no face (`event.manhunt`, no `story.wanted`).
+- **The notices' voice** (plain, a little grim) is right ("yes").
+- **Where there is war, about 30% of the people die of it in a year** (owner, confirmed: 30% in the regions at war, not the whole world). Built: every region on an active war's front loses `WAR_TOLL` (8.5%) of its people each season, soldiers first (70% of picks), then villagers. Regions at peace keep the ~1% a year from the other story causes. A region fought over for two years loses about half its people, so this leans on the people lane's births to refill it.
+
+
 ## Files
 
 | File | What it does |
@@ -18,6 +28,7 @@ Everything below is Claude's proposal unless marked as the owner's. Every number
 | `kinds-jobs.js` | Contracts seeded weekly from the people: feud, kill, escort, hunt, blade, debt |
 | `frame.js` | The hand-written structure: his arc (chapters), rivals, the duel and offer quests, each region's main tale |
 | `board.js` | `boardOf(L, region)`: the notice board, the signs in the air, the region's mood |
+| `service.js` | Sworn service (orders, warnings, `breakOath`), being wanted (`wanted`, the yearly manhunt), the royal manhunt |
 
 `node scripts/story-smoke.mjs [seed] [years]` lives a world (10 years by default) untouched and prints the world events, a timeline of the big ones, every quest kind with how it ended, the rivals, a board, and checks the rules (below). Prototype: `prototypes/40-story.html` (sources in `prototypes-src/40-story/`).
 
@@ -58,7 +69,9 @@ The game calls `resolveQuest` when he has actually done the thing in the zone (k
 | `bounties[actorId]` | `{ reward, since, region }` |
 | `grudges` | `[{ by, against, why, d, posted? }]`, capped at 200: the grieving who may pay for a killing |
 | `rivals[actorId]` | `{ id, creed ('honour'|'coin'|'cruel'), epithet, line (generation), heirOf, renown, grudge, beaten, at (region), away (day), since }` |
-| `arc` | `{ chapter, renown, done, ways: { fight: n, ... }, since, sworn (lord id, false if refused, absent before the offer) }` |
+| `arc` | `{ chapter, renown, done, ways: { fight: n, ... }, since, sworn (lord id, false if refused or broken, absent before the offer), oathBroken (the lord) }` |
+| `service` | `{ lord, since, warnings, orders: [questIds] }` while he is sworn, else null |
+| `wanted` | `[{ by (lord id or null), culture, regions, why ('oathbreaker', 'robbed a royal procession'), forever, target, since }]` |
 | `stats` | `{ events: { type: n }, quests: { kind: n }, endings: { way or 'world' or 'overtaken' or 'rival': n } }` |
 
 ### Fields added to core records (rule 5: added, never renamed)
@@ -69,6 +82,8 @@ The game calls `resolveQuest` when he has actually done the thing in the zone (k
 | actor | `lord` | set on a new lord at succession (the core's existing meaning: the region he rules) |
 | actor | `master` | on the ronin: the lord he swore to (the offer quest) |
 | actor | `chief` | set on a new camp chief when a razed camp is refounded (the core's existing meaning) |
+| region | `titled` | `{ from (the old lord), how, since }`: the title passed by long occupation |
+| quest | `order` | `{ lord, ways }`: an order from his lord, and the ways that count as obedience |
 | region | `occupier` | `{ culture?, actor?, since, how: 'war'|'uprising' }`: who holds the region by force. The title (`region.lord`) is untouched (owner) |
 | zone | `razed` | the hour a camp was burnt; its `holder` is null, so `ownerOf` makes its plots nature, claimable (`docs/world-and-land.md`) |
 | plot | (`L.plots[pid].holder`) | a raid, a debt, a feud or an army moves `holder`; never `title` |
@@ -128,7 +143,7 @@ Every event carries `text` (a line for a board), `heralds` (how people hear: `me
 | `event.lordIll`, `event.lordRecovers`, `event.lordDied` | age 55+: (age - 52) × .004 a season; 70% fatal in 20-70 days | |
 | `event.succession` | an heir takes the seat (son, widow as regent, or a steward) | sets `region.lord` |
 | `event.successionDispute`, `event.disputeSettled` | two sons (75%), or one son and an uncle (50%) or a retainer (20%) | danger +.2, unrest +.15 |
-| `event.war`, `event.battle`, `event.peace` | spring, cultures bordering at relation ≤ -.5: 18%, at most 3 wars | a battle a season on the front: 2-5 dead, harvest × .85, danger +.2; ends at a score of 3 or 8 battles; the winner occupies one front region (or frees its own) |
+| `event.war`, `event.battle`, `event.peace` | spring, cultures bordering at relation ≤ -.5: 18%, at most 3 wars | a battle a season on the front: every front region loses 8.5% of its people (owner: 30% a year where there is war), the battle region harvest × .85, danger +.2; ends at a score of 3 or 8 battles; the winner occupies one front region (or frees its own) |
 | `event.uprising`, `event.uprisingWon`, `event.uprisingCrushed`, `event.uprisingEnds` | unrest ≥ .65, 50% a season | won: `region.occupier`, the lord dies 50%, tax .3. Crushed: the leader and 1-4 rebels executed, tax +.05 |
 | `event.tax`, `event.taxRelief` | yearly: a proud or warring lord 14% (+.1, up to .7); hungry region 30% (-.1) | |
 | `event.procession`, `event.processionArrives` | spring and autumn, 60%, the court's royals to a friendly seat | |
@@ -138,6 +153,8 @@ Every event carries `text` (a line for a board), `heralds` (how people hear: `me
 | `event.bounty` | a season's most notorious chief | |
 | `event.banditArmy`, `event.villageTaken`, `event.armyBroken` | 2+ camps in a region at notoriety 10+, 20% a season, once in two years | taken: 1-4 dead, every plot of the village to the chief's possession |
 | `event.crackdown` | his standing with a culture at -.5 or worse, yearly | |
+| `event.manhunt` | he broke his oath (every year, forever), or robbed a royal procession (court and allies, two years); a search with no face for unseen theft | danger +.3 |
+| `event.titlePasses` | a region held by force for 5 years | sets `region.lord`, maybe `region.culture` |
 
 Seasons and years are the core's: 28-day seasons, 112-day years.
 
@@ -152,33 +169,31 @@ Seasons and years are the core's: 28-day seasons, 112-day years.
 | `story.item` | `actor, item, quest, zone` | the items lanes: loot (a royal red kimono, an heirloom blade) |
 | `story.rivalBeatHim`, `rivalReturns`, `rivalDied`, `rivalRises` | `rival, quest, region, heirOf` | |
 | `story.chapter` | `actor, chapter, title` | his arc |
+| `story.order`, `story.warning`, `story.oathBroken`, `story.oathPasses`, `story.released` | `actor, lord, quest, warnings, of, why` | sworn service |
+| `story.wanted` | `{ target (the ronin), by, culture, regions, why, forever, renewed? }` | **crime lane**: a bounty on him and hunters in those regions. `forever` never lapses and cannot be paid off (owner) |
 
 ## The frame (the only hand-written story)
 
-- **His arc** (`CHAPTERS` in `frame.js`): 1 Masterless, 2 A Name on the Road (renown 6), 3 The Offer (renown 12 and a clan or court liking him), 4 Sworn or Free Blade (his answer), 5 Blood and Land (he holds a plot), 6 The Heir (he has a child). Renown is one per quest, two or three for big ones. His epithet follows karma: the Kind (4+), the Just (10+), the Snake (-4), the Butcher (-10).
-- **Rivals:** three at world start, ronin of different cultures aged 20-42, one per creed: honour (fights, backs the lawful heir), coin (bribes, betrays, backs whoever pays), cruel (betrays, murders). They wander a region a season. A rival in or next to a quest's region takes it 20% of the time on its due day, in his creed's way, with its full consequences. One with a grudge (2+) or renown 4+ calls the ronin out. Beaten, he leaves for a year or two and comes back with a new name (One-Eye, the Scarred...). Killed, his child, parent or a student takes up the name, with a grudge if the ronin killed him.
+- **His arc** (`CHAPTERS` in `frame.js`): 1 Masterless, 2 A Name on the Road (renown 6), 3 The Offer (renown 12 and a clan or court liking him), 4 Sworn, Free Blade or Oathbreaker (his answer, and whether he kept it), 5 Blood and Land (he holds a plot), 6 The Heir (he has a child). Renown is one per quest, two or three for big ones. His epithet follows karma: the Kind (4+), the Just (10+), the Snake (-4), the Butcher (-10).
+- **Rivals:** three at world start, ronin of different cultures aged 20-42, one per creed: honour (fights, backs the lawful heir), coin (bribes, betrays, backs whoever pays), cruel (betrays, murders). They wander a region a season. A rival in or next to a quest's region takes it 20% of the time on its due day, in his creed's way, with its full consequences; a quest the ronin has taken, a rival may finish first (8% a week, owner: rivals race him). An oathbreaker's manhunt each year sharpens a mercenary or cruel rival's grudge. One with a grudge (2+) or renown 4+ calls the ronin out. Beaten, he leaves for a year or two and comes back with a new name (One-Eye, the Scarred...). Killed, his child, parent or a student takes up the name, with a grudge if the ronin killed him.
 - **Each region's main tale** (`taleOf`): the thread that matters most there now, by weight: war 9, a disputed seat 8, a rising 8, a bandit army 7, famine 7, plague 6, occupation 5, a dying lord 4. With none, the most memorable thing that happened there.
 
 ## Rules this lane keeps (and the test checks)
 
-- Everything runs in `onDay` or slower. Weekly work (raids, contracts) runs on days divisible by 7; the census of people is rebuilt once a week. A game day costs **about 0.55 ms** on average in `story-smoke` (the core included), the worst season about 30 ms.
+- Everything runs in `onDay` or slower. Weekly work (raids, contracts) runs on days divisible by 7; the census of people is rebuilt once a week. A game day costs **about 0.6 ms** on average in `story-smoke` (the core included), the worst season about 30 ms.
 - All state is plain JSON in `L.sys.story`; the save round-trips it exactly. Randomness is only the stream the core hands each call, or `rngFor(L.seed, ...)`. The same seed and time give the same story.
-- Ten years untouched (seed 12345): about 800 quests (feud, raiders and robbed the most common), 35 kinds of world event, about 570 deaths the story caused and 200 fields seized. Every way of every kind is tried on a copy of the world by the test.
+- Ten years untouched (seed 12345): about 800 quests (feud, raiders and robbed the most common), 35 kinds of world event, about 900 deaths the story caused (a third of them war) and 200 fields seized. Every way of every kind is tried on a copy of the world by the test.
 
 ## What story needs from other lanes
 
 - **People (`people.*`):** emit `people.died { actor, cause }` for every death you cause (age, sickness, childbirth). Story listens for it to start a lord's succession. While `L.sys.people` exists, story stops making lords ill itself. Please listen to `story.killed` for heirs and households: story sets `alive: false` and `died` and does nothing else to the dead. Region succession (`region.lord`) stays with story; the household's plots and money are yours.
-- **Crime (`crime.*`):** while `L.sys.crime` exists, story stops raiding and robbing itself and makes quests from your events instead. Please emit, with these fields: `crime.raid { camp: [x, y], by, victim, mon, killed, zone }`, `crime.robbery { victim, by, mon, zone, item? }`, `crime.murder { victim, by }`, `crime.bounty { actor, mon, why }` (300 mon and up becomes a famous bounty). Please listen to `story.deed` (witnesses, bounties on him) and `story.seized`. Story moves his karma and standing for quests itself; do not apply them again.
+- **Crime (`crime.*`):** while `L.sys.crime` exists, story stops raiding and robbing itself and makes quests from your events instead. Please emit, with these fields: `crime.raid { camp: [x, y], by, victim, mon, killed, zone }`, `crime.robbery { victim, by, mon, zone, item? }`, `crime.murder { victim, by }`, `crime.bounty { actor, mon, why }` (300 mon and up becomes a famous bounty). Please listen to `story.deed` (witnesses, bounties on him), `story.wanted` (a bounty and hunters on him in `regions`; `forever` never lapses and cannot be paid off, owner) and `story.seized`. Story moves his karma and standing for quests itself; do not apply them again.
 - **Economy (`econ.*`):** story listens for `econ.famine { region, severity 0..1 }` and raises that region's hunger. Please read `effects.prices` on `event.*` to move prices, and treat `event.harvest.yields` as each region's crop factor for the year. Story moves only mon between people; silver and ryō are yours.
 - **Travel (`travel.*`, `storm.*`):** story only passes `storm.*` on to the boards as a bell. Please include `region` or `zone` and a `text` on storm events. Story's events carry `danger` and `travel` effects and a procession's `route` for the road.
 - **World and integration:** `src/sim/index.js` does not export story (the core is the integrator's); import `src/sim/story/index.js` once, before `generateWorld`. The game's zone view should treat a zone with `razed` as a burnt, empty camp, and a region with `occupier` as garrisoned by it.
 
 ## Open questions for the owner
 
-1. **Karma's scale.** Quests move karma by whole steps (-6..+3 each). Is that the right size next to the crime lane's karma?
-2. **How much the world bleeds.** Untouched, the story kills about 1% of the people a year (battles, famine, raids, feuds, disease) on top of old age. More, less?
-3. **War takes land by occupation, not title.** The winner garrisons one region; the old lord keeps the deed on paper. Should a long occupation (say ten years) turn into title? That is the still-open "how a title passes" question.
-4. **Rivals take quests he ignores.** One in five, when a rival is near. Should rivals compete for quests he has taken, too (right now only a note and a grudge)?
-5. **Swearing to a lord.** "Sworn" ends his masterless arc. Should a sworn ronin get orders from his lord (quests only his lord can give), and can he break his oath later?
-6. **Royal processions.** Robbing one costs karma -6 and standing -.6 with the court. Should it also raise a kingdom-wide manhunt (the crime lane's bounty)?
-7. **Tone of the texts.** The notices are plain and a little grim. Is that the voice, or do you want them shorter?
+1. **Karma's scale.** Quests move karma by whole steps (-6..+3 each). Is that the right size next to the crime lane's karma? (not answered yet)
+2. **The heir of a grudge.** An oathbreaker is wanted forever by that lord. When the lord dies, his heir keeps the manhunt going (built that way, since "forever"). Right?
+3. **Occupation to title after 5 game years** (about 16 real days). Longer, shorter?

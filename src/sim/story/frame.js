@@ -13,8 +13,9 @@ export const CHAPTERS = [
   { n: 1, title: 'Masterless', text: 'No lord, no house, a sword and a straw hat. The roads are full of men like him; most end in a ditch.' },
   { n: 2, title: 'A Name on the Road', text: 'Innkeepers know his hat now. Headmen send boys to find him; magistrates pretend not to.' },
   { n: 3, title: 'The Offer', text: 'A lord has asked him to kneel and take a stipend. A ronin who accepts is a ronin no longer.' },
-  { n: 4, title: 'Sworn', text: 'He wears a lord\'s crest. His quarrels are his lord\'s, and so are his enemies.' },
-  { n: 4, alt: true, title: 'Free Blade', text: 'He turned down a lord to his face. Every house now wonders who he will sell his sword to.' },
+  { n: 4, v: 'sworn', title: 'Sworn', text: 'He wears a lord\'s crest. His quarrels are his lord\'s, and so are his enemies.' },
+  { n: 4, v: 'oath', title: 'Oathbreaker', text: 'He broke his oath. The lord he swore to will hunt him until one of them is dead, and after.' },
+  { n: 4, v: 'free', title: 'Free Blade', text: 'He turned down a lord to his face. Every house now wonders who he will sell his sword to.' },
   { n: 5, title: 'Blood and Land', text: 'He holds ground of his own. Ground is what men kill each other for.' },
   { n: 6, title: 'The Heir', text: 'He has a child. If he dies now, the name goes on.' },
 ];
@@ -36,12 +37,12 @@ function newRival(L, id, creed, epithet, line, heirOf) {
 export const rivalName = (L, id) => { const R = ST(L).rivals[id]; return R ? `${actor(L, id).given} ${R.epithet}` : who(L, id); };
 
 // a rival nearby may get to a contract before its due day
-export function rivalTakes(L, q, r) {
+export function rivalTakes(L, q, r, chance = .2) {
   if (q.kind === 'duel' || q.kind === 'offer') return null;
   for (const R of Object.values(ST(L).rivals)) {
     if (!alive(L, R.id) || R.away > today(L) || q.giver === R.id || q.target === R.id) continue;
     if (R.at !== q.region && !ST(L).adj[R.at].includes(q.region)) continue;
-    if (!r.chance(.2)) continue;
+    if (!r.chance(chance)) continue;
     const ways = KINDS[q.kind].ways, w = CREEDS[R.creed].map(id => ways.find(x => x.id === id || x.as === id)).find(x => x && !(x.needs && x.needs(L, q, actor(L, R.id))) && !(x.cost && x.cost(L, q) > actor(L, R.id).money.mon));
     if (!w) continue;
     if (q.state === 'taken') { R.grudge++; announce(L, 'story.rivalBeatHim', { rival: R.id, quest: q.id, region: q.region }, `${rivalName(L, R.id)} got to "${q.title}" before the ronin did.`, ['board']); }
@@ -97,7 +98,7 @@ defineQuest('duel', { board: 'inn', check: (L, q) => !alive(L, q.giver) ? 'The c
 defineQuest('offer', { board: 'lord', check: (L, q) => !alive(L, q.giver) ? 'The lord who made the offer is dead.' : null,
   ways: [
     { id: 'talk', label: 'Kneel and swear', blurb: 'A stipend, a crest, a master.', karma: 0, mon: () => 100, from: 'giver', standing: (L, q) => st(q.culture, .25),
-      act: (L, q) => { const p = actor(L, L.player); p.master = q.giver; ST(L).arc.sworn = q.giver; return `The ronin knelt to ${who(L, q.giver)} and took his crest. He is masterless no longer.`; } },
+      act: (L, q) => { const p = actor(L, L.player); p.master = q.giver; ST(L).arc.sworn = q.giver; ST(L).service = { lord: q.giver, since: today(L), warnings: 0, orders: [] }; return `The ronin knelt to ${who(L, q.giver)} and took his crest. He is masterless no longer.`; } },
     { id: 'help', label: 'Refuse, politely', blurb: 'Stay free. The lord will remember the bow and the no.', karma: 0, standing: (L, q) => st(q.culture, -.05),
       act: (L, q) => { ST(L).arc.sworn = false; return `The ronin bowed low and refused ${who(L, q.giver)}. He is still his own man.`; } },
     { id: 'betray', label: 'Take the advance and vanish', blurb: 'A season\'s stipend up front.', karma: -3, mon: () => 250, from: 'giver', standing: (L, q) => st(q.culture, -.4),
@@ -120,7 +121,7 @@ export function arcDay(L, cal) {
     announce(L, 'story.chapter', { actor: L.player, chapter: want, title: c.title }, `Chapter ${want}: ${c.title}. ${c.text}`, ['messenger']); }
 }
 export function chapterOf(L) {
-  const A = ST(L).arc, p = actor(L, L.player), c = CHAPTERS.find(x => x.n === A.chapter && (A.chapter !== 4 || !!x.alt === (A.sworn === false)));
+  const A = ST(L).arc, p = actor(L, L.player), v = A.oathBroken ? 'oath' : A.sworn === false ? 'free' : 'sworn', c = CHAPTERS.find(x => x.n === A.chapter && (A.chapter !== 4 || x.v === v));
   const k = p ? p.karma : 0, name = k >= 10 ? 'the Just' : k >= 4 ? 'the Kind' : k <= -10 ? 'the Butcher' : k <= -4 ? 'the Snake' : null;
   return { ...c, epithet: name, renown: A.renown, done: A.done, ways: A.ways };
 }

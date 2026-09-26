@@ -1,14 +1,14 @@
 // node scripts/story-smoke.mjs [seed] [years]: make a world with the story lane, live it (10 years by default) with nobody touching
 // anything, and print the world events that happened, the quests that arose and how each ended on its own. Exits non-zero on a broken rule.
 import { generateWorld, advance, hoursFromYears, calendar, serialize, deserialize, on } from '../src/sim/index.js';
-import { storyOf, openQuests, boardOf, taleOf, chapterOf, rivalName, waysOf, resolveQuest, takeQuest } from '../src/sim/story/index.js';
+import { storyOf, openQuests, boardOf, taleOf, chapterOf, rivalName, waysOf, resolveQuest, takeQuest, breakOath } from '../src/sim/story/index.js';
 
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 10);
 const L = generateWorld(seed, 0), S = storyOf(L);
 const events = [], quests = {};
-on('*', e => { if (e.type.startsWith('event.') || e.type.startsWith('story.')) events.push(e); });
-on('story.questPosted', e => { quests[e.quest] = { ...S.quests[e.quest] }; });
-const ended = e => { const q = S.quests[e.quest]; if (q) quests[e.quest] = { ...q }; };
+on('*', (e, W) => { if (W === L && (e.type.startsWith('event.') || e.type.startsWith('story.'))) events.push(e); });   // only this world, not its copies
+on('story.questPosted', (e, W) => { if (W === L) quests[e.quest] = { ...S.quests[e.quest] }; });
+const ended = (e, W) => { const q = W === L && S.quests[e.quest]; if (q) quests[e.quest] = { ...q }; };
 on('story.questEnded', ended); on('story.questResolved', ended);
 
 const day = h => { const c = calendar(h); return `y${c.year} ${c.season.padEnd(6)} d${String(c.dayOfSeason).padStart(2)}`; };
@@ -33,7 +33,7 @@ const count = (arr, f) => arr.reduce((m, x) => (m[f(x)] = (m[f(x)] || 0) + 1, m)
 const byType = count(events.filter(e => e.type.startsWith('event.')), e => e.type);
 console.log('WORLD EVENTS'); for (const [t, n] of Object.entries(byType).sort((a, b) => b[1] - a[1])) console.log(`  ${String(n).padStart(4)}  ${t}`);
 const BIG = new Set(['event.war', 'event.peace', 'event.lordDied', 'event.successionDispute', 'event.disputeSettled', 'event.uprising', 'event.uprisingWon', 'event.uprisingCrushed', 'event.famine',
-  'event.plague', 'event.plagueEnds', 'event.earthquake', 'event.comet', 'event.banditArmy', 'event.villageTaken', 'event.armyBroken', 'event.procession', 'event.bounty', 'event.typhoon', 'event.drought']);
+  'event.plague', 'event.plagueEnds', 'event.earthquake', 'event.comet', 'event.banditArmy', 'event.villageTaken', 'event.armyBroken', 'event.procession', 'event.bounty', 'event.typhoon', 'event.drought', 'event.titlePasses', 'event.manhunt']);
 console.log('\nTIMELINE (the big moves)');
 for (const e of events.filter(e => BIG.has(e.type))) console.log(`  ${day(e.h)}  ${e.text}`);
 const story = count(events.filter(e => e.type.startsWith('story.') && !e.type.startsWith('story.quest')), e => e.type);
@@ -63,6 +63,21 @@ const tales = count(L.regions.map(g => taleOf(L, g.id)), t => t.kind); console.l
   P.standing[clan.id] = .6; storyOf(C).arc.renown = 12; advance(C, 24);
   const offer = openQuests(C).find(q => q.kind === 'offer'); must(offer, 'no offer of service came at renown 12');
   if (offer) { resolveQuest(C, offer.id, 'talk'); advance(C, 24); const ch = chapterOf(C); must(ch.n === 4 && ch.title === 'Sworn' && P.master === offer.giver, `swearing did not reach "Sworn" (${ch.title})`); tried.offer = ['talk']; } }
+// sworn service (owner): orders come; ignored, they bring warnings; the third breaks the oath and that lord wants him forever
+{ const C = deserialize(serialize(L)), P = C.actors[C.player], SC = storyOf(C), clan = C.cultures.find(c => c.kind === 'clan' && c.regions.some(i => C.regions[i].lord && C.actors[C.regions[i].lord].alive));
+  const lord = clan.regions.map(i => C.regions[i].lord).find(id => id && C.actors[id].alive);
+  P.master = lord; SC.arc.sworn = lord; SC.service = { lord, since: 0, warnings: 0, orders: [] }; const ev = [];
+  const off = on('*', (e, W) => { if (W === C && /story\.(order|warning|oathBroken|wanted|oathPasses|released)|event\.manhunt/.test(e.type)) ev.push(e.type); });
+  advance(C, 24 * 112 * 2); off();
+  const n = t => ev.filter(x => x === t).length;
+  console.log(`\nSWORN, NEVER OBEYING (2 years): ${n('story.order')} orders, ${n('story.warning')} warnings, oath broken ${n('story.oathBroken')}, manhunts ${n('event.manhunt')}, chapter now "${chapterOf(C).title}"`);
+  must(n('story.oathPasses') + n('story.released') > 0 || (n('story.oathBroken') === 1 && !P.master && (SC.wanted || []).some(w => w.forever && w.by === lord)), 'ignored orders did not break the oath into a forever manhunt');
+  const D = deserialize(serialize(L)), P2 = D.actors[D.player], lord2 = D.cultures.find(c => c.kind === 'clan').regions.map(i => D.regions[i].lord).find(id => id && D.actors[id].alive);
+  P2.master = lord2; storyOf(D).arc.sworn = lord2; storyOf(D).service = { lord: lord2, since: 0, warnings: 0, orders: [] };
+  must(breakOath(D) && storyOf(D).wanted.some(w => w.forever && w.by === lord2), 'breaking the oath did not make him wanted forever'); }
+// robbing a royal procession raises a manhunt across the court and its allies
+{ const C = deserialize(serialize(L)); advance(C, 24 * 112); const q = openQuests(C).find(x => x.kind === 'procession');
+  if (q) { C.actors[C.player].money.mon = 5000; resolveQuest(C, q.id, 'betray'); must((storyOf(C).wanted || []).some(w => w.why === 'robbed a royal procession' && w.regions.length > 1), 'robbing a royal procession raised no manhunt'); } }
 console.log('\nWAYS TRIED on copies of the world', Object.entries(tried).map(([k, v]) => `${k}: ${v.join(', ')}`).join('; '));
 
 // ---- rules: saves round-trip, plain JSON, same seed gives the same world, cheap enough ----

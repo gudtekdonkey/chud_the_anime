@@ -3,6 +3,7 @@ import { ST, today, clamp, announce, kill, seize, pay, who, alive, actor, regNam
 import { defineQuest, post } from './quests.js';
 import { settleDispute, settleUprising } from './politics.js';
 import { razeCamp, settleArmy, robbed } from './order.js';
+import { royalManhunt } from './service.js';
 
 // ---- Quests the world makes out of what is happening: famine, a disputed seat, a rising, a dying lord, raiders, a robbery,
 // a famous bounty, a village in an army's path, a royal procession, a letter in wartime. Each ends on its own if he stays away. ----
@@ -175,9 +176,9 @@ defineQuest('procession', { board: 'inn',
     { id: 'fight', label: 'Walk the road ahead of it', blurb: 'Clear the outlaws before the silk comes by.', karma: 1, mon: (L, q) => q.reward, from: 'giver', standing: (L, q) => st(q.culture, .2),
       act: (L, q) => { arrive(L, q, 'safely, a ronin walking ahead'); return `The procession passed without a stone thrown. The court remembers who walked ahead of it.`; } },
     { id: 'stealth', label: 'Steal the silk at the inn', blurb: 'One night, one chest, nobody hurt.', karma: -3, standing: (L, q) => st(q.culture, -.1),
-      act: (L, q, r, by) => { loot(L, q, by, 'a royal red kimono'); deed(L, q, 'theft from royalty', q.target, false); arrive(L, q, 'a chest lighter'); return `A chest of red silk is missing from the royal baggage. Every inn on the road is being searched.`; } },
+      act: (L, q, r, by) => { loot(L, q, by, 'a royal red kimono'); deed(L, q, 'theft from royalty', q.target, false); royalManhunt(L, q, false); arrive(L, q, 'a chest lighter'); return `A chest of red silk is missing from the royal baggage. Every inn on the road is being searched.`; } },
     { id: 'betray', label: 'Rob the procession', blurb: 'Colour is worth a fortune. It is also death to touch.', karma: -6, mon: () => 400, from: 'target', standing: (L, q) => st(q.culture, -.6),
-      act: (L, q, r, by) => { loot(L, q, by, 'a royal red kimono'); deed(L, q, 'robbery of royalty', q.target, true); const P = proc(L, q); if (P) delete ST(L).processions[q.stake.procession];
+      act: (L, q, r, by) => { loot(L, q, by, 'a royal red kimono'); deed(L, q, 'robbery of royalty', q.target, true); if (by === L.player) royalManhunt(L, q, true); const P = proc(L, q); if (P) delete ST(L).processions[q.stake.procession];
         return `The ronin fell on the procession on an open road. ${who(L, q.target)} lived; the red silk did not stay with him.`; } },
   ],
   untouched: (L, q, r) => { const P = proc(L, q); if (!P) return 'The procession has passed.';
