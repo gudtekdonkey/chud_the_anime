@@ -25,7 +25,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `screen.js` | The `#game` canvas, its 2D context `g`, the `#hud` line |
 | `input.js` | Keyboard map, touch pad, `held`/`taps`, `readInput()`, the room-clear checkbox |
 | `rig/pose.js` | `pz()` (pose from REST), `HILT`, `lerpP`, `ease`/`lin`, `keyed()` (eased keyframes to frames) |
-| `rig/rig.js` | `rig()`: draws one side-view pose pixel by pixel from joint angles into a depth raster, each part at its own depth (`Z`); the hat |
+| `rig/rig.js` | `rig()`: draws one side-view pose pixel by pixel from joint angles into a depth raster, each part at its own depth (`Z`); the body only, the hat is an item |
 | `anims/anims.js` | `ANIMS` (frame count, fps, loop, the moveset "about" text), `GLITCHY` |
 | `anims/poses.js` | `POSES` for every rig animation, the guard and counter stances, `GLF` (baked glitch frames) |
 | `anims/hand-drawn.js` | Hand-drawn rows the rig can't pose: the two open stances (front view) and sit / sit down / stand up (back view) |

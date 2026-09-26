@@ -8,7 +8,7 @@ export function initWardrobe() {
   const sync = () => {
     for (const [id, b] of btns) b.setAttribute('aria-pressed', String(wear.outfit.has(id)));
     const on = ITEMS.filter(i => wear.outfit.has(i.id)).map(i => i.name.toLowerCase());
-    document.getElementById('wearing').textContent = on.length ? `Wearing: ${on.join(', ')}.` : 'Nothing but the hat and the blade.';
+    document.getElementById('wearing').textContent = on.length ? `Wearing: ${on.join(', ')}.` : 'Nothing: the bare body and the blade.';
   };
   const done = () => { sync(); game.focus(); };
   for (const [slot, label] of SLOTS) {

@@ -7,7 +7,12 @@ import { bandLine, ring } from './raster.js';
 // bias: depth nudge for layering. Colours are shades of black (c0..c6 in RC), never bright.
 const TATTER = [11, 9, 11, 8, 10, 7];
 const MANTLE_RING = { f: 'c', u: 7.5, vf: 2.7, vb: -2.9, b: 3.6 }, NECK = [{ f: 'c', u: 8.1, vf: 1.9, vb: -2.1, b: 2.4 }, { f: 'c', u: 9.2, vf: 1.6, vb: -1.8, b: 2.0 }];
+// the straw hat, side on: wide enough to keep the rain, and his eyes, out of sight (keep its height-to-width ratio)
+const STRAW = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
 export const ITEMS = [
+  // ---- head ----
+  { id: 'straw', slot: 'head', name: 'Wide straw hat', about: 'The one he walked in with. Its brim tips forward on a cut.',
+    parts: [{ kind: 'sidehat', rows: STRAW, bias: 2.6 }] },   // over his head and eye, under the mantle and the near arm
   // ---- shoulders ----
   { id: 'mantle', slot: 'shoulders', name: 'Flat mantle', about: 'His mantle from the start. Draped flat down the back, never a hump; its tip lifts a hair when he moves.',
     parts: [{ kind: 'drape', col: 'M', edge: 'm', bias: 2.65 }] },   // over the head and hat, under the near arm, as it always was
@@ -56,14 +61,14 @@ export const ITEMS = [
   { id: 'kote', slot: 'hands', name: 'Iron kote', about: 'Armoured sleeves, plated from the wrist to the elbow.', parts: [{ kind: 'arm', style: 'kote', col: ['c3', 'c4'], edge: 'c6', bias: .3 }] },
 ];
 export const BY_ID = Object.fromEntries(ITEMS.map(i => [i.id, i]));
-export const SLOTS = [['shoulders', 'Shoulders'], ['neck', 'Neck'], ['back', 'Back'], ['waist', 'Waist'], ['body', 'Body'], ['hands', 'Hands']];
-// the flat mantle alone is his look today, so it is what he starts in
+export const SLOTS = [['head', 'Head'], ['shoulders', 'Shoulders'], ['neck', 'Neck'], ['back', 'Back'], ['waist', 'Waist'], ['body', 'Body'], ['hands', 'Hands']];
+// the straw hat and the flat mantle are his look today, so they are what he starts in
 export const OUTFITS = [
-  { name: 'Default', items: ['mantle'] },
-  { name: 'Wanderer', items: ['ragged', 'obi', 'wraps'] },
-  { name: 'Ghost', items: ['longscarf', 'tattered', 'cord'] },
-  { name: 'Retainer', items: ['plates', 'cape', 'obi', 'kote'] },
-  { name: 'Night coat', items: ['crow', 'coat', 'scarf'] },
+  { name: 'Default', items: ['straw', 'mantle'] },
+  { name: 'Wanderer', items: ['straw', 'ragged', 'obi', 'wraps'] },
+  { name: 'Ghost', items: ['straw', 'longscarf', 'tattered', 'cord'] },
+  { name: 'Retainer', items: ['straw', 'plates', 'cape', 'obi', 'kote'] },
+  { name: 'Night coat', items: ['straw', 'crow', 'coat', 'scarf'] },
   { name: 'Bare', items: [] },
 ];
 
@@ -85,6 +90,10 @@ export function drawPart(S, part, J) {
   if (part.kind === 'line') return bandLine(S, J, part.f, part.u, part.vf, part.vb, part.b, part.col, bias, part.w || 1);
   if (part.kind === 'lapel') { if (J.Hc.F[2] > .25) for (const s of [1, -1]) S.seg(J.Lc(8.6, 2.3, s * 1.4), J.Lc(4.4, 2.5, s * .6), 1, part.col, bias); return; }
   if (part.kind === 'knot') { const q = S.P(bone(J, part.f).L(part.u, part.v, part.b)); S.dot(q[0], q[1], q[2] + bias, part.size, part.col); return; }
+  if (part.kind === 'sidehat') {  // a hat drawn side on, its brim resting on the head, nudged forward by the pose (p.hat)
+    const [hx, hy] = J.hc, w = part.rows[0].length, x0 = Math.round(hx) - (w >> 1) + 1 + J.p.hat, y0 = Math.round(hy) - 1 - part.rows.length;
+    part.rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') S.px(Math.round(x0 + x), y0 + y, bias, ch); }));
+    return; }
   if (part.kind === 'drape') {   // the game's first mantle, flat down the back: the side rig's polygon, its back tip lifting with the flutter
     const L = (u, v) => S.P(J.L(u, v, 0)), f = J.p.flutter || 0, z = bias;
     S.poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], z, part.col);

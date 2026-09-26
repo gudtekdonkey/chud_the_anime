@@ -1,11 +1,11 @@
 import { OX, OY } from '../config.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles into a depth raster (src/wardrobe/raster.js), so every frame is a pose ----
-const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
+// The body only: the hat and everything else he wears are items (src/wardrobe/items.js).
 // Every part carries a depth (Z), so the clothing drawn into the same raster layers between his limbs:
 // the far arm and leg behind the body, the near arm over whatever he wears, a held blade over everything.
 // The depths follow the old painter's order, so the bare rig draws exactly what it always did.
-const Z = { scab: -3.5, farArm: -3, farLeg: -2.5, body: 0, obi: .01, nearLeg: 1.2, head: 2.5, eye: 2.51, hat: 2.6, bblade: 40, nearArm: 45, blade: 50 };
+const Z = { scab: -3.5, farArm: -3, farLeg: -2.5, body: 0, obi: .01, nearLeg: 1.2, head: 2.5, eye: 2.51, bblade: 40, nearArm: 45, blade: 50 };
 export const NEAR_ARM_Z = Z.nearArm;
 export function rig(R, p) {
   let z = 0;
@@ -52,13 +52,11 @@ export function rig(R, p) {
   z = Z.body; poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
   z = Z.obi; for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
   z = Z.nearLeg; leg(p.fl, 'K', .5);
-  // head and hat
+  // head
   const hc = L(10 - p.bow * .7, .6 + p.bow * 1.1);
   z = Z.head; for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
   z = Z.eye; put(hc[0] + 1.5, hc[1], p.dim ? 'e' : 'E');
-  const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
-  z = Z.hat; HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x, hy0 + y, ch); }));
-  // (the mantle is clothing now: src/wardrobe/items.js)
+  // (the hat and the mantle are clothing now: src/wardrobe/items.js)
   // the back hand's blade is drawn over the body and the sash, so it is never lost behind them
   z = Z.bblade;
   if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; blob(bh[0], bh[1], 2, 'D'); seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
@@ -74,4 +72,5 @@ export function rig(R, p) {
     seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S');
     seg(add(hand, d, 1), add(hand, d, 13), 1, 'W');
   }
+  return { hc };   // the head's centre, so the hat, hair and masks sit on exactly the pixels the head does
 }

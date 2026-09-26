@@ -5,11 +5,11 @@ import { fromSide, solve } from './skeleton.js';
 
 // ---- Dressing a figure: the rig's pose and everything it wears, into one depth raster ----
 // a figure: the item ids it wears, the cloth state of each loose part, its clock and its velocity (px/s, in its own facing)
-export const makeFigure = (items = ['mantle']) => ({ outfit: new Set(items), cloth: new Map(), t: 0, vel: [0, 0] });
+export const makeFigure = (items = ['straw', 'mantle']) => ({ outfit: new Set(items), cloth: new Map(), t: 0, vel: [0, 0] });
 // dt > 0 steps the cloth; dt 0 draws it where it last was (or where it hangs, the first time)
 export function dress(R, F, p, dt = 0) {
-  R.clear(); rig(R, p);
-  const J = solve(fromSide(p), 0, true), live = new Set();
+  R.clear(); const { hc } = rig(R, p);
+  const J = solve(fromSide(p), 0, true), live = new Set(); J.hc = hc;
   // the breeze, plus the wind of his own motion
   const env = { t: F.t, wind: [Math.sin(F.t * .9) * 9 + Math.sin(F.t * 2.1) * 4 - F.vel[0] * 1.3, 0, Math.sin(F.t * .7 + 1) * 3 - F.vel[1] * 1.3] };
   const steps = dt > 0 ? Math.min(3, Math.max(1, Math.round(dt * 60))) : 0;

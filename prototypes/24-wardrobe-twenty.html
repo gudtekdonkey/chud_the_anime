@@ -44,8 +44,12 @@
   .num { font-size: 13px; color: var(--dim); font-variant-numeric: tabular-nums; margin-right: auto; }
   .tag { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--rule); padding: 2px 6px; }
   .tag.cloth { color: var(--cyan); border-color: #2b5a55; }
+  .tag.warn { color: #e8b86a; border-color: #5a4a2b; }
+  .note { color: #e8b86a; font-size: 14px; }
+  .check { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; cursor: pointer; }
+  .check input { accent-color: var(--cyan); width: 16px; height: 16px; margin: 0; }
   .card p { font-size: 14px; line-height: 1.45; }
-  #masks { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+  #masks, #heads { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
   .card.mask canvas { aspect-ratio: 30 / 26; }
   /* layering */
   .tbl { overflow-x: auto; border: 1px solid var(--rule); }
@@ -73,7 +77,7 @@
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Clothing · twenty pieces · ten masks · nine slots</div>
+    <div class="eyebrow">Clothing · twenty pieces · hats, hair, masks · eleven slots</div>
     <h1>The ronin's wardrobe</h1>
     <p>Twenty pieces of clothing for the ronin, each hung on the game's own rig and posed with the game's own frames. Loose parts are live cloth. Everything is a shade of black. Dress him below, then see how the layers stack.</p>
   </header>
@@ -95,7 +99,8 @@
         </div>
       </div>
       <div class="ctl">
-        <div><div class="lbl">Wearing</div><p id="wearing" aria-live="polite"></p></div>
+        <div><div class="lbl">Wearing</div><p id="wearing" aria-live="polite"></p><p id="note" class="note" aria-live="polite"></p></div>
+        <div><div class="lbl">Hair colour</div><div class="chips" role="group" aria-label="Hair colour" id="haircols"></div></div>
         <div class="chips" role="group" aria-label="Outfits" id="presets"></div>
         <div id="slots"></div>
       </div>
@@ -107,8 +112,14 @@
     <div id="twenty"></div>
   </section>
 
+  <section aria-labelledby="heads-h">
+    <div class="intro"><h2 id="heads-h">Hats and hair</h2><p>The hat is an item now, not part of him, so he can go bareheaded. Hair sits on his scalp, and long styles have cloth tails that swing. Under a hat, whatever is above the brim hides, and the sides and tails still show. Tick the box to see every style under the straw hat.</p></div>
+    <label class="check" for="underhat"><input type="checkbox" id="underhat"> Hair under the straw hat</label>
+    <div id="heads"></div>
+  </section>
+
   <section aria-labelledby="masks-h">
-    <div class="intro"><h2 id="masks-h">Masks</h2><p>Ten masks in a new face slot. Unlike the clothes they come in any colour, so they are the one place his silhouette can carry a colour of its own. Each is drawn on the side of his face under the hat brim, and his cyan eye shows through all but the visor. Shuffle for random colours, or wear one in the fitting room.</p></div>
+    <div class="intro"><h2 id="masks-h">Masks</h2><p>Ten masks in the face slot. Unlike the clothes they come in any colour, so they are the one place his silhouette can carry a colour of its own. Each is drawn on the side of his face under the hat brim, and his cyan eye shows through all but the visor. Eight fit under a hat. The oni's horns and the kitsune's ears don't, so putting one on takes the hat off, and putting a hat on takes that mask off. Shuffle for random colours, or wear one in the fitting room.</p></div>
     <div class="chips" role="group" aria-label="Mask colours"><button type="button" class="chip" id="shuffle">Shuffle colours</button><button type="button" class="chip" id="original">Their own colours</button></div>
     <div id="masks"></div>
   </section>
@@ -132,22 +143,23 @@
   </section>
 
   <section aria-labelledby="slots-h">
-    <div class="intro"><h2 id="slots-h">Clothing slots: recommended, one per layer</h2><p>Each slot is a layer, and he wears at most one piece in each: legs, body, back, waist, ties, shoulders, neck, hands and face (the masks). That gives him a head-to-toe outfit of up to nine pieces and never two mantles.</p></div>
+    <div class="intro"><h2 id="slots-h">Clothing slots: recommended, one per layer</h2><p>Each slot is a layer, and he wears at most one piece in each: legs, body, back, waist, ties, shoulders, neck and hands for clothes, then hair, face (masks) and head (hats). That gives him up to eleven pieces and never two mantles. On the head the order is scalp, hair, mask, hat.</p></div>
     <div class="rules">
       <div><h3>Why slots</h3><p>Two pieces in the same place would fight for the same pixels, like two mantles or a cape inside a cape. One per slot rules that out, so any outfit a player builds reads cleanly.</p></div>
       <div><h3>Why slot = layer</h3><p>The slot tells you the layer, so the stacking order never needs tuning outfit by outfit. A new piece only has to pick its slot to layer correctly.</p></div>
       <div><h3>What slots give the game</h3><p>Drops and loot can name a slot ("a new waist piece"). Each slot can carry one kind of bonus later, such as armour on the body or speed on the legs, and the wardrobe screen is just eight rows.</p></div>
       <div><h3>Not recommended</h3><p>Free stacking with no slots looks messy at 20 px tall and needs a rule for every pair. Fewer slots, such as merging waist and ties, would stop the Pilgrim wearing a sash and a tasuki together.</p></div>
     </div>
-    <p>Hats are held back for now: the straw hat is part of his silhouette and stays on the rig. It can become a tenth slot later.</p>
+    <p>One cross-slot rule: a mask with horns or ears and a hat can't be worn together. Whichever went on last stays.</p>
   </section>
 
   <div class="ask">
     <h2>Your call</h2>
     <ol>
       <li><b>Which pieces stay?</b> Keep, cut or change any of the twenty.</li>
-      <li><b>His default outfit.</b> In the game today he starts in the flat mantle alone.</li>
-      <li><b>Slots.</b> Keep the nine, one piece in each? Add a head slot for hats?</li>
+      <li><b>His default outfit.</b> In the game today he starts in the straw hat and the flat mantle. Should he start bareheaded?</li>
+      <li><b>Slots.</b> Keep the eleven, one piece in each?</li>
+      <li><b>Hair.</b> Which styles stay? Should hair colour be natural shades only, or any dye?</li>
       <li><b>Masks.</b> Which of the ten stay, and should their colours be random per drop, dyed by the player, or fixed?</li>
       <li><b>The layer order.</b> For example, should the sash go over the coat (as now) or under it?</li>
     </ol>
@@ -1360,13 +1372,6 @@
 	};
 	//#endregion
 	//#region src/rig/rig.js
-	const HAT_SIDE = [
-		"........GGGG........",
-		".....GGHHHHHHGG.....",
-		"..GGHHHHHHHHHHHHGG..",
-		".GBBBBBBBBBBBBBBBBG.",
-		"..KBBBBBBBBBBBBBBK.."
-	];
 	const Z = {
 		scab: -3.5,
 		farArm: -3,
@@ -1376,7 +1381,6 @@
 		nearLeg: 1.2,
 		head: 2.5,
 		eye: 2.51,
-		hat: 2.6,
 		bblade: 40,
 		nearArm: 45,
 		blade: 50
@@ -1454,11 +1458,6 @@
 		for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, "K");
 		z = Z.eye;
 		put(hc[0] + 1.5, hc[1], p.dim ? "e" : "E");
-		const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
-		z = Z.hat;
-		HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => {
-			if (ch !== ".") put(hx0 + x, hy0 + y, ch);
-		}));
 		z = Z.bblade;
 		if (p.bsword != null) {
 			const d = [Math.cos(p.bsword), Math.sin(p.bsword)];
@@ -1483,6 +1482,7 @@
 			put(...hand, "S");
 			seg(add(hand, d, 1), add(hand, d, 13), 1, "W");
 		}
+		return { hc };
 	}
 	//#endregion
 	//#region src/wardrobe/skeleton.js
@@ -1963,6 +1963,23 @@
 		b: 2
 	}];
 	const ITEMS$1 = [
+		{
+			id: "straw",
+			slot: "head",
+			name: "Wide straw hat",
+			about: "The one he walked in with. Its brim tips forward on a cut.",
+			parts: [{
+				kind: "sidehat",
+				rows: [
+					"........GGGG........",
+					".....GGHHHHHHGG.....",
+					"..GGHHHHHHHHHHHHGG..",
+					".GBBBBBBBBBBBBBBBBG.",
+					"..KBBBBBBBBBBBBBBK.."
+				],
+				bias: 2.6
+			}]
+		},
 		{
 			id: "mantle",
 			slot: "shoulders",
@@ -2523,6 +2540,13 @@
 			S.dot(q[0], q[1], q[2] + bias, part.size, part.col);
 			return;
 		}
+		if (part.kind === "sidehat") {
+			const [hx, hy] = J.hc, w = part.rows[0].length, x0 = Math.round(hx) - (w >> 1) + 1 + J.p.hat, y0 = Math.round(hy) - 1 - part.rows.length;
+			part.rows.forEach((r, y) => [...r].forEach((ch, x) => {
+				if (ch !== ".") S.px(Math.round(x0 + x), y0 + y, bias, ch);
+			}));
+			return;
+		}
 		if (part.kind === "drape") {
 			const L = (u, v) => S.P(J.L(u, v, 0)), f = J.p.flutter || 0, z = bias;
 			S.poly([
@@ -2633,10 +2657,22 @@
 			what: "Wraps and armoured sleeves ride on the arm itself: under the near arm only when it is behind him."
 		},
 		{
+			id: "hair",
+			name: "Hair",
+			z: null,
+			what: "On the head itself, over the scalp. A hat flattens it: whatever is above the brim hides, the sides and tails still show. Tails are cloth and fall over the mantle."
+		},
+		{
 			id: "face",
 			name: "Face",
 			z: null,
-			what: "Masks sit on the head itself, over the face and under the hat brim, so the hat still frames them. Any colour."
+			what: "Masks, over the face and the hair, under the hat brim. Masks with horns or ears do not fit under a hat. Any colour."
+		},
+		{
+			id: "head",
+			name: "Head",
+			z: null,
+			what: "Hats, the outermost thing on his head. Optional: he can go bareheaded."
 		}
 	];
 	const LZ = Object.fromEntries(LAYERS.map((l) => [l.id, l.z || 0]));
@@ -2942,6 +2978,8 @@
 		}
 	];
 	const MASK_PAL = {
+		hX: "#1a1c22",
+		hx: "#2f333c",
 		mR: "#c8322b",
 		mr: "#7e1c17",
 		mW: "#ece8de",
@@ -2970,12 +3008,15 @@
 			a: "mr",
 			fix: { W: "mW" },
 			rows: [
+				".A..A",
+				".a..a",
 				"AAAA.",
 				"AAAEa",
 				"AWAWA",
 				".aAa."
 			],
-			about: "A red demon face with bared fangs."
+			hat: false,
+			about: "A red demon face with bared fangs and two horns. The horns do not fit under a hat."
 		},
 		{
 			id: "kitsune",
@@ -2984,12 +3025,15 @@
 			a: "mw",
 			fix: { R: "mR" },
 			rows: [
+				".A.A..",
+				".AaA..",
 				"AAAA..",
 				"AARE..",
 				"AAAAAA",
 				".aaa.."
 			],
-			about: "A white fox with a pointed snout and red markings at the eye."
+			hat: false,
+			about: "A white fox with a pointed snout, red markings at the eye and tall ears. The ears do not fit under a hat."
 		},
 		{
 			id: "tengu",
@@ -2998,6 +3042,8 @@
 			a: "mr",
 			fix: {},
 			rows: [
+				"",
+				"",
 				"AAAA....",
 				"AAAEAAAA",
 				"aAAA....",
@@ -3012,6 +3058,8 @@
 			a: "mk",
 			fix: { S: "mS" },
 			rows: [
+				"",
+				"",
 				".....",
 				".....",
 				"ASSAA",
@@ -3026,6 +3074,8 @@
 			a: "mw",
 			fix: {},
 			rows: [
+				"",
+				"",
 				"AAAA",
 				"AAAE",
 				"AAaA",
@@ -3040,6 +3090,8 @@
 			a: "mb",
 			fix: {},
 			rows: [
+				"",
+				"",
 				"AAAA",
 				"AaAE",
 				"AaAa",
@@ -3054,6 +3106,8 @@
 			a: "mv",
 			fix: {},
 			rows: [
+				"",
+				"",
 				".....",
 				".....",
 				"AAAAA",
@@ -3068,6 +3122,8 @@
 			a: "mk",
 			fix: { Y: "mY" },
 			rows: [
+				"",
+				"",
 				"AAAA...",
 				"AAAEYY.",
 				"AAAAYYY",
@@ -3082,6 +3138,8 @@
 			a: "mM",
 			fix: {},
 			rows: [
+				"",
+				"",
 				"....",
 				"aAAAA",
 				"....",
@@ -3096,6 +3154,8 @@
 			a: "ms",
 			fix: {},
 			rows: [
+				"",
+				"",
 				"AAAA",
 				"AaAE",
 				"AAAA",
@@ -3105,7 +3165,169 @@
 		}
 	];
 	const MASK_BY = Object.fromEntries(MASKS.map((m) => [m.id, m]));
+	const tail = (b, n, w, dz = 0) => ({
+		kind: "chain",
+		f: "c",
+		u: 10.2,
+		v: -1.9,
+		b,
+		n,
+		seg: 1.2,
+		dir: [
+			-.45,
+			-1,
+			dz
+		],
+		w,
+		col: ["hX", "hx"],
+		split: .6,
+		stiff: .03,
+		catch: .8,
+		bias: 2.7
+	});
+	const HAIR = [
+		{
+			id: "topknot",
+			name: "Topknot",
+			rows: [
+				"....aA....",
+				"....AA....",
+				"...AAAA...",
+				"...A......"
+			],
+			about: "Tied up and folded forward on the crown, the samurai way."
+		},
+		{
+			id: "crop",
+			name: "Short crop",
+			rows: [
+				"",
+				"",
+				"...AAAA...",
+				"..aA......"
+			],
+			about: "Cut close. Nothing to grab in a fight."
+		},
+		{
+			id: "ponytail",
+			name: "Ponytail",
+			rows: [
+				"",
+				"",
+				"...AAAA...",
+				"..AA......"
+			],
+			tails: [tail(0, 6, [1, 1])],
+			about: "Tied at the back of the head. The tail swings behind him and lags on a turn."
+		},
+		{
+			id: "long",
+			name: "Long and loose",
+			rows: [
+				"",
+				"",
+				"..AAAAA...",
+				"..AA......",
+				"..A......."
+			],
+			tails: [tail(-.8, 7, [2, 1], -.15), tail(.6, 6, [1, 1], .15)],
+			about: "Down past the shoulders, streaming when he runs."
+		},
+		{
+			id: "braid",
+			name: "Braid",
+			rows: [
+				"",
+				"",
+				"...AAAA...",
+				"..aA......"
+			],
+			tails: [{
+				...tail(0, 9, [1, 1]),
+				split: .15,
+				stiff: .06
+			}],
+			about: "One long plait to the small of his back, heavier than loose hair."
+		},
+		{
+			id: "wild",
+			name: "Wild",
+			rows: [
+				"...A.A....",
+				"..AAAAA.A.",
+				"..AAAAAA..",
+				"..AA......"
+			],
+			about: "Spiked and unkempt. Crushed flat when he puts a hat on."
+		},
+		{
+			id: "bun",
+			name: "Bun",
+			rows: [
+				"...aa.....",
+				"..aAA.....",
+				"...AAAA...",
+				"..A......."
+			],
+			about: "Wound tight at the back of the head."
+		},
+		{
+			id: "sakayaki",
+			name: "Sakayaki",
+			rows: [
+				".....AA...",
+				"....a.....",
+				"...a..a...",
+				"...A......"
+			],
+			about: "The crown shaved bare, a small knot on top. The enemy samurai wear it."
+		}
+	];
+	const HAIR_COLS = [
+		["Ink", ["#1a1c22", "#2f333c"]],
+		["Ash", ["#5c6068", "#3a3d44"]],
+		["White", ["#d9dbdd", "#9a9ea3"]],
+		["Rust", ["#7a3a22", "#4a2416"]]
+	];
+	const HATS = [
+		{
+			id: "kasa",
+			name: "Pilgrim's kasa",
+			rows: [
+				".......GG.......",
+				"......GHHG......",
+				".....GHHHHG.....",
+				"....GHHHHHHG....",
+				"..GBBBBBBBBBBG..",
+				"...KBBBBBBBBK..."
+			],
+			about: "Narrow and tall. The brim sits close, so the glint of his eyes shows."
+		},
+		{
+			id: "broken",
+			name: "Broken hat",
+			rows: [
+				"........GGGG........",
+				".....GGHHHHH.G......",
+				"..GGHHHHHHHH.HHHGG..",
+				".GBBBBBBBBBB.BBBBBG.",
+				"..KBBBBBBBBB.BBBBK.."
+			],
+			about: "Split by a blade that almost found him. He never mended it."
+		},
+		{
+			id: "jingasa",
+			name: "Jingasa",
+			rows: [
+				".......GGGGGG.......",
+				"...GGGHHHHHHHHGGG...",
+				"GGBBBBBBBBBBBBBBBBGG"
+			],
+			about: "A flat iron war hat, low and wide."
+		}
+	];
 	const SLOT_OF = {
+		straw: "head",
 		mantle: "shoulders",
 		ragged: "shoulders",
 		crow: "shoulders",
@@ -3126,7 +3348,7 @@
 			return {
 				...it,
 				slot: SLOT_OF[it.id],
-				parts: it.parts.map((p) => p.kind === "drape" ? p : {
+				parts: it.parts.map((p) => p.kind === "drape" || p.kind === "sidehat" ? p : {
 					...p,
 					bias: LZ[SLOT_OF[it.id]] + (p.bias || 0) - lo
 				})
@@ -3144,9 +3366,31 @@
 			slot: "face",
 			name: m.name,
 			about: m.about,
+			noHat: m.hat === false,
 			parts: [{
 				kind: "mask",
 				mask: m.id
+			}]
+		})),
+		...HAIR.map((h) => ({
+			id: "hair-" + h.id,
+			slot: "hair",
+			name: h.name,
+			about: h.about,
+			parts: [{
+				kind: "hair",
+				rows: h.rows
+			}, ...h.tails || []]
+		})),
+		...HATS.map((h) => ({
+			id: h.id,
+			slot: "head",
+			name: h.name,
+			about: h.about,
+			parts: [{
+				kind: "sidehat",
+				rows: h.rows,
+				bias: 2.6
 			}]
 		}))
 	];
@@ -3200,12 +3444,19 @@
 			return true;
 		}
 		if (part.kind === "mask") {
-			const m = MASK_BY[part.mask], p = J.p, hc = S.P(J.L(10 - p.bow * .7, .6 + p.bow * 1.1, 0));
-			const x0 = Math.round(hc[0] - 1.5), y0 = Math.round(hc[1]) - 1, tint = S.tint;
+			const m = MASK_BY[part.mask], p = J.p, hc = J.hc;
+			const x0 = Math.round(hc[0] - 1.5), y0 = Math.round(hc[1]) - 3, tint = S.tint;
 			m.rows.forEach((r, y) => [...r].forEach((ch, x) => {
 				if (ch === ".") return;
 				const key = ch === "E" ? p.dim ? "e" : "E" : ch === "A" ? tint ? "mX" : m.A : ch === "a" ? tint ? "mx" : m.a : m.fix[ch];
 				S.px(x0 + x, y0 + y, ch === "E" ? 2.57 : 2.56, key);
+			}));
+			return true;
+		}
+		if (part.kind === "hair") {
+			const x0 = Math.round(J.hc[0] - 1.5) - 3, y0 = Math.round(J.hc[1]) - 4;
+			part.rows.forEach((r, y) => [...r].forEach((ch, x) => {
+				if (ch !== ".") S.px(x0 + x, y0 + y, 2.55, ch === "A" ? "hX" : "hx");
 			}));
 			return true;
 		}
@@ -3235,7 +3486,8 @@
 		cloth: /* @__PURE__ */ new Map(),
 		t: Math.random() * 9,
 		vel: [0, 0],
-		tint: null
+		tint: null,
+		hair: HAIR_COLS[0][1]
 	});
 	const hex = (r, g, b) => "#" + [
 		r,
@@ -3280,13 +3532,18 @@
 	}
 	function dress(R, F, p, dt, only) {
 		R.clear();
-		rig(R, p);
+		const { hc } = rig(R, p);
 		R.tint = F.tint;
-		if (F.tint) Object.assign(R.pk, packPal({
-			mX: F.tint[0],
-			mx: F.tint[1]
+		Object.assign(R.pk, packPal({
+			hX: F.hair[0],
+			hx: F.hair[1],
+			...F.tint ? {
+				mX: F.tint[0],
+				mx: F.tint[1]
+			} : {}
 		}));
 		const J = solve(fromSide(p), 0, true);
+		J.hc = hc;
 		const env = {
 			t: F.t,
 			wind: [
@@ -3397,11 +3654,13 @@
 	const OUTFITS = [
 		{
 			name: "Default",
-			items: ["mantle"]
+			items: ["straw", "mantle"]
 		},
 		{
 			name: "Wanderer",
 			items: [
+				"straw",
+				"hair-ponytail",
 				"hakama",
 				"ragged",
 				"obi",
@@ -3411,6 +3670,7 @@
 		{
 			name: "Ghost",
 			items: [
+				"hair-long",
 				"legwraps",
 				"tattered",
 				"cord",
@@ -3421,16 +3681,21 @@
 		{
 			name: "Retainer",
 			items: [
+				"jingasa",
+				"hair-topknot",
 				"hakama",
 				"plates",
 				"cape",
 				"obi",
-				"kote"
+				"kote",
+				"mask-menpo"
 			]
 		},
 		{
 			name: "Night coat",
 			items: [
+				"straw",
+				"hair-crop",
 				"coat",
 				"crow",
 				"scarf"
@@ -3439,6 +3704,8 @@
 		{
 			name: "Rain walker",
 			items: [
+				"kasa",
+				"hair-braid",
 				"legwraps",
 				"haori",
 				"apron",
@@ -3449,6 +3716,7 @@
 		{
 			name: "Pilgrim",
 			items: [
+				"hair-bun",
 				"hakama",
 				"haori",
 				"obi",
@@ -3460,6 +3728,7 @@
 		{
 			name: "Demon",
 			items: [
+				"hair-wild",
 				"hakama",
 				"plates",
 				"crow",
@@ -3486,7 +3755,8 @@
 		const same = (a) => a.length === hero.outfit.size && a.every((x) => hero.outfit.has(x));
 		document.querySelectorAll("[data-outfit]").forEach((b) => b.setAttribute("aria-pressed", String(same(OUTFITS[b.dataset.outfit].items))));
 		const on = ITEMS.filter((i) => hero.outfit.has(i.id));
-		$("wearing").textContent = on.length ? on.map((i) => i.name).join(" · ") : "Nothing but the hat and the blade";
+		$("wearing").textContent = on.length ? on.map((i) => i.name).join(" · ") : "Nothing: the bare body and the blade";
+		$("note").textContent = note;
 		buildUp();
 	}
 	Object.fromEntries(LAYERS.map((l) => [l.id, l.name]));
@@ -3496,15 +3766,29 @@
 		if (!b) return;
 		const it = BY_ID[b.dataset.item], on = hero.outfit.has(it.id);
 		for (const o of ITEMS) if (o.slot === it.slot) hero.outfit.delete(o.id);
-		if (!on) hero.outfit.add(it.id);
+		note = "";
+		if (!on) {
+			hero.outfit.add(it.id);
+			const off = ITEMS.filter((o) => hero.outfit.has(o.id) && (it.noHat && o.slot === "head" || it.slot === "head" && o.noHat));
+			for (const o of off) hero.outfit.delete(o.id);
+			if (off.length) note = it.noHat ? `The ${it.name} mask doesn't fit under a hat, so the ${off[0].name.toLowerCase()} came off.` : `The ${off[0].name} mask doesn't fit under a hat, so it came off.`;
+		}
 		syncRoom();
 	});
+	let note = "";
 	$("presets").innerHTML = OUTFITS.map((o, i) => `<button type="button" class="chip" data-outfit="${i}">${o.name}</button>`).join("");
 	$("presets").addEventListener("click", (e) => {
 		const b = e.target.closest("[data-outfit]");
 		if (!b) return;
 		hero.outfit = new Set(OUTFITS[b.dataset.outfit].items);
+		note = "";
 		syncRoom();
+	});
+	$("haircols").innerHTML = HAIR_COLS.map(([n], i) => `<button type="button" class="chip" data-hc="${i}">${n}</button>`).join("") + "<button type=\"button\" class=\"chip\" id=\"hairdye\">Random dye</button>";
+	$("haircols").addEventListener("click", (e) => {
+		const b = e.target.closest("button");
+		if (!b) return;
+		hero.hair = b.id === "hairdye" ? randomTint() : HAIR_COLS[b.dataset.hc][1];
 	});
 	document.querySelectorAll("[data-pose]").forEach((b) => b.addEventListener("click", () => {
 		ui.pose = b.dataset.pose;
@@ -3515,7 +3799,12 @@
 		ui.face = -ui.face;
 		turnCloth(hero);
 	});
-	const cards = ITEMS.filter((i) => i.slot !== "face").map((it, i) => ({
+	const HEADS = /* @__PURE__ */ new Set([
+		"hair",
+		"face",
+		"head"
+	]);
+	const cards = ITEMS.filter((i) => !HEADS.has(i.slot)).map((it, i) => ({
 		it,
 		F: makeFigure([it.id]),
 		phase: i * .37
@@ -3525,9 +3814,21 @@
 		F: makeFigure(["mask-" + m.id]),
 		phase: i * .5
 	}));
-	$("masks").innerHTML = maskCards.map((c) => `<article class="card mask"><canvas width="30" height="26" aria-label="The ${c.m.name} mask on his face"></canvas><h3>${c.m.name}</h3><p>${c.m.about}</p></article>`).join("");
+	$("masks").innerHTML = maskCards.map((c) => `<article class="card mask"><canvas width="30" height="26" aria-label="The ${c.m.name} mask on his face"></canvas><div class="meta"><span class="num">mask</span><span class="tag ${c.m.hat === false ? "warn" : ""}">${c.m.hat === false ? "no hat" : "fits under a hat"}</span></div><h3>${c.m.name}</h3><p>${c.m.about}</p></article>`).join("");
 	document.querySelectorAll("#masks canvas").forEach((cv, i) => {
 		maskCards[i].g = cv.getContext("2d");
+	});
+	const headCards = [...ITEMS.filter((i) => i.slot === "head"), ...ITEMS.filter((i) => i.slot === "hair")].map((it, i) => ({
+		it,
+		F: makeFigure([it.id]),
+		phase: i * .4
+	}));
+	$("heads").innerHTML = headCards.map((c) => `<article class="card mask"><canvas width="30" height="26" aria-label="The ronin with the ${c.it.name}"></canvas><div class="meta"><span class="num">${c.it.slot === "head" ? "hat" : "hair"}</span></div><h3>${c.it.name}</h3><p>${c.it.about}</p></article>`).join("");
+	document.querySelectorAll("#heads canvas").forEach((cv, i) => {
+		headCards[i].g = cv.getContext("2d");
+	});
+	$("underhat").addEventListener("change", (e) => {
+		for (const c of headCards) if (c.it.slot === "hair") c.F.outfit = new Set(e.target.checked ? [c.it.id, "straw"] : [c.it.id]);
 	});
 	$("shuffle").addEventListener("click", () => {
 		for (const c of maskCards) c.F.tint = randomTint();
@@ -3580,7 +3881,11 @@
 		$("bu-labels").innerHTML = steps.map((s) => `<span><b>${s.label}</b>${s.item ? "<br>" + s.item : "<br>the rig"}</span>`).join("");
 		$("bu-labels").style.setProperty("--n", steps.length);
 	}
-	$("layers").innerHTML = LAYERS.map((l, i) => `<tr><td class="ord">${i + 1}</td><td><b>${l.name}</b></td><td class="z">${l.z == null ? "on the head" : "+" + l.z.toFixed(2)}</td><td>${ITEMS.filter((x) => x.slot === l.id).map((x) => x.name).join(", ")}</td><td>${l.what}</td></tr>`).join("");
+	$("layers").innerHTML = LAYERS.map((l, i) => `<tr><td class="ord">${i + 1}</td><td><b>${l.name}</b></td><td class="z">${l.z == null ? {
+		hair: "2.55",
+		face: "2.56",
+		head: "2.60"
+	}[l.id] : "+" + l.z.toFixed(2)}</td><td>${ITEMS.filter((x) => x.slot === l.id).map((x) => x.name).join(", ")}</td><td>${l.what}</td></tr>`).join("");
 	$("swatches").innerHTML = [
 		"c0",
 		"c1",
@@ -3595,7 +3900,7 @@
 	let last = performance.now();
 	let clock = 0;
 	function tick(now) {
-		let dt = Math.min(.05, (now - last) / 1e3);
+		let dt = Math.min(.05, Math.max(0, (now - last) / 1e3));
 		last = now;
 		if (still) dt = 0;
 		clock += dt;
@@ -3611,6 +3916,14 @@
 			stage(c.g, 56, 50, c.F, poseAt(k, u), dt, 26, 43);
 		}
 		for (const c of maskCards) {
+			if (!c.g) continue;
+			c.F.t = clock + c.phase;
+			const cv = dress(R, c.F, poseAt("idle", clock + c.phase), dt);
+			c.g.fillStyle = "#474c4a";
+			c.g.fillRect(0, 0, 30, 26);
+			c.g.drawImage(cv, 10, 6, 30, 26, 0, 0, 30, 26);
+		}
+		for (const c of headCards) {
 			if (!c.g) continue;
 			c.F.t = clock + c.phase;
 			const cv = dress(R, c.F, poseAt("idle", clock + c.phase), dt);
