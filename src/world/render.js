@@ -21,7 +21,7 @@ import { itemDrawables, drawItemsOver, drawSmoke } from '../items/items.js';
 import { PILLARS, bg, drawPillar } from './room.js';
 import { partyDrawables } from '../party/companions.js';
 import { recruitDrawables } from '../party/recruit.js';
-import { pairedDrawables, drawPairLines } from '../party/paired.js';
+import { X as PAIR, pairedDrawables, drawPairLines } from '../party/paired.js';
 import { drawPartyHud, drawPartyPrompts } from '../ui/party-hud.js';
 import { KIT, drawKit } from '../ui/kit-screen.js';
 
@@ -37,7 +37,7 @@ export function render() {
   // depth-sort the pillars, the enemies, their dropped swords, the player and any execution by their feet
   const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), ...ENEMIES.map(e => ({ y: e.y - (e.alive ? 0 : .5), d: () => drawEnemy(e) })),
     ...blades.map(b => ({ y: b.y - .2, d: () => drawBlade(b, fade) })), ...(P.state === 'exec' ? [] : [{ y: P.y, d: drawPlayer }]), ...stageItems(), ...itemDrawables(),
-    ...mirrors.map(m => ({ y: m.y, d: () => drawMirror(m) })), ...partyDrawables(), ...recruitDrawables(), ...pairedDrawables(),
+    ...mirrors.map(m => ({ y: m.y, d: () => drawMirror(m) })), ...partyDrawables(PAIR && PAIR.a), ...recruitDrawables(), ...pairedDrawables(),
     ...debris.map(d => ({ y: d.state === 'in' ? d.cy + Math.sin(d.a) * d.r * .45 : d.py, d: () => drawDebris(d) }))];
   items.sort((a, b) => a.y - b.y).forEach(i => i.d());
   drawSmoke(true);   // a thinner haze in front of everyone

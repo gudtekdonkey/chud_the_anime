@@ -34,13 +34,29 @@ export const CHARMS = {
   oath: { name: 'IRON OATH', scope: 'ally', about: 'Once per area the wearer steps in and takes a blow meant for you.' },
 };
 // paired executions: each says what a partner needs, like the solo executions' rules (assassin/rules.js), and any companion
-// who meets it can join K. needs: weapons (any of), skill (they know it), item (they wear it). The owner cut the Bond Cord charm
+// who meets it can join K. needs: weapons (any of), skill (they know it), item (they wear any of), hero (his own weapon, any of).
+// Most are the two weapons working together (owner: "we can interplay with the two weapons"). The owner cut the Bond Cord charm.
+// Their choreography is party/paired-moves.js
+const POLES = ['bo', 'yari', 'naginata'], HEAVY = ['kanabo', 'tetsubo', 'nodachi'],
+  BLADES = ['katana', 'nodachi', 'tanto', 'wakizashi', 'daisho', 'naginata', 'kama', 'kusarigama', 'yari'];   // his, to cut a man in two
 export const PAIRED = [
   { id: 'cross', name: 'CROSSING CUT', about: 'You and the partner pass through him from both sides; he falls on the shared click.', needs: { weapons: SHEATHED } },   // a blade drawn from a scabbard
+  { id: 'vault', name: 'POLE VAULT', about: 'They plant the pole, you run up it and they heave: you flip over him and come down through his head.', needs: { weapons: POLES, hero: BLADES } },
+  { id: 'batter', name: 'BATTER UP', about: 'Their heavy swing lifts him off the floor; you blink above him and cut him in two in the air.', needs: { weapons: HEAVY, hero: BLADES } },
+  { id: 'reel', name: 'REEL IN', about: 'Their chain takes him by the neck and yanks him through your draw.', needs: { weapons: ['kusarigama'], hero: BLADES } },
+  { id: 'fan', name: 'FAN SNAP', about: 'The iron fan snaps open in his face; he turns to it, and you cut him from behind.', needs: { weapons: ['tessen'], hero: BLADES } },
+  { id: 'catch', name: 'CATCH AND KILL', about: 'The jitte catches his swing and twists the sword out of his hands; you run him through from behind.', needs: { weapons: ['jitte'] } },
+  { id: 'skewer', name: 'SKEWER', about: 'The spear runs him through and lifts him overhead; you leap and cut him off the point.', needs: { weapons: ['yari', 'naginata'], hero: BLADES } },
+  { id: 'switch', name: 'SWITCH', about: 'He swings at them and they are you: a shadow step trades your places, and you both cut.', needs: { skill: 'shadowstep' } },
+  { id: 'duet', name: 'IAI DUET', about: 'Both of you still, hands on the hilt; one draw each, and he falls apart on the shared click.', needs: { skill: 'iai', hero: SHEATHED } },
+  { id: 'scissors', name: 'SCISSORS', about: 'Two short blades and yours close on him at two heights at once: three pieces.', needs: { weapons: ['kama', 'daisho', 'wakizashi'], hero: BLADES } },
+  { id: 'flip', name: 'ANKLE FLIP', about: 'The nunchaku takes his ankle and flips him upside down; you cut him in two before he lands.', needs: { weapons: ['nunchaku'], hero: BLADES } },
+  { id: 'snare', name: 'SCARF SNARE', about: 'Their long scarf goes round his neck and hauls him off his feet, into your cut.', needs: { item: ['longscarf', 'scarf'] } },
+  { id: 'step', name: 'SHOULDER STEP', about: 'They kneel in their armour; you run up their back, somersault, and come down through him.', needs: { item: ['plates', 'kote'], hero: BLADES } },
 ];
 export const SKILLS = { spearwall: 'SPEAR WALL', shadowstep: 'SHADOW STEP', iai: 'IAI' };
 export const fits = (c, ex) => { const n = ex.needs;
-  return (!n.weapons || n.weapons.includes(c.kit.weapon)) && (!n.skill || c.skills.includes(n.skill)) && (!n.item || c.kit.wear.has(n.item)); };
+  return (!n.weapons || n.weapons.includes(c.kit.weapon)) && (!n.skill || c.skills.includes(n.skill)) && (!n.item || [].concat(n.item).some(i => c.kit.wear.has(i))); };
 export const pairsFor = c => PAIRED.filter(ex => fits(c, ex));
 
 // ---- Levels: companions earn EXP and level like him (INV's 100 x level curve), but choose their own stats (owner) ----

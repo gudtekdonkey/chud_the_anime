@@ -114,7 +114,8 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `party/figures.js` | Drawing anyone in the party: weapon + trait frames (cached), the ally palette, `place` |
 | `party/companions.js` | Companions in the room: ranks of six, weapon roles, hits and Qi, EXP, downed / lifted / dead (`hurtAlly`), Iron Oath |
 | `party/recruit.js` | Recruiting: the road wanderer, the guarded captive, the camp board |
-| `party/paired.js` | Paired executions on K (the crossing cut) |
+| `party/paired.js` | Paired executions on K: the candidate and the 5 s party cooldown, the actors in a frame local to the enemy, `halve` (pieces), drawing |
+| `party/paired-moves.js` | `RUNS`: each paired execution's choreography (the crossing cut, pole vault, batter up and the rest) |
 | `ui/kit-screen.js` | Tab: the kit screen for him and every companion (pauses the game) |
 | `ui/party-hud.js` | The party panel under the skill bar, and the E / K prompts over the world |
 | `styles.css` / `index.html` | The page; `index.html` holds markup only |
