@@ -2,18 +2,31 @@ import { FW, FH, OX, OY, RC } from '../config.js';
 import { KATANA_ART } from '../weapons/katana.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
-// the rig works in its original 48x48 frame (feet at 24, 40) and is shifted by whole pixels into the bigger frame, so the
-// rounding of every pose stays exactly as it was
+// Two outputs share one drawing:
+//   rig(g, fx, p, pal): straight onto a canvas in painter's order, the hat and mantle drawn with him (the samurai, the executions' pieces).
+//   rigR(R, p): into a depth raster (src/wardrobe/raster.js), the body only: what he wears is items (src/wardrobe/items.js) layered
+//   between his limbs by depth: the far arm and leg behind the body, the near arm over whatever he wears, a held blade over everything.
+// The depths follow the painter's order, so the bare raster rig draws exactly what the canvas rig does without the hat and mantle.
+// it works in its original 48x48 frame (feet at 24, 40) and is shifted by whole pixels into the bigger frame, so the rounding
+//   of every pose stays exactly as it was
 export const RX = 24, RY = 40;
 const DX = OX - RX, DY = OY - RY;
+const Z = { scab: -3.5, farArm: -3, offHand: -2.9, farLeg: -2.5, body: 0, obi: .01, nearLeg: 1.2, head: 2.5, eye: 2.51, hat: 3, mantle: 3.5, bblade: 40, nearArm: 45, blade: 50 };
+export const NEAR_ARM_Z = Z.nearArm;
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
 // pal swaps the colours (the samurai's red-grey); p.bare drops the hat and mantle for a bare head and topknot
 export function rig(g, fx, p, pal = RC) {
   // pixels past the frame's edge are dropped, so a long weapon never bleeds into the next frame of the sheet
-  const put = (x, y, c) => { const X = DX + Math.round(x), Y = DY + Math.round(y); if (X < 0 || X >= FW || Y < 0 || Y >= FH) return;
-    g.fillStyle = pal[c]; g.fillRect(fx + X, Y, 1, 1); };
-  const blob = (x, y, w, c) => { const X = DX + Math.round(x - (w - 1) / 2), Y = DY + Math.round(y - (w - 1) / 2); if (X < 0 || X + w > FW || Y < 0 || Y + w > FH) return;
-    g.fillStyle = pal[c]; g.fillRect(fx + X, Y, w, w); };
+  return draw((x, y, z, c) => { if (x < 0 || x >= FW || y < 0 || y >= FH) return; g.fillStyle = pal[c]; g.fillRect(fx + x, y, 1, 1); }, p, true);
+}
+// returns the head's centre, so the hat, hair and masks sit on exactly the pixels the head does
+export const rigR = (R, p) => draw((x, y, z, c) => R.px(x, y, z, c), p, false);
+
+function draw(out, p, clothed) {
+  let z = 0;
+  const put = (x, y, c) => out(DX + Math.round(x), DY + Math.round(y), z, c);
+  const blob = (x, y, w, c) => { const x0 = Math.round(x - (w - 1) / 2), y0 = Math.round(y - (w - 1) / 2);
+    for (let j = 0; j < w; j++) for (let i = 0; i < w; i++) out(DX + x0 + i, DY + y0 + j, z, c); };
   const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
     for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
   const poly = (pts, c) => {
@@ -46,42 +59,45 @@ export function rig(g, fx, p, pal = RC) {
   const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
 
   if (p.noUpper) {   // cut in two: only the pelvis and legs are left, and they fold on their own
-    leg(p.bl, 'D', -.5); poly([L(0, -2), L(0, 2), L(2.6, 2.2), L(2.6, -2.2)], 'K'); leg(p.fl, 'K', .5); return;
+    z = Z.farLeg; leg(p.bl, 'D', -.5); z = Z.body; poly([L(0, -2), L(0, 2), L(2.6, 2.2), L(2.6, -2.2)], 'K'); z = Z.nearLeg; leg(p.fl, 'K', .5); return { hc: null };
   }
   // the weapon's art draws itself through these hooks (src/weapons/); a pose carries it as p.wp, the katana if none
   const wp = p.wp || KATANA_ART, kit = { put, seg, blob, add, L, p };
   // far side first: scabbard, far arm, far leg
-  wp.far(kit, p, mouth, sd);
+  z = Z.scab; wp.far(kit, p, mouth, sd);
   // the back hand can carry the blade too, for the counter stances
-  const bh = arm(p.ba, 'D'); kit.bh = bh;                   // a two-handed weapon runs its shaft through both hands
-  if (wp.offHand) wp.offHand(kit, p, bh);                  // a second weapon in the back hand (twin blades)
-  leg(p.bl, 'D', -.5);
+  z = Z.farArm; const bh = arm(p.ba, 'D'); kit.bh = bh;   // a two-handed weapon runs its shaft through both hands
+  z = Z.offHand; if (wp.offHand) wp.offHand(kit, p, bh);                  // a second weapon in the back hand (twin blades)
+  z = Z.farLeg; leg(p.bl, 'D', -.5);
   // torso, near leg
-  poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
-  for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
-  leg(p.fl, 'K', .5);
+  z = Z.body; poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
+  z = Z.obi; for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
+  z = Z.nearLeg; leg(p.fl, 'K', .5);
   // head and hat
   // neck: the head lags and lolls on it (+ forward), carried by the chest
   const nk = p.neck || 0, hc = L(10 - p.bow * .7 - Math.abs(nk) * 1.2, .6 + p.bow * 1.1 + nk * 2.2);
   if (!p.noHead) {   // noHead: the head has come off and is its own piece now
-    for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
+    z = Z.head; for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
     const hf = p.headFlip ? -1 : 1;   // headFlip: the head is wrenched round to face backward
-    put(hc[0] + 1.5 * hf, hc[1], p.dim ? 'e' : 'E');
+    z = Z.eye; put(hc[0] + 1.5 * hf, hc[1], p.dim ? 'e' : 'E'); z = Z.head;
     if (p.bare) { for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] - 2, 'K'); put(hc[0] - hf, hc[1] - 3, 'K'); put(hc[0] - 2 * hf, hc[1] - 4, 'K'); put(hc[0] - 2 * hf, hc[1] - 3, 'D'); }
   }
   const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
-  if (!p.bare) HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x - fx + fx, hy0 + y, ch); }));
+  // clothed (the canvas rig): the hat and mantle drawn with him; in the raster they are wardrobe items
+  z = Z.hat; if (clothed && !p.bare) HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x, hy0 + y, ch); }));
   // mantle over the shoulders, its back tip lifting a hair with the flutter
   const f = p.flutter;
   // it drapes flat down the back instead of standing off it, so it no longer reads as a hump
-  if (!p.bare) { poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M');
+  z = Z.mantle; if (clothed && !p.bare) { poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M');
     seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
     if (f > .5) put(...L(2.6, -3.4), 'M'); }
   // the back hand's blade is drawn over the body and the sash, so it is never lost behind them
-  if (p.bsword != null) wp.backHeld(kit, bh, p.bsword);
+  z = Z.bblade; if (p.bsword != null) wp.backHeld(kit, bh, p.bsword);
   // near arm and the weapon: stowed, sliding home, or in the hand
-  const hand = arm(p.fa, 'K');
+  z = Z.nearArm; const hand = arm(p.fa, 'K');
+  z = Z.blade;
   if (p.sword === null && !p.sheathing && p.bsword == null && !p.empty) wp.stowed(kit, p, mouth, sd);
   else if (p.sheathing) wp.sheathing(kit, hand, mouth);
   else if (p.sword !== null) wp.held(kit, hand, p.sword);
+  return { hc: p.noHead ? null : [hc[0] + DX, hc[1] + DY] };
 }

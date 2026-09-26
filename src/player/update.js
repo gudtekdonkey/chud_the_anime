@@ -13,17 +13,22 @@ import { motes } from './body.js';
 import { hit, burst } from './hits.js';
 import { meditate, spawnMirror, updateMirrors } from './mirror.js';
 import { TAP, chargeUp, TC, RIFT, release, charged } from './skills.js';
-import { reach } from '../weapons/weapons.js';
 import { gate, startCd, updateCds } from './cooldowns.js';
 import { updateEnemies } from '../world/enemies.js';
 import { assassinate, tickStages, updateStages } from '../assassin/assassinate.js';
 import { K, updateMarkers } from '../assassin/markers.js';
+import { EL } from '../fx/element.js';
+import { reach } from '../weapons/weapons.js';
+import { updateItems, itemInput, itemState, mirrorCut } from '../items/items.js';
+import { sheathClick } from '../items/harvest.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
   for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; q.life -= dt; }
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
   P.ghosts.forEach(g => { g.age += dt; g.white -= dt; }); P.ghosts = P.ghosts.filter(g => g.age < g.hold + .25);
+  if (P.hide > 0 && P.state !== 'tele' && P.state !== 'idle' && P.state !== 'run') P.hide = 0;   // acting mid-slither: he re-forms at once
+  P.hide = Math.max(0, (P.hide || 0) - dt); if (!(P.hide > 0)) P.goo = Math.max(0, (P.goo || 0) - dt);
   S.shake = Math.max(0, S.shake - dt); S.impact = Math.max(0, S.impact - 1); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
   updateCds(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
   updateFx(dt); updateEnemies(dt, S.hitstop > 0); updateStages(dt); updateMarkers();
@@ -36,8 +41,11 @@ export function update(dt, inp) {
   const free = s === 'idle' || s === 'run' || s === 'walk' || s === 'idleGlitch' || s === 'sit' || s === 'sitDown';
   const canAttack = free || s === 'land' || s === 'sheathe' || s.startsWith('ready') || s === 'runArmed';
   if (inp.mx) P.face = Math.sign(inp.mx);
+  // the way he faces as he moves: side on, three-quarters or straight toward or away from the camera (the west side mirrors the east)
+  if (inp.mx || inp.my) P.view = inp.my > 0 ? (inp.mx ? 'SE' : 'S') : inp.my < 0 ? (inp.mx ? 'NE' : 'N') : 'E';
   const moving = inp.mx || inp.my;
 
+  updateItems(dt, canAttack && s !== 'sit' && s !== 'sitDown');
   if (s === 'exec') return;   // the execution's stage moves him (assassin/assassinate.js)
   if (inp.die && s !== 'death') { setState('death'); return; }
   if (s === 'sit' || s === 'sitDown') {
@@ -50,6 +58,7 @@ export function update(dt, inp) {
     return;
   }
   if (s === 'standUp') { if (T >= D) { /* handled in the switch */ } else return; }
+  if (itemInput(inp, canAttack, dt)) return;
   if (canAttack) {
     if (inp.slash) return setState(P.armed ? 'slash1r' : 'slash1');
     if (inp.jump) { setState('jump'); P.vz = 150; return; }
@@ -77,11 +86,12 @@ export function update(dt, inp) {
         const [dx, dy] = inputDir(inp), gait = held.has('walk') ? 'walk' : 'run';
         moveBy(dx * P.gait[gait] * dt, dy * P.gait[gait] * dt);
         if (s !== gait) setState(gait);
+        if (EL.cur.kit && Math.floor(T / .09) !== Math.floor((T - dt) / .09)) EL.cur.kit.step(P.x, P.y);   // his footsteps leave the element behind
         P.still = 0;
       } else {
         P.still += dt;
         if (s === 'run' || s === 'walk') setState('idle');
-        if (s === 'idle' && P.still > 4) { setState('idleGlitch'); P.still = 0; }
+        if (s === 'idle' && P.still > 4) { setState('idleGlitch'); P.still = 0; const k = EL.cur.kit; if (k) { if (k.idle) k.idle(); else k.residue(P.x, P.y, 6); } }
         if (s === 'idleGlitch' && T >= D) setState('idle');
         if (s === 'sitDown' && T >= D) setState('sit');
       }
@@ -91,6 +101,7 @@ export function update(dt, inp) {
       const sp = 260 * (1 - u) + 50;
       moveBy(P.slideDir[0] * sp * dt, P.slideDir[1] * sp * dt);
       if (u < .7 && Math.random() < .5) dust(1, P.slideDir[0]);
+      if (EL.cur.kit && u < .8 && Math.random() < .5) EL.cur.kit.step(P.x - P.slideDir[0] * 4, P.y);   // the slide smears the element along the floor
       if (Math.floor(T / .04) !== Math.floor((T - dt) / .04)) ghost();
       if (T >= D + .08) setState(moving ? 'run' : 'idle');
       break;
@@ -99,7 +110,7 @@ export function update(dt, inp) {
       if (moving) { const [dx, dy] = inputDir(inp); moveBy(dx * 70 * dt, dy * 70 * dt); }
       P.vz -= 520 * dt; P.z += P.vz * dt;
       if (s === 'jump' && P.vz < 0) { P.state = 'fall'; P.t = 0; }
-      if (P.z <= 0) { P.z = 0; P.vz = 0; setState('land'); dust(8); }
+      if (P.z <= 0) { P.z = 0; P.vz = 0; setState('land'); dust(8); if (EL.cur.kit) for (let i = 0; i < 4; i++) EL.cur.kit.step(P.x + rr(-4, 4), P.y); }
       break;
     }
     case 'land': if (T >= D) setState(moving ? 'run' : 'idle'); break;
@@ -119,7 +130,8 @@ export function update(dt, inp) {
     case 'tele': {
       P.inv = true;
       if (u >= .45 && !P.moved) { P.moved = true; const fx = P.x, fy = P.y; blink(56, P.blinkDir);
-        residue(fx, fy, 12); residue(P.x, P.y, 12); storm(P.x, P.y);
+        if (EL.cur.kit) { EL.cur.kit.travel(fx, fy); mirrorCut(fx, fy); break; }
+        residue(fx, fy, 12); residue(P.x, P.y, 12); storm(P.x, P.y); mirrorCut(fx, fy);
         const n = Math.hypot(P.x - fx, P.y - fy) | 0;
         for (let i = 0; i < n; i += 2) spark(fx + (P.x - fx) * i / n, fy - 12 + (P.y - fy) * i / n + (Math.random() - .5) * 10, 0, 0, .18, COL.fx, false); }
       if (T >= D) { P.moved = false; P.inv = false; setState('idle'); }
@@ -143,14 +155,14 @@ export function update(dt, inp) {
       if (T >= .225 && T < .3) hit('d1', P.x + P.face * rd, P.y - 12, rr2);
       if (T >= .325 && T < .4) hit('d2', P.x + P.face * rd, P.y - 12, rr2);
       // the sheath click: whatever he cut bursts now, a beat after the blades
-      if (once('click', T >= .6)) { spark(P.x + P.face * 3, P.y - 10, 0, -10, .12, '#ffffff', false);
+      if (once('click', T >= .6)) { spark(P.x + P.face * 3, P.y - 10, 0, -10, .12, '#ffffff', false); sheathClick();
         if (P.struck.size) { S.hitstop = .06; S.shake = 1 / 60; for (const d of P.struck) burst(d); } }
       if (T >= D) { P.moved = false; P.inv = false; P.armed = false; setState('idle'); }
       break;
     }
     case 'sheathe': {
       if (once('flick', T >= .12)) for (let k = 0; k < 4; k++) spark(P.x + P.face * rr(8, 14), P.y - rr(6, 12), P.face * rr(20, 50), rr(-10, 10), .15, COL.fx2, true);
-      if (once('click', T >= .82)) { P.armed = false; spark(P.x + P.face * 3, P.y - 12, P.face * 6, -12, .12, '#ffffff', false); }
+      if (once('click', T >= .82)) { P.armed = false; sheathClick(); spark(P.x + P.face * 3, P.y - 12, P.face * 6, -12, .12, '#ffffff', false); }
       if (moving) { setState(P.armed ? 'runArmed' : 'run'); break; }
       if (T >= D) setState('idle');
       break;
@@ -211,8 +223,9 @@ export function update(dt, inp) {
         else if (q.slide) { setState('slide'); P.slideDir = q.dir; dust(6, q.dir[0]); startCd('slide'); } else if (q.jump) { setState('jump'); P.vz = 150; } }
       break;
     }
+    default: itemState(s, T, D, dt, moving); break;
     case 'death': {
-      if (u > .8 && !P.burst) { P.burst = true; for (let i = 0; i < 30; i++) spark(P.x + (Math.random() - .5) * 26, P.y - Math.random() * 8, (Math.random() - .5) * 40, -20 - Math.random() * 40, .7, Math.random() < .5 ? COL.fx : COL.body, false); }
+      if (u > .8 && !P.burst) { P.burst = true; if (EL.cur.kit) EL.cur.kit.residue(P.x, P.y, 16); for (let i = 0; i < 30; i++) spark(P.x + (Math.random() - .5) * 26, P.y - Math.random() * 8, (Math.random() - .5) * 40, -20 - Math.random() * 40, .7, Math.random() < .5 ? COL.fx : COL.body, false); }
       if (T >= D + 1) { P.burst = false; setState('idleGlitch'); }
       break;
     }

@@ -14,7 +14,7 @@ import { collide } from './room.js';
 //   kill(e, o)           dead now, whatever his health. o.dir: which way the blow carries him (+1 right, -1 left).
 //                        o.execution: gone at once, no death of ours and no dropped sword (the execution's pieces are the death)
 //   e.held = true        an execution owns him: we neither update nor draw him, and hits pass him by
-//   onKill(fn)           fn(e) after every death (K's cooldown reset hangs here)
+//   onKill(fn)           fn(e, o) after every death (o.execution for an execution) (K's cooldown reset hangs here)
 export const HP = 4, ISOLATION = 36;
 // damage per kind of hit (the same kinds as QI_GAIN): bigger moves hit harder
 export const DMG = { slash: 1, d: 1, sw: 2, tc: 2, cm: 3, cr: 1, crB: 2, mi: 1, chain: 1, burst: 1 };
@@ -52,12 +52,12 @@ export function damage(e, n, fx, fy) {
 export function kill(e, o = {}) {
   if (!e.alive) return;
   const dir = o.dir || -e.face;
-  if (o.execution) { e.alive = false; e.hp = 0; e.state = 'gone'; e.held = false; for (const fn of kills) fn(e); return; }
+  if (o.execution) { e.alive = false; e.hp = 0; e.state = 'gone'; e.held = false; for (const fn of kills) fn(e, o); return; }
   const shown = e.body.out;   // he dies from the pose he is seen in, not the one he was headed for
   e.alive = false; e.hp = 0; e.state = 'dead'; e.t = 0; e.fd = dir * e.face; e.P0 = shown; e.vx = o.vx != null ? o.vx : dir * 30; e.vy = 0;
   // his sword leaves his hands as he goes: it falls, turning, and lies where it lands
   if (shown.sword != null) blades.push({ x: e.x + e.face * 6, y: e.y + rr(-2, 3), z: 16, vx: dir * rr(10, 30), vz: rr(20, 50), a: shown.sword, va: sgn() * rr(6, 12), face: e.face });
-  for (const fn of kills) fn(e);
+  for (const fn of kills) fn(e, o);
 }
 
 function thud(e) {
