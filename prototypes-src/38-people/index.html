@@ -1,0 +1,116 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ronin Bloodlines</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --panel2: #16181b; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --faint: #646c6b;
+    --cyan: #6ff3e4; --cyan-dim: #2c6f68; --land: #cdb477; --blood: #b87a70; }
+  body { background: var(--ground); color: var(--ink); font: 14px/1.5 Figtree, system-ui, sans-serif; margin: 0; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 22px; }
+  header { display: grid; gap: 8px; max-width: 78ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  h2 { font: 700 19px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  h3 { font: 600 13px/1.2 Figtree, sans-serif; margin: 0; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+  p { margin: 0; color: var(--muted); }
+  button, select, input { font: inherit; color: var(--ink); background: #0f1113; border: 1px solid #454c52; padding: 5px 10px; border-radius: 2px; }
+  button { cursor: pointer; } button:hover:not(:disabled) { border-color: var(--cyan); color: var(--cyan); }
+  button:disabled { opacity: .45; cursor: default; }
+  button.hot { border-color: var(--cyan); color: var(--cyan); }
+  button.grave { border-color: var(--blood); color: var(--blood); }
+  :focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; background: var(--panel); border: 1px solid var(--rule); padding: 10px 12px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; }
+  .bar .clock { font: 700 16px/1 "Pixelify Sans", monospace; color: var(--cyan); min-width: 17ch; font-variant-numeric: tabular-nums; }
+  .bar label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+  .col { display: grid; gap: 22px; min-width: 0; }
+  .card { background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 12px; min-width: 0; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: baseline; }
+  .stats { display: flex; flex-wrap: wrap; gap: 4px 18px; font-variant-numeric: tabular-nums; color: var(--muted); }
+  .stats b { color: var(--ink); font-weight: 600; }
+  svg text { fill: var(--muted); font: 11px Figtree, sans-serif; }
+  .plots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; max-width: 280px; }
+  .plot { aspect-ratio: 1; border: 1px solid var(--rule); font: 500 10px/1.15 Figtree, sans-serif; padding: 3px; overflow: hidden; color: var(--ground); display: flex; align-items: flex-end; cursor: default; }
+  .plot.villager { background: var(--land); } .plot.lord { background: var(--cyan-dim); color: var(--ink); } .plot.nature { background: #22262a; color: var(--faint); }
+  .plot.trust { background: repeating-linear-gradient(135deg, var(--land) 0 5px, #8c7b52 5px 10px); }
+  .plot.player { outline: 2px solid var(--cyan); outline-offset: -2px; }
+  .houses { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+  .house { border: 1px solid var(--rule); background: var(--panel2); padding: 9px 10px; display: grid; gap: 5px; align-content: start; }
+  .house .head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .house .land { color: var(--land); font-size: 12px; white-space: nowrap; }
+  .p { display: flex; gap: 6px; align-items: baseline; cursor: pointer; border: 0; background: none; padding: 0; text-align: left; color: var(--ink); width: 100%; }
+  .p:hover .nm { color: var(--cyan); }
+  .p .ag { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 2.5ch; text-align: right; }
+  .p .job { color: var(--faint); font-size: 12px; margin-left: auto; white-space: nowrap; }
+  .p.kid .nm { color: var(--muted); }
+  .p.dyn .nm { color: var(--cyan); }
+  .tag { font: 500 11px/1 "Pixelify Sans", monospace; padding: 2px 5px; border: 1px solid currentColor; letter-spacing: .04em; }
+  .tag.c { color: var(--cyan); } .tag.l { color: var(--land); } .tag.r { color: var(--blood); } .tag.m { color: var(--muted); }
+  .tree { font-size: 13px; overflow-x: auto; max-height: 520px; overflow-y: auto; }
+  .tree ul { list-style: none; margin: 0; padding-left: 16px; border-left: 1px solid var(--rule); }
+  .tree > ul { padding-left: 0; border: 0; }
+  .tree li { padding: 2px 0; }
+  .tree .n { cursor: pointer; } .tree .n:hover { color: var(--cyan); }
+  .tree .dead { color: var(--faint); } .tree .me { color: var(--cyan); font-weight: 600; }
+  .tree .sp { color: var(--muted); } .tree .yr { color: var(--faint); font-variant-numeric: tabular-nums; font-size: 12px; }
+  .brides { display: grid; gap: 6px; }
+  .bride { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; border: 1px solid var(--rule); padding: 7px 9px; background: var(--panel2); }
+  .bride .why { grid-column: 1 / -1; font-size: 12px; color: var(--muted); }
+  .bride .acts { display: flex; gap: 6px; }
+  .meter { height: 5px; background: #0f1113; border: 1px solid var(--rule); width: 90px; } .meter i { display: block; height: 100%; background: var(--cyan); }
+  .death { border: 1px solid var(--blood); padding: 12px 14px; display: grid; gap: 6px; }
+  .death h2 { color: var(--blood); }
+  .log { max-height: 320px; overflow-y: auto; display: grid; gap: 2px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .log div { display: grid; grid-template-columns: 11ch 1fr; gap: 10px; color: var(--muted); }
+  .log div b { color: var(--ink); font-weight: 400; }
+  .log .y { color: var(--faint); }
+  .graves { display: grid; gap: 6px; font-size: 13px; }
+  .graves div { border-left: 2px solid var(--faint); padding-left: 8px; color: var(--muted); }
+  .graves div.pl { border-color: var(--cyan); }
+  .ask { background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 8px; max-width: 86ch; }
+  .ask ol { margin: 0; padding-left: 20px; color: var(--muted); display: grid; gap: 4px; }
+  @media (prefers-reduced-motion: no-preference) { .flash { animation: fl .8s ease-out; } @keyframes fl { from { background: #2a3b39; } } }
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Prototype 38 · the people lane</div>
+    <h1>Ronin Bloodlines</h1>
+    <p>A whole world of about 6,700 people living on the simulation core. Watch one village's families across generations: births, weddings, deaths, and land passing to heirs. Follow any bloodline, court a bride as the ronin, then let him fall and see who carries on.</p>
+  </header>
+  <div class="bar" id="bar">
+    <span class="clock" id="clock">…</span>
+    <button id="s1" title="Live one season (28 days)">+ season</button>
+    <button id="y1">+ 1 year</button>
+    <button id="y10">+ 10 years</button>
+    <button id="play" class="hot">Play</button>
+    <label for="village">Village <select id="village"></select></label>
+    <label for="hour">Hour <input id="hour" type="range" min="0" max="23" value="10"> <span id="hourv">10:00</span></label>
+    <label for="seed">Seed <input id="seed" type="number" value="12345" style="width: 8ch"></label>
+    <button id="newworld">New world</button>
+  </div>
+  <div class="grid">
+    <div class="col">
+      <section class="card" id="vcard"></section>
+      <section class="card"><div class="row"><h2>Households</h2><p id="hsub"></p></div><div class="houses" id="houses"></div></section>
+    </div>
+    <div class="col">
+      <section class="card" id="ronin"></section>
+      <section class="card"><div class="row"><h2>Bloodline</h2><p id="tsub"></p></div><div class="tree" id="tree"></div></section>
+      <section class="card"><h2>Graves the world remembers</h2><div class="graves" id="graves"></div></section>
+    </div>
+  </div>
+  <section class="card"><div class="row"><h2>Chronicle</h2><p>People events in this village and in the ronin's house, newest first</p></div><div class="log" id="log"></div></section>
+  <section class="ask">
+    <h2>Decided by the owner (2026-09-26)</h2>
+    <ol>
+      <li>Old age can take him while you are away. The ledger never kills him young off screen.</li>
+      <li>His children and grandchildren carry on, then a brother. A companion is still open.</li>
+      <li>A child heir is played at once. The widow, else the next of kin, is regent until 16.</li>
+      <li>What he carried lies with his body: finders keepers. His heir can take it back from the grave first, if he gets there first.</li>
+      <li>Buying and bidding for land belongs to the economy lane. The long dead are forgotten after 20 years to keep saves small.</li>
+    </ol>
+  </section>
+</div>
+<!-- BUNDLE -->

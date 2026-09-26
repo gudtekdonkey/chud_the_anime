@@ -44,7 +44,7 @@ Rules, in order:
 6. **Karma** is paid always.
 7. **Unseen**: no bounty, no standing. **Masked**: seen, known to have happened, but the bounty and standing land on nobody, unless a witness standing close (`close`, the ones the live game's senses put within reach) sees through the mask: each does 30% of the time (`K.MASK_SEE`, owner 2026-09-26), and his people then know it was him. Off screen, half the witnesses count as close.
 8. **Known**: each witnessing culture raises its bounty on him by the crime's bounty and lowers its standing by the crime's hit.
-9. A theft moves the money (`value`, capped at what the victim carries). A killing marks the victim dead (`alive: false`, `died`, `cause: 'murder'`).
+9. A theft moves the money (`value`, capped at what the victim carries). A killing goes through the people lane's `killActor(L, id, 'murder', killer, { zone })`, the one way to kill anyone: the grave, the widow, the vendetta, the heir. Executions use cause `'executed'`.
 
 ## Bounties
 
@@ -67,7 +67,7 @@ Rules, in order:
 `L.plots[pid] = { title, holder }` (the core's record; `ownerOf` reads it). **Holder** is possession, **title** is ownership on paper. Force moves only the holder. The title moves only by a lawful mechanic.
 
 Fields added by this lane:
-- `actor.holds` (the core's field) is kept as possession: the plots he holds.
+- `actor.holds` (the core's field), in the people lane's meaning: every plot he holds or has the title to. He keeps a plot in it while he has either.
 - `actor.claims`: plots whose title he has while someone else holds them.
 - `actor.cause`: why a person died, when a crime or an execution killed him (`'murder'`, `'executed'`).
 - `L.sys.crime.contested[pid] = { title, holder, from, since, how, crime, witnesses }`: land held by someone who has not the title. `how`: `murder`, `raid`, `force`, `kin`, `lord`, `court` or `title`. Up to five witnesses of the taking are remembered.
@@ -76,6 +76,7 @@ Fields added by this lane:
 By force:
 - `seize(L, pid, by, { how, crime, witnesses })`: the holder changes; if the new holder is not the title holder the plot is contested.
 - `takePlotByMurder(L, killer, victim, pid, o)`: one crime (`plotMurder`, or `regicide`) and the seizure.
+- **When the man who took it dies**, possession goes back to the claimant (or to the title holder when nobody can claim it): the people lane passes only land a dead man had title to.
 - **Raids back**: each season a contested plot whose claimant is alive is raided back by his kin with a 12% chance, 22% when the region's lord helps (he helps against a holder his people want for 500 mon or more, or against an outlaw). His land is raided back the same way while he is away.
 
 **The title mechanic (proposal for the owner).** Seven ways, all built so they can be tried in prototype 39:
@@ -116,11 +117,11 @@ Once a game day, per region (rates are for a region of 70 people, scaled by its 
 
 **Children stay at home until 18, unseen** (owner, 2026-09-26): nobody under 18 is ever a culprit, a victim, a witness or a hunter (`K.ADULT`), and the prototype does not show them. They join the world the season they turn 18.
 
-**Births** (owner, 2026-09-26: "we should have births") belong to the people lane (`src/sim/people/`), not here. The crime lane only kills: without births, seed 12345 falls from 6,741 people to about 1,100 in 10 years. The people lane's births have to replace about 30% of grown people a year, 18 years later.
+**Births and newcomers** (owner, 2026-09-26): the people lane (`src/sim/people/`, merged) has births; the crime system imports it and kills through it. Children take 18 years to replace the dead, so at 30% a year the owner chose to refill the land with newcomers (`src/sim/people/newcomers.js`): towns and villages below their founding size take in arriving households each season. Seed 12345 holds about 5,950 of its 6,714 people over 10 years.
 
-Cost: seed 12345, 10 years, about 0.4 ms a game day on average in Node (the budget is 1 ms), more in the first years while the world is full. The people index (who lives in which region and zone) is a cache rebuilt once a game season, never saved.
+Cost: seed 12345, 10 years, with the people lane: the crime system about 0.86 ms a game day at the core's reference speed (the budget is 1 ms), including the people lane's `killActor` for the deaths it causes (about a third of it). The people index (grown people by region and zone) is rebuilt once a game season from the people lane's residents, never saved; each camp's reach is worked out once per world.
 
-A typical 10 years (seed 12345, no births): about 5,400 murders, 330 elders or royals killed, 3,000 thefts, 1,000 assaults, 700 raids, 150 feuds; about 1,900 caught (750 executed); a few dozen plots seized by force and taken back. Titles passed mostly by inheritance, then prescription, forgery and now and then a sale. NPC holders are rarely rich or well enough thought of to buy, pay blood money or be granted land: those ways are mostly his.
+A typical 10 years (seed 12345, before births and newcomers): about 5,400 murders, 330 elders or royals killed, 3,000 thefts, 1,000 assaults, 700 raids, 150 feuds; about 1,900 caught (750 executed); a few dozen plots seized by force and taken back. Titles passed mostly by inheritance, then prescription, forgery and now and then a sale. NPC holders are rarely rich or well enough thought of to buy, pay blood money or be granted land: those ways are mostly his.
 
 ## Events
 
@@ -157,10 +158,11 @@ Every event carries `h` (the game hour). Names are `crime.*`.
 - A close witness sometimes sees through a mask.
 - A violent time: about 30% of the people die every year.
 - There are births; babies stay at home until 18 and are not seen.
+- Keep 30% violence and refill the land with newcomers from beyond the map.
 - Everything in this document approved (owner, 2026-09-26).
 
 ## Still open
 
 1. **"Many men are slave to their masters"** (owner, 2026-09-26). Not built yet; see the question in the lane's report.
 2. **Karma's reach.** Standing drifts back to karma ÷ 200: should low karma alone make peoples wary of him even without a crime seen?
-3. **Births against 30% deaths**: approved (owner, 2026-09-26); the people lane builds them, and its birth rate has to match.
+3. ~~Births against 30% deaths~~ **Answered (owner, 2026-09-26):** keep 30%, refill with newcomers (built in the people lane).

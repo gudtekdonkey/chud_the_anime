@@ -1,5 +1,6 @@
 import { emit, newId, zoneAt } from '../ledger.js';
 import { rngFor } from '../rng.js';
+import { killActor } from '../people/index.js';
 import { ageOf } from '../actors.js';
 import { CRIMES, K, HONOUR, COMPANION, worse } from './rules.js';
 
@@ -35,8 +36,9 @@ export function spend(a, mon) {
 }
 export const give = (a, mon) => { a.money.mon += mon; };
 
-// ---- death by the sword: the people lane owns deaths from age and illness; a crime or an execution marks it here ----
-export function kill(L, a, cause) { if (!a.alive) return; a.alive = false; a.died = L.hour; a.cause = cause; }
+// ---- death by the sword ----
+// through the people lane's killActor, the one way to kill anyone: the grave, the widow, the vendetta, the heir
+export function kill(L, a, cause, by = null, zone = null) { if (a.alive) killActor(L, a.id, cause, by, zone ? { zone } : {}); }
 export const isRoyal = (L, a) => a.cls === 'royal' || (a.lord != null && L.regions[a.lord]?.lord === a.id);
 export const isElderOrRoyal = (L, a) => isRoyal(L, a) || ageOf(L, a) >= K.ELDER_AGE;
 
@@ -134,7 +136,7 @@ export function commit(L, kind, o) {
   // what moved: money, a life
   let taken = 0;
   if (kind === 'theft' && victim) { taken = Math.min(Math.max(0, Math.round(o.value || 0)), victim.money.mon); victim.money.mon -= taken; give(by, taken); }
-  if (killing && victim) kill(L, victim, 'murder');
+  if (killing && victim) kill(L, victim, 'murder', by.id, o.zone);
   // the word spreads: each culture that saw him puts a bounty on him and thinks less of him; of his crimes, peoples close to the
   // victim's hear too (NPC crimes stay with the witnesses' people, to keep the world cheap)
   for (const c of blamed) { addBounty(L, by.id, c, def.bounty + taken * K.THEFT_SHARE, kind); addStanding(L, by, c, def.standing); }

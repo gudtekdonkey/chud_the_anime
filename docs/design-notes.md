@@ -182,6 +182,15 @@ The owner said the deaths still don't feel like someone dying, and the execution
 - **Crime and karma** (owner, 2026-09-26, the crime lane, `docs/sim-crime.md`, prototype 39): a legal title passes by sale, blood money, a lord's grant, inheritance, a court case, time with no claimant left, or a forged deed; a forged deed may come out each season, less likely every year. Blood money clears the bounty. A shrine can clear a bounty. Anyone 60 or older is an elder; killing royalty is never forgiven unless the killer is royal. A close witness sometimes sees through a mask. A violent time: about 30% of the people die by the sword every year. Open: "many men are slave to their masters".
 - **Births** (owner, 2026-09-26): there are births. Babies stay at home until 18 and are not seen: no crime, fight or witness involves anyone under 18. Built by the people lane; it has to keep up with 30% of grown people dying a year. The crime lane (prototype 39, `docs/sim-crime.md`) is approved as built.
 
+## People, heirs and death (`prototypes/38-people.html`, `docs/sim-people.md`, 2026-09-26)
+
+- **Old age may take him while you are away** (owner: "yes he may die"). The ledger never kills him young off screen.
+- **Who carries on** (owner): his children and grandchildren, "maybe a brother or companion". Built: the named heir, sons, daughters, grandchildren, then brothers. A companion as heir is still open.
+- **A child heir is played at once** (owner); the widow, else the next of kin, is regent and holds the land until 16.
+- **What he carried stays with his body** (owner: "if his gear was on him and he died in an unrecoverable place, it's finders keepers"). His weapon and purse are his grave's goods; his heir can take them back by reaching the grave first, and anyone else can rob it. His land and everything not on him pass to the heir.
+- **Buying land belongs to the economy lane** (owner: they buy free plots or bid for them). The people lane keeps the want (a `land` ambition) and the lord's grant of a free plot to a new household.
+- **The long dead are forgotten** (owner: ok): after 20 years, the dead who were nobody in particular keep only their name, dates, family links and grave.
+- **Violence and newcomers** (owner, 2026-09-26): at 30% of grown people a year even the fastest births empty the world (children take 18 years), so keep 30% and refill: wanderers, refugees and settlers arrive from beyond the map to towns and villages below their founding size (`src/sim/people/newcomers.js`). The people lane is merged; children come of age at 18 there too, and crime kills through its `killActor`.
 ## Economy (2026-09-26)
 
 - **Hard times** (owner): about 40% of people short of rice on an average day; lords take half the crop; famine spreads before the harvest. Built in `src/sim/economy/` (`docs/sim-economy.md`).

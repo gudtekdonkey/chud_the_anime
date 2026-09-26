@@ -5,7 +5,7 @@ import { populate } from './actors.js';
 
 // ---- The world from a seed: 100 × 100 zones, terrain, 100 regions, 20 cultures, settlements, camps, shrines, roads, people ----
 // Zone record (compact, one per grid square; the tiles inside are made on demand by zone.js):
-//   { x, y, biome, region (-1 at sea), kind, road, name?, holder? (a camp's chief) }
+//   { x, y, biome, region (-1 at sea), kind, road, name?, holder? (a camp's chief), void? (a void: nobody lives there; wild.js) }
 // biome: sea, coast, plains, paddy, forest, bamboo, marsh, hills, mountains
 // kind:  sea | wild | town (the region's seat) | village | camp (outlaws, a hostile base that spawns) | fort (a culture's garrison) | shrine
 // Region: { id, name, culture, seat: [x, y], zones: n, center: [x, y] }
@@ -72,6 +72,13 @@ export function generateWorld(seed, realNow = Date.now()) {
   for (const a of L.cultures) for (const b of L.cultures) if (a.id < b.id) {
     const hr = rngFor(seed, 'rel', a.id, b.id), v = Math.max(-1, Math.min(1, kindRelation(a.kind, b.kind) + (border.has(a.id + '|' + b.id) ? -.2 : 0) + hr.range(-.25, .25)));
     a.relations[b.id] = b.relations[a.id] = +v.toFixed(2); }
+  // ---- the voids (owner, 2026-09-26): great tracts where nobody lives and the mystical creatures do. People keep out of them;
+  // bandits hold their edges. No settlement is placed in one and roads go round them unless there is no other way (wild.js) ----
+  carveVoids(L, land, seed);
+  // how far each land zone is from a void (0 inside one): camps prefer the void's edge, the bandits' country
+  const toVoid = new Map(), q = land.filter(z => z.void); for (const z of q) toVoid.set(z, 0);
+  for (let i = 0; i < q.length; i++) { const z = q[i], d = toVoid.get(z); if (d >= 4) continue;
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = zoneAt(L, z.x + dx, z.y + dy); if (n && n.biome !== 'sea' && !toVoid.has(n)) { toVoid.set(n, d + 1); q.push(n); } } }
   // ---- settlements: each region's seat, villages, camps, forts and a shrine, placed where they make sense ----
   const pr = rngFor(seed, 'places');
   const placed = [];
@@ -79,10 +86,12 @@ export function generateWorld(seed, realNow = Date.now()) {
     camp: { forest: 3, hills: 3, bamboo: 2, marsh: 2, mountains: 1 }, fort: { hills: 4, plains: 2, mountains: 2 }, shrine: { hills: 3, mountains: 3, forest: 2, bamboo: 2 } };
   for (const g of L.regions) {
     const zs = land.filter(z => z.region === g.id), kind = L.cultures[g.culture].kind;
-    const place = (what, minGap = 4) => { const cands = zs.filter(z => z.kind === 'wild' && fit[what][z.biome] &&
+    const place = (what, minGap = 4) => { const cands = zs.filter(z => z.kind === 'wild' && !z.void && fit[what][z.biome] &&
       placed.every(o => Math.abs(o.x - z.x) + Math.abs(o.y - z.y) >= minGap));
-      if (!cands.length) return null; const z = pr.weighted(cands.map(c => [c, fit[what][c.biome]])); z.kind = what; placed.push(z); return z; };
-    const seat = place(kind === 'bandits' ? 'camp' : 'town', 5) || zs[0]; if (!placed.includes(seat)) placed.push(seat); seat.kind = kind === 'bandits' ? 'camp' : 'town';
+      if (!cands.length) return null;
+      const edge = z => what === 'camp' && (toVoid.get(z) ?? 9) <= 3 ? 4 : 1;   // bandits camp on the void's edge
+      const z = pr.weighted(cands.map(c => [c, fit[what][c.biome] * edge(c)])); z.kind = what; placed.push(z); return z; };
+    const seat = place(kind === 'bandits' ? 'camp' : 'town', 5) || zs.find(z => !z.void) || zs[0]; if (!placed.includes(seat)) placed.push(seat); seat.kind = kind === 'bandits' ? 'camp' : 'town';
     seat.name = placeName(rngFor(seed, 'seat', g.id)); g.seat = [seat.x, seat.y];
     const nv = kind === 'bandits' ? pr.int(0, 1) : pr.int(2, Math.min(4, 1 + Math.floor(zs.length / 25)));
     for (let i = 0; i < nv; i++) { const z = place('village'); if (z) z.name = placeName(rngFor(seed, 'village', z.x, z.y)); }
@@ -104,6 +113,21 @@ export function generateWorld(seed, realNow = Date.now()) {
   return L;
 }
 const COST = { sea: 1e9, coast: 1.5, plains: 1, paddy: 1.3, forest: 2, bamboo: 2.2, marsh: 3.5, hills: 2.5, mountains: 6 };
+// ~9 blobs, about 15% of the land, on wild ground (mountains, forest, marsh first), far apart; each region keeps a settled core
+export const VOIDS = { n: 9, share: .15, gap: 18, r: [5, 8] };
+function carveVoids(L, land, seed) {
+  const r = rngFor(seed, 'voids'), wildW = { mountains: 4, marsh: 3, forest: 3, bamboo: 2, hills: 2, plains: 1, paddy: .3, coast: .2 };
+  const warp = noise(hash(seed, 'voidw'), 6), centres = [], target = land.length * VOIDS.share, pick = land.map(z => [z, wildW[z.biome] || 1]); let carved = 0;
+  for (let tries = 0; centres.length < VOIDS.n && tries < 400; tries++) {
+    const c = r.weighted(pick);
+    if (centres.some(o => Math.hypot(o.x - c.x, o.y - c.y) < VOIDS.gap)) continue;
+    centres.push(c); const rad = r.range(...VOIDS.r);
+    for (const z of land) { const d = Math.hypot(z.x - c.x, z.y - c.y) / rad + (warp(z.x, z.y) - .5) * .7;
+      if (d < 1 && !z.void && carved < target * 1.3) { z.void = true; carved++; } } }
+  // a region swallowed by a void keeps a settled core: its zones nearest its middle come back
+  for (const g of L.regions) { const zs = land.filter(z => z.region === g.id), open = zs.filter(z => !z.void).length, need = Math.min(zs.length, 8);
+    if (open < need) zs.sort((a, b) => Math.hypot(a.x - g.center[0], a.y - g.center[1]) - Math.hypot(b.x - g.center[0], b.y - g.center[1])).slice(0, need).forEach(z => delete z.void); }
+}
 function road(L, a, b) {
   if (!a || !b || a === b) return;
   const { w } = L.size, start = a.y * w + a.x, goal = b.y * w + b.x, g = new Map([[start, 0]]), from = new Map(), open = [[0, start]];
@@ -112,7 +136,7 @@ function road(L, a, b) {
     if (l < open.length && open[l][0] < open[m][0]) m = l; if (r < open.length && open[r][0] < open[m][0]) m = r; if (m === k) break; [open[m], open[k]] = [open[k], open[m]]; k = m; } } return top; };
   while (open.length) { const [, i] = pop(); if (i === goal) break; const x = i % w, y = (i - x) / w;
     for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = zoneAt(L, x + dx, y + dy); if (!n) continue; const j = n.y * w + n.x;
-      const c = g.get(i) + (n.road ? .35 : COST[n.biome]); if (c < (g.get(j) ?? 1e12)) { g.set(j, c); from.set(j, i); push(c + Math.abs(n.x - b.x) + Math.abs(n.y - b.y), j); } } }
+      const c = g.get(i) + (n.road ? .35 : COST[n.biome] * (n.void ? 8 : 1)); if (c < (g.get(j) ?? 1e12)) { g.set(j, c); from.set(j, i); push(c + Math.abs(n.x - b.x) + Math.abs(n.y - b.y), j); } } }
   for (let i = goal; i != null && i !== start; i = from.get(i)) L.zones[i].road = true;
   L.zones[start].road = true;
 }
