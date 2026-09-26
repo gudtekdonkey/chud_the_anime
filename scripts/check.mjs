@@ -79,6 +79,37 @@ try {
       for (const k of keys) await kb.down(k); await reach(/^run$/);
       await until(`facing ${view}`, v => window.__game.P.view === v, view); await sleep(150);
       for (const k of keys) await kb.up(k); await reach(/^idle$/); await shot(`01a-facing-${view}`); } });
+  await run('true left: W, SW and NW drawn as themselves (never the east mirrored), turned through the facings between', async () => {
+    // log every facing he is drawn in, once per animation frame, to see the turn pass through the facings between
+    await page.evaluate(() => { window.__faces = []; const tick = () => { if (!window.__faces) return; const f = window.__game.PF, s = `${f.id}${f.flip < 0 ? '~' : ''}`;
+      if (window.__faces[window.__faces.length - 1] !== s) window.__faces.push(s); requestAnimationFrame(tick); }; tick(); });
+    for (const [keys, id] of [[['a'], 'W'], [['a', 's'], 'SW'], [['a', 'w'], 'NW'], [['s'], 'S'], [['a'], 'W']]) {
+      for (const k of keys) await kb.down(k); await reach(/^run$/);
+      await until(`drawn facing ${id}`, v => window.__game.PF.id === v && window.__game.PF.flip === 1, id); await sleep(150);
+      for (const k of keys) await kb.up(k); await reach(/^idle$/);
+      const f = await page.evaluate(() => ({ ...window.__game.PF, face: window.__game.P.face }));
+      if (f.id !== id || f.flip !== 1) fail(`idle facing ${id} is drawn ${f.id}, flip ${f.flip}`);
+      await shot(`01a-true-${id}`); }
+    // back east: never a flip, one facing at a time through the camera side
+    await kb.down('d'); await until('drawn facing E', () => window.__game.PF.id === 'E'); await kb.up('d'); await reach(/^idle$/);
+    const seq = await page.evaluate(() => { const s = window.__faces; window.__faces = null; return s; });
+    const ORDER = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'];
+    for (let i = 1; i < seq.length; i++) { const a = ORDER.indexOf(seq[i - 1]), b = ORDER.indexOf(seq[i]), d = (b - a + 8) % 8;
+      if (a < 0 || b < 0 || (d !== 1 && d !== 7)) fail(`the turn jumped from ${seq[i - 1]} to ${seq[i]} (${seq.join(' ')})`); }
+    if (!seq.includes('S')) fail(`W to E did not turn by the camera: ${seq.join(' ')}`);
+    // a cut facing west stays side on, but from his true left, never mirrored (owner: "don't mirror", the scabbard at his left hip)
+    await kb.down('a'); await reach(/^run$/); await kb.up('a'); await reach(/^idle$/);
+    await kb.press('j'); await reach(/^slash1$/);
+    const c = await page.evaluate(() => ({ ...window.__game.PF }));
+    if (c.id !== 'W' || c.flip !== 1 || Math.abs(c.yaw - Math.PI) > 1e-6) fail(`a cut facing west is drawn ${c.id}, yaw ${c.yaw}, flip ${c.flip}: mirrored, not his true left`);
+    await shot('01a-true-W-cut'); await reach(/^idle$/, 10000);   // calm: he resheathes and stands
+    // the samurai in guard come round to their true facing too: facing left, a west facing (a beat later, turning through the ones between)
+    await sleep(700);
+    const en = await page.evaluate(() => { const IX = { E: 0, SE: 1, S: 2, SW: 3, W: 4, NW: 5, N: 6, NE: 7 }, WEST = { E: 'W', SE: 'SW', NE: 'NW' };
+      return window.__game.E.filter(e => e.alive && e.turn && e.state === 'guard').map(e => ({ at: e.turn.i, want: IX[e.face < 0 ? WEST[e.view] || e.view : e.view], face: e.face })); });
+    if (!en.length) fail('no samurai in guard to look at');
+    const off = en.filter(e => e.at !== e.want);
+    if (off.length > en.length / 2) fail(`samurai are not drawn in their true facing: ${JSON.stringify(off)}`); });
   await run('hold V: walk', async () => { await kb.down('v'); await kb.down('d'); await reach(/^walk$/); await sleep(300); await shot('01b-walk');
     await kb.up('d'); await kb.up('v'); await reach(/^idle$/); });
   await run('personality: a trait mix re-bakes how he stands and walks', async () => {

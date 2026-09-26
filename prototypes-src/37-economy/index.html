@@ -1,0 +1,100 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mon and Koku</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --faint: #5d6664; --cyan: #6ff3e4;
+    --cheap: #4fa3b8; --dear: #d59a4a; --bad: #e0737a; --good: #8fd6a0; }
+  html, body { background: var(--ground); }
+  body { margin: 0; color: var(--ink); font: 15px/1.5 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 20px; }
+  header { display: grid; gap: 8px; max-width: 80ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  h2 { font: 700 18px/1.15 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  h3 { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  p { margin: 0; color: var(--muted); } b { color: var(--ink); font-weight: 600; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  .bar label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 14px; }
+  select, input[type=number] { background: var(--panel); color: var(--ink); border: 1px solid var(--rule); padding: 4px 6px; font: inherit; }
+  input[type=number] { width: 7em; }
+  button { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .06em; color: var(--ink); background: transparent; border: 1px solid var(--rule); padding: 7px 10px; cursor: pointer; }
+  button:hover { border-color: #4a5157; } button.on { border-color: var(--cyan); color: var(--cyan); }
+  button:focus-visible, input:focus-visible, select:focus-visible, canvas:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .clock { font: 500 15px/1 "Pixelify Sans", monospace; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .main { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 1020px) { .main { grid-template-columns: 1fr; } }
+  .col { display: grid; gap: 16px; min-width: 0; }
+  .panel { background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
+  .mapbox { position: relative; background: var(--panel); border: 1px solid var(--rule); }
+  canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+  #map { cursor: crosshair; }
+  .tip { position: absolute; pointer-events: none; background: #0d0f10ee; border: 1px solid var(--rule); padding: 6px 8px; font-size: 13px; max-width: 250px; z-index: 2; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); align-items: center; }
+  .sw { width: 10px; height: 10px; flex: none; display: inline-block; }
+  .ramp { width: 120px; height: 8px; background: linear-gradient(90deg, var(--cheap), #5d6664, var(--dear)); display: inline-block; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th { font: 500 12px/1.2 "Pixelify Sans", monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  td { text-align: right; padding: 3px 6px; border-bottom: 1px solid #25292d; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  tr.sel td { background: #232a2c; } tbody tr { cursor: pointer; } tbody tr:hover td { background: #20262a; }
+  .unit { color: var(--faint); font-size: 12px; }
+  .cmp { display: inline-block; width: 60px; height: 6px; background: #262b2f; position: relative; vertical-align: middle; }
+  .cmp i { position: absolute; top: 0; bottom: 0; }
+  .cmp::after { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--faint); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: 14px; font-variant-numeric: tabular-nums; }
+  dt { color: var(--muted); } dd { margin: 0; }
+  .pill { display: inline-block; font: 500 11px/1 "Pixelify Sans", monospace; letter-spacing: .06em; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; }
+  .pill.bad { color: var(--bad); } .pill.good { color: var(--good); } .pill.warn { color: var(--dear); }
+  .weight { position: relative; height: 14px; background: #262b2f; }
+  .weight i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--cyan); }
+  .weight b { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
+  .ticks { position: relative; height: 16px; font-size: 11px; color: var(--muted); }
+  .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .feed { display: grid; gap: 4px; font-size: 13px; max-height: 240px; overflow: auto; }
+  .feed div { display: flex; gap: 8px; } .feed time { color: var(--faint); flex: none; font-variant-numeric: tabular-nums; }
+  .stack { display: flex; height: 14px; gap: 2px; }
+  .stack i { display: block; height: 100%; }
+  .chartbox { position: relative; }
+  .note { font-size: 13px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Economy · prototype 37</div>
+    <h1>Mon and koku</h1>
+    <p>The living world's economy on the simulation core. Every region keeps a market whose prices answer its own stock; land yields koku at the autumn harvest and taxes climb to the lords; caravans carry goods along the roads; every household earns by its trade and spends by its class. <b>Play</b> or <b>fast-forward</b>, pick a good to colour the map by its price, click a region to open its market and its lord.</p>
+    <div class="bar">
+      <button type="button" id="play">Play</button>
+      <label for="speed">Speed <select id="speed"><option value="1">a day a frame</option><option value="7" selected>a week a frame</option><option value="28">a season a frame</option></select></label>
+      <button type="button" id="year">Live a year</button>
+      <span class="clock" id="clock"></span>
+      <label for="good">Map shows <select id="good"></select></label>
+      <label for="seed">Seed <input type="number" id="seed" value="12345"></label>
+      <button type="button" id="gen">Make this world</button>
+    </div>
+  </header>
+  <div class="main">
+    <div class="col">
+      <div class="mapbox"><canvas id="map" width="500" height="500" tabindex="0" role="img" aria-label="The world, coloured by the price of the chosen good"></canvas><div class="tip" id="tip" hidden></div></div>
+      <div class="legend" id="legend"></div>
+      <div class="panel"><h3>The world's books</h3><div id="books"></div></div>
+      <div class="panel"><h3>News from the markets</h3><div class="feed" id="feed"></div></div>
+    </div>
+    <div class="col">
+      <div class="panel"><h2 id="rname">Region</h2><p id="rsub" class="note"></p>
+        <div class="scroll"><table id="market"></table></div><p class="note" id="silknote"></p></div>
+      <div class="panel"><h3 id="ctitle">Price over time</h3><div class="chartbox"><canvas id="chart" width="700" height="220" role="img" aria-label="Price history"></canvas><div class="tip" id="ctip" hidden></div></div>
+        <div class="legend" id="clegend"></div></div>
+      <div class="grid2">
+        <div class="panel"><h3>The lord</h3><div id="lord"></div></div>
+        <div class="panel"><h3>The ronin's purse</h3><div id="purse"></div></div>
+      </div>
+      <div class="panel"><h3>Wealth by household</h3><div class="scroll"><table id="wealth"></table></div></div>
+    </div>
+  </div>
+</div>
+<!-- BUNDLE -->
