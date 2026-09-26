@@ -55,6 +55,44 @@ Plot holder → zone lord (all of one zone) → domain (merged zones) → kingdo
 - What death costs (items, land, companions), and whether land can be lost in raids.
 - Platforms: browser, desktop (Steam), phone, gamepad.
 
+## Wealth (proposed, for the owner to confirm)
+
+The measure of power in this world is land and what it grows, the way feudal Japan counted it, not a single gold number.
+
+### Money
+| Money | What it is | Used for |
+|---|---|---|
+| **Mon** | copper coins with a square hole, strung in strings of 1,000 (a *kan*); already in the game | everyday: food, lodging, repairs, small bribes, wages |
+| **Silver** (by weight, *monme*) | merchants' money | trade in bulk, buying goods between regions |
+| **Gold ryō** | an oval gold coin, rare; 1 ryō = 1,000 mon to keep the sums simple | the big things: land, a master's blade, blood money, paying off a large bounty |
+| **Koku** | a measure of rice: what one person eats in a year | the worth of land and the rank of a lord (a lord "of 10,000 koku"). Plots yield it, taxes are paid in it, armies eat it |
+| **Glitch shards** | not money: the otherworldly currency already in the game | his skills and Qi, never traded with ordinary people |
+
+### Where it comes from, and where it goes
+- **In:** loot from the dead, bounties he collects, harvests and crafts from his plots, trade, contracts (escort, hunt, kill), tolls and taxes once he holds land, gambling.
+- **Out:** food and lodging, companion wages, repairs, land bought, taxes to whoever rules above him, bribes, blood money and paying off bounties, shrine offerings, building on his land.
+- Every money source needs a matching sink, or prices stop meaning anything within a few hours of play.
+
+### Land is the real wealth
+- Every plot has a **yield** in koku per season, set by its terrain (paddy best, field, then forest and rock yield other things: timber, ore) and by work done on it.
+- A zone's yield is the sum of its plots; a lord's rank is the koku of everything he holds.
+- **Taxes flow up:** a plot holder pays a share to the zone lord, a zone lord to the domain, a domain to the kingdom. Holding a zone means collecting from every plot in it that others work.
+- **Land has a price** from its yield and place (safe, near a road or a village), and can be bought, sold, granted, lost in a raid, or taken (at a crime's cost).
+
+### Prices move
+- Each region's ledger keeps its own stock and prices: famine sends rice up, war sends weapons and armour up, a destroyed base makes land nearby cheap until it is settled.
+- Merchants and caravans move goods between regions (the ronin can escort them, rob them, or run his own). A rival kingdom's blockade cuts trade.
+
+### Keeping it
+- Coins are carried, and carried coins can be lost: pickpockets, bandits, death (depending on the death rule, still open).
+- A **storehouse** (*kura*) on his own land keeps wealth safe unless the land is raided; a **money-changer** in a town holds it for a fee.
+- Colour is rank (owner, 2026-09-26): coloured clothing is rare and worth a fortune; a royal's red kimono is loot worth killing for, and wearing it has consequences.
+
+### Open, for the owner
+- Keep the historical names (mon, ryō, koku) or plain ones (copper, gold, rice)?
+- Should carried money have weight, so a fortune has to be moved, stored or banked?
+- What is lost on death: carried coin only, or more?
+
 ## Engineering decisions (Claude's, unless the owner objects)
 - **One actor for everyone**: the ronin, enemies, companions, villagers, lords and animals are the same entity: body (rig, clothes, weapon), personality, inventory, a brain (player, AI or orders), a faction, karma and standing.
 - **Everything is data with stable IDs** (items, weapons, clothes, cultures, recipes, actions, executions), so saves and new content never break each other.
