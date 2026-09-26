@@ -6,8 +6,8 @@ import { rr, ring, after, spark } from '../fx/util.js';
 import { frameOf } from './actions.js';
 import { silPts, bodyPt } from './body.js';
 import { has } from '../items/inventory.js';
-import { T, powerCast } from './power.js';
-import { DUMMIES } from '../world/dummies.js';
+import { T, pw, powerCast } from './power.js';
+import { DMG, living, damage } from '../world/enemies.js';
 
 // ---- Qi and the Storm Chain passive: hits fill it, a full meter wakes the storm for 8 s ----
 // the Qi each kind of hit feeds: bigger moves feed more (chain hits feed none, or the storm would never end)
@@ -30,19 +30,19 @@ export function updateQi(dt) {
     return; }
   if ((P.qiIdle += dt) > 3) P.qi = Math.max(0, P.qi - dt * .05); // out of the fight it slowly ebbs
 }
-// from the struck dummy, lightning leaps to the nearest dummies not yet in this chain: three links, more with power
+// from the struck enemy, lightning leaps to the nearest enemies not yet in this chain: three links, more with power
 export function chainFrom(d0) {
   const seen = new Set([d0]); let a = d0;
   ring(d0.x, d0.y - 2, 6, 3, .3, 3, COL.fx2);
   for (let hop = 0, hops = T('chain', 'hops') + (has('bead') ? 1 : 0); hop < hops; hop++) {   // Thunder Bead: one more jump
     let b = null, best = 130;
-    for (const d of DUMMIES) { const r = Math.hypot(d.x - a.x, (d.y - a.y) * 1.3); if (!seen.has(d) && r < best) { best = r; b = d; } }
+    for (const d of living()) { const r = Math.hypot(d.x - a.x, (d.y - a.y) * 1.3); if (!seen.has(d) && r < best) { best = r; b = d; } }
     if (!b) break; seen.add(b);
     const x0 = a.x, y0 = a.y - 16, x1 = b.x, y1 = b.y - 16;
     after(.02 + hop * .07, () => { zap(x0, y0, x1, y1, .32, 3.5, '#ffffff', { every: 1, fork: true }); zap(x0, y0, x1, y1, .32, 2, COL.fx, { every: 1 });
-      ring(x1, y1 + 14, 6, 3, .32, 3.5, COL.fx2); ring(x1, y1, 4, 4, 2 / 60); chainHit(b); });
+      ring(x1, y1 + 14, 6, 3, .32, 3.5, COL.fx2); ring(x1, y1, 4, 4, 2 / 60); chainHit(b, x0); });
     a = b;
   }
 }
-export function chainHit(d) { d.flash = .05; d.wob = .22; d.zap = .35; P.struck.add(d);
+export function chainHit(d, fx) { if (!d.alive) return; d.zap = .35; P.struck.add(d); damage(d, DMG.chain * pw('dmg'), fx, d.y);
   for (let i = 0; i < 9; i++) { const a = rr(0, 6.28); spark(d.x, d.y - 16, Math.cos(a) * rr(60, 130), Math.sin(a) * rr(40, 90), rr(.08, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); } }

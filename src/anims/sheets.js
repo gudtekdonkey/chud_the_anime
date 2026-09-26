@@ -31,7 +31,7 @@ function placeholderSheet(name) {
   for (let i = 0; i < n; i++) {
     if (name === 'sit' || name === 'sitDown' || name === 'standUp') { sitFrame(g, i * FW, name, i); continue; }
     if (name === 'ready4' || name === 'ready5') { frontFrame(g, i * FW, name === 'ready4' ? OPEN_FRONT : INVITE_FRONT, i); continue; }
-    const p = POSES[name][i % POSES[name].length];
+    const ps = POSES[name], p = ps && ps[i % ps.length];   // exec has no sheet: its stage draws him live
     if (p) rig(g, i * FW, p);
     const gl = GLF[name] && GLF[name][i];
     if (gl) sliceGlitch(g, i * FW, gl, i + name.length * 7);
@@ -42,6 +42,9 @@ function placeholderSheet(name) {
 for (const k in POSES) if (ANIMS[k]) ANIMS[k].n = POSES[k].length;   // keyframed moves decide their own length
 export const SHEETS = {};
 for (const k in ANIMS) SHEETS[k] = placeholderSheet(k);
-// a new weapon re-bakes every placeholder with its blade; a dropped-in strip is kept as it is
-export function rebake() { for (const k in ANIMS) if (!SHEETS[k].custom) SHEETS[k] = placeholderSheet(k); }
 export const dur = k => ANIMS[k].n / ANIMS[k].fps;
+// after a move's poses change (a new personality): bake its sheet again, unless a dropped-in strip has replaced it.
+// With no move named (a new weapon's blade), every placeholder is baked again
+export function rebake(k) {
+  if (k == null) { for (const m in ANIMS) if (!SHEETS[m].custom) SHEETS[m] = placeholderSheet(m); return; }
+  ANIMS[k].n = POSES[k].length; if (!SHEETS[k].custom) SHEETS[k] = placeholderSheet(k); }

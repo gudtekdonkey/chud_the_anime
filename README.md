@@ -25,6 +25,7 @@ Click the screen first.
 | Key | Move |
 |---|---|
 | WASD / arrows | Run |
+| Hold V | Walk (how he stands, walks and runs comes from the personality picked under the game) |
 | J | Light-speed quick-draw; press again during the follow-through for the rising answer cut |
 | Shift or L | Ground slide |
 | Space | Jump |
@@ -40,13 +41,13 @@ Click the screen first.
 | 1–4 | Use a quick slot (static bomb, thunder talisman, whetstone, grave incense) |
 | X | Die (for testing) |
 
-The "Room is clear" box under the game treats the training dummies as props, so after an attack he sheathes at once. On a touch screen, buttons appear under the game.
+The "Room is clear" box under the game treats the samurai as no threat, so after an attack he sheathes at once. On a touch screen, buttons appear under the game.
 
 ## Layout
 
 - `index.html`: the page markup. `src/`: the game as ES modules (`main.js` boots it; `CLAUDE.md` has the full module map).
 - `src/rig/`, `src/anims/`: the posable rig and every animation's poses, baked into sheets at load.
-- `src/player/`: the state machine and the skills. `src/fx/`: the effect systems. `src/world/`: the room, dummies and rendering. `src/items/`: big items, pickups, consumables, relics and Harvest. `src/ui/`: the HUD, its pixel font and sprites, the moveset table and the sprite-strip tester.
+- `src/player/`: the state machine and the skills. `src/fx/`: the effect systems. `src/world/`: the room, the enemies and rendering. `src/items/`: big items, pickups, consumables, relics and Harvest. `src/ui/`: the HUD, its pixel font and sprites, the moveset table and the sprite-strip tester.
 - `prototypes/`: style studies, character rounds, UI ideas and test builds, numbered in the order they were made. Each is a standalone HTML file (`13-charged-i.html`: hold I to charge, keys 1–6 pick one of six variations).
 - `docs/design-notes.md`: decisions made so far and what's next.
 - `scripts/check.mjs`: the smoke test.

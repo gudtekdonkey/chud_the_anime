@@ -9,7 +9,7 @@ import { rr, sgn, FRAG_COLS, residue } from './util.js';
 import { drawVoid } from './void.js';
 import { updateQi } from '../player/qi.js';
 import { updateRibbons, drawRibbons } from '../player/power.js';
-import { DUMMIES } from '../world/dummies.js';
+import { ENEMIES } from '../world/enemies.js';
 
 // ---- Engine effects: drawn in world space, never in the sheets, so they survive real art replacing the placeholder ----
 export function storm(x, y) {
@@ -40,10 +40,10 @@ export function updateFx(dt) {
     if (--z.tick <= 0) { z.pts = boltPts(z); z.tick = z.every || 2 + (Math.random() * 2 | 0); } // re-jag every 2-3 frames
     z.on = Math.random() < (z.every === 1 ? .9 : .7); }
   for (const r of rings) r.life -= dt;
-  // a shocked dummy keeps 2-3 short bolts crawling over it
-  for (const dummy of DUMMIES) if (dummy.zap > 0) { dummy.zap -= dt;
-    if (zaps.filter(z => z.dz === dummy).length < 3) { const x = dummy.x + rr(-7, 7), y = dummy.y - rr(3, 27);
-      zap(x, y, x + rr(-10, 10), y + rr(-8, 8), rr(.05, .09), 2.5, Math.random() < .5 ? '#ffffff' : COL.fx2, { every: 1, dz: dummy }); } }
+  // a shocked enemy keeps 2-3 short bolts crawling over it
+  for (const e of ENEMIES) if (e.zap > 0) { e.zap -= dt;
+    if (zaps.filter(z => z.dz === e).length < 3) { const x = e.x + rr(-7, 7), y = e.y - rr(3, 27);
+      zap(x, y, x + rr(-10, 10), y + rr(-8, 8), rr(.05, .09), 2.5, Math.random() < .5 ? '#ffffff' : COL.fx2, { every: 1, dz: e }); } }
   updateQi(dt);
   for (const L of [frags, zaps, rings]) for (let i = L.length - 1; i >= 0; i--) if (L[i].life <= 0) L.splice(i, 1);
 }

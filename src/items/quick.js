@@ -9,7 +9,7 @@ import { WS } from './item-sprites.js';
 import { tinted } from '../ui/sprites.js';
 import { takeQuick, heal } from './inventory.js';
 import { arc, plusPop } from './item-fx.js';
-import { DUMMIES } from '../world/dummies.js';
+import { living } from '../world/enemies.js';
 
 // ---- Consumables, used from quick slots 1-4: each use is short so it never breaks a fight (incense is the slow heal) ----
 const WH = '#ffffff', CY = '#6ff3e4', CY2 = '#b8fff6';
@@ -17,7 +17,7 @@ export const USE_STATE = { bomb: 'bomb', talisman: 'talisman', whetstone: 'whet'
 export const EDGE_T = 20, SMOKE_T = 6;   // the whetstone's edge; the bomb's smoke over the whole screen
 export function useQuick(i) { const id = takeQuick(i); if (!id) return false; setState(USE_STATE[id]); P.useSlot = i; if (id === 'whetstone') INV.edgeSlot = i; return true; }
 const hand = () => [P.x + P.face * 3, P.y - 27];   // the raised hand, roughly, in the RAISE pose
-const nearest = (x, y, skip, max) => { let b = null, best = max; for (const d of DUMMIES) { const r = Math.hypot(d.x - x, (d.y - y) * 1.3); if (d !== skip && r < best) { best = r; b = d; } } return b; };
+const nearest = (x, y, skip, max) => { let b = null, best = max; for (const d of living()) { const r = Math.hypot(d.x - x, (d.y - y) * 1.3); if (d !== skip && r < best) { best = r; b = d; } } return b; };
 let cloud = null, stick = null, smoke = null;
 const SMOKE_COLS = ['#0c0d11', '#1b1e25', '#2c323b', '#1b1e25', '#565e66'];
 // the smoke's body: pixel-edged blobs of dark static baked once, two layers that drift against each other
@@ -46,9 +46,9 @@ export const USE = {
     if (once('call', T >= .2)) { residue(hx, hy + 4, 6); zap(hx, hy - 7, hx + 3, -4, .08, 2, CY2); }
     if (once('hit1', T >= .24)) { const a = P.t1 = nearest(P.x, P.y, null, 220); if (a) { zap(a.x + 2, -4, a.x, a.y - 16, .22, 3, WH); zap(a.x - 2, -4, a.x, a.y - 16, .2, 3, CY);
       ring(a.x, a.y, 5, 2, .25, 2.8, CY); for (let i = 0; i < 10; i++) { const r = rr(0, 6.28); spark(a.x, a.y - 14, Math.cos(r) * 120, Math.sin(r) * 80, rr(.1, .2), [WH, CY2, CY][i % 3], true); }
-      chainHit(a); S.hitstop = .07; S.shake = .05; } }
+      chainHit(a, P.x); S.hitstop = .07; S.shake = .05; } }
     if (once('hit2', T >= .36) && P.t1) { const a = P.t1, b = nearest(a.x, a.y, a, 130); if (b) { zap(a.x, a.y - 14, b.x, b.y - 14, .2, 2.5, CY); zap(a.x, a.y - 14, b.x, b.y - 14, .14, 3, CY2);
-      chainHit(b); S.hitstop = .05; S.shake = 1 / 60; } }
+      chainHit(b, a.x); S.hitstop = .05; S.shake = 1 / 60; } }
   },
   // draw and hone: sparks run along the blade, then the edge turns cyan for 20 s
   whet(T, dt, moving) {

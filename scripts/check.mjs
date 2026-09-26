@@ -44,7 +44,7 @@ try {
     catch { fail(`never reached ${what} (state now: ${await state()}, log tail: ${(await page.evaluate(() => window.__log.slice(-8))).join(' > ')})`); } };
   const reach = (re, timeout) => until(re.toString(), r => new RegExp(r).test(window.__game.P.state), re.source, timeout);
   const cv = name => until(`charged skill ${name}`, n => window.__game.P.cv && window.__game.P.cv.name === n, name);
-  const FREE = /^(idle|run|idleGlitch|ready\d|runArmed|sheathe)$/;   // states that take a new command
+  const FREE = /^(idle|run|walk|idleGlitch|ready\d|runArmed|sheathe)$/;   // states that take a new command
   const shot = name => page.locator('#game').screenshot({ path: `${OUT}/${name}.png` });
   // walk him somewhere with the arrow keys: the vertical leg first, then the horizontal, so the route is predictable round the pillars
   const walkTo = async (x, y, timeout = 10000) => {
@@ -59,14 +59,49 @@ try {
   const run = async (name, fn) => { step = name; await fn(); console.log(`  ok  ${name}`); };
 
   await run('move', async () => { await kb.down('d'); await reach(/^run$/); await sleep(300); await shot('01-run'); await kb.up('d'); await reach(/^idle$/); });
+  await run('hold V: walk', async () => { await kb.down('v'); await kb.down('d'); await reach(/^walk$/); await sleep(300); await shot('01b-walk');
+    await kb.up('d'); await kb.up('v'); await reach(/^idle$/); });
+  await run('personality: a trait mix re-bakes how he stands and walks', async () => {
+    await page.selectOption('#pz-preset', 'Old master');
+    await until('the Old master\'s slower walk', () => window.__game.P.gait.walk < 40);
+    await page.locator('#game').click(); await kb.down('v'); await kb.down('a'); await reach(/^walk$/); await sleep(300); await shot('01c-old-master');
+    await kb.up('a'); await kb.up('v'); await reach(/^idle$/);
+    await page.selectOption('#pz-preset', 'The ronin (as he is)'); await until('his own walk again', () => window.__game.P.gait.walk === 40);
+    await page.locator('#game').click(); });
   await run('J, J: slash 1 flows into slash 2', async () => {
     await kb.press('j'); await reach(/^slash1$/);
     await until('slash 1 follow-through', () => window.__game.P.t > .18);
     await kb.press('j'); await reach(/^slash2$/); await shot('02-slash2');
     await reach(/^ready\d$/); });
+  await run('J on a samurai: flinch, stagger, death', async () => {
+    // walk up to the nearest samurai, then cut until he falls; every state he passes through is logged
+    await page.evaluate(() => { window.__eLog = []; const e = window.__game.E[0];
+      const tick = () => { if (window.__eLog[window.__eLog.length - 1] !== e.state) window.__eLog.push(e.state); requestAnimationFrame(tick); }; tick(); });
+    await kb.down('d'); await until('walking up to him', () => window.__game.P.x > 236); await kb.up('d'); await reach(FREE);
+    // J, J each round: the answer cut lands inside 0.5 s of the first, so he staggers wherever the steps before left the ronin
+    for (let i = 0; i < 10 && await page.evaluate(() => window.__game.E[0].alive); i++) {
+      await kb.press('j'); await reach(/^slash1/); await until('slash 1 follow-through', () => window.__game.P.t > .18);
+      await kb.press('j'); await reach(FREE); }
+    const e = await page.evaluate(() => ({ alive: window.__game.E[0].alive, hp: window.__game.E[0].hp, log: window.__eLog }));
+    if (e.alive) fail(`the samurai is still standing after 10 cuts (hp ${e.hp}, states ${e.log.join(' > ')})`);
+    for (const st of ['flinch', 'stagger', 'dead']) if (!e.log.includes(st)) fail(`the samurai never went through ${st} (states ${e.log.join(' > ')})`);
+    await until('him hitting the floor', () => window.__game.E[0].body.thudT != null); await sleep(600); await shot('08-samurai-down'); });
+  await run('K on a lone samurai in reach: the kill line and K prompt, an execution, K ready 0.2 s after', async () => {
+    await sleep(200); await shot('09-k-prompt');
+    await kb.press('k'); await reach(/^exec$/); await page.evaluate(() => { window.__st = window.__game.P.exec; });
+    await sleep(700); await shot('10-execution');
+    await reach(/^idle$/, 4000);
+    // the deaths pass: the blade landed on him (knockback, blood) and his body moved on its springs
+    const d = await page.evaluate(() => { const E = window.__st.E; return { name: window.__st.ex.name, hit: E.hitAt != null, t: E.body.t }; });
+    if (!d.hit || !(d.t > .5)) fail(`"${d.name}": the deaths pass never ran on the executed body (${JSON.stringify(d)})`);
+    const cd = await page.evaluate(() => ({ t: window.__game.P.cd.tele, max: window.__game.P.cdMax.tele }));
+    if (!(cd.max <= .2 + 1e-9)) fail(`K was not reset to 0.2 s after the kill (${JSON.stringify(cd)})`);
+    await until('K ready again', () => !(window.__game.P.cd.tele > 0), undefined, 1000); await sleep(500); await shot('11-after'); });
   await run('Shift: ground slide', async () => { await kb.press('Shift'); await reach(/^slide$/); await reach(FREE); });
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
   await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
+    // out of every samurai's reach first (the top-left corner), so K is the plain teleport, not an assassination
+    await kb.down('a'); await kb.down('w'); await sleep(4200); await kb.up('a'); await kb.up('w'); await reach(FREE);
     await kb.press('k'); await reach(/^tele$/); await reach(FREE);
     await until('K on cooldown', () => window.__game.P.cd.tele > 0);
     await kb.press('k'); await until('the refused press', () => window.__game.P.cdDeny.tele > 0);
@@ -105,7 +140,9 @@ try {
     if ((await inv()).quick[0].n !== n0 - 1) fail('the bomb count did not drop');
     if (!(await page.evaluate(() => window.__game.S.smoke > 0))) fail('the smoke is not up'); });
   await run('hold E by the fallen: Harvest turns them to EXP', async () => {
-    await walkTo(160, 152); await kb.down('e'); await reach(/^harvest$/); await until('EXP', () => window.__game.INV.exp > 10 || window.__game.INV.lv > 1);
+    const body = await page.evaluate(() => { const e = window.__game.E.find(e => !e.alive); return e && [e.x, e.y]; });
+    if (!body) fail('no fallen samurai to harvest');
+    await walkTo(body[0] + (body[0] > 240 ? -24 : 24), body[1]); await kb.down('e'); await reach(/^harvest$/); await until('EXP', () => window.__game.INV.exp > 10 || window.__game.INV.lv > 1);
     await shot('14-harvest'); await kb.up('e'); await reach(FREE); });
   await run('power III (the test picker): the Crescent Moon comes with its twin and the slam with its pillars', async () => {
     await page.selectOption('#power', '3'); await until('power III', () => window.__game.INV.power === 3);

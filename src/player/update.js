@@ -14,9 +14,11 @@ import { hit, burst } from './hits.js';
 import { meditate, spawnMirror, updateMirrors } from './mirror.js';
 import { TAP, chargeUp, TC, RIFT, release, charged } from './skills.js';
 import { gate, startCd, updateCds } from './cooldowns.js';
+import { updateEnemies } from '../world/enemies.js';
+import { assassinate, tickStages, updateStages } from '../assassin/assassinate.js';
+import { K, updateMarkers } from '../assassin/markers.js';
 import { updateItems, itemInput, itemState, mirrorCut } from '../items/items.js';
 import { sheathClick } from '../items/harvest.js';
-import { DUMMIES } from '../world/dummies.js';
 import { T as pT, powerCast } from './power.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
@@ -24,21 +26,21 @@ export function update(dt, inp) {
   for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; q.life -= dt; }
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
   P.ghosts.forEach(g => { g.age += dt; g.white -= dt; }); P.ghosts = P.ghosts.filter(g => g.age < g.hold + .25);
-  for (const d of DUMMIES) { d.flash = Math.max(0, d.flash - dt); d.wob = Math.max(0, d.wob - dt); }
-  S.shake = Math.max(0, S.shake - dt); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
+  S.shake = Math.max(0, S.shake - dt); S.impact = Math.max(0, S.impact - 1); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
   updateCds(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
-  updateFx(dt);
+  updateFx(dt); updateEnemies(dt, S.hitstop > 0); updateStages(dt); updateMarkers();
   if (S.hitstop > 0) { S.hitstop -= dt; return; }
-  updateCuts(dt); updateMirrors(dt);
+  updateCuts(dt); updateMirrors(dt); tickStages(dt);
   for (const t of timers.splice(0)) if ((t.t -= dt) <= 0) t.fn(); else timers.push(t); // sequenced payoffs (implosions, chain links)
 
   P.t += dt;
   const s = P.state, T = P.t, D = dur(s), u = T / D;
-  const free = s === 'idle' || s === 'run' || s === 'idleGlitch' || s === 'sit' || s === 'sitDown';
+  const free = s === 'idle' || s === 'run' || s === 'walk' || s === 'idleGlitch' || s === 'sit' || s === 'sitDown';
   const canAttack = free || s === 'land' || s === 'sheathe' || s.startsWith('ready') || s === 'runArmed';
   if (inp.mx) P.face = Math.sign(inp.mx);
   const moving = inp.mx || inp.my;
 
+  if (s === 'exec') return;   // the execution's stage moves him (assassin/assassinate.js)
   updateItems(dt, canAttack && s !== 'sit' && s !== 'sitDown');
   if (inp.die && s !== 'death') { setState('death'); return; }
   if (s === 'sit' || s === 'sitDown') {
@@ -56,6 +58,7 @@ export function update(dt, inp) {
     if (inp.slash) return setState(P.armed ? 'slash1r' : 'slash1');
     if (inp.jump) { setState('jump'); P.vz = 150; return; }
     if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); startCd('slide'); return; }
+    if (inp.tele && K.pick) return assassinate(K.pick);   // an isolated enemy in reach: K flashes to him and executes
     if (inp.tele) { setState('tele'); P.blinkDir = inputDir(inp); startCd('tele'); return; }
     if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'double'; startCd('double'); return; }
     if (inp.rift) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'rift'; return; }   // O and P cool down from the release
@@ -72,15 +75,16 @@ export function update(dt, inp) {
       else { if (s === 'runArmed') setState(pickStance()); P.still += dt; if (P.still > 2) { P.still = 0; setState('sheathe'); } }
       break;
     }
-    case 'idle': case 'run': case 'idleGlitch': case 'sit': case 'sitDown': {
+    case 'idle': case 'run': case 'walk': case 'idleGlitch': case 'sit': case 'sitDown': {
       if (moving) {
-        const [dx, dy] = inputDir(inp);
-        moveBy(dx * 78 * dt, dy * 78 * dt);
-        if (s !== 'run') setState('run');
+        // hold V to walk; both speeds come from his personality
+        const [dx, dy] = inputDir(inp), gait = held.has('walk') ? 'walk' : 'run';
+        moveBy(dx * P.gait[gait] * dt, dy * P.gait[gait] * dt);
+        if (s !== gait) setState(gait);
         P.still = 0;
       } else {
         P.still += dt;
-        if (s === 'run') setState('idle');
+        if (s === 'run' || s === 'walk') setState('idle');
         if (s === 'idle' && P.still > 4) { setState('idleGlitch'); P.still = 0; }
         if (s === 'idleGlitch' && T >= D) setState('idle');
         if (s === 'sitDown' && T >= D) setState('sit');

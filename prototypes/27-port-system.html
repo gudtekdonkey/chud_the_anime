@@ -1,0 +1,5100 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ronin Port System</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; margin: 0; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 64px; display: grid; gap: 26px; }
+  header { display: grid; gap: 8px; max-width: 74ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 21px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  p b, li b { color: var(--ink); font-weight: 600; }
+  code { font: 13px/1 ui-monospace, monospace; color: var(--ink); }
+  canvas { image-rendering: pixelated; display: block; }
+  .viewer { display: grid; grid-template-columns: minmax(0, 1fr) minmax(200px, 260px); gap: 18px; align-items: start; }
+  @media (max-width: 760px) { .viewer { grid-template-columns: 1fr; } }
+  #compass { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--panel); border: 1px solid var(--rule); padding: 6px; }
+  #compass figure { margin: 0; display: grid; gap: 2px; }
+  #compass canvas { width: 100%; aspect-ratio: 72 / 64; }
+  #compass figcaption { font: 500 11px/1 "Pixelify Sans", monospace; letter-spacing: .1em; color: var(--muted); text-align: center; padding-block: 3px; }
+  #compass figure:nth-child(5) figcaption { color: #6c7573; }
+  #picker { display: flex; flex-wrap: wrap; gap: 6px; align-content: start; }
+  #picker .grp { flex-basis: 100%; font: 500 12px/1 "Pixelify Sans", monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--cyan); padding-top: 8px; }
+  #picker button { font: 13px/1.2 Figtree, sans-serif; color: var(--ink); background: #23272b; border: 1px solid #3a4046; padding: 6px 9px; cursor: pointer; }
+  #picker button[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); }
+  #picker button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .bar { display: flex; gap: 18px; align-items: center; }
+  .bar label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; color: var(--muted); font-size: 14px; }
+  .bar input { accent-color: var(--cyan); width: 16px; height: 16px; }
+  .sec { display: grid; gap: 12px; border-top: 1px solid var(--rule); padding-top: 18px; }
+  #every { display: grid; gap: 4px; overflow-x: auto; padding-bottom: 6px; }
+  .row { display: grid; grid-template-columns: 130px repeat(9, 72px); gap: 3px; align-items: center; }
+  .row .lab { font-size: 13px; color: var(--muted); }
+  .row canvas { width: 72px; height: 64px; }
+  .row canvas:nth-child(2) { opacity: .8; }
+  .heads { display: grid; grid-template-columns: 130px repeat(9, 72px); gap: 3px; font: 500 11px/1 "Pixelify Sans", monospace; letter-spacing: .1em; color: var(--muted); }
+  .heads span { text-align: center; }
+  ol { margin: 0; padding-left: 22px; color: var(--muted); display: grid; gap: 6px; max-width: 78ch; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Rig v2 · the port system</div>
+    <h1>Every move, every direction</h1>
+    <p>The game's own animations, read straight from <code>src/anims/poses.js</code>, and personality idles and walks from <code>src/traits/bake.js</code>. None of them was redrawn. Each side-view pose goes through one function, <code>port()</code>, onto rig v2's skeleton, and is baked facing all eight ways in his default outfit, cloth and all. The old side-view rig sits in the middle of the compass for comparison.</p>
+    <div class="bar"><label for="pause"><input type="checkbox" id="pause"> Pause</label></div>
+  </header>
+  <section class="viewer" aria-label="One move in eight directions">
+    <div id="compass"></div>
+    <div id="picker" aria-label="Moves"></div>
+  </section>
+  <section class="sec">
+    <h2>What port() adds to a side pose</h2>
+    <ol>
+      <li><b>The angles carry over.</b> The near leg and arm become his right, the far ones his left, and the back-hand blade goes to his left hand.</li>
+      <li><b>The hips follow the stride.</b> The leading leg brings its hip round, so a lunge seen from the front turns.</li>
+      <li><b>The chest turns into the blade.</b> Whichever arm holds a sword, reaching forward turns that shoulder toward the target.</li>
+      <li><b>The head stays on the target.</b> It takes back most of the turn beneath it.</li>
+      <li><b>Deep bends open the knees</b> outward instead of folding them through his body.</li>
+      <li><b>A hand on the hilt reaches for the real hilt</b> at his left hip, from any side.</li>
+      <li><b>Personality knobs carry over:</b> a bowed head and dimmed eyes.</li>
+      <li><b>Any move can override any rig v2 knob</b> where the automatic turn is not what it needs. None of the moves below uses one.</li>
+    </ol>
+  </section>
+  <section class="sec">
+    <h2>All of them</h2>
+    <p>Each row bakes as it scrolls into view: the old side view, then east round to north-east.</p>
+    <div class="heads"><span></span><span>old</span><span>E</span><span>SE</span><span>S</span><span>SW</span><span>W</span><span>NW</span><span>N</span><span>NE</span></div>
+    <div id="every"></div>
+  </section>
+</div>
+<script>
+(function() {
+	//#region ../wt-pers/src/rig/pose.js
+	const REST$2 = {
+		hx: 0,
+		hy: 0,
+		lean: .04,
+		chest: 0,
+		breath: 0,
+		fl: [.1, .08],
+		bl: [-.1, .04],
+		fa: [.12, .18],
+		ba: [-.08, .12],
+		sword: null,
+		bsword: null,
+		sheathing: false,
+		hat: 0,
+		flutter: 0,
+		bow: 0,
+		dim: 0
+	};
+	const pz$2 = (o) => ({
+		...REST$2,
+		...o
+	});
+	const HILT = [.42, 1];
+	const lerpP = (a, b, k) => {
+		const o = {};
+		for (const key in a) {
+			const x = a[key], y = b[key];
+			o[key] = Array.isArray(x) ? x.map((v, i) => v + (y[i] - v) * k) : typeof x === "number" && typeof y === "number" ? x + (y - x) * k : k < .5 ? x : y;
+		}
+		return o;
+	};
+	const ease = (k) => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+	const lin = (k) => k;
+	function keyed(keys, fps) {
+		const n = Math.round(keys[keys.length - 1][0] * fps) + 1;
+		return Array.from({ length: n }, (_, i) => {
+			const t = i / fps;
+			let j = 0;
+			while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+			const [t0, a] = keys[j], [t1, b, e] = keys[j + 1];
+			return lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0)))));
+		});
+	}
+	//#endregion
+	//#region ../wt-pers/src/traits/knobs.js
+	const BASE = {
+		idle: {
+			lean: .04,
+			chest: 0,
+			hx: 0,
+			hy: 0,
+			bow: 0,
+			hat: 0,
+			dim: 0,
+			legs: 1,
+			knee: 0,
+			fa: [.12, .18],
+			ba: [-.08, .12],
+			breath: 1,
+			armBreath: .03,
+			period: 16 / 6,
+			fps: 6,
+			bob: 0,
+			sway: 0,
+			swayLean: 0,
+			jitter: 0,
+			flutter: 1,
+			every: 2,
+			f: {},
+			b: {}
+		},
+		walk: {
+			lean: .08,
+			chest: 0,
+			hx: 0,
+			hy: 0,
+			bow: 0,
+			hat: 0,
+			dim: 0,
+			stride: .5,
+			knee0: .12,
+			lift: .55,
+			swing: .25,
+			fa0: .1,
+			faEl: .3,
+			ba0: -.1,
+			baEl: .25,
+			bounce: .6,
+			heavy: 0,
+			rock: 0,
+			limp: 0,
+			wobble: 0,
+			fps: 8,
+			speed: 40,
+			flutter: .5,
+			f: { hilt: .6 },
+			b: {}
+		},
+		run: {
+			lean: .32,
+			chest: 0,
+			hx: 0,
+			hy: 0,
+			bow: 0,
+			hat: 0,
+			dim: 0,
+			stride: .95,
+			knee0: .3,
+			lift: 1.1,
+			swing: .7,
+			fa0: .3,
+			faEl: .9,
+			ba0: -.5,
+			baEl: .5,
+			bounce: 1,
+			heavy: 0,
+			rock: 0,
+			limp: 0,
+			wobble: 0,
+			fps: 14,
+			speed: 78,
+			flutter: 1,
+			f: {},
+			b: {}
+		}
+	};
+	const MUL = /* @__PURE__ */ new Set([
+		"period",
+		"fps",
+		"speed"
+	]);
+	const MODES = [
+		"idle",
+		"walk",
+		"run"
+	];
+	const ARMS = {
+		hilt: HILT,
+		scabbard: [.35, .6],
+		behind: [-.5, -1],
+		cross: [.15, 1.45],
+		sleeves: [.25, 1.35],
+		folded: [.3, .85],
+		pray: [.55, 2.15],
+		chin: [1, 2.35],
+		hip: [-.6, 1.3],
+		clutch: [.15, 1.2],
+		fists: [.5, 2.2],
+		dangle: [.02, .04],
+		trail: [-1.35, .1]
+	};
+	//#endregion
+	//#region ../wt-pers/src/traits/fidgets.js
+	const env = (u, a = .2, b = .25) => u < a ? ease(u / a) : u > 1 - b ? ease((1 - u) / b) : 1;
+	const hump = (u) => Math.sin(Math.PI * Math.min(1, Math.max(0, u)));
+	const FIDGETS = {
+		hatTip: {
+			dur: 1.6,
+			about: "reaches up and tugs the brim of his hat down",
+			at: (u) => ({
+				f: [2.4, .6],
+				w: env(u, .25, .3),
+				add: {
+					hat: u > .4 && u < .75 ? 1 : 0,
+					bow: .35 * env(u)
+				}
+			})
+		},
+		hiltCheck: {
+			dur: 1.8,
+			about: "rests a hand on the hilt and glances down at it",
+			at: (u) => ({
+				f: HILT,
+				w: env(u),
+				add: {
+					bow: .6 * env(u, .3, .3),
+					lean: .05 * env(u)
+				}
+			})
+		},
+		hiltThumb: {
+			dur: 1.4,
+			about: "thumbs the guard of his sword, restless",
+			at: (u) => ({
+				f: [HILT[0] + .1 * Math.max(0, Math.sin(u * 28)), HILT[1]],
+				w: env(u, .15, .2),
+				add: {}
+			})
+		},
+		neckCrack: {
+			dur: 1.3,
+			about: "tips his head over, then snaps it back",
+			at: (u) => ({
+				w: 0,
+				add: {
+					bow: u < .45 ? 1.1 * ease(u / .45) : u < .55 ? 1.1 - 1.7 * (u - .45) / .1 : -.6 * env(u, 0, .45),
+					chest: -.06 * env(u)
+				}
+			})
+		},
+		shoulderRoll: {
+			dur: 1.6,
+			about: "rolls his shoulders up and back",
+			at: (u) => ({
+				w: 0,
+				add: {
+					breath: .9 * hump(u),
+					chest: -.12 * Math.sin(Math.PI * 2 * u) * env(u)
+				}
+			})
+		},
+		footTap: {
+			dur: 1.6,
+			about: "taps his front foot three times",
+			at: (u) => {
+				const t = Math.max(0, Math.sin(u * 6 * Math.PI)) * env(u, .1, .1);
+				return {
+					w: 0,
+					add: { fl: [.2 * t, .5 * t] }
+				};
+			}
+		},
+		weightShift: {
+			dur: 1.8,
+			about: "shifts his weight onto the back foot and back again",
+			at: (u) => ({
+				w: 0,
+				add: {
+					hx: -1.5 * env(u, .3, .3),
+					lean: -.05 * env(u, .3, .3),
+					fl: [.12 * env(u, .3, .3), 0]
+				}
+			})
+		},
+		stretch: {
+			dur: 2.2,
+			about: "stretches both arms up over his head",
+			at: (u) => ({
+				f: [2.95, .15],
+				b: [2.8, .25],
+				w: env(u, .3, .3),
+				add: {
+					breath: 1 * env(u, .3, .3),
+					lean: -.08 * env(u),
+					chest: -.14 * env(u),
+					bow: -.4 * env(u)
+				}
+			})
+		},
+		sigh: {
+			dur: 2.4,
+			about: "a long sigh: the chest lifts, then everything sags",
+			at: (u) => ({
+				w: 0,
+				add: {
+					breath: 1.2 * hump(u / .55),
+					bow: .7 * env(u, .5, .2) * (u > .45 ? 1 : 0),
+					fa: [-.06 * env(u, .5, .2), 0],
+					ba: [.06 * env(u, .5, .2), 0]
+				}
+			})
+		},
+		glance: {
+			dur: 1.5,
+			about: "glances up and back over his shoulder",
+			at: (u) => ({
+				w: 0,
+				add: {
+					bow: -.45 * env(u, .15, .3),
+					hx: -1 * env(u, .15, .3),
+					chest: -.1 * env(u, .15, .3),
+					hat: -1 * (u > .15 && u < .7 ? 1 : 0)
+				}
+			})
+		},
+		nod: {
+			dur: 1.4,
+			about: "two slow nods",
+			at: (u) => ({
+				w: 0,
+				add: { bow: .8 * Math.pow(Math.sin(Math.PI * 2 * u), 2) }
+			})
+		},
+		lookDown: {
+			dur: 2,
+			about: "lowers his head and stares at the floor",
+			at: (u) => ({
+				w: 0,
+				add: {
+					bow: 1.2 * env(u, .3, .3),
+					lean: .06 * env(u, .3, .3)
+				}
+			})
+		},
+		scratch: {
+			dur: 1.6,
+			about: "scratches the back of his head under the hat",
+			at: (u) => ({
+				f: [2.2, 1.45 + .12 * Math.sin(u * 40)],
+				w: env(u, .25, .25),
+				add: {
+					bow: .3 * env(u),
+					hat: u > .3 && u < .7 ? -1 : 0
+				}
+			})
+		},
+		knuckles: {
+			dur: 1.5,
+			about: "brings his hands together and cracks his knuckles",
+			at: (u) => ({
+				f: [.7, 1.6],
+				b: [.65, 1.7],
+				w: env(u, .25, .25),
+				add: {
+					chest: u > .5 && u < .6 ? .08 : 0,
+					bow: .2 * env(u)
+				}
+			})
+		},
+		dustOff: {
+			dur: 1.6,
+			about: "brushes dust off his far shoulder",
+			at: (u) => ({
+				f: [1.25, 2.3 + .15 * Math.sin(u * 22)],
+				w: env(u, .25, .25),
+				add: {
+					bow: .3 * env(u),
+					chest: .06 * env(u)
+				}
+			})
+		},
+		yawn: {
+			dur: 2.2,
+			about: "a slow yawn behind one hand",
+			at: (u) => ({
+				f: [1.6, 2.1],
+				w: env(u, .3, .3),
+				add: {
+					breath: 1.3 * env(u, .3, .3),
+					bow: -.5 * env(u, .3, .3),
+					chest: -.1 * env(u)
+				}
+			})
+		},
+		stumble: {
+			dur: 1.6,
+			about: "loses his footing for a moment and catches himself",
+			at: (u) => {
+				const e = env(u, .1, .55);
+				return {
+					b: [-1.4, .2],
+					f: [1.3, .2],
+					w: e,
+					add: {
+						hx: -2.5 * e,
+						lean: -.25 * e,
+						bl: [-.3 * e, 0],
+						fl: [.3 * e, .2 * e],
+						hat: e > .5 ? -1 : 0
+					}
+				};
+			}
+		},
+		flexHand: {
+			dur: 1.3,
+			about: "shakes out his sword hand",
+			at: (u) => ({
+				f: [.6, .4 + .5 * Math.max(0, Math.sin(u * 30))],
+				w: env(u),
+				add: {}
+			})
+		},
+		fixMantle: {
+			dur: 1.7,
+			about: "straightens his mantle at the collar",
+			at: (u) => ({
+				f: [1.6, 2.3],
+				w: env(u, .25, .3),
+				add: {
+					chest: -.05 * env(u),
+					bow: .25 * env(u),
+					flutter: u > .4 && u < .7 ? 1 : 0
+				}
+			})
+		},
+		toes: {
+			dur: 1.3,
+			about: "rocks up onto his toes and back",
+			at: (u) => ({
+				w: 0,
+				add: { hy: -Math.round(hump(u * 2 % 1) * env(u, .1, .1)) }
+			})
+		}
+	};
+	//#endregion
+	//#region ../wt-pers/src/traits/traits.js
+	const TRAITS = {
+		stoic: {
+			name: "Stoic",
+			group: "bearing",
+			about: "Barely moves. A shallow breath, a rare glance at his blade, an even, quiet step.",
+			idle: {
+				breath: -.4,
+				every: 4
+			},
+			walk: {
+				bounce: -.42,
+				swing: -.14
+			},
+			run: { swing: -.21 },
+			fidgets: ["hiltCheck"]
+		},
+		proud: {
+			name: "Proud",
+			group: "bearing",
+			about: "Chest out, chin up, hands clasped behind him. Long, unhurried strides.",
+			all: {
+				lean: -.16,
+				chest: -.14,
+				bow: -.52
+			},
+			idle: {
+				legs: .6,
+				b: { behind: 1 }
+			},
+			walk: {
+				stride: .24,
+				fps: .84,
+				swing: -.21,
+				b: { behind: 1 }
+			},
+			fidgets: ["glance"]
+		},
+		humble: {
+			name: "Humble",
+			group: "bearing",
+			about: "Head dipped, hands folded low in front of him. Small, polite steps.",
+			all: {
+				bow: .75,
+				lean: .1
+			},
+			idle: {
+				f: { folded: 1 },
+				b: { folded: 1 }
+			},
+			walk: {
+				stride: -.19,
+				fps: .84,
+				swing: -.21,
+				f: { folded: .7 }
+			},
+			fidgets: ["nod"]
+		},
+		regal: {
+			name: "Regal",
+			group: "bearing",
+			about: "Upright and still, both hands behind his back. A slow, level walk with no bounce at all.",
+			all: {
+				lean: -.12,
+				chest: -.07,
+				bow: -.3
+			},
+			idle: {
+				breath: -.3,
+				f: { behind: 1 },
+				b: { behind: 1 }
+			},
+			walk: {
+				fps: .68,
+				stride: .16,
+				bounce: -.84,
+				f: { behind: 1 },
+				b: { behind: 1 }
+			},
+			run: { fps: .87 },
+			fidgets: ["nod"]
+		},
+		hunched: {
+			name: "Hunched",
+			group: "bearing",
+			about: "Rounded over, head low, as if under a weight. Short steps.",
+			all: {
+				lean: .44,
+				chest: .22,
+				bow: .9
+			},
+			idle: {
+				fa: [.1, .2],
+				ba: [.1, .2]
+			},
+			walk: {
+				stride: -.16,
+				lift: -.2
+			},
+			run: { lean: .16 }
+		},
+		coiled: {
+			name: "Coiled",
+			group: "bearing",
+			about: "Always half a breath from drawing: knees bent, feet wide, hand on the hilt. Stalks rather than walks.",
+			all: { lean: .24 },
+			idle: {
+				knee: 1.12,
+				legs: 2,
+				breath: -.3,
+				f: { hilt: 1 }
+			},
+			walk: {
+				knee0: .56,
+				bounce: -.56,
+				stride: .16,
+				fps: .76,
+				f: { hilt: 1 }
+			},
+			run: {
+				lean: .2,
+				f: { hilt: .8 }
+			},
+			fidgets: ["hiltThumb"]
+		},
+		slouch: {
+			name: "Slouched",
+			group: "bearing",
+			about: "Hips pushed forward, shoulders back, arms hanging. Scuffs along.",
+			all: {
+				lean: -.2,
+				chest: .32,
+				bow: .52,
+				hx: 1
+			},
+			idle: {
+				f: { dangle: .6 },
+				b: { dangle: .6 }
+			},
+			walk: {
+				swing: -.14,
+				lift: -.26,
+				bounce: -.28
+			},
+			fidgets: ["sigh"]
+		},
+		soldier: {
+			name: "Soldier",
+			group: "bearing",
+			about: "Drilled: feet together, still as a post, then a crisp march with the arms swinging high.",
+			all: {
+				lean: -.04,
+				chest: -.07
+			},
+			idle: {
+				breath: -.5,
+				legs: -.5,
+				every: 6
+			},
+			walk: {
+				swing: .49,
+				lift: .33,
+				fps: 1.16,
+				faEl: -.2,
+				baEl: -.2,
+				bounce: .28,
+				f: { hilt: -.6 }
+			},
+			run: { swing: .14 }
+		},
+		lazy: {
+			name: "Lazy",
+			group: "energy",
+			about: "Arms dead at his sides, slow deep breaths, a yawn now and then. Drags his feet.",
+			all: {
+				bow: .45,
+				lean: -.08
+			},
+			idle: {
+				period: 1.35,
+				breath: .3,
+				hx: 1,
+				f: { dangle: 1 },
+				b: { dangle: 1 }
+			},
+			walk: {
+				fps: .52,
+				lift: -.45,
+				stride: -.16,
+				swing: -.21,
+				bounce: -.42,
+				speed: .8
+			},
+			run: {
+				fps: .76,
+				lift: -.39,
+				speed: .9
+			},
+			fidgets: ["yawn"]
+		},
+		restless: {
+			name: "Restless",
+			group: "energy",
+			about: "Can't stand still: sways, taps his foot, shifts his weight, and fidgets every breath.",
+			idle: {
+				sway: 1.3,
+				jitter: .48,
+				every: -1
+			},
+			walk: { fps: 1.16 },
+			fidgets: ["footTap", "weightShift"]
+		},
+		twitchy: {
+			name: "Twitchy",
+			group: "energy",
+			about: "Quick shallow breaths and little jerks. Glances round, shakes out his hand.",
+			idle: {
+				jitter: 1.44,
+				period: .8,
+				every: -1
+			},
+			walk: {
+				fps: 1.32,
+				wobble: .2
+			},
+			run: { fps: 1.16 },
+			fidgets: ["glance", "flexHand"]
+		},
+		bouncy: {
+			name: "Bouncy",
+			group: "energy",
+			about: "Springs on his knees with each breath and bounds when he walks.",
+			idle: {
+				bob: 1,
+				period: .8,
+				knee: .28
+			},
+			walk: {
+				bounce: 1.96,
+				lift: .39,
+				fps: 1.16
+			},
+			run: { bounce: 1.4 },
+			fidgets: ["toes"]
+		},
+		weary: {
+			name: "Weary",
+			group: "energy",
+			about: "Bone tired: heavy breaths, head down, arms hanging. Every footfall lands hard.",
+			all: {
+				bow: .9,
+				lean: .24,
+				chest: .14
+			},
+			idle: {
+				breath: .8,
+				period: 1.2,
+				knee: .21,
+				f: { dangle: .7 },
+				b: { dangle: .7 }
+			},
+			walk: {
+				fps: .6,
+				stride: -.19,
+				lift: -.39,
+				swing: -.21,
+				heavy: 1.04,
+				speed: .75
+			},
+			run: {
+				fps: .76,
+				speed: .85,
+				lift: -.39
+			},
+			fidgets: ["sigh"]
+		},
+		eager: {
+			name: "Eager",
+			group: "energy",
+			about: "Leaning in, up on the balls of his feet, quick to go.",
+			all: {
+				lean: .2,
+				bow: -.22
+			},
+			idle: {
+				bob: .5,
+				period: .85,
+				knee: .21
+			},
+			walk: {
+				fps: 1.32,
+				stride: .16,
+				speed: 1.15
+			},
+			run: {
+				speed: 1.1,
+				lean: .16,
+				fps: 1.08
+			},
+			fidgets: ["toes"]
+		},
+		heavy: {
+			name: "Heavy",
+			group: "energy",
+			about: "Wide and solid. Rolls his shoulders; every step thuds.",
+			all: { lean: .06 },
+			idle: {
+				legs: 1.5,
+				knee: .28,
+				breath: .3
+			},
+			walk: {
+				heavy: 1.95,
+				fps: .68,
+				stride: .08,
+				speed: .85
+			},
+			run: {
+				heavy: 1.56,
+				fps: .76
+			},
+			fidgets: ["shoulderRoll"]
+		},
+		lightFooted: {
+			name: "Light-footed",
+			group: "energy",
+			about: "Barely touches the floor: no bounce, high quick feet.",
+			idle: { knee: .14 },
+			walk: {
+				bounce: -.7,
+				lift: .26,
+				fps: 1.16
+			},
+			run: {
+				bounce: -.56,
+				lift: .26,
+				speed: 1.08
+			},
+			fidgets: ["toes"]
+		},
+		calm: {
+			name: "Calm",
+			group: "mood",
+			about: "Slow, even breathing, few fidgets, a gentle unhurried walk.",
+			idle: {
+				period: 1.3,
+				breath: -.2,
+				every: 2
+			},
+			walk: {
+				fps: .84,
+				bounce: -.28
+			}
+		},
+		nervous: {
+			name: "Nervous",
+			group: "mood",
+			about: "Hand never leaves the hilt. Shrinks a little, glances round, quick short steps.",
+			all: {
+				bow: .3,
+				lean: .12
+			},
+			idle: {
+				jitter: .6,
+				every: -1,
+				knee: .28,
+				legs: -.3,
+				f: { hilt: .9 }
+			},
+			walk: {
+				fps: 1.24,
+				stride: -.16,
+				f: { hilt: 1 }
+			},
+			fidgets: ["glance", "hiltThumb"]
+		},
+		cocky: {
+			name: "Cocky",
+			group: "mood",
+			about: "Fist on his hip, hat pushed back, a swagger in every step.",
+			all: {
+				lean: -.16,
+				chest: -.11,
+				bow: -.3,
+				hat: -1
+			},
+			idle: {
+				legs: 1.5,
+				sway: .78,
+				b: { hip: 1 }
+			},
+			walk: {
+				rock: 1.6,
+				fps: .84,
+				stride: .16,
+				bounce: .42,
+				b: { hip: 1 }
+			},
+			run: { rock: .8 },
+			fidgets: ["dustOff", "neckCrack"]
+		},
+		brooding: {
+			name: "Brooding",
+			group: "mood",
+			about: "Arms folded, head sunk, staring at nothing.",
+			all: {
+				bow: 1.2,
+				lean: .04
+			},
+			idle: {
+				breath: -.2,
+				f: { cross: 1 },
+				b: { cross: 1 }
+			},
+			walk: {
+				fps: .68,
+				stride: -.13,
+				f: { cross: 1 },
+				b: { cross: 1 }
+			},
+			fidgets: ["lookDown"]
+		},
+		cheerful: {
+			name: "Cheerful",
+			group: "mood",
+			about: "Chin up, a little sway, a springy walk with big arm swings.",
+			all: { bow: -.38 },
+			idle: {
+				bob: .6,
+				sway: 1.04
+			},
+			walk: {
+				bounce: 1.12,
+				swing: .35,
+				fps: 1.16,
+				f: { hilt: -.6 }
+			},
+			run: {
+				swing: .14,
+				bounce: .56
+			},
+			fidgets: ["toes", "stretch"]
+		},
+		grim: {
+			name: "Grim",
+			group: "mood",
+			about: "Feet set, hand on the hilt, jaw down. A heavy, deliberate walk.",
+			all: {
+				bow: .45,
+				lean: .08
+			},
+			idle: {
+				breath: -.4,
+				every: 2,
+				legs: .6,
+				f: { hilt: 1 }
+			},
+			walk: {
+				heavy: .78,
+				fps: .76,
+				swing: -.21,
+				f: { hilt: 1 }
+			},
+			fidgets: ["hiltCheck"]
+		},
+		wary: {
+			name: "Wary",
+			group: "mood",
+			about: "Half crouched, weight ready, checking behind him.",
+			all: { lean: .12 },
+			idle: {
+				knee: .49,
+				legs: 1.2,
+				f: { hilt: .7 }
+			},
+			walk: {
+				knee0: .32,
+				fps: .84,
+				bounce: -.42,
+				f: { hilt: .8 }
+			},
+			fidgets: ["glance", "weightShift"]
+		},
+		melancholy: {
+			name: "Melancholy",
+			group: "mood",
+			about: "Long sighs, eyes on the floor, a slow and heavy walk.",
+			all: {
+				bow: 1.05,
+				lean: .06
+			},
+			idle: {
+				period: 1.4,
+				breath: .4,
+				f: { dangle: .5 },
+				b: { dangle: .5 }
+			},
+			walk: {
+				fps: .6,
+				speed: .8,
+				swing: -.28,
+				stride: -.16
+			},
+			run: {
+				fps: .84,
+				speed: .9
+			},
+			fidgets: ["sigh", "lookDown"]
+		},
+		menacing: {
+			name: "Menacing",
+			group: "mood",
+			about: "Leans in, arms still, cracks his neck and knuckles. Slow, long, heavy strides.",
+			all: {
+				lean: .2,
+				chest: .11,
+				bow: .38
+			},
+			idle: {
+				breath: -.3,
+				legs: 1,
+				knee: .28
+			},
+			walk: {
+				fps: .52,
+				stride: .32,
+				bounce: -.42,
+				swing: -.35,
+				speed: .85,
+				heavy: .52
+			},
+			fidgets: ["neckCrack", "knuckles"]
+		},
+		serene: {
+			name: "Serene",
+			group: "mood",
+			about: "Hands tucked into his sleeves, deep slow breaths, a glide of a walk.",
+			all: { bow: .3 },
+			idle: {
+				period: 1.5,
+				breath: .2,
+				every: 2,
+				f: { sleeves: 1 },
+				b: { sleeves: 1 }
+			},
+			walk: {
+				fps: .68,
+				bounce: -.56,
+				swing: -.28,
+				f: { sleeves: 1 },
+				b: { sleeves: 1 }
+			},
+			fidgets: ["nod"]
+		},
+		hatTipper: {
+			name: "Hat tipper",
+			group: "quirk",
+			about: "Keeps tugging the brim of his hat down.",
+			idle: { every: -.5 },
+			fidgets: ["hatTip"]
+		},
+		hiltFiddler: {
+			name: "Hilt fiddler",
+			group: "quirk",
+			about: "His hand keeps drifting to the sword: thumbing the guard, checking it's there.",
+			idle: { f: { hilt: .4 } },
+			fidgets: ["hiltThumb", "hiltCheck"]
+		},
+		neckCracker: {
+			name: "Neck cracker",
+			group: "quirk",
+			about: "Tips his head over and snaps it back.",
+			fidgets: ["neckCrack"]
+		},
+		shoulderRoller: {
+			name: "Shoulder roller",
+			group: "quirk",
+			about: "Rolls the stiffness out of his shoulders.",
+			fidgets: ["shoulderRoll"]
+		},
+		footTapper: {
+			name: "Foot tapper",
+			group: "quirk",
+			about: "Taps his front foot, impatient.",
+			fidgets: ["footTap"]
+		},
+		stretcher: {
+			name: "Stretcher",
+			group: "quirk",
+			about: "Stretches his arms up over his head.",
+			fidgets: ["stretch"]
+		},
+		sigher: {
+			name: "Sigher",
+			group: "quirk",
+			about: "Lets out long sighs.",
+			fidgets: ["sigh"]
+		},
+		glancer: {
+			name: "Glancer",
+			group: "quirk",
+			about: "Keeps looking back over his shoulder.",
+			idle: { every: -1 },
+			fidgets: ["glance"]
+		},
+		hummer: {
+			name: "Hummer",
+			group: "quirk",
+			about: "Sways to a tune only he can hear, and walks to its beat.",
+			idle: {
+				sway: 1.56,
+				swayLean: .05,
+				bob: .4
+			},
+			walk: {
+				rock: .96,
+				bounce: .42
+			}
+		},
+		knuckleCracker: {
+			name: "Knuckle cracker",
+			group: "quirk",
+			about: "Brings his hands together and cracks his knuckles.",
+			fidgets: ["knuckles"]
+		},
+		vain: {
+			name: "Vain",
+			group: "quirk",
+			about: "Always tidying: straightens the mantle, brushes off a shoulder, sets the hat.",
+			all: { chest: -.07 },
+			idle: { every: -1 },
+			fidgets: [
+				"fixMantle",
+				"dustOff",
+				"hatTip"
+			]
+		},
+		scratcher: {
+			name: "Head scratcher",
+			group: "quirk",
+			about: "Scratches the back of his head, puzzled.",
+			fidgets: ["scratch"]
+		},
+		limping: {
+			name: "Limping",
+			group: "body",
+			about: "Favours his near leg: a short stiff step, then a dip onto the good one.",
+			idle: {
+				lean: -.04,
+				legs: .5
+			},
+			walk: {
+				limp: 1,
+				fps: .76,
+				speed: .8
+			},
+			run: {
+				limp: .6,
+				speed: .85
+			}
+		},
+		elder: {
+			name: "Elder",
+			group: "body",
+			about: "Stooped, hands behind the back, short careful steps.",
+			all: {
+				lean: .36,
+				bow: .52,
+				chest: .18
+			},
+			idle: {
+				knee: .35,
+				period: 1.2,
+				b: { behind: 1 }
+			},
+			walk: {
+				stride: -.32,
+				lift: -.39,
+				fps: .68,
+				speed: .7,
+				swing: -.28,
+				b: { behind: 1 }
+			},
+			run: {
+				speed: .8,
+				fps: .76,
+				lift: -.52
+			},
+			fidgets: ["nod"]
+		},
+		drunk: {
+			name: "Drunk",
+			group: "body",
+			about: "Sways, lurches, loses his footing and catches it. Weaves as he walks.",
+			idle: {
+				sway: 2.6,
+				swayLean: .1,
+				jitter: .72
+			},
+			walk: {
+				wobble: 1,
+				fps: .84,
+				speed: .85
+			},
+			run: { wobble: .6 },
+			fidgets: ["stumble"]
+		},
+		lumbering: {
+			name: "Lumbering",
+			group: "body",
+			about: "A big man's weight: planted wide, arms held off the body, a slow rolling gait.",
+			all: {
+				lean: .12,
+				chest: .07
+			},
+			idle: {
+				legs: 2.5,
+				knee: .42,
+				breath: .4,
+				period: 1.2,
+				fa: [.15, 0],
+				ba: [-.15, 0]
+			},
+			walk: {
+				stride: .32,
+				fps: .52,
+				heavy: 1.56,
+				rock: .96,
+				speed: .9,
+				swing: .14
+			},
+			run: {
+				fps: .68,
+				heavy: 1.3
+			}
+		},
+		nimble: {
+			name: "Nimble",
+			group: "body",
+			about: "Wiry and quick, light on bent knees, flexing his hand.",
+			idle: {
+				knee: .35,
+				bob: .4,
+				period: .85
+			},
+			walk: {
+				fps: 1.32,
+				stride: -.13,
+				lift: .33,
+				bounce: -.28
+			},
+			run: {
+				fps: 1.16,
+				speed: 1.1,
+				lean: .12
+			},
+			fidgets: ["toes", "flexHand"]
+		},
+		wounded: {
+			name: "Wounded",
+			group: "body",
+			about: "Clutches his side, breathes fast and shallow, limps.",
+			all: {
+				bow: .6,
+				lean: .2
+			},
+			idle: {
+				breath: .5,
+				period: .8,
+				knee: .28,
+				f: { clutch: 1 }
+			},
+			walk: {
+				limp: .5,
+				fps: .68,
+				speed: .75,
+				heavy: .65,
+				f: { clutch: 1 }
+			},
+			run: {
+				limp: .4,
+				speed: .85,
+				f: { clutch: .8 }
+			},
+			fidgets: ["sigh"]
+		},
+		shinobi: {
+			name: "Shinobi",
+			group: "discipline",
+			about: "Low and silent, hand on the hilt. Runs bent double with both arms swept back.",
+			all: {
+				lean: .3,
+				bow: .3
+			},
+			idle: {
+				knee: .98,
+				legs: 1,
+				f: { hilt: 1 }
+			},
+			walk: {
+				knee0: .72,
+				bounce: -.7,
+				fps: .84,
+				speed: .9,
+				f: { hilt: 1 },
+				b: { behind: .4 }
+			},
+			run: {
+				lean: .7,
+				swing: -.7,
+				f: { trail: 1 },
+				b: { trail: 1 }
+			}
+		},
+		duelist: {
+			name: "Duelist",
+			group: "discipline",
+			about: "One hand on the hilt, the other on the scabbard, side-on and measured.",
+			all: { lean: .04 },
+			idle: {
+				legs: 1.2,
+				knee: .28,
+				f: { hilt: 1 },
+				b: { scabbard: 1 }
+			},
+			walk: {
+				fps: .84,
+				bounce: -.28,
+				f: { hilt: 1 },
+				b: { scabbard: 1 }
+			},
+			run: { f: { hilt: .8 } },
+			fidgets: ["hiltCheck"]
+		},
+		monk: {
+			name: "Monk",
+			group: "discipline",
+			about: "Palms together, a slow breath, a quiet walk in prayer.",
+			all: { bow: .45 },
+			idle: {
+				breath: -.2,
+				period: 1.3,
+				f: { pray: 1 },
+				b: { pray: 1 }
+			},
+			walk: {
+				fps: .76,
+				bounce: -.42,
+				f: { pray: .8 },
+				b: { pray: .8 }
+			},
+			fidgets: ["nod"]
+		},
+		brawler: {
+			name: "Brawler",
+			group: "discipline",
+			about: "Fists up, bouncing on his toes, rolling his shoulders.",
+			all: {
+				lean: .2,
+				bow: .22
+			},
+			idle: {
+				bob: .8,
+				period: .7,
+				knee: .42,
+				legs: 1.5,
+				f: { fists: 1 },
+				b: { fists: 1 }
+			},
+			walk: {
+				rock: 1.28,
+				bounce: .56,
+				f: { fists: .7 },
+				b: { fists: .7 }
+			},
+			fidgets: ["shoulderRoll", "knuckles"]
+		},
+		wanderer: {
+			name: "Wanderer",
+			group: "discipline",
+			about: "Arms tucked in his sleeves, an easy sway, a long road ahead.",
+			all: { lean: .04 },
+			idle: {
+				sway: .65,
+				f: { sleeves: 1 },
+				b: { sleeves: 1 }
+			},
+			walk: {
+				fps: .76,
+				bounce: .14,
+				f: { sleeves: 1 },
+				b: { sleeves: 1 }
+			},
+			fidgets: ["glance"]
+		},
+		shadow: {
+			name: "Shadow",
+			group: "discipline",
+			about: "Sunk low and dead still; glides with no bob at all.",
+			all: { lean: .16 },
+			idle: {
+				knee: .56,
+				breath: -.5,
+				every: 4
+			},
+			walk: {
+				bounce: -1.4,
+				lift: -.13,
+				knee0: .48,
+				fps: .84
+			},
+			run: {
+				bounce: -1.4,
+				lean: .12
+			}
+		},
+		scholar: {
+			name: "Scholar",
+			group: "discipline",
+			about: "Hand at his chin, lost in thought. Walks with his hands behind him, head bent.",
+			all: { bow: .45 },
+			idle: { f: { chin: 1 } },
+			walk: {
+				fps: .76,
+				bow: .15,
+				f: { behind: 1 },
+				b: { behind: 1 }
+			},
+			fidgets: ["nod", "scratch"]
+		},
+		veteran: {
+			like: "grim",
+			name: "Veteran",
+			group: "discipline",
+			about: "Grim, plus an old wound: the same set jaw and hand on the hilt, with a slight limp.",
+			walk: { limp: .35 },
+			fidgets: ["shoulderRoll"]
+		}
+	};
+	//#endregion
+	//#region ../wt-pers/src/traits/mix.js
+	const clone = (o) => JSON.parse(JSON.stringify(o));
+	const expand = (id, k, seen = /* @__PURE__ */ new Set()) => {
+		const t = TRAITS[id];
+		if (!t) throw new Error(`unknown trait "${id}"`);
+		if (seen.has(id)) throw new Error(`trait "${id}" is its own ancestor`);
+		seen.add(id);
+		return [...t.like ? expand(t.like, k, seen) : [], [t, k]];
+	};
+	function nudge(m, key, v, k) {
+		if (key === "f" || key === "b") {
+			for (const a in v) m[key][a] = (m[key][a] || 0) + v[a] * k;
+			return;
+		}
+		if (!(key in m)) return;
+		if (Array.isArray(m[key])) m[key] = m[key].map((x, i) => x + v[i] * k);
+		else if (MUL.has(key)) m[key] *= Math.pow(v, k);
+		else m[key] += v * k;
+	}
+	function mix(list = [], extra) {
+		const out = clone(BASE);
+		out.fidgets = [];
+		for (const [id, k] of list) for (const [t, kk] of expand(id, k)) {
+			for (const mode of MODES) for (const blk of [t.all, t[mode]]) if (blk) for (const key in blk) nudge(out[mode], key, blk[key], kk);
+			if (kk > .25) {
+				for (const f of t.fidgets || []) if (!out.fidgets.includes(f)) out.fidgets.push(f);
+			}
+		}
+		if (extra) {
+			for (const mode of MODES) for (const blk of [extra.all, extra[mode]]) if (blk) for (const key in blk) nudge(out[mode], key, blk[key], 1);
+		}
+		out.fidgets = out.fidgets.slice(0, 4);
+		return out;
+	}
+	function check(id, t) {
+		const bad = (m) => {
+			throw new Error(`trait "${id}": ${m}`);
+		};
+		if (!t.name || !t.about) bad("needs a name and an about");
+		if (t.like && !TRAITS[t.like]) bad(`like "${t.like}" is not a trait`);
+		for (const mode of ["all", ...MODES]) for (const key in t[mode] || {}) {
+			if (key === "f" || key === "b") {
+				for (const a in t[mode][key]) if (!ARMS[a]) bad(`no hand target "${a}"`);
+				continue;
+			}
+			if (!MODES.some((m) => key in BASE[m]) || mode !== "all" && !(key in BASE[mode])) bad(`${mode} has no knob "${key}"`);
+		}
+		for (const f of t.fidgets || []) if (!FIDGETS[f]) bad(`no fidget "${f}"`);
+	}
+	for (const id in TRAITS) check(id, TRAITS[id]);
+	//#endregion
+	//#region ../wt-pers/src/traits/bake.js
+	const TAU$1 = Math.PI * 2;
+	const BREATH_T = [
+		0,
+		0,
+		0,
+		.15,
+		.45,
+		.75,
+		.95,
+		1,
+		1,
+		1,
+		.85,
+		.6,
+		.3,
+		.1,
+		0,
+		0
+	];
+	const FLUT_T = [
+		0,
+		0,
+		0,
+		0,
+		1,
+		1,
+		0,
+		0,
+		0,
+		0,
+		0,
+		1,
+		1,
+		1,
+		0,
+		0
+	];
+	const table$1 = (tb, u) => {
+		let x = (u % 1 + 1) % 1 * tb.length;
+		if (Math.abs(x - Math.round(x)) < 1e-6) x = Math.round(x) % tb.length;
+		const i = Math.floor(x), f = x - i;
+		return tb[i] + (tb[(i + 1) % tb.length] - tb[i]) * f;
+	};
+	const toward = (a, t, w) => {
+		w = Math.min(1, Math.max(0, w));
+		return a.map((v, i) => v + (t[i] - v) * w);
+	};
+	function hands(q, m) {
+		for (const a in m.f) q.fa = toward(q.fa, ARMS[a], m.f[a]);
+		for (const a in m.b) q.ba = toward(q.ba, ARMS[a], m.b[a]);
+	}
+	const reach = ([th, kn]) => 5 * Math.cos(th) + 6 * Math.cos(th - kn);
+	function meet([th, kn], R) {
+		const x = Math.min(1, Math.max(-1, (R - 5 * Math.cos(th)) / 6)), a = Math.acos(x);
+		return [th, th - (Math.abs(a - (th - kn)) < Math.abs(-a - (th - kn)) ? a : -a)];
+	}
+	function plant(q) {
+		const drop = Math.round(11 - Math.max(reach(q.fl), reach(q.bl))), R = 11 - drop;
+		q.hy += drop;
+		if (Math.abs(reach(q.fl) - R) > .4) q.fl = meet(q.fl, R);
+		if (Math.abs(reach(q.bl) - R) > .4) q.bl = meet(q.bl, R);
+	}
+	function addTo(q, add) {
+		for (const k in add) q[k] = Array.isArray(add[k]) ? q[k].map((v, i) => v + add[k][i]) : k === "flutter" ? Math.max(q[k], add[k]) : q[k] + add[k];
+	}
+	function idleFrames(m, fidgets = []) {
+		const n1 = Math.max(4, Math.round(m.period * m.fps)), every = Math.max(1, Math.round(m.every));
+		let breaths = fidgets.length ? every * fidgets.length : 1;
+		if ((m.sway || m.swayLean || m.jitter) && breaths % 2) breaths *= 2;
+		const n = n1 * breaths, seg = n1 * every, out = [];
+		for (let i = 0; i < n; i++) {
+			const u = i / n1, b = table$1(BREATH_T, u) * m.breath, slow = Math.sin(TAU$1 * i / (2 * n1));
+			const jit = m.jitter * (.6 * Math.sin(TAU$1 * 3 * i / n) + .4 * Math.sin(TAU$1 * 7 * i / n + 1));
+			const q = pz$2({
+				lean: m.lean + m.swayLean * slow,
+				chest: m.chest,
+				hx: m.hx + m.sway * slow + jit,
+				hy: m.hy + m.bob * b,
+				bow: m.bow,
+				hat: m.hat,
+				dim: m.dim,
+				breath: b,
+				fl: [.1 * m.legs + .45 * m.knee, .08 + m.knee],
+				bl: [-.1 * m.legs - .2 * m.knee, .04 + .7 * m.knee],
+				fa: [m.fa[0] + b * m.armBreath, m.fa[1]],
+				ba: [m.ba[0] - b * m.armBreath, m.ba[1]],
+				flutter: FLUT_T[Math.floor(u * 16 + 1e-6) % 16] * m.flutter
+			});
+			hands(q, m);
+			plant(q);
+			const fd = fidgets.length && FIDGETS[fidgets[Math.floor(i / seg) % fidgets.length]];
+			if (fd) {
+				const len = Math.min(seg, Math.max(4, Math.round(fd.dur * m.fps))), at = i % seg - (seg - len);
+				if (at >= 0) {
+					const r = fd.at(at / len);
+					if (r.f) q.fa = toward(q.fa, r.f, r.w);
+					if (r.b) q.ba = toward(q.ba, r.b, r.w);
+					addTo(q, r.add);
+				}
+			}
+			q.hx = Math.round(q.hx);
+			q.hy = Math.round(q.hy);
+			out.push(q);
+		}
+		return out;
+	}
+	function gaitFrames(m) {
+		const cycles = m.wobble ? 2 : 1, out = [];
+		const stride = Math.max(0, m.stride), lift = Math.max(0, m.lift), swing = Math.max(0, m.swing);
+		const lf = 1 - m.limp * .4, lk = 1 - m.limp * .6;
+		for (let i = 0; i < 8 * cycles; i++) {
+			const T = i / 8, ph = T % 1, slow = Math.sin(TAU$1 * T / cycles);
+			const a = TAU$1 * (ph + m.limp * .06 * Math.sin(TAU$1 * ph)), s = Math.sin(a), c = Math.cos(a), dip = .5 - .5 * Math.cos(2 * a);
+			const q = pz$2({
+				hx: Math.round(m.hx + m.wobble * 2 * slow),
+				hy: Math.round(m.hy + m.bounce * dip + m.heavy * 1.5 * dip ** 3 + m.limp * 1.5 * Math.max(0, -s)),
+				lean: m.lean + m.rock * .06 * Math.cos(2 * a) + m.wobble * .1 * slow,
+				chest: m.chest,
+				bow: m.bow,
+				hat: m.hat,
+				dim: m.dim,
+				fl: [stride * lf * s, m.knee0 + lift * lk * Math.max(0, c)],
+				bl: [-stride * s, m.knee0 + lift * Math.max(0, -c)],
+				fa: [-swing * s + m.fa0, m.faEl],
+				ba: [swing * s + m.ba0, m.baEl],
+				flutter: m.flutter * (i % 4) / 2
+			});
+			hands(q, m);
+			out.push(q);
+		}
+		return out;
+	}
+	function bake(list, extra) {
+		const m = mix(list, extra), idleFps = m.fidgets.length ? Math.max(m.idle.fps, 12) : m.idle.fps;
+		return {
+			idle: {
+				poses: idleFrames({
+					...m.idle,
+					fps: idleFps
+				}, m.fidgets),
+				fps: idleFps
+			},
+			walk: {
+				poses: gaitFrames(m.walk),
+				fps: m.walk.fps
+			},
+			run: {
+				poses: gaitFrames(m.run),
+				fps: m.run.fps
+			},
+			speed: {
+				walk: m.walk.speed,
+				run: m.run.speed
+			},
+			fidgets: m.fidgets,
+			knobs: m
+		};
+	}
+	//#endregion
+	//#region ../wt-pers/src/anims/poses.js
+	const run8 = Array.from({ length: 8 }, (_, i) => {
+		const a = i / 8 * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);
+		return pz$2({
+			lean: .32,
+			hy: Math.round(.5 - .5 * Math.cos(2 * a)),
+			fl: [.95 * s, .3 + 1.1 * Math.max(0, c)],
+			bl: [-.95 * s, .3 + 1.1 * Math.max(0, -c)],
+			fa: [-.7 * s + .3, .9],
+			ba: [.7 * s - .5, .5],
+			flutter: i % 4 / 2
+		});
+	});
+	const BREATH = [
+		0,
+		0,
+		0,
+		.15,
+		.45,
+		.75,
+		.95,
+		1,
+		1,
+		1,
+		.85,
+		.6,
+		.3,
+		.1,
+		0,
+		0
+	];
+	const FLUT = [
+		0,
+		0,
+		0,
+		0,
+		1,
+		1,
+		0,
+		0,
+		0,
+		0,
+		0,
+		1,
+		1,
+		1,
+		0,
+		0
+	];
+	const idle16 = BREATH.map((b, i) => pz$2({
+		breath: b,
+		fa: [.12 + b * .03, .18],
+		ba: [-.08 - b * .03, .12],
+		flutter: FLUT[i]
+	}));
+	const GUARD$1 = pz$2({
+		hy: 3,
+		lean: .14,
+		chest: .06,
+		fl: [.6, 1],
+		bl: [-.65, .4],
+		fa: [1.2, .55],
+		ba: [1.05, .75],
+		sword: -.85
+	});
+	const J1_WIND = pz$2({
+		hx: -1,
+		hy: 4,
+		lean: -.1,
+		chest: -.4,
+		fl: [.6, 1.05],
+		bl: [-.75, .45],
+		fa: [2.6, .6],
+		ba: [2.3, .8],
+		sword: -2.45
+	});
+	const J1_FOLLOW = pz$2({
+		hx: 2,
+		hy: 4,
+		lean: .6,
+		chest: .5,
+		fl: [1.1, 1.25],
+		bl: [-1.1, .1],
+		fa: [1, .2],
+		sword: 1.3,
+		ba: [.6, .2],
+		hat: 1
+	});
+	const J1_TAIL = [
+		[
+			.16,
+			pz$2({
+				hx: 2,
+				hy: 3,
+				lean: .45,
+				chest: .35,
+				fl: [1, 1.1],
+				bl: [-1, .1],
+				fa: [1.8, .1],
+				sword: .1,
+				ba: [1.2, .3],
+				hat: 1,
+				flutter: 1
+			}),
+			lin
+		],
+		[.22, J1_FOLLOW],
+		[.36, pz$2({
+			...J1_FOLLOW,
+			lean: .56,
+			chest: .46
+		})],
+		[.5, GUARD$1]
+	];
+	pz$2({
+		hx: 3,
+		hy: 2,
+		lean: .55,
+		fl: [1, .9],
+		bl: [-.95, .1]
+	});
+	const MOON_HOLD = pz$2({
+		hx: -1,
+		hy: 3,
+		lean: -.08,
+		chest: -.28,
+		fl: [.6, 1],
+		bl: [-.7, .45],
+		fa: [2.75, .35],
+		ba: [2.45, .55],
+		sword: -2.25
+	});
+	const MOON_DOWN = pz$2({
+		hx: 3,
+		hy: 5,
+		lean: .7,
+		chest: .55,
+		fl: [1.15, 1.3],
+		bl: [-1.15, .1],
+		fa: [.85, .15],
+		sword: 1.35,
+		ba: [.55, .2],
+		hat: 1,
+		flutter: 1
+	});
+	const STANCE_POSES = [
+		pz$2({
+			hx: -1,
+			hy: 2,
+			lean: -.06,
+			chest: .08,
+			fl: [.45, .55],
+			bl: [-.35, .45],
+			fa: [.55, .35],
+			ba: [-.35, .25],
+			bsword: 2.05
+		}),
+		pz$2({
+			hx: -1,
+			hy: 2,
+			lean: -.02,
+			chest: .12,
+			fl: [.4, .6],
+			bl: [-.35, .5],
+			fa: [.95, .7],
+			ba: [-.15, .9],
+			bsword: 1.85
+		}),
+		pz$2({
+			hx: -1,
+			hy: 3,
+			lean: .02,
+			chest: .14,
+			fl: [.5, .75],
+			bl: [-.45, .6],
+			fa: [.3, .25],
+			ba: [-.55, .1],
+			bsword: 1.95,
+			hat: 1
+		}),
+		pz$2({
+			hx: -2,
+			hy: 2,
+			lean: -.1,
+			chest: .22,
+			fl: [.5, .5],
+			bl: [-.5, .5],
+			fa: [.25, 1.3],
+			ba: [-.75, .15],
+			bsword: 1.75
+		})
+	];
+	const STANCE_BREATH = [
+		0,
+		0,
+		.3,
+		.7,
+		1,
+		1,
+		1,
+		.7,
+		.3,
+		0,
+		0,
+		0,
+		.2,
+		.5,
+		.2,
+		0
+	];
+	const POSES = {
+		...Object.fromEntries(STANCE_POSES.map((q, k) => ["ready" + k, STANCE_BREATH.map((b, i) => pz$2({
+			...q,
+			breath: b,
+			bsword: q.bsword + b * .03,
+			flutter: i === 5 || i === 13 ? 1 : 0
+		}))])),
+		ready4: Array(8).fill(null),
+		ready5: Array(8).fill(null),
+		idle: idle16,
+		idleGlitch: idle16.filter((_, i) => i % 2 === 0),
+		run: run8,
+		walk: gaitFrames(BASE.walk),
+		slide: [
+			pz$2({
+				hy: 2,
+				lean: .35,
+				fl: [.6, .9],
+				bl: [-.7, .3],
+				fa: [.6, .6],
+				ba: [-.9, .3]
+			}),
+			pz$2({
+				hy: 4,
+				lean: -.2,
+				fl: [1.1, .4],
+				bl: [.1, 1.6],
+				fa: [.7, .6],
+				ba: [-1.8, 0],
+				flutter: 1
+			}),
+			...[
+				0,
+				1,
+				2,
+				3,
+				4
+			].map((i) => pz$2({
+				hy: 5,
+				lean: -.58 + i % 2 * .03,
+				fl: [1.5, .08],
+				bl: [.38, 2.3],
+				fa: [.75, .75],
+				ba: [-2.45 + i % 2 * .1, -.2],
+				hat: -1 - (i > 1 ? 1 : 0),
+				flutter: i % 2
+			})),
+			pz$2({
+				hy: 4,
+				lean: -.45,
+				fl: [1.3, .2],
+				bl: [.3, 2],
+				fa: [.7, .7],
+				ba: [-2.2, -.1],
+				hat: -1
+			}),
+			pz$2({
+				hy: 2,
+				lean: .2,
+				fl: [.7, .8],
+				bl: [-.3, .9],
+				fa: [.5, .6],
+				ba: [-1.1, .3]
+			}),
+			pz$2({
+				hy: 1,
+				lean: .12,
+				fl: [.3, .3],
+				bl: [-.2, .4],
+				ba: [-.4, .2]
+			})
+		],
+		jump: [pz$2({
+			hy: 3,
+			lean: .3,
+			fl: [.6, 1],
+			bl: [-.4, .8]
+		}), ...[
+			0,
+			1,
+			2
+		].map(() => pz$2({
+			lean: .2,
+			fl: [1, 1.7],
+			bl: [.2, 1.9],
+			fa: [.6, .6],
+			ba: [-1.5, .2],
+			flutter: 1
+		}))],
+		fall: [
+			0,
+			1,
+			2
+		].map((i) => pz$2({
+			lean: .1,
+			fl: [.4, .4 + i * .1],
+			bl: [-.3, .5],
+			fa: [.9, .3],
+			ba: [-2, .2],
+			flutter: i % 2
+		})),
+		land: [
+			pz$2({
+				hy: 4,
+				lean: .35,
+				fl: [.8, 1.4],
+				bl: [-.5, 1]
+			}),
+			pz$2({
+				hy: 2,
+				lean: .2,
+				fl: [.4, .7],
+				bl: [-.3, .5]
+			}),
+			pz$2({ hy: 1 })
+		],
+		slash1: keyed([
+			[0, pz$2({
+				fa: HILT,
+				ba: [-.1, .6]
+			})],
+			[.09, pz$2({
+				hx: -1,
+				hy: 3,
+				lean: -.12,
+				chest: -.3,
+				fl: [.55, .9],
+				bl: [-.7, .4],
+				fa: [.3, 1.3],
+				ba: [-.05, .9]
+			})],
+			...J1_TAIL
+		], 30),
+		slash1r: keyed([
+			[0, GUARD$1],
+			[.09, J1_WIND],
+			...J1_TAIL
+		], 30),
+		slash2: keyed([
+			[0, J1_FOLLOW],
+			[.08, pz$2({
+				hx: 1,
+				hy: 5,
+				lean: .5,
+				chest: .25,
+				fl: [.8, 1.3],
+				bl: [-.8, .4],
+				fa: [.5, .3],
+				sword: 2.3,
+				ba: [.4, .5]
+			})],
+			[
+				.14,
+				pz$2({
+					hx: 2,
+					hy: 2,
+					lean: -.12,
+					chest: -.3,
+					fl: [.9, .5],
+					bl: [-.8, .2],
+					fa: [2.5, 0],
+					sword: -1.2,
+					ba: [2.1, .2],
+					hat: 1,
+					flutter: 1
+				}),
+				lin
+			],
+			[.2, pz$2({
+				hx: 2,
+				hy: 1,
+				lean: -.22,
+				chest: -.45,
+				fl: [.9, .4],
+				bl: [-.8, .2],
+				fa: [2.9, -.1],
+				sword: -1.85,
+				ba: [2.6, .1],
+				hat: 1,
+				flutter: 1
+			})],
+			[.34, pz$2({
+				hx: 2,
+				hy: 1,
+				lean: -.2,
+				chest: -.42,
+				fl: [.9, .4],
+				bl: [-.8, .2],
+				fa: [2.88, -.1],
+				sword: -1.82,
+				ba: [2.55, .1],
+				hat: 1
+			})],
+			[.5, GUARD$1]
+		], 30),
+		moonHold: [
+			0,
+			.3,
+			.7,
+			1,
+			1,
+			.7,
+			.3,
+			0
+		].map((b, i) => pz$2({
+			...MOON_HOLD,
+			breath: b,
+			sword: MOON_HOLD.sword - b * .05,
+			flutter: i === 3 || i === 4 ? 1 : 0
+		})),
+		moon: keyed([
+			[0, MOON_HOLD],
+			[
+				.05,
+				pz$2({
+					hx: 2,
+					hy: 4,
+					lean: .5,
+					chest: .4,
+					fl: [1, 1.15],
+					bl: [-1, .15],
+					fa: [1.6, .05],
+					sword: .1,
+					ba: [1.1, .2],
+					hat: 1,
+					flutter: 1
+				}),
+				lin
+			],
+			[.1, MOON_DOWN],
+			[.45, pz$2({
+				...MOON_DOWN,
+				lean: .66,
+				chest: .5
+			})],
+			[.75, GUARD$1]
+		], 30),
+		meditate: BREATH.map((b, i) => pz$2({
+			lean: .02,
+			chest: .1,
+			fl: [.06, .05],
+			bl: [-.06, .04],
+			fa: [.55, 2.15],
+			ba: [.45, 2.25],
+			bow: 1,
+			dim: 1,
+			breath: b,
+			flutter: FLUT[i]
+		})),
+		ready: [
+			0,
+			0,
+			.3,
+			.7,
+			1,
+			1,
+			1,
+			.7,
+			.3,
+			0,
+			0,
+			0,
+			.2,
+			.5,
+			.2,
+			0
+		].map((b, i) => pz$2({
+			...GUARD$1,
+			breath: b,
+			sword: GUARD$1.sword + b * .04,
+			flutter: i === 5 || i === 13 ? 1 : 0
+		})),
+		runArmed: run8.map((q) => pz$2({
+			...q,
+			lean: .4,
+			fa: [.9, .3],
+			sword: 2.55
+		})),
+		sheathe: keyed([
+			[0, GUARD$1],
+			[
+				.12,
+				pz$2({
+					hy: 3,
+					lean: .2,
+					chest: .1,
+					fl: [.6, 1],
+					bl: [-.65, .4],
+					fa: [1.45, .05],
+					sword: 1.15,
+					ba: [-.4, .3]
+				}),
+				lin
+			],
+			[.3, pz$2({
+				hy: 3,
+				lean: .2,
+				chest: .1,
+				fl: [.6, 1],
+				bl: [-.65, .4],
+				fa: [1.42, .06],
+				sword: 1.2,
+				ba: [-.4, .3]
+			})],
+			[.45, pz$2({
+				hy: 2,
+				lean: .12,
+				fl: [.4, .7],
+				bl: [-.45, .3],
+				fa: [1.2, .45],
+				sheathing: true,
+				ba: [.45, 1.1]
+			})],
+			[.75, pz$2({
+				hy: 1,
+				lean: .08,
+				fl: [.25, .4],
+				bl: [-.3, .2],
+				fa: [.6, .9],
+				sheathing: true,
+				ba: [.35, 1.1]
+			})],
+			[.82, pz$2({
+				hy: 1,
+				lean: .06,
+				fl: [.2, .3],
+				bl: [-.25, .15],
+				fa: HILT,
+				ba: [.3, 1]
+			})],
+			[1, pz$2({
+				hy: 1,
+				lean: .06,
+				fl: [.2, .3],
+				bl: [-.25, .15],
+				fa: HILT,
+				ba: [.3, 1]
+			})],
+			[1.2, pz$2({ fa: [.2, .3] })]
+		], 15),
+		tele: [
+			pz$2({
+				hy: 2,
+				lean: .4,
+				fl: [.5, .9],
+				bl: [-.5, .3],
+				fa: HILT,
+				ba: [-.9, .2]
+			}),
+			pz$2({
+				hy: 3,
+				lean: .58,
+				fl: [.6, 1.1],
+				bl: [-.6, .4],
+				fa: HILT,
+				ba: [-1.2, .2],
+				flutter: 1
+			}),
+			pz$2({
+				hy: 3,
+				lean: .6,
+				fl: [.6, 1.1],
+				bl: [-.6, .4],
+				fa: HILT,
+				ba: [-1.3, .2],
+				flutter: 1
+			}),
+			pz$2({
+				hy: 3,
+				lean: .62,
+				fl: [.6, 1.1],
+				bl: [-.6, .4],
+				fa: HILT,
+				ba: [-1.3, .2]
+			}),
+			pz$2({
+				hy: 6,
+				lean: .5,
+				fl: [1.25, 1.95],
+				bl: [-.15, 2.4],
+				fa: HILT,
+				ba: [-.7, .4],
+				flutter: 1
+			}),
+			pz$2({
+				hy: 6,
+				lean: .45,
+				fl: [1.25, 1.95],
+				bl: [-.15, 2.4],
+				fa: HILT,
+				ba: [-.6, .4]
+			}),
+			pz$2({
+				hy: 3,
+				lean: .3,
+				fl: [.7, 1],
+				bl: [-.2, 1.2],
+				fa: HILT,
+				ba: [-.4, .3]
+			}),
+			pz$2({
+				hy: 1,
+				lean: .12,
+				fl: [.2, .3],
+				bl: [-.15, .3],
+				fa: [.3, .6]
+			})
+		],
+		double: [
+			pz$2({
+				hy: 2,
+				lean: .35,
+				fl: [.5, .9],
+				bl: [-.6, .3],
+				fa: HILT,
+				ba: [-.1, .7]
+			}),
+			pz$2({
+				hy: 4,
+				lean: .55,
+				fl: [.8, 1.4],
+				bl: [-.8, .5],
+				fa: HILT,
+				ba: [-.05, .8]
+			}),
+			pz$2({
+				hy: 4,
+				lean: .58,
+				fl: [.8, 1.4],
+				bl: [-.8, .5],
+				fa: HILT,
+				ba: [-.05, .8],
+				flutter: 1
+			}),
+			pz$2({
+				hy: 4,
+				lean: .6,
+				fl: [.8, 1.4],
+				bl: [-.8, .5],
+				fa: HILT,
+				ba: [-.05, .8]
+			}),
+			null,
+			pz$2({
+				hx: 5,
+				hy: 4,
+				lean: .8,
+				fl: [1.3, 1.2],
+				bl: [-1.2, .1],
+				fa: [1.95, 0],
+				sword: -.45,
+				ba: [-1.6, 0],
+				hat: 1,
+				flutter: 1
+			}),
+			pz$2({
+				hx: 5,
+				hy: 4,
+				lean: .82,
+				fl: [1.3, 1.2],
+				bl: [-1.2, .1],
+				fa: [2.25, 0],
+				sword: -.95,
+				ba: [-1.65, 0],
+				hat: 1,
+				flutter: 1
+			}),
+			pz$2({
+				hx: 5,
+				hy: 3,
+				lean: .5,
+				fl: [1.2, 1.1],
+				bl: [-1.1, .1],
+				fa: [2.75, .2],
+				sword: -1.65,
+				ba: [-1, .5],
+				hat: 1
+			}),
+			pz$2({
+				hx: 7,
+				hy: 5,
+				lean: .9,
+				fl: [1.4, 1.5],
+				bl: [-1.3, .1],
+				fa: [1.25, 0],
+				sword: 1,
+				ba: [-1.7, 0],
+				hat: 1,
+				flutter: 1
+			}),
+			...[
+				0,
+				1,
+				2,
+				3
+			].map((i) => pz$2({
+				hx: 7,
+				hy: 6,
+				lean: .95,
+				fl: [1.45, 1.7],
+				bl: [-1.35, .1],
+				fa: [.65, .15],
+				sword: 2.45,
+				ba: [-1.85, 0],
+				hat: 1,
+				flutter: i === 0 ? 1 : 0
+			})),
+			pz$2({
+				hx: 6,
+				hy: 4,
+				lean: .6,
+				fl: [1.1, 1.2],
+				bl: [-1, .2],
+				fa: [1.3, .3],
+				sword: .75,
+				ba: [-1.2, .2]
+			}),
+			pz$2({
+				hx: 4,
+				hy: 2,
+				lean: .35,
+				fl: [.7, .7],
+				bl: [-.6, .2],
+				fa: [.8, .7],
+				sheathing: true,
+				ba: [-.6, .2]
+			}),
+			pz$2({
+				hx: 2,
+				hy: 1,
+				lean: .15,
+				fl: [.3, .3],
+				bl: [-.3, .2],
+				fa: HILT,
+				ba: [-.3, .2]
+			})
+		],
+		sweep: [
+			...[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5
+			].map((i) => {
+				const k = i / 5;
+				return pz$2({
+					hy: Math.round(k * 6),
+					lean: .05 + k * .35,
+					fl: [.2 + k * 1, .2 + k * 1.75],
+					bl: [-.1 - k * .05, .1 + k * 2.3],
+					fa: i < 2 ? HILT : [.9 - k * .3, .4],
+					sword: i < 2 ? null : 1.45,
+					ba: [-.1, .2 + k * .4]
+				});
+			}),
+			...Array.from({ length: 20 }, (_, i) => pz$2({
+				hx: i > 13 ? i % 2 ? 1 : 0 : 0,
+				hy: 6,
+				lean: .4 + (i > 6 && i < 14 ? .03 : 0),
+				fl: [1.2, 1.95],
+				bl: [-.15, 2.4],
+				fa: [.6, .4],
+				sword: 1.45,
+				ba: [-.1, .6],
+				breath: [
+					0,
+					0,
+					.3,
+					.7,
+					1,
+					1,
+					.7,
+					.3
+				][i % 8],
+				flutter: i > 9 ? i % 2 : 0
+			})),
+			...[
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7
+			].map((i) => {
+				const k = i / 7;
+				return pz$2({
+					hy: Math.round(6 - k * 8),
+					lean: .3 - k * .45,
+					fl: [1.2 - k * .9, 1.9 - k * 1.7],
+					bl: [-.1 - k * .2, 2.3 - k * 2.1],
+					fa: [1.6 + k * 1.2, .1],
+					sword: -1.2 + i * 2.4,
+					ba: [-1.2 - k * 1.2, .1],
+					hat: i % 2 ? -1 : 0,
+					flutter: i % 2
+				});
+			}),
+			pz$2({
+				hy: -3,
+				lean: -.2,
+				fl: [.4, .5],
+				bl: [-.3, .6],
+				fa: [3, 0],
+				sword: -1.62,
+				ba: [2.9, .1],
+				hat: -1,
+				flutter: 1
+			}),
+			pz$2({
+				hy: -3,
+				lean: -.22,
+				fl: [.4, .5],
+				bl: [-.3, .6],
+				fa: [3.05, 0],
+				sword: -1.62,
+				ba: [2.95, .1],
+				hat: -1
+			}),
+			pz$2({
+				hx: 2,
+				hy: 3,
+				lean: .5,
+				fl: [1, 1],
+				bl: [-.9, .3],
+				fa: [1.9, 0],
+				sword: -.2,
+				ba: [1.4, .3],
+				flutter: 1
+			}),
+			...[
+				0,
+				1,
+				2,
+				3,
+				4
+			].map((i) => pz$2({
+				hx: 3,
+				hy: 6,
+				lean: .9,
+				fl: [1.35, 1.6],
+				bl: [-1.2, .15],
+				fa: [.9, .05],
+				sword: 1.35,
+				ba: [.9, .2],
+				hat: 1,
+				flutter: i === 0 ? 1 : 0
+			})),
+			pz$2({
+				hx: 2,
+				hy: 4,
+				lean: .55,
+				fl: [1, 1.2],
+				bl: [-.9, .3],
+				fa: [1.1, .3],
+				sword: 1.1,
+				ba: [-.3, .3]
+			}),
+			pz$2({
+				hx: 1,
+				hy: 2,
+				lean: .25,
+				fl: [.5, .5],
+				bl: [-.4, .3],
+				fa: [1.2, .4],
+				sword: .8,
+				ba: [-.4, .3]
+			})
+		],
+		death: [
+			pz$2({
+				hx: -1,
+				lean: -.35,
+				fa: [.9, .5],
+				ba: [-1.2, .2]
+			}),
+			pz$2({
+				hx: -2,
+				lean: -.5,
+				fl: [.4, .2],
+				bl: [-.4, .4],
+				fa: [1.1, .5],
+				ba: [-1.5, .2],
+				hat: -1
+			}),
+			pz$2({
+				hx: -3,
+				hy: 1,
+				lean: -.55,
+				fl: [.5, .3],
+				bl: [-.4, .6],
+				fa: [1, .5],
+				ba: [-1.5, .2],
+				hat: -1
+			}),
+			pz$2({
+				hx: -2,
+				hy: 4,
+				lean: .3,
+				fl: [1.1, 1.8],
+				bl: [-.1, 2.3],
+				fa: [.3, .2],
+				ba: [-.2, .2]
+			}),
+			pz$2({
+				hx: -2,
+				hy: 5,
+				lean: .45,
+				fl: [1.2, 1.9],
+				bl: [-.1, 2.4],
+				fa: [.1, .1],
+				ba: [-.1, .1]
+			}),
+			pz$2({
+				hx: -2,
+				hy: 5,
+				lean: .5,
+				fl: [1.2, 1.9],
+				bl: [-.1, 2.4],
+				fa: [.05, .1],
+				ba: [-.05, .1]
+			}),
+			...[
+				0,
+				1,
+				2,
+				3
+			].map(() => pz$2({
+				hx: 2,
+				hy: 9,
+				lean: 1.45,
+				fl: [1.2, 1],
+				bl: [1, .9],
+				fa: [1.6, .2],
+				ba: [1.3, .2]
+			}))
+		]
+	};
+	//#endregion
+	//#region ../wt-pers/src/anims/anims.js
+	const ANIMS = {
+		idle: {
+			n: 16,
+			fps: 6,
+			loop: true,
+			about: "A calm breath, about 2.7 s: the chest and shoulders rise a pixel while the hips stay planted, and the mantle barely stirs. His hands hang free and the katana stays sheathed at his hip."
+		},
+		idleGlitch: {
+			n: 8,
+			fps: 14,
+			loop: false,
+			about: "After 4 s standing still he glitches once, then back to idle."
+		},
+		run: {
+			n: 8,
+			fps: 14,
+			loop: true,
+			about: "Leaning into the run with the arms swinging and the katana sheathed at the hip. Faces left or right by the last sideways input."
+		},
+		walk: {
+			n: 8,
+			fps: 8,
+			loop: true,
+			about: "Hold V to walk: an unhurried step, 40 px/s, his front hand resting on the hilt. How he walks, stands and runs comes from his personality (the traits picked under the game)."
+		},
+		slide: {
+			n: 10,
+			fps: 20,
+			loop: false,
+			about: "Replaces wall slide: a push-off step, then he drops and glides leaning back, lead leg straight, back leg folded under, back arm raised behind for balance while the hat slips back. Momentum carries him up out of it."
+		},
+		jump: {
+			n: 4,
+			fps: 12,
+			loop: false,
+			about: "A hop off the floor with the knees tucked. You can steer in the air. His shadow and reflection stay on the ground."
+		},
+		fall: {
+			n: 3,
+			fps: 12,
+			loop: true,
+			about: "The way down from a jump, the back arm up."
+		},
+		land: {
+			n: 3,
+			fps: 16,
+			loop: false,
+			about: "Touchdown: knees soak it up, with a dust puff."
+		},
+		slash1: {
+			n: 16,
+			fps: 30,
+			loop: false,
+			about: "One fluid cut, 0.5 s: from the sheath, the hips sink and the chest turns away, then hips, chest, arms and blade drive through in that order with a lunge, into a held follow-through, and he settles into his guard stance. Press J again during the follow-through to flow straight into slash 2."
+		},
+		slash1r: {
+			n: 16,
+			fps: 30,
+			loop: false,
+			hidden: true,
+			about: ""
+		},
+		ready: {
+			n: 16,
+			fps: 8,
+			loop: true,
+			about: "Waiting with the blade out after an attack. Each time, one of six stances is picked at random: four side-on counter stances (low hang, reverse grip, tip to the floor, shoulder first) with the blade in his back hand pointing at the ground, and two opened to the camera (open, invitation). After about 2 s of calm he resheathes."
+		},
+		ready0: {
+			n: 16,
+			fps: 8,
+			loop: true,
+			hidden: true,
+			about: ""
+		},
+		ready1: {
+			n: 16,
+			fps: 8,
+			loop: true,
+			hidden: true,
+			about: ""
+		},
+		ready2: {
+			n: 16,
+			fps: 8,
+			loop: true,
+			hidden: true,
+			about: ""
+		},
+		ready3: {
+			n: 16,
+			fps: 8,
+			loop: true,
+			hidden: true,
+			about: ""
+		},
+		ready4: {
+			n: 8,
+			fps: 4,
+			loop: true,
+			hidden: true,
+			about: ""
+		},
+		ready5: {
+			n: 8,
+			fps: 4,
+			loop: true,
+			hidden: true,
+			about: ""
+		},
+		runArmed: {
+			n: 8,
+			fps: 14,
+			loop: true,
+			about: "Running with the blade out, trailing low behind him."
+		},
+		slash2: {
+			n: 16,
+			fps: 30,
+			loop: false,
+			about: "The answer cut, flowing on from slash 1's follow-through: he sinks and coils, then rises through a cut that ends with the blade overhead and the chest open, and settles back into guard."
+		},
+		sheathe: {
+			n: 19,
+			fps: 15,
+			loop: false,
+			about: "Unhurried, 1.2 s, only once he has waited in guard: a sharp flick, a beat, the blade laid across and slid home slowly, the click, a moment of stillness, then his hands let go."
+		},
+		tele: {
+			n: 8,
+			fps: 22,
+			loop: false,
+			about: "Glitch teleport: he drops into a sprinter's crouch and breaks into slices, blinks 56 px, and lands kneeling in a flurry of crackling electricity before rising. For a few seconds afterwards his body glitches at random, as if the jump is still settling. Glitch slivers hang at both ends."
+		},
+		double: {
+			n: 16,
+			fps: 24,
+			loop: false,
+			about: "Glitch double slash: a deep quick-draw crouch, vanish, then a long low lunge cut and a second cut down past his body. He freezes in the final pose, sheathes, and on the click the target bursts. That is a tap of I. Hold I instead to charge Thousand Cuts in this crouch; P (Cross Rift) plays on these frames too."
+		},
+		sweep: {
+			n: 44,
+			fps: 20,
+			loop: false,
+			about: "Storm slam: he kneels slowly and draws, then waits a full second gathering power. Chips of stone and dust lift off the floor, drift in and circle him, faster and faster, with crackles jumping between them. He rises with the blade whirling in a cyclone, the debris spiralling up with him, leaps, and brings the blade all the way down. The slam flings the debris out, cracks the floor, throws a ring of bolts and shakes the screen."
+		},
+		moonHold: {
+			n: 8,
+			fps: 10,
+			loop: true,
+			about: "Crescent Moon, the charge (hold O): he plants his feet and raises the blade high behind his head, in place. Sparks and short bolts gather onto his body, a cyan rim flickers round him and motes rise off his hat and shoulders, all growing with the charge (about 0.9 s to full)."
+		},
+		moon: {
+			n: 24,
+			fps: 30,
+			loop: false,
+			about: "Crescent Moon, the release: one huge descending cut. A giant crescent sweeps into being along its arc in about 0.15 s: white-hot core, cyan body, a flickering pale shimmer, echoes and motes trailing off it, a pale screen flash, a shockwave on the floor and its light pooled beneath. It hangs, glowing, then shatters into slivers and shards and everything under it bursts. Size and power grow with the charge. He settles into guard."
+		},
+		meditate: {
+			n: 16,
+			fps: 12,
+			loop: true,
+			about: "Mirror Meditation (N): he stands still without drawing, palms together at his chest, head bowed, eyes dimmed, breathing slowly inside a faint cyan aura. For about 1.4 s he cannot move while 3 to 5 glitching cyan mirror images step out of him, each dash to a different nearest dummy, cut it once and dissolve into slivers. Mirror hits feed Qi."
+		},
+		sitDown: {
+			n: 4,
+			fps: 8,
+			loop: false,
+			about: "Replaces wall sit: he turns his back to the camera and lowers himself to the floor."
+		},
+		standUp: {
+			n: 4,
+			fps: 12,
+			loop: false,
+			about: "Getting up from the monk sit: he rises, stands with his back to you, then turns. Plays before anything he does from sitting."
+		},
+		sit: {
+			n: 8,
+			fps: 3,
+			loop: true,
+			about: "Sitting cross-legged like a monk, back to the camera, katana laid beside him, breathing slowly. Any move gets him up."
+		},
+		death: {
+			n: 10,
+			fps: 10,
+			loop: false,
+			about: "Recoils, drops to a knee, falls forward and glitches apart. He comes back a second later."
+		}
+	};
+	//#endregion
+	//#region rig2.js
+	const PAL = {
+		K: "#0c0d11",
+		D: "#2c323b",
+		E: "#6ff3e4",
+		W: "#e9eeee",
+		S: "#7d868e",
+		s: "#2c3037",
+		G: "#3b424c",
+		H: "#2a2f37",
+		B: "#1a1d24",
+		c0: "#0f1115",
+		c1: "#14171c",
+		c2: "#1b1e25",
+		c3: "#22262e",
+		c4: "#2b2f38",
+		c5: "#30353e",
+		c6: "#3d424d"
+	};
+	const FOE_PAL = {
+		...PAL,
+		K: "#3a2e31",
+		D: "#5a4a4e",
+		E: "#ff5a4a",
+		W: "#cfd4d6",
+		s: "#3a3033"
+	};
+	const pack = (hex) => {
+		const n = parseInt(hex.slice(1), 16);
+		return (255 << 24 | (n & 255) << 16 | n & 65280 | n >> 16) >>> 0;
+	};
+	const packPal = (P) => Object.fromEntries(Object.entries(P).map(([k, v]) => [k, pack(v)]));
+	const PK = packPal(PAL);
+	packPal(FOE_PAL);
+	const TAU = Math.PI * 2;
+	const KZ = .3;
+	const KH = .05;
+	const V = {
+		add: (a, b) => [
+			a[0] + b[0],
+			a[1] + b[1],
+			a[2] + b[2]
+		],
+		sub: (a, b) => [
+			a[0] - b[0],
+			a[1] - b[1],
+			a[2] - b[2]
+		],
+		mul: (a, k) => [
+			a[0] * k,
+			a[1] * k,
+			a[2] * k
+		],
+		dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+		len: (a) => Math.hypot(a[0], a[1], a[2]),
+		norm: (a) => {
+			const l = Math.hypot(a[0], a[1], a[2]) || 1;
+			return [
+				a[0] / l,
+				a[1] / l,
+				a[2] / l
+			];
+		},
+		lerp: (a, b, k) => [
+			a[0] + (b[0] - a[0]) * k,
+			a[1] + (b[1] - a[1]) * k,
+			a[2] + (b[2] - a[2]) * k
+		],
+		cross: (a, b) => [
+			a[1] * b[2] - a[2] * b[1],
+			a[2] * b[0] - a[0] * b[2],
+			a[0] * b[1] - a[1] * b[0]
+		]
+	};
+	const UP = [
+		0,
+		1,
+		0
+	];
+	function frame(yaw, pitch = 0) {
+		const c = Math.cos(pitch), s = Math.sin(pitch), fx = Math.cos(yaw), fz = Math.sin(yaw);
+		return {
+			F: [
+				fx * c,
+				-s,
+				fz * c
+			],
+			U: [
+				fx * s,
+				c,
+				fz * s
+			],
+			R: [
+				-fz,
+				0,
+				fx
+			]
+		};
+	}
+	const loc = (fr, o, a, u, b) => [
+		o[0] + fr.F[0] * a + fr.U[0] * u + fr.R[0] * b,
+		o[1] + fr.F[1] * a + fr.U[1] * u + fr.R[1] * b,
+		o[2] + fr.F[2] * a + fr.U[2] * u + fr.R[2] * b
+	];
+	const limbDir = (fr, th, sp, s) => {
+		const c = Math.cos(th), st = Math.sin(th);
+		return [
+			fr.F[0] * st + (-UP[0] * Math.cos(sp) + fr.R[0] * s * Math.sin(sp)) * c,
+			fr.F[1] * st - Math.cos(sp) * c,
+			fr.F[2] * st + fr.R[2] * s * Math.sin(sp) * c
+		];
+	};
+	function ik2(S, T, l1, l2, pole) {
+		let d = V.sub(T, S);
+		const L = Math.min(V.len(d), l1 + l2 - .01);
+		d = V.norm(d);
+		const a = (l1 * l1 - l2 * l2 + L * L) / (2 * L), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+		let q = V.sub(pole, V.mul(d, V.dot(pole, d)));
+		q = V.norm(q);
+		return [V.add(V.add(S, V.mul(d, a)), V.mul(q, h)), V.add(S, V.mul(d, L))];
+	}
+	const REST$1 = {
+		hx: 0,
+		hy: 0,
+		lean: .04,
+		chest: 0,
+		hipYaw: 0,
+		twist: 0,
+		headYaw: 0,
+		breath: 0,
+		rl: [
+			.1,
+			.08,
+			.07,
+			.3
+		],
+		ll: [
+			-.1,
+			.04,
+			.07,
+			.3
+		],
+		ra: [
+			.12,
+			.18,
+			.1
+		],
+		la: [
+			-.08,
+			.12,
+			.1
+		],
+		rik: [
+			0,
+			0,
+			0,
+			0,
+			0
+		],
+		lik: [
+			0,
+			0,
+			0,
+			0,
+			0
+		],
+		sword: null,
+		swordYaw: 0,
+		lsword: null,
+		lswordYaw: 0,
+		sheathing: false,
+		hat: 0
+	};
+	const pz$1 = (o = {}) => {
+		const r = {
+			...REST$1,
+			...o
+		};
+		for (const k of [
+			"rl",
+			"ll",
+			"ra",
+			"la"
+		]) if (o[k]) r[k] = REST$1[k].map((v, i) => o[k][i] ?? v);
+		return r;
+	};
+	pz$1({
+		hy: 3,
+		lean: .14,
+		chest: .06,
+		twist: .15,
+		rl: [
+			.6,
+			1,
+			.1
+		],
+		ll: [
+			-.65,
+			.4,
+			.1
+		],
+		ra: [
+			1.2,
+			.55,
+			-.35
+		],
+		la: [
+			1.05,
+			.75,
+			-.6
+		],
+		sword: -.85
+	});
+	pz$1({
+		hx: -1,
+		hy: 4,
+		lean: -.1,
+		chest: -.4,
+		hipYaw: .2,
+		twist: .5,
+		headYaw: -.6,
+		rl: [.6, 1.05],
+		ll: [-.75, .45],
+		ra: [
+			2.6,
+			.6,
+			-.3
+		],
+		la: [
+			2.3,
+			.8,
+			-.5
+		],
+		sword: -2.45
+	});
+	pz$1({
+		hx: 2,
+		hy: 3,
+		lean: .45,
+		chest: .35,
+		hipYaw: -.1,
+		twist: -.25,
+		headYaw: .3,
+		rl: [1, 1.1],
+		ll: [-1, .1],
+		ra: [
+			1.8,
+			.1,
+			-.1
+		],
+		la: [
+			1.2,
+			.3,
+			-.3
+		],
+		sword: .1,
+		hat: 1
+	});
+	const FOLLOW = pz$1({
+		hx: 2,
+		hy: 4,
+		lean: .6,
+		chest: .5,
+		hipYaw: -.25,
+		twist: -.5,
+		headYaw: .7,
+		rl: [1.1, 1.25],
+		ll: [-1.1, .1],
+		ra: [
+			1,
+			.2,
+			-.15
+		],
+		la: [
+			.6,
+			.2,
+			.35
+		],
+		sword: 1.3,
+		swordYaw: -.35,
+		hat: 1
+	});
+	pz$1({
+		hx: -1,
+		hy: 2,
+		lean: -.06,
+		chest: .08,
+		hipYaw: -.15,
+		twist: -.35,
+		headYaw: .45,
+		rl: [.45, .55],
+		ll: [-.35, .45],
+		ra: [.55, .35],
+		la: [
+			-.35,
+			.25,
+			.25
+		],
+		lsword: 2.05,
+		lswordYaw: -.3
+	});
+	pz$1({
+		hy: 2,
+		lean: 0,
+		hipYaw: .9,
+		twist: .67,
+		headYaw: -1.57,
+		rl: [
+			.05,
+			.15,
+			.38,
+			.6
+		],
+		ll: [
+			.05,
+			.15,
+			.38,
+			.6
+		],
+		ra: [
+			-.1,
+			.12,
+			.3
+		],
+		la: [
+			.12,
+			.3,
+			.32
+		],
+		sword: .95,
+		swordYaw: 1.35
+	});
+	pz$1({
+		...FOLLOW,
+		lean: .56,
+		chest: .46
+	});
+	const SHW = 2.7;
+	function solve(p, yaw) {
+		const yh = yaw + p.hipYaw, yc = yh + p.twist, yd = yc + p.headYaw;
+		const Hy = frame(yh), Cy = frame(yc), Hd = frame(yd), Hh = frame(yh, p.lean), Hc = frame(yc, p.lean + p.chest);
+		const pelvis = loc(Hy, [
+			0,
+			0,
+			0
+		], p.hx, 11 - p.hy, 0), waist = loc(Hh, pelvis, 0, 4, 0);
+		const Lh = (u, v, b) => loc(Hh, pelvis, v, u, b);
+		const Lc = (u, v, b) => {
+			const q = loc(Hc, waist, v, u - 4, b);
+			if (u > 4) q[1] += p.breath * Math.min(1, (u - 4) / 3);
+			return q;
+		};
+		const J = {
+			p,
+			yaw,
+			Hy,
+			Cy,
+			Hd,
+			Hh,
+			Hc,
+			pelvis,
+			waist,
+			Lh,
+			Lc,
+			chest: Lc(7, 0, 0),
+			neck: Lc(8.2, 0, 0),
+			arm: {},
+			leg: {}
+		};
+		J.head = V.add(Lc(10, 0, 0), V.mul(Hd.F, .6));
+		if (p.bow) J.head = V.add(J.head, V.add(V.mul(Hd.F, p.bow * 1.1), [
+			0,
+			-p.bow * .7,
+			0
+		]));
+		for (const s of [1, -1]) {
+			const k = s > 0 ? "r" : "l", [th, el, sp] = p[k + "a"];
+			const sh = Lc(7, 0, s * SHW);
+			let e = V.add(sh, V.mul(limbDir(Cy, th, sp, s), 4)), h = V.add(e, V.mul(limbDir(Cy, th + el, sp, s), 4));
+			const ik = p[k + "ik"];
+			if (ik[3] > .001) {
+				const [e2, h2] = ik2(sh, ik[4] > .5 ? Lc(ik[1], ik[0], ik[2]) : Lh(ik[1], ik[0], ik[2]), 4, 4, V.add(V.add(V.mul(Cy.F, -1), V.mul(Cy.R, s * .9)), [
+					0,
+					-.4,
+					0
+				]));
+				e = V.lerp(e, e2, ik[3]);
+				h = V.lerp(h, h2, ik[3]);
+			}
+			J.arm[k] = {
+				s,
+				sh,
+				el: e,
+				hand: h,
+				col: Cy.R[2] * s < -.35 ? "D" : "K"
+			};
+			const [lt, kn, lsp, toe] = p[k + "l"];
+			const hip = Lh(0, 0, s * 1.2), knee = V.add(hip, V.mul(limbDir(Hy, lt, lsp, s), 5)), ank = V.add(knee, V.mul(limbDir(Hy, lt - kn, lsp, s), 6));
+			const fd = V.add(V.mul(Hy.F, Math.cos(toe)), V.mul(Hy.R, s * Math.sin(toe)));
+			J.leg[k] = {
+				s,
+				hip,
+				knee,
+				ank,
+				toe: V.add(ank, V.mul(fd, 2)),
+				col: Hy.R[2] * s < -.35 ? "D" : "K"
+			};
+		}
+		J.mouth = Lh(1.5, 2, -2.5);
+		J.sd = V.norm(V.add(V.add(V.mul(Hy.F, -Math.cos(.32)), [
+			0,
+			-Math.sin(.32),
+			0
+		]), V.mul(Hy.R, -.1)));
+		const sw = (a, y) => {
+			const f = V.add(V.mul(Cy.F, Math.cos(y)), V.mul(Cy.R, Math.sin(y)));
+			return V.norm(V.add(V.mul(f, Math.cos(a)), [
+				0,
+				-Math.sin(a),
+				0
+			]));
+		};
+		J.swordR = p.sword == null ? null : sw(p.sword, p.swordYaw);
+		J.swordL = p.lsword == null ? null : sw(p.lsword, p.lswordYaw);
+		J.cols = [["r", "l"].flatMap((k) => [[J.leg[k].hip, J.leg[k].knee], [J.leg[k].knee, J.leg[k].ank]])];
+		return J;
+	}
+	var Sprite = class {
+		constructor(w, h, ox, oy) {
+			Object.assign(this, {
+				w,
+				h,
+				ox,
+				oy
+			});
+			this.c = new Uint32Array(w * h);
+			this.z = new Float32Array(w * h);
+			this.canvas = document.createElement("canvas");
+			this.canvas.width = w;
+			this.canvas.height = h;
+			this.g = this.canvas.getContext("2d");
+			this.img = this.g.createImageData(w, h);
+			this.u32 = new Uint32Array(this.img.data.buffer);
+			this.pal = PK;
+		}
+		clear() {
+			this.c.fill(0);
+			this.z.fill(-1e9);
+		}
+		px(x, y, z, key) {
+			if (x < 0 || y < 0 || x >= this.w || y >= this.h) return;
+			const i = y * this.w + x;
+			if (z >= this.z[i]) {
+				this.z[i] = z;
+				this.c[i] = this.pal[key];
+			}
+		}
+		P(q) {
+			return [
+				this.ox + q[0],
+				this.oy - q[1] + q[2] * KZ,
+				q[2]
+			];
+		}
+		dot(sx, sy, z, w, key) {
+			const x0 = Math.round(sx - (w - 1) / 2), y0 = Math.round(sy - (w - 1) / 2);
+			for (let y = 0; y < w; y++) for (let x = 0; x < w; x++) this.px(x0 + x, y0 + y, z, key);
+		}
+		seg(A, B, w, key, bias = 0) {
+			const a = this.P(A), b = this.P(B), n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
+			for (let i = 0; i <= n; i++) {
+				const k = i / n;
+				this.dot(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k + bias, w, key);
+			}
+		}
+		poly(pts, z, key) {
+			let y0 = 1e9, y1 = -1e9;
+			for (const q of pts) {
+				y0 = Math.min(y0, q[1]);
+				y1 = Math.max(y1, q[1]);
+			}
+			for (let y = Math.floor(y0); y <= Math.ceil(y1); y++) {
+				const xs = [], yc = y + .5;
+				for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+					const [xi, yi] = pts[i], [xj, yj] = pts[j];
+					if (yi > yc !== yj > yc) xs.push((xj - xi) * (yc - yi) / (yj - yi) + xi);
+				}
+				xs.sort((a, b) => a - b);
+				for (let k = 0; k + 1 < xs.length; k += 2) for (let x = Math.ceil(xs[k] - .5); x + .5 < xs[k + 1]; x++) this.px(x, y, z, key);
+			}
+		}
+		flush() {
+			this.u32.set(this.c);
+			this.g.putImageData(this.img, 0, 0);
+			return this.canvas;
+		}
+	};
+	function hull(P) {
+		const p = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+		if (p.length < 3) return p;
+		const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+		for (const q of p) {
+			while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop();
+			lo.push(q);
+		}
+		for (let i = p.length - 1; i >= 0; i--) {
+			const q = p[i];
+			while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop();
+			up.push(q);
+		}
+		return lo.slice(0, -1).concat(up.slice(0, -1));
+	}
+	function ring(L, u, vf, vb, b, n = 16, jag = null) {
+		const out = [];
+		for (let i = 0; i < n; i++) {
+			const a = i / n * TAU, c = Math.cos(a), s = Math.sin(a);
+			out.push(L(u + (jag ? jag(i, a) : 0), c * (c >= 0 ? vf : -vb), s * b));
+		}
+		return out;
+	}
+	const CAM = V.norm([
+		0,
+		KZ,
+		1
+	]);
+	const SECT = [
+		[
+			0,
+			2,
+			-2,
+			2.3
+		],
+		[
+			4,
+			2.1,
+			-2.2,
+			2.2
+		],
+		[
+			7,
+			2.3,
+			-2.4,
+			2.8
+		],
+		[
+			8.2,
+			1.4,
+			-1.6,
+			1.8
+		]
+	];
+	function drawBody(S, J, st) {
+		const p = J.p, armed = st.katana;
+		if (armed) {
+			const tip = V.add(J.mouth, V.mul(J.sd, 12));
+			S.seg(J.mouth, tip, 1, "s");
+			const t = S.P(tip);
+			S.dot(t[0], t[1], t[2], 1, "S");
+		}
+		for (const k of ["r", "l"]) {
+			const L = J.leg[k];
+			S.seg(L.hip, L.knee, 2, L.col);
+			S.seg(L.knee, L.ank, 2, L.col);
+			S.seg(L.ank, L.toe, 1, L.col);
+		}
+		const zT = (J.pelvis[2] + J.neck[2]) / 2;
+		const sec = ([u, vf, vb, b], L) => ring(L, u, vf, vb, b, 12).map((q) => S.P(q));
+		S.poly(hull([...sec(SECT[0], J.Lh), ...sec(SECT[1], J.Lh)]), zT, "K");
+		S.poly(hull([
+			...sec(SECT[1], J.Lc),
+			...sec(SECT[2], J.Lc),
+			...sec(SECT[3], J.Lc)
+		]), zT, "K");
+		bandLine(S, J, "h", 2.2, 2.1, -2.1, 2.4, "D", .05);
+		if (J.Hc.F[2] > .3) for (const s of [1, -1]) S.seg(J.Lc(8.1, 2.1, s * 1.2), J.Lc(5.2, 2.2, s * .35), 1, "D", .1);
+		for (const k of ["r", "l"]) {
+			const A = J.arm[k];
+			S.seg(A.sh, A.el, 2, A.col, .1);
+			S.seg(A.el, A.hand, 1, A.col, .1);
+			const h = S.P(A.hand);
+			S.dot(h[0], h[1], h[2] + .1, 2, A.col);
+		}
+		const c = S.P(J.head), Hd = J.Hd, w = Math.max(3, Math.round(2 * (Math.abs(Hd.F[0]) * 1.9 + Math.abs(Hd.R[0]) * 2.3)));
+		const x0 = Math.floor(c[0] - w / 2) + 1, cy = Math.round(c[1]), hz = J.head[2] + 1.2;
+		for (let y = -1; y <= 1; y++) for (let x = 0; x < w; x++) S.px(x0 + x, cy + y, hz, "K");
+		J.headBox = {
+			x0,
+			w,
+			cy
+		};
+		if (!st.blink) {
+			const seen = [];
+			for (const s of [1, -1]) {
+				if (Hd.F[2] * .75 + Hd.R[2] * s * .66 <= .12) continue;
+				const e = S.P(V.add(V.add(J.head, V.mul(Hd.F, 1.8)), V.mul(Hd.R, s * 1.05)));
+				let ex = Math.min(x0 + w - 1, Math.max(x0, Math.round(e[0])));
+				if (seen.includes(ex)) ex += ex > x0 ? -1 : 1;
+				seen.push(ex);
+				S.px(ex, cy, hz + .01, "E");
+			}
+		}
+		if (st.bare) {
+			for (let x = 1; x < w - 1; x++) S.px(x0 + x, cy - 2, hz, "K");
+			const kn = S.P(V.add(V.add(J.head, V.mul(Hd.F, -1.4)), [
+				0,
+				3.2,
+				0
+			]));
+			S.dot(kn[0], kn[1], hz, 1, "K");
+			const k2 = S.P(V.add(V.add(J.head, V.mul(Hd.F, -2.3)), [
+				0,
+				3.4,
+				0
+			]));
+			S.dot(k2[0], k2[1], hz, 1, "D");
+		} else if (!st.hat) {
+			for (let x = 0; x < w; x++) S.px(x0 + x, cy - 2, hz, "K");
+			const t = S.P(V.add(V.add(J.head, V.mul(Hd.F, -2.4)), [
+				0,
+				.6,
+				0
+			]));
+			S.dot(t[0], t[1], hz, 1, "K");
+			S.dot(t[0] - Hd.F[0], t[1] + 1, hz, 1, "K");
+		}
+		if (armed) {
+			const TOP = 50;
+			const blade = (A, d) => {
+				const hand = A.hand;
+				S.seg(hand, V.sub(hand, V.mul(d, 2.5)), 1, "K", TOP);
+				S.seg(V.add(hand, d), V.add(hand, V.mul(d, 13)), 1, "W", TOP);
+				const h = S.P(hand), g = S.P(V.add(hand, V.mul(d, 1.2)));
+				S.dot(h[0], h[1], h[2] + TOP + 2, 2, A.col);
+				S.dot(g[0], g[1], g[2] + TOP + 3, 1, "S");
+			};
+			if (J.swordR) blade(J.arm.r, J.swordR);
+			if (J.swordL) blade(J.arm.l, J.swordL);
+			if (p.sheathing) S.seg(J.arm.r.hand, J.mouth, 1, "W", .3);
+			else if (!J.swordR && !J.swordL && !p.empty) {
+				const m = S.P(J.mouth);
+				S.dot(m[0], m[1], m[2] + .2, 1, "S");
+				S.seg(V.sub(J.mouth, J.sd), V.sub(J.mouth, V.mul(J.sd, 3.5)), 1, "W", .2);
+			}
+		}
+	}
+	function bandLine(S, J, f, u, vf, vb, b, key, bias, w = 1) {
+		const L = f === "h" ? J.Lh : J.Lc, fr = f === "h" ? J.Hh : J.Hc, n = 20, pts = ring(L, u, vf, vb, b, n);
+		for (let i = 0; i < n; i++) {
+			const a = i / n * TAU, a2 = (i + 1) / n * TAU;
+			const vis = (th) => fr.F[2] * Math.cos(th) + fr.R[2] * Math.sin(th) > -.05;
+			if (vis(a) && vis(a2)) S.seg(pts[i], pts[(i + 1) % n], w, key, bias);
+		}
+	}
+	function drawHat(S, J, spec) {
+		const Hd = J.Hd, t = (spec.tilt || 0) + J.p.hat * .1, ct = Math.cos(t), sn = Math.sin(t);
+		const up = V.add(V.mul(UP, ct), V.mul(Hd.F, sn)), fw = V.sub(V.mul(Hd.F, ct), V.mul(UP, sn));
+		const base = V.add(V.add(J.head, V.mul(up, spec.sit || 3)), V.mul(Hd.F, J.p.hat * .8)), hz0 = J.head[2];
+		const zBase = J.head[2] + 2.5;
+		spec.levels.forEach((Lv, li) => {
+			const c = V.add(base, V.mul(up, Lv.h)), rows = /* @__PURE__ */ new Map();
+			for (let k = 0; k < 72; k++) {
+				const a = k / 72 * TAU;
+				let r = Lv.r;
+				if (spec.notch && Lv.h <= spec.notch.top) {
+					const d = Math.abs(((a - spec.notch.at) % TAU + TAU + Math.PI) % TAU - Math.PI);
+					if (d < spec.notch.w) r -= spec.notch.depth * (1 - d / spec.notch.w);
+				}
+				const q = V.add(V.add(c, V.mul(fw, r * Math.cos(a))), V.mul(Hd.R, r * Math.sin(a)));
+				const x = S.ox + q[0], y = Math.round(S.oy - q[1] + hz0 * KZ + (q[2] - hz0) * KH);
+				const m = rows.get(y);
+				if (m) {
+					m[0] = Math.min(m[0], x);
+					m[1] = Math.max(m[1], x);
+				} else rows.set(y, [x, x]);
+			}
+			for (const [y, [a, b]] of rows) {
+				const x0 = Math.floor(a) + 1, x1 = Math.floor(b), ew = Lv.ew || 1;
+				for (let x = x0; x <= x1; x++) S.px(x, y, zBase + li * .01, x - x0 < ew || x1 - x < ew ? Lv.edge : Lv.fill);
+			}
+		});
+		if (spec.crack) {
+			const q = V.add(V.add(base, V.mul(fw, Math.cos(spec.crack) * 4)), V.mul(Hd.R, Math.sin(spec.crack) * 4));
+			if (V.dot(V.add(V.mul(fw, Math.cos(spec.crack)), V.mul(Hd.R, Math.sin(spec.crack))), [
+				0,
+				0,
+				1
+			]) > -.2) {
+				const P0 = S.P(V.add(q, V.mul(up, 1))), P1 = S.P(V.add(V.add(q, V.mul(up, 2.2)), V.mul(fw, -Math.cos(spec.crack) * 1.5)));
+				S.px(Math.round(P0[0]), Math.round(S.oy - (base[1] + up[1]) + hz0 * KZ), zBase + .2, "B");
+				S.px(Math.round(P1[0]), Math.round(S.oy - (base[1] + 2 * up[1]) + hz0 * KZ), zBase + .2, "B");
+			}
+		}
+	}
+	var Cloth = class {
+		constructor(n) {
+			this.p = new Float32Array(n * 3);
+			this.o = new Float32Array(n * 3);
+			this.r = new Float32Array(n * 3);
+			this.ok = false;
+		}
+	};
+	const frameOf = (J, f) => f === "h" ? {
+		L: J.Lh,
+		fr: J.Hh,
+		yf: J.Hy
+	} : {
+		L: J.Lc,
+		fr: J.Hc,
+		yf: J.Cy
+	};
+	function dims(part) {
+		return part.kind === "chain" ? [1, part.n] : [part.cols, part.rows];
+	}
+	function restFill(out, part, J) {
+		const { L, fr, yf } = frameOf(J, part.f), [cols, rows] = dims(part);
+		const put = (k, q) => {
+			out[k * 3] = q[0];
+			out[k * 3 + 1] = q[1];
+			out[k * 3 + 2] = q[2];
+		};
+		if (part.kind === "chain") {
+			const d = V.norm(V.add(V.add(V.mul(yf.F, part.dir[0]), V.mul(UP, part.dir[1])), V.mul(yf.R, part.dir[2]))), a = L(part.u, part.v, part.b);
+			for (let j = 0; j < rows; j++) put(j, V.add(a, V.mul(d, part.seg * j)));
+			return;
+		}
+		if (part.kind === "sheet") {
+			const d = V.norm(V.add([
+				0,
+				-1,
+				0
+			], V.mul(yf.F, -part.back)));
+			for (let i = 0; i < cols; i++) {
+				const a = L(part.u, part.v, part.b0 + (part.b1 - part.b0) * i / (cols - 1));
+				for (let j = 0; j < rows; j++) put(j * cols + i, V.add(a, V.mul(d, part.seg * j)));
+			}
+			return;
+		}
+		const R = part.ring, down = part.down === "frame" ? V.mul(fr.U, -1) : [
+			0,
+			-1,
+			0
+		];
+		for (let i = 0; i < cols; i++) {
+			const a = part.arc ? part.arc[0] + (part.arc[1] - part.arc[0]) * i / (cols - 1) : i / cols * TAU, c = Math.cos(a), s = Math.sin(a);
+			const top = L(R.u, c * (c >= 0 ? R.vf : -R.vb), s * R.b), out = V.norm(V.add(V.mul(yf.F, c), V.mul(yf.R, s)));
+			const drop = part.drop[0] * (1 + c) / 2 + part.drop[1] * (1 - c) / 2;
+			for (let j = 0; j < rows; j++) {
+				let k = j / (rows - 1);
+				if (j === rows - 1 && part.jag) k *= 1 - part.jag * (i % 2);
+				put(j * cols + i, V.add(V.add(top, V.mul(down, drop * k)), V.mul(out, (part.flare || 0) * k)));
+			}
+		}
+	}
+	function collide(q, J) {
+		const a = J.pelvis, b = J.neck, ab = V.sub(b, a), t = Math.max(0, Math.min(1, V.dot(V.sub(q, a), ab) / V.dot(ab, ab)));
+		if (t > 0 && t < 1) {
+			const c = V.add(a, V.mul(ab, t)), r = V.sub(q, c), F = t > .45 ? J.Cy.F : J.Hy.F, Rr = t > .45 ? J.Cy.R : J.Hy.R;
+			const x = V.dot(r, F), y = V.dot(r, Rr), e = (x / (x > 0 ? 2.9 : 3)) ** 2 + (y / 3.3) ** 2;
+			if (e < 1) {
+				const k = 1 / Math.sqrt(Math.max(e, 1e-4)) - 1, push = V.add(V.mul(F, x * k), V.mul(Rr, y * k));
+				q[0] += push[0];
+				q[2] += push[2];
+				q[1] += push[1];
+			}
+		}
+		for (const [A, B] of J.cols[0]) {
+			const ab2 = V.sub(B, A), t2 = Math.max(0, Math.min(1, V.dot(V.sub(q, A), ab2) / V.dot(ab2, ab2))), c = V.add(A, V.mul(ab2, t2)), r = V.sub(q, c), d = V.len(r);
+			if (d < 1.6 && d > 1e-4) {
+				const k = (1.6 - d) / d;
+				q[0] += r[0] * k;
+				q[1] += r[1] * k;
+				q[2] += r[2] * k;
+			}
+		}
+		if (q[1] < .3) q[1] = .3;
+	}
+	function clothStep(C, part, J, env, dt) {
+		const [cols, rows] = dims(part), n = cols * rows, P = C.p, O = C.o, R = C.r;
+		restFill(R, part, J);
+		if (!C.ok) {
+			P.set(R);
+			O.set(R);
+			C.ok = true;
+		}
+		const damp = .965, dt2 = dt * dt, loop = part.kind === "skirt" && !part.arc;
+		for (let k = cols; k < n; k++) {
+			const ex = (k / cols | 0) / (rows - 1), i3 = k * 3;
+			const fl = Math.sin(env.t * 7.3 + k * 1.7) * 8 * ex;
+			for (let d = 0; d < 3; d++) {
+				const v = (P[i3 + d] - O[i3 + d]) * damp;
+				O[i3 + d] = P[i3 + d];
+				const acc = d === 1 ? -150 : env.wind[d] * (.35 + .65 * ex) * (part.catch ?? 1) + (d === 0 ? fl : fl * .5);
+				P[i3 + d] += v + acc * dt2;
+			}
+		}
+		const link = (i, j, pin) => {
+			const a = i * 3, b = j * 3;
+			const rx = R[b] - R[a], ry = R[b + 1] - R[a + 1], rz = R[b + 2] - R[a + 2], rest = Math.hypot(rx, ry, rz);
+			const dx = P[b] - P[a], dy = P[b + 1] - P[a + 1], dz = P[b + 2] - P[a + 2], d = Math.hypot(dx, dy, dz) || 1e-6, k = (d - rest) / d;
+			if (pin) {
+				P[b] -= dx * k;
+				P[b + 1] -= dy * k;
+				P[b + 2] -= dz * k;
+			} else {
+				P[a] += dx * k / 2;
+				P[a + 1] += dy * k / 2;
+				P[a + 2] += dz * k / 2;
+				P[b] -= dx * k / 2;
+				P[b + 1] -= dy * k / 2;
+				P[b + 2] -= dz * k / 2;
+			}
+		};
+		for (let it = 0; it < 6; it++) {
+			for (let i = 0; i < cols * 3; i++) P[i] = R[i];
+			for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) {
+				const k = j * cols + i;
+				if (j + 1 < rows) link(k, k + cols, j === 0);
+				if (i + 1 < cols) link(k, k + 1, j === 0);
+				else if (loop) link(k, j * cols, j === 0);
+			}
+		}
+		const st = part.stiff || 0, q = [
+			0,
+			0,
+			0
+		];
+		for (let k = cols; k < n; k++) {
+			const i3 = k * 3;
+			for (let d = 0; d < 3; d++) P[i3 + d] += (R[i3 + d] - P[i3 + d]) * st;
+			q[0] = P[i3];
+			q[1] = P[i3 + 1];
+			q[2] = P[i3 + 2];
+			if (part.collide !== false) collide(q, J);
+			P[i3] = q[0];
+			P[i3 + 1] = q[1];
+			P[i3 + 2] = q[2];
+		}
+		for (let i = 0; i < cols * 3; i++) P[i] = R[i];
+	}
+	function drawCloth(S, C, part, J) {
+		const [cols, rows] = dims(part), P = C.p, pt = (k) => [
+			P[k * 3],
+			P[k * 3 + 1],
+			P[k * 3 + 2]
+		], col = part.col, bias = part.bias || 0;
+		if (part.kind === "chain") {
+			for (let j = 0; j + 1 < rows; j++) {
+				const far = j >= rows * (part.split ?? .5);
+				S.seg(pt(j), pt(j + 1), far ? part.w[1] : part.w[0], far ? col[1] : col[0], bias);
+			}
+			if (part.tassel) {
+				const e = S.P(pt(rows - 1));
+				S.dot(e[0], e[1] + 1, e[2] + bias, 1, part.tassel);
+			}
+			return;
+		}
+		const loop = part.kind === "skirt" && !part.arc, { yf } = frameOf(J, part.f), axis = part.kind === "skirt" ? J.pelvis : null;
+		for (let j = 0; j + 1 < rows; j++) for (let i = 0; i < (loop ? cols : cols - 1); i++) {
+			const i2 = (i + 1) % cols;
+			if (part.lens && (j + 1 >= part.lens[i] || j + 1 >= part.lens[i2])) continue;
+			if (part.holes && part.holes.some(([hi, hj]) => hi === i && hj === j)) continue;
+			const a = pt(j * cols + i), b = pt(j * cols + i2), c = pt((j + 1) * cols + i2), d = pt((j + 1) * cols + i);
+			const n = V.cross(V.sub(b, a), V.sub(d, a)), mid = V.mul(V.add(V.add(a, b), V.add(c, d)), .25);
+			const o = axis ? [
+				mid[0] - axis[0],
+				0,
+				mid[2] - axis[2]
+			] : V.mul(yf.F, -1);
+			const outer = V.dot(n, CAM) > 0 === V.dot(n, o) > 0;
+			const key = j + 2 >= (part.lens ? Math.min(part.lens[i], part.lens[i2]) : rows) && col.hem ? col.hem : outer ? col.edge && (i === 0 || i2 === cols - 1) && !loop ? col.edge : col.out : col.in;
+			const z = mid[2] + bias, sp = [
+				a,
+				b,
+				c,
+				d
+			].map((q) => S.P(q));
+			S.poly(sp, z, key);
+			S.seg(a, d, 1, key, bias);
+			S.seg(b, c, 1, key, bias);
+		}
+	}
+	function drawShell(S, part, J) {
+		const n = 16, rings = part.rings.map((r) => ring(frameOf(J, r.f).L, r.u, r.vf, r.vb, r.b, n)), bias = part.bias || 0, ax = J.pelvis;
+		for (let k = 0; k + 1 < rings.length; k++) for (let i = 0; i < n; i++) {
+			const i2 = (i + 1) % n, a = rings[k][i], b = rings[k][i2], c = rings[k + 1][i2], d = rings[k + 1][i];
+			if (part.gap && part.gap(i)) continue;
+			const nn = V.cross(V.sub(b, a), V.sub(d, a)), mid = V.mul(V.add(V.add(a, b), V.add(c, d)), .25);
+			const key = V.dot(nn, CAM) > 0 === V.dot(nn, [
+				mid[0] - ax[0],
+				0,
+				mid[2] - ax[2]
+			]) > 0 ? part.col[k] : part.inner || "c0";
+			S.poly([
+				a,
+				b,
+				c,
+				d
+			].map((q) => S.P(q)), mid[2] + bias, key);
+			S.seg(a, d, 1, key, bias);
+		}
+	}
+	function drawPart(S, part, J, st) {
+		if (part.kind === "shell") return drawShell(S, part, J);
+		if (part.kind === "line") return bandLine(S, J, part.f, part.u, part.vf, part.vb, part.b, part.col, part.bias || 0, part.w || 1);
+		if (part.kind === "lapel") {
+			if (J.Hc.F[2] > .25) for (const s of [1, -1]) S.seg(J.Lc(8.6, 2.3, s * 1.4), J.Lc(4.4, 2.5, s * .6), 1, part.col, part.bias);
+			return;
+		}
+		if (part.kind === "knot") {
+			const q = S.P(frameOf(J, part.f).L(part.u, part.v, part.b));
+			S.dot(q[0], q[1], q[2] + (part.bias || 0), part.size, part.col);
+			return;
+		}
+		if (part.kind === "sode") {
+			for (const k of ["r", "l"]) {
+				const A = J.arm[k], al = V.norm(V.sub(A.el, A.sh)), ac = J.Cy.F, out = V.mul(J.Cy.R, A.s);
+				const q = [
+					V.add(V.add(A.sh, V.mul(out, 1.2)), V.add(V.mul(ac, 1.7), [
+						0,
+						.8,
+						0
+					])),
+					V.add(V.add(A.sh, V.mul(out, 1.2)), V.add(V.mul(ac, -1.7), [
+						0,
+						.8,
+						0
+					])),
+					V.add(V.add(A.sh, V.mul(al, 3.4)), V.add(V.mul(out, 1.3), V.mul(ac, -1.9))),
+					V.add(V.add(A.sh, V.mul(al, 3.4)), V.add(V.mul(out, 1.3), V.mul(ac, 1.9)))
+				];
+				const z = (q[0][2] + q[2][2]) / 2 + part.bias;
+				S.poly(q.map((p) => S.P(p)), z, part.col);
+				S.seg(q[2], q[3], 1, part.edge, part.bias + .05);
+			}
+			return;
+		}
+		if (part.kind === "arm") {
+			for (const k of ["r", "l"]) {
+				const A = J.arm[k], near = A.col === "K";
+				if (part.style === "wrap") {
+					for (let i = 0; i <= 10; i++) {
+						const t = .35 + .65 * i / 10, q = S.P(V.lerp(A.el, A.hand, t));
+						S.dot(q[0], q[1], q[2] + part.bias, 1, i % 2 ? part.col[0] : part.col[1]);
+					}
+					const h = S.P(A.hand);
+					S.dot(h[0], h[1], h[2] + part.bias, 2, near ? part.col[1] : part.col[0]);
+				} else {
+					S.seg(V.lerp(A.el, A.hand, .1), V.lerp(A.el, A.hand, .85), 2, near ? part.col[0] : part.col[1], part.bias);
+					const w = S.P(V.lerp(A.el, A.hand, .85));
+					S.dot(w[0], w[1], w[2] + part.bias + .05, 1, part.edge);
+					const e = S.P(V.lerp(A.el, A.hand, .1));
+					S.dot(e[0], e[1], e[2] + part.bias + .05, 2, part.edge);
+				}
+			}
+			return;
+		}
+	}
+	const ITEMS = [
+		{
+			id: "straw",
+			slot: "head",
+			name: "Wide straw hat",
+			bones: "head",
+			layer: "over the head",
+			cloth: false,
+			flavour: "The one he walked in with. Wide enough to keep the rain, and his eyes, out of sight.",
+			hat: {
+				sit: 3,
+				levels: [
+					{
+						h: -1,
+						r: 8,
+						fill: "B",
+						edge: "K"
+					},
+					{
+						h: 0,
+						r: 9,
+						fill: "B",
+						edge: "G"
+					},
+					{
+						h: 1,
+						r: 8,
+						fill: "H",
+						edge: "G",
+						ew: 2
+					},
+					{
+						h: 2,
+						r: 5,
+						fill: "H",
+						edge: "G",
+						ew: 2
+					},
+					{
+						h: 3,
+						r: 2,
+						fill: "G",
+						edge: "G"
+					}
+				]
+			}
+		},
+		{
+			id: "kasa",
+			slot: "head",
+			name: "Pilgrim's kasa",
+			bones: "head",
+			layer: "over the head",
+			cloth: false,
+			flavour: "Narrow and tall. The brim sits close, so the glint of his eyes shows.",
+			hat: {
+				sit: 2.6,
+				levels: [
+					{
+						h: -1,
+						r: 5,
+						fill: "B",
+						edge: "K"
+					},
+					{
+						h: 0,
+						r: 6,
+						fill: "B",
+						edge: "G"
+					},
+					{
+						h: 1,
+						r: 5,
+						fill: "H",
+						edge: "G"
+					},
+					{
+						h: 2,
+						r: 4,
+						fill: "H",
+						edge: "G"
+					},
+					{
+						h: 3,
+						r: 3,
+						fill: "H",
+						edge: "G"
+					},
+					{
+						h: 4,
+						r: 2,
+						fill: "H",
+						edge: "G"
+					},
+					{
+						h: 5,
+						r: 1,
+						fill: "G",
+						edge: "G"
+					}
+				]
+			}
+		},
+		{
+			id: "broken",
+			slot: "head",
+			name: "Broken hat",
+			bones: "head",
+			layer: "over the head",
+			cloth: false,
+			flavour: "Split by a blade that almost found him. The notch turns with his head. He never mended it.",
+			hat: {
+				sit: 3,
+				tilt: .05,
+				notch: {
+					at: .9,
+					w: .55,
+					depth: 4,
+					top: 1
+				},
+				crack: -.6,
+				levels: [
+					{
+						h: -1,
+						r: 8,
+						fill: "B",
+						edge: "K"
+					},
+					{
+						h: 0,
+						r: 9,
+						fill: "B",
+						edge: "G"
+					},
+					{
+						h: 1,
+						r: 8,
+						fill: "H",
+						edge: "G",
+						ew: 2
+					},
+					{
+						h: 2,
+						r: 4,
+						fill: "H",
+						edge: "G",
+						ew: 1
+					},
+					{
+						h: 3,
+						r: 1.5,
+						fill: "G",
+						edge: "G"
+					}
+				]
+			}
+		},
+		{
+			id: "mantle",
+			slot: "shoulders",
+			name: "Ragged mantle",
+			bones: "upper spine",
+			layer: "+0.5, over the chest",
+			cloth: "ragged hem",
+			flavour: "Short and heavy, frayed at the hem. It settles back onto his shoulders after every cut.",
+			parts: [{
+				kind: "shell",
+				rings: [{
+					f: "c",
+					u: 8.8,
+					vf: 1.5,
+					vb: -1.8,
+					b: 2.2
+				}, {
+					f: "c",
+					u: 7.5,
+					vf: 2.7,
+					vb: -2.9,
+					b: 3.6
+				}],
+				col: ["c5"],
+				bias: .5
+			}, {
+				kind: "skirt",
+				f: "c",
+				ring: {
+					u: 7.5,
+					vf: 2.7,
+					vb: -2.9,
+					b: 3.6
+				},
+				cols: 16,
+				rows: 2,
+				drop: [1.9, 4.3],
+				flare: .5,
+				jag: .35,
+				down: "frame",
+				stiff: .35,
+				catch: .6,
+				col: {
+					out: "c2",
+					in: "c0"
+				},
+				bias: .5
+			}]
+		},
+		{
+			id: "crow",
+			slot: "shoulders",
+			name: "Crow mantle",
+			bones: "upper spine",
+			layer: "+0.5, over the chest",
+			cloth: "feathered layers",
+			flavour: "Long feathered layers to the elbow. They lift like wings when he turns.",
+			parts: [{
+				kind: "shell",
+				rings: [{
+					f: "c",
+					u: 8.8,
+					vf: 1.5,
+					vb: -1.8,
+					b: 2.2
+				}, {
+					f: "c",
+					u: 7.5,
+					vf: 2.7,
+					vb: -2.9,
+					b: 3.6
+				}],
+				col: ["c4"],
+				bias: .5
+			}, {
+				kind: "skirt",
+				f: "c",
+				ring: {
+					u: 7.5,
+					vf: 2.7,
+					vb: -2.9,
+					b: 3.6
+				},
+				cols: 16,
+				rows: 3,
+				drop: [3.4, 5.6],
+				flare: 1.1,
+				jag: .45,
+				down: "frame",
+				stiff: .12,
+				catch: .8,
+				col: {
+					out: "c1",
+					in: "c0",
+					hem: "c0"
+				},
+				bias: .5
+			}]
+		},
+		{
+			id: "scarf",
+			slot: "neck",
+			name: "Short scarf",
+			bones: "neck",
+			layer: "+0.9, over the mantle",
+			cloth: "one short tail",
+			flavour: "A wrap and a stub of a tail. Just enough to flick when he stops.",
+			parts: [{
+				kind: "shell",
+				rings: [{
+					f: "c",
+					u: 8.1,
+					vf: 1.9,
+					vb: -2.1,
+					b: 2.4
+				}, {
+					f: "c",
+					u: 9.2,
+					vf: 1.6,
+					vb: -1.8,
+					b: 2
+				}],
+				col: ["c4"],
+				bias: .9
+			}, {
+				kind: "chain",
+				f: "c",
+				u: 8.7,
+				v: -2.1,
+				b: 1,
+				n: 5,
+				seg: 1.4,
+				dir: [
+					-.6,
+					-1,
+					.2
+				],
+				w: [2, 1],
+				col: ["c4", "c3"],
+				stiff: .02,
+				bias: .9
+			}]
+		},
+		{
+			id: "longscarf",
+			slot: "neck",
+			name: "Long scarf",
+			bones: "neck",
+			layer: "+0.9, over the mantle",
+			cloth: "two long tails",
+			flavour: "Two long tails that stream a body-length behind him when he runs.",
+			parts: [
+				{
+					kind: "shell",
+					rings: [{
+						f: "c",
+						u: 8.1,
+						vf: 1.9,
+						vb: -2.1,
+						b: 2.4
+					}, {
+						f: "c",
+						u: 9.2,
+						vf: 1.6,
+						vb: -1.8,
+						b: 2
+					}],
+					col: ["c3"],
+					bias: .9
+				},
+				{
+					kind: "chain",
+					f: "c",
+					u: 8.7,
+					v: -2.1,
+					b: .9,
+					n: 14,
+					seg: 1.5,
+					dir: [
+						-.6,
+						-1,
+						.2
+					],
+					w: [2, 1],
+					split: .6,
+					col: ["c3", "c2"],
+					catch: 1.4,
+					bias: .9
+				},
+				{
+					kind: "chain",
+					f: "c",
+					u: 8.5,
+					v: -2.1,
+					b: -.3,
+					n: 9,
+					seg: 1.4,
+					dir: [
+						-.6,
+						-1,
+						-.2
+					],
+					w: [1, 1],
+					col: ["c2", "c2"],
+					catch: 1.2,
+					bias: .85
+				}
+			]
+		},
+		{
+			id: "cape",
+			slot: "back",
+			name: "Short cape",
+			bones: "upper spine",
+			layer: "behind the back",
+			cloth: "grid 5 x 7",
+			flavour: "Shoulder to hip. It swings wide on a turn and snaps back.",
+			parts: [{
+				kind: "sheet",
+				f: "c",
+				u: 8.1,
+				v: -2.3,
+				b0: -2.5,
+				b1: 2.5,
+				cols: 5,
+				rows: 7,
+				seg: 1.5,
+				back: .3,
+				stiff: .01,
+				col: {
+					out: "c4",
+					in: "c1",
+					hem: "c2",
+					edge: "c5"
+				},
+				bias: 0
+			}]
+		},
+		{
+			id: "tattered",
+			slot: "back",
+			name: "Tattered long cape",
+			bones: "upper spine",
+			layer: "behind the back",
+			cloth: "grid 6 x 11, torn",
+			flavour: "Torn to the knee, with holes you can see the floor through.",
+			parts: [{
+				kind: "sheet",
+				f: "c",
+				u: 8.1,
+				v: -2.3,
+				b0: -2.7,
+				b1: 2.7,
+				cols: 6,
+				rows: 11,
+				seg: 1.6,
+				back: .3,
+				stiff: .005,
+				lens: [
+					11,
+					9,
+					11,
+					8,
+					10,
+					7
+				],
+				holes: [
+					[1, 5],
+					[3, 7],
+					[4, 3]
+				],
+				col: {
+					out: "c2",
+					in: "c0",
+					hem: "c1",
+					edge: "c4"
+				},
+				bias: 0
+			}]
+		},
+		{
+			id: "obi",
+			slot: "waist",
+			name: "Obi sash",
+			bones: "pelvis",
+			layer: "+0.3, over the hips",
+			cloth: "two tails",
+			flavour: "A wide sash, knotted at the back, its two tails following him.",
+			parts: [
+				{
+					kind: "shell",
+					rings: [{
+						f: "h",
+						u: 1.4,
+						vf: 2.3,
+						vb: -2.3,
+						b: 2.6
+					}, {
+						f: "h",
+						u: 3.1,
+						vf: 2.3,
+						vb: -2.4,
+						b: 2.6
+					}],
+					col: ["c3"],
+					bias: .3
+				},
+				{
+					kind: "line",
+					f: "h",
+					u: 3.1,
+					vf: 2.3,
+					vb: -2.4,
+					b: 2.6,
+					col: "c5",
+					bias: .35
+				},
+				{
+					kind: "knot",
+					f: "h",
+					u: 2.3,
+					v: -2.7,
+					b: -.6,
+					size: 2,
+					col: "c4",
+					bias: .4
+				},
+				{
+					kind: "chain",
+					f: "h",
+					u: 2,
+					v: -2.8,
+					b: -.9,
+					n: 5,
+					seg: 1.3,
+					dir: [
+						-.3,
+						-1,
+						0
+					],
+					w: [2, 1],
+					col: ["c3", "c2"],
+					bias: .35
+				},
+				{
+					kind: "chain",
+					f: "h",
+					u: 2,
+					v: -2.8,
+					b: -.2,
+					n: 4,
+					seg: 1.3,
+					dir: [
+						-.3,
+						-1,
+						.2
+					],
+					w: [1, 1],
+					col: ["c2", "c2"],
+					bias: .3
+				}
+			]
+		},
+		{
+			id: "cord",
+			slot: "waist",
+			name: "Wanderer's cord",
+			bones: "pelvis",
+			layer: "+0.3, over the hips",
+			cloth: "one tassel",
+			flavour: "A thin rope belt. One tasselled end swings at his left hip.",
+			parts: [
+				{
+					kind: "line",
+					f: "h",
+					u: 2.3,
+					vf: 2.25,
+					vb: -2.3,
+					b: 2.55,
+					col: "c5",
+					bias: .3
+				},
+				{
+					kind: "knot",
+					f: "h",
+					u: 2.2,
+					v: 1.3,
+					b: -2.2,
+					size: 2,
+					col: "c5",
+					bias: .35
+				},
+				{
+					kind: "chain",
+					f: "h",
+					u: 2,
+					v: 1.3,
+					b: -2.4,
+					n: 5,
+					seg: 1.2,
+					dir: [
+						.1,
+						-1,
+						-.1
+					],
+					w: [1, 1],
+					col: ["c5", "c4"],
+					tassel: "c4",
+					bias: .35
+				}
+			]
+		},
+		{
+			id: "plates",
+			slot: "body",
+			name: "Lamellar plates",
+			bones: "spine, upper arms, pelvis",
+			layer: "+0.2 chest, +0.8 shoulders",
+			cloth: "stiff hip plates",
+			flavour: "Light lacquered plates on the chest, shoulders and hips. Enough to turn a glancing cut.",
+			parts: [
+				{
+					kind: "shell",
+					rings: [{
+						f: "c",
+						u: 4.2,
+						vf: 2.4,
+						vb: -2.6,
+						b: 2.6
+					}, {
+						f: "c",
+						u: 7.4,
+						vf: 2.7,
+						vb: -2.8,
+						b: 3.1
+					}],
+					col: ["c3"],
+					bias: .2
+				},
+				{
+					kind: "line",
+					f: "c",
+					u: 5.3,
+					vf: 2.5,
+					vb: -2.7,
+					b: 2.8,
+					col: "c5",
+					bias: .25
+				},
+				{
+					kind: "line",
+					f: "c",
+					u: 6.4,
+					vf: 2.6,
+					vb: -2.75,
+					b: 3,
+					col: "c5",
+					bias: .25
+				},
+				{
+					kind: "skirt",
+					f: "h",
+					ring: {
+						u: 1,
+						vf: 2.5,
+						vb: -2.6,
+						b: 2.9
+					},
+					cols: 8,
+					rows: 2,
+					drop: [3.6, 3.6],
+					flare: 1,
+					down: "frame",
+					stiff: .45,
+					catch: .3,
+					col: {
+						out: "c2",
+						in: "c0",
+						hem: "c4"
+					},
+					bias: .2
+				},
+				{
+					kind: "sode",
+					col: "c3",
+					edge: "c5",
+					bias: .8
+				}
+			]
+		},
+		{
+			id: "coat",
+			slot: "body",
+			name: "Long coat",
+			bones: "spine, pelvis",
+			layer: "+0.15 over the body",
+			cloth: "open skirts",
+			flavour: "Knee-length and open at the front, so the skirts part around his legs.",
+			parts: [
+				{
+					kind: "shell",
+					rings: [
+						{
+							f: "h",
+							u: .3,
+							vf: 2.3,
+							vb: -2.3,
+							b: 2.6
+						},
+						{
+							f: "c",
+							u: 4,
+							vf: 2.3,
+							vb: -2.4,
+							b: 2.5
+						},
+						{
+							f: "c",
+							u: 7.3,
+							vf: 2.6,
+							vb: -2.7,
+							b: 3.1
+						},
+						{
+							f: "c",
+							u: 8.7,
+							vf: 1.8,
+							vb: -2,
+							b: 2.1
+						}
+					],
+					col: [
+						"c1",
+						"c1",
+						"c3"
+					],
+					bias: .15
+				},
+				{
+					kind: "lapel",
+					col: "c4",
+					bias: .3
+				},
+				{
+					kind: "skirt",
+					f: "h",
+					ring: {
+						u: .5,
+						vf: 2.6,
+						vb: -2.7,
+						b: 3
+					},
+					arc: [.5, TAU - .5],
+					cols: 12,
+					rows: 4,
+					drop: [5.4, 6],
+					flare: 1.3,
+					stiff: .05,
+					col: {
+						out: "c1",
+						in: "c0",
+						hem: "c0",
+						edge: "c3"
+					},
+					bias: .15
+				}
+			]
+		},
+		{
+			id: "wraps",
+			slot: "hands",
+			name: "Hand wraps",
+			bones: "forearms, hands",
+			layer: "+0.3 on the arm",
+			cloth: false,
+			flavour: "Cloth bound from knuckle to elbow, for the grip.",
+			parts: [{
+				kind: "arm",
+				style: "wrap",
+				col: ["c5", "c3"],
+				bias: .3
+			}]
+		},
+		{
+			id: "kote",
+			slot: "hands",
+			name: "Iron kote",
+			bones: "forearms, hands",
+			layer: "+0.3 on the arm",
+			cloth: false,
+			flavour: "Armoured sleeves, plated from the wrist to the elbow.",
+			parts: [{
+				kind: "arm",
+				style: "kote",
+				col: ["c3", "c4"],
+				edge: "c6",
+				bias: .3
+			}]
+		},
+		{
+			id: "katana",
+			slot: "weapon",
+			name: "Katana",
+			bones: "pelvis (scabbard), either hand",
+			layer: "depth of the hand",
+			cloth: false,
+			flavour: "Worn at the left hip. Drawn with either hand, sheathed unless he is fighting."
+		}
+	];
+	const BY_ID = Object.fromEntries(ITEMS.map((i) => [i.id, i]));
+	const OUTFITS = [
+		{
+			name: "Wanderer",
+			items: [
+				"straw",
+				"mantle",
+				"obi",
+				"wraps",
+				"katana"
+			]
+		},
+		{
+			name: "Ghost",
+			items: [
+				"broken",
+				"longscarf",
+				"tattered",
+				"cord",
+				"katana"
+			]
+		},
+		{
+			name: "Retainer",
+			items: [
+				"kasa",
+				"plates",
+				"cape",
+				"obi",
+				"kote",
+				"katana"
+			]
+		},
+		{
+			name: "Night coat",
+			items: [
+				"straw",
+				"crow",
+				"coat",
+				"scarf",
+				"katana"
+			]
+		}
+	];
+	function makeFigure(o) {
+		return {
+			yaw: 0,
+			outfit: /* @__PURE__ */ new Set(),
+			cloth: /* @__PURE__ */ new Map(),
+			t: 0,
+			vel: [0, 0],
+			pal: PK,
+			bare: false,
+			...o
+		};
+	}
+	function drawFigure(S, F, pose, dt) {
+		const J = solve(pose, F.yaw), wear = [...F.outfit].map((id) => BY_ID[id]).filter(Boolean);
+		const st = {
+			katana: F.outfit.has("katana") || F.bare,
+			hat: wear.find((i) => i.hat),
+			blink: F.blink || pose.dim > .5,
+			bare: F.bare
+		};
+		S.pal = F.pal;
+		S.clear();
+		drawBody(S, J, st);
+		if (st.hat && !F.bare) drawHat(S, J, st.hat.hat);
+		const env = {
+			t: F.t,
+			wind: [
+				Math.sin(F.t * .9) * 9 + Math.sin(F.t * 2.1) * 4 - F.vel[0] * 1.3,
+				0,
+				Math.sin(F.t * .7 + 1) * 3 - F.vel[1] * 1.3
+			]
+		};
+		const live = /* @__PURE__ */ new Set();
+		for (const it of wear) (it.parts || []).forEach((part, pi) => {
+			if (part.kind === "chain" || part.kind === "sheet" || part.kind === "skirt") {
+				const key = it.id + ":" + pi;
+				live.add(key);
+				let C = F.cloth.get(key);
+				const [c, r] = dims(part);
+				if (!C) {
+					C = new Cloth(c * r);
+					F.cloth.set(key, C);
+				}
+				const steps = dt > 0 ? Math.min(3, Math.max(1, Math.round(dt * 60))) : 0;
+				for (let k = 0; k < steps; k++) clothStep(C, part, J, env, 1 / 60);
+				if (!C.ok) clothStep(C, part, J, env, 0);
+				drawCloth(S, C, part, J);
+			} else drawPart(S, part, J, st);
+		});
+		for (const k of F.cloth.keys()) if (!live.has(k)) F.cloth.delete(k);
+		return J;
+	}
+	function floorTile(W, H, seed) {
+		const c = document.createElement("canvas");
+		c.width = W;
+		c.height = H;
+		const g = c.getContext("2d");
+		let r = seed;
+		const rnd = () => (r = r * 16807 % 2147483647) / 2147483647;
+		g.fillStyle = "#474c4a";
+		g.fillRect(0, 0, W, H);
+		for (let i = 0; i < W * H / 40; i++) {
+			g.fillStyle = rnd() < .5 ? "#434846" : "#4b504e";
+			g.fillRect(rnd() * W | 0, rnd() * H | 0, 2, 1);
+		}
+		return c;
+	}
+	//#endregion
+	//#region rigv1.js
+	const RC1 = {
+		K: "#0c0d11",
+		D: "#2c323b",
+		M: "#1b1e25",
+		m: "#30353e",
+		H: "#2a2f37",
+		G: "#3b424c",
+		B: "#1a1d24",
+		E: "#6ff3e4",
+		W: "#e9eeee",
+		S: "#7d868e",
+		s: "#2c3037"
+	};
+	const HAT_SIDE = [
+		"........GGGG........",
+		".....GGHHHHHHGG.....",
+		"..GGHHHHHHHHHHHHGG..",
+		".GBBBBBBBBBBBBBBBBG.",
+		"..KBBBBBBBBBBBBBBK.."
+	];
+	function rigV1(g, p) {
+		const OX = 24, fx = 0;
+		const put = (x, y, c) => {
+			g.fillStyle = RC1[c];
+			g.fillRect(fx + Math.round(x), Math.round(y), 1, 1);
+		};
+		const blob = (x, y, w, c) => {
+			g.fillStyle = RC1[c];
+			g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w);
+		};
+		const seg = (a, b, w, c) => {
+			const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
+			for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c);
+		};
+		const poly = (pts, c) => {
+			const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
+			for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++) for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+				let inside = false;
+				for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+					const [xi, yi] = pts[i], [xj, yj] = pts[j];
+					if (yi > y + .5 !== yj > y + .5 && x + .5 < (xj - xi) * (y + .5 - yi) / (yj - yi) + xi) inside = !inside;
+				}
+				if (inside) put(x, y, c);
+			}
+		};
+		const hip = [OX + p.hx, 29 + p.hy], up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
+		const up2 = [Math.sin(p.lean + p.chest), -Math.cos(p.lean + p.chest)], fw2 = [Math.cos(p.lean + p.chest), Math.sin(p.lean + p.chest)];
+		const L = (u, v) => {
+			const b = u > 4 ? p.breath * Math.min(1, (u - 4) / 3) : 0;
+			if (u <= 4) return [hip[0] + up[0] * u + fw[0] * v, hip[1] + up[1] * u + fw[1] * v];
+			const w = [hip[0] + up[0] * 4, hip[1] + up[1] * 4];
+			return [w[0] + up2[0] * (u - 4) + fw2[0] * v, w[1] + up2[1] * (u - 4) + fw2[1] * v - b];
+		};
+		const dir = (a) => [Math.sin(a), Math.cos(a)], add = (a, d, k) => [a[0] + d[0] * k, a[1] + d[1] * k];
+		const leg = ([th, kn], c, off) => {
+			const h = L(0, off), k = add(h, dir(th), 5), f = add(k, dir(th - kn), 6);
+			seg(h, k, 2, c);
+			seg(k, f, 2, c);
+			seg(f, [f[0] + 2, f[1]], 1, c);
+		};
+		const arm = ([sh, el], c) => {
+			const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
+			seg(s, e, 2, c);
+			seg(e, h, 1, c);
+			blob(h[0], h[1], 2, c);
+			return h;
+		};
+		const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
+		seg(mouth, add(mouth, sd, 12), 1, "s");
+		put(...add(mouth, sd, 12), "S");
+		const bh = arm(p.ba, "D");
+		if (p.bsword != null) {
+			const d = [Math.cos(p.bsword), Math.sin(p.bsword)];
+			seg(bh, add(bh, d, -2.5), 1, "K");
+			put(...bh, "S");
+			seg(add(bh, d, 1), add(bh, d, 13), 1, "W");
+		}
+		leg(p.bl, "D", -.5);
+		poly([
+			L(0, -2),
+			L(0, 2),
+			L(7, 2.3),
+			L(8.2, 1.4),
+			L(8.2, -1.6),
+			L(7, -2.4)
+		], "K");
+		for (let v = -2; v <= 2; v++) put(...L(2.2, v), "D");
+		leg(p.fl, "K", .5);
+		const hc = L(10, .6);
+		for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, "K");
+		put(hc[0] + 1.5, hc[1], "E");
+		const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
+		HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => {
+			if (ch !== ".") put(hx0 + x, hy0 + y, ch);
+		}));
+		const f = p.flutter;
+		poly([
+			L(8.4, 2.3),
+			L(8.9, -1.6),
+			L(6.8, -2.9),
+			L(3, -3 - f * .7),
+			L(3.6, -1.2),
+			L(5.4, 2.7)
+		], "M");
+		seg(L(8.4, 2.1), L(8.8, -1.4), 1, "m");
+		if (f > .5) put(...L(2.6, -3.4), "M");
+		const hand = arm(p.fa, "K");
+		if (p.sword === null && !p.sheathing && p.bsword == null) {
+			put(...mouth, "S");
+			seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, "W");
+		} else if (p.sword !== null) {
+			const d = [Math.cos(p.sword), Math.sin(p.sword)];
+			seg(hand, add(hand, d, -2.5), 1, "K");
+			put(...hand, "S");
+			seg(add(hand, d, 1), add(hand, d, 13), 1, "W");
+		}
+	}
+	//#endregion
+	//#region port.js
+	const REST = {
+		hx: 0,
+		hy: 0,
+		lean: .04,
+		chest: 0,
+		hipYaw: 0,
+		twist: 0,
+		headYaw: 0,
+		breath: 0,
+		rl: [
+			.1,
+			.08,
+			.07,
+			.3
+		],
+		ll: [
+			-.1,
+			.04,
+			.07,
+			.3
+		],
+		ra: [
+			.12,
+			.18,
+			.1
+		],
+		la: [
+			-.08,
+			.12,
+			.1
+		],
+		rik: [
+			0,
+			0,
+			0,
+			0,
+			0
+		],
+		lik: [
+			0,
+			0,
+			0,
+			0,
+			0
+		],
+		sword: null,
+		swordYaw: 0,
+		lsword: null,
+		lswordYaw: 0,
+		sheathing: false,
+		hat: 0
+	};
+	const HILT_IK = [
+		4.3,
+		2.3,
+		-1.9,
+		1,
+		0
+	];
+	const pz = (o) => ({
+		...REST,
+		...o
+	});
+	const HILT1 = [.42, 1];
+	const DIRS = [
+		["E", 0],
+		["SE", 45],
+		["S", 90],
+		["SW", 135],
+		["W", 180],
+		["NW", 225],
+		["N", 270],
+		["NE", 315]
+	].map(([id, deg]) => ({
+		id,
+		yaw: deg * Math.PI / 180
+	}));
+	const cl = (v, a, b) => Math.max(a, Math.min(b, v));
+	const near = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) < .12;
+	function port(p, over = {}) {
+		if (!p) return null;
+		const onHilt = p.sword == null && !p.sheathing && near(p.fa, HILT1);
+		const open = (kn) => .07 + .14 * Math.max(0, kn - 1.2);
+		const q = pz({
+			hx: p.hx,
+			hy: p.hy,
+			lean: p.lean,
+			chest: p.chest,
+			breath: p.breath,
+			hat: p.hat || 0,
+			rl: [
+				p.fl[0],
+				p.fl[1],
+				open(p.fl[1]),
+				.3
+			],
+			ll: [
+				p.bl[0],
+				p.bl[1],
+				open(p.bl[1]),
+				.3
+			],
+			ra: [
+				p.fa[0],
+				p.fa[1],
+				.1
+			],
+			la: [
+				p.ba[0],
+				p.ba[1],
+				.1
+			],
+			sword: p.sword,
+			lsword: p.bsword,
+			sheathing: !!p.sheathing,
+			rik: onHilt ? HILT_IK : [
+				0,
+				0,
+				0,
+				0,
+				0
+			]
+		});
+		q.bow = p.bow || 0;
+		q.dim = p.dim || 0;
+		q.empty = !!p.empty;
+		q.hipYaw = cl(-.1 * (p.fl[0] - p.bl[0]), -.25, .25);
+		if (p.sword != null) q.twist = cl(-.14 * (p.fa[0] - .6), -.45, .45);
+		else if (p.bsword != null) q.twist = cl(.14 * (p.ba[0] - .6), -.45, .45);
+		q.headYaw = -.75 * (q.hipYaw + q.twist);
+		return Object.assign(q, over);
+	}
+	//#endregion
+	//#region page.js
+	const LABEL = {
+		idle: "Idle",
+		idleGlitch: "Idle glitch",
+		run: "Run",
+		walk: "Walk",
+		slide: "Slide",
+		jump: "Jump",
+		fall: "Fall",
+		land: "Land",
+		slash1: "J slash",
+		slash1r: "J slash, rising",
+		ready: "Ready",
+		ready0: "Counter stance 1",
+		ready1: "Counter stance 2",
+		ready2: "Counter stance 3",
+		ready3: "Counter stance 4",
+		runArmed: "Run, blade out",
+		slash2: "Second cut",
+		sheathe: "Resheathe",
+		tele: "Glitch teleport",
+		double: "Double slash",
+		sweep: "Storm slam",
+		moonHold: "Crescent hold",
+		moon: "Crescent release",
+		meditate: "Meditate",
+		death: "Death"
+	};
+	const MOVES = [];
+	for (const id in POSES) {
+		const fr = POSES[id];
+		if (!ANIMS[id] || !Array.isArray(fr) || !fr.some(Boolean) || !LABEL[id]) continue;
+		MOVES.push({
+			id,
+			name: LABEL[id],
+			frames: fr.filter(Boolean),
+			fps: ANIMS[id].fps,
+			loop: ANIMS[id].loop,
+			group: "game"
+		});
+	}
+	for (const [trait, mode, name] of [
+		[
+			"proud",
+			"walk",
+			"Proud, walking"
+		],
+		[
+			"weary",
+			"walk",
+			"Weary, walking"
+		],
+		[
+			"coiled",
+			"idle",
+			"Coiled, standing"
+		],
+		[
+			"humble",
+			"idle",
+			"Humble, standing"
+		],
+		[
+			"lazy",
+			"idle",
+			"Lazy, standing"
+		]
+	]) {
+		const b = bake([[trait, 1]]);
+		MOVES.push({
+			id: trait + "-" + mode,
+			name,
+			frames: b[mode].poses,
+			fps: b[mode].fps,
+			loop: true,
+			group: "personality"
+		});
+	}
+	const W = 72;
+	const H = 64;
+	const SPR = new Sprite(W, H, 36, 52);
+	const OUTFIT = OUTFITS[0].items;
+	const copy = (src) => {
+		const c = document.createElement("canvas");
+		c.width = src.width;
+		c.height = src.height;
+		c.getContext("2d").drawImage(src, 0, 0);
+		return c;
+	};
+	const cache = /* @__PURE__ */ new Map();
+	function strip(m, d) {
+		const key = m.id + "|" + d;
+		if (cache.has(key)) return cache.get(key);
+		const F = makeFigure({
+			yaw: DIRS[d].yaw,
+			outfit: new Set(OUTFIT)
+		}), out = [], dt = 1 / m.fps;
+		for (let pass = 0; pass < 2; pass++) m.frames.forEach((p, i) => {
+			F.t += dt;
+			const img = (drawFigure(SPR, F, port(p), dt), SPR.flush());
+			if (pass) out.push(copy(img));
+		});
+		cache.set(key, out);
+		return out;
+	}
+	const OLD = /* @__PURE__ */ new Map();
+	function oldStrip(m) {
+		if (OLD.has(m.id)) return OLD.get(m.id);
+		const out = m.frames.map((p) => {
+			const c = document.createElement("canvas");
+			c.width = 48;
+			c.height = 48;
+			rigV1(c.getContext("2d"), p);
+			return c;
+		});
+		OLD.set(m.id, out);
+		return out;
+	}
+	const FLOOR = floorTile(W, H, 23);
+	function cell(g, img, old) {
+		g.drawImage(FLOOR, 0, 0);
+		const x = old ? 12 : 0, y = old ? 12 : 0;
+		g.save();
+		g.globalAlpha = .17;
+		g.translate(0, 105);
+		g.scale(1, -1);
+		g.drawImage(img, x, y);
+		g.restore();
+		g.fillStyle = "rgba(18,22,22,.4)";
+		g.fillRect(31, 53, 10, 1);
+		g.drawImage(img, x, y);
+	}
+	const mk = (cls, label) => {
+		const c = document.createElement("canvas");
+		c.width = W;
+		c.height = H;
+		c.className = cls;
+		c.setAttribute("role", "img");
+		c.setAttribute("aria-label", label);
+		return c;
+	};
+	const COMPASS = [
+		"NW",
+		"N",
+		"NE",
+		"W",
+		"old",
+		"E",
+		"SW",
+		"S",
+		"SE"
+	];
+	const compass = document.getElementById("compass");
+	const picker = document.getElementById("picker");
+	const cells = {};
+	COMPASS.forEach((id) => {
+		const f = document.createElement("figure");
+		const c = mk("big", id === "old" ? "the old side view" : "facing " + id);
+		const cap = document.createElement("figcaption");
+		cap.textContent = id === "old" ? "old rig" : id;
+		f.append(c, cap);
+		compass.append(f);
+		cells[id] = c;
+	});
+	let cur = MOVES[0];
+	function choose(m) {
+		cur = m;
+		for (const b of picker.querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.id === m.id));
+		T0 = performance.now();
+	}
+	for (const grp of ["game", "personality"]) {
+		const h = document.createElement("div");
+		h.className = "grp";
+		h.textContent = grp === "game" ? "In the game" : "With a personality";
+		picker.append(h);
+		for (const m of MOVES.filter((q) => q.group === grp)) {
+			const b = document.createElement("button");
+			b.type = "button";
+			b.textContent = m.name;
+			b.dataset.id = m.id;
+			b.onclick = () => choose(m);
+			picker.append(b);
+		}
+	}
+	const table = document.getElementById("every");
+	const rows = [];
+	for (const m of MOVES) {
+		const tr = document.createElement("div");
+		tr.className = "row";
+		const lab = document.createElement("div");
+		lab.className = "lab";
+		lab.textContent = m.name;
+		tr.append(lab);
+		const cs = [mk("small", m.name + ", old side view"), ...DIRS.map((d) => mk("small", m.name + ", facing " + d.id))];
+		tr.append(...cs);
+		table.append(tr);
+		rows.push({
+			m,
+			cs,
+			seen: false,
+			done: 0
+		});
+	}
+	const io = new IntersectionObserver((es) => es.forEach((e) => {
+		const r = rows.find((q) => q.cs[0].parentNode === e.target);
+		if (r) r.seen = e.isIntersecting;
+	}), { rootMargin: "200px" });
+	rows.forEach((r) => io.observe(r.cs[0].parentNode));
+	let T0 = performance.now();
+	let paused = false;
+	document.getElementById("pause").addEventListener("change", (e) => paused = e.target.checked);
+	const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+	let tStill = 0;
+	function frameIndex(m, t) {
+		const n = m.frames.length, i = Math.floor(t * m.fps);
+		return m.loop ? i % n : Math.min(n - 1, i % (n + Math.round(m.fps * .6)));
+	}
+	function tick(now) {
+		const t = paused || still ? tStill : Math.max(0, (now - T0) / 1e3);
+		const i = frameIndex(cur, t);
+		cell(cells.old.getContext("2d"), oldStrip(cur)[i], true);
+		DIRS.forEach((d, k) => cell(cells[d.id].getContext("2d"), strip(cur, k)[i], false));
+		let budget = 3;
+		for (const r of rows) {
+			if (!r.seen) continue;
+			while (r.done < DIRS.length && budget > 0) {
+				strip(r.m, r.done++);
+				budget--;
+			}
+			const j = frameIndex(r.m, t);
+			cell(r.cs[0].getContext("2d"), oldStrip(r.m)[j], true);
+			for (let k = 0; k < r.done; k++) cell(r.cs[k + 1].getContext("2d"), strip(r.m, k)[j], false);
+		}
+		requestAnimationFrame(tick);
+	}
+	choose(MOVES.find((m) => m.id === "slash1") || MOVES[0]);
+	requestAnimationFrame(tick);
+	window.__port = {
+		MOVES,
+		strip,
+		port,
+		DIRS
+	};
+	//#endregion
+})();
+</script>
