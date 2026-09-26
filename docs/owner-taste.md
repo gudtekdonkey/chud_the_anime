@@ -24,3 +24,15 @@
 - When a blow is heavy (a huge swing, a blunt strike, an energy burst), the enemy absorbs it and is thrown: off his feet, flung back with height, often coming apart mid-air with the pieces tumbling and skidding to rest.
 - Suits: storm slam (U), Crescent Moon (O), Cross Rift's detonation (P), Thousand Cuts' final cut, and the Whirlwind, Pommel, Overload, Kick Launch, Scabbard and Fault Line executions. The quiet, precise executions stay quiet.
 - The counter stance (blade in the back hand, drawn over the body) is approved.
+
+## The movement bar (owner, round two of skills)
+- Iai Focus's stance is the benchmark: "apply this same level of excruciating attention to our movements in every other skill or execution." Hand finds the hilt, the other hand closes on the scabbard, the rear foot slides back along the floor with a scrape of dust, the body sinks and hunches over the sheath, the hat dips. Every limb has a reason and the pose builds in readable stages.
+- Hold every skill and execution to this: real samurai body mechanics, weight shifting, feet that slide or plant, hands that grip real things.
+
+## Qi effects (owner)
+- No effects on the floor for Qi skills: no ripples, no rings rolling out, no sigils. (Storm breath's shockwave is the exception; he loves it.)
+- No droplets or particles rising off the top of his head.
+- Power I is quiet. Each power tier adds far more particles plus a new layer (matter lifting off the floor at II, ribbons at III).
+- He loved the Qi shield: a dome of light round him that grows with power, huge at III with particles floating round it.
+- He loved Storm breath ("a wicked skill"), Time Slice, Iai Focus, and Lingering Blades as they are.
+- Harvest (EXP from the fallen) is its own button, not the heal.
