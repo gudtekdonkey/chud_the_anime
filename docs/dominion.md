@@ -88,6 +88,15 @@ A settlement is any zone with homes in it. It grows by tiers, from what is built
 - **Land:** claiming, the recipes that build, the auto-managing steward.
 - **The world:** the ladder maps onto the grid (zones, regions as provinces), and the map shows domains, provinces and realms as they change.
 
+## The voids (owner, 2026-09-26; for the dominion lane to build)
+
+The world has three rings (`src/sim/wild.js`, docs/foundations.md → "The wild"): the settled lands, the bandits' edge, and the voids where the mystical creatures live. What it means for land and armies:
+
+- **Nobody settles a void.** Worldgen places no settlement in one (zone `void: true`), and a plot inside a void cannot be claimed, built on or given a settlement until the ronin has the strength to hold it. Proposed: a void zone can be claimed only from level 30 (his first power spike), and only next to land he already holds.
+- **The edge is where land is cheap and unsafe.** Claims on the edge are open to anyone, but bandit raids there run higher (the travel lane's ambush weight is ×2.5 on the edge).
+- **Armies and settlers go round the voids.** Roads already do (worldgen makes a void 8× dearer to build a road through), and outlaw bands never step into one. An army that marches through a void loses men to the creatures; one camped at its edge loses a few at night.
+- **Pushing a void back** is open for the owner: whether a strong enough lord, once he has slain what lives there, can turn part of a void into wild land that people will settle.
+
 ## Defaults until the owner says otherwise (Claude, 2026-09-26)
 The owner approved the design without answering these, so the lane starts from:
 1. English names with the Japanese in brackets: plot, estate, zone (*mura*), domain (*han*), province (*kuni*), realm.

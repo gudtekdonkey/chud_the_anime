@@ -100,11 +100,11 @@ function roadNear(L, x, y, r) {
   for (let t = 0; t < 12; t++) { const z = zoneAt(L, x + r.int(-ROAM, ROAM), y + r.int(-ROAM, ROAM)); if (z && z.road) return [z.x, z.y]; }
   return [x, y];
 }
-// one zone toward the goal: roads first (they are faster and where the travellers are), open land if no road leads there, never the sea
+// one zone toward the goal: roads first (they are faster and where the travellers are), open land if no road leads there, never the sea or a void
 function step(L, b) {
   const [x, y] = b.at, [gx, gy] = b.goal; if (x === gx && y === gy) return;
   let best = null, bd = Math.abs(gx - x) + Math.abs(gy - y) + (zoneAt(L, x, y).road ? 0 : .5);
-  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = zoneAt(L, x + dx, y + dy); if (!n || n.kind === 'sea') continue;
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const n = zoneAt(L, x + dx, y + dy); if (!n || n.kind === 'sea' || n.void) continue;   // outlaws keep out of the voids too
     const d = Math.abs(gx - n.x) + Math.abs(gy - n.y) + (n.road ? 0 : .5); if (d < bd) { bd = d; best = n; } }
   if (best) b.at = [best.x, best.y];
 }

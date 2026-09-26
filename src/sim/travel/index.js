@@ -5,6 +5,7 @@ import { stormsDay, stormEffects } from './storms.js';
 import { TRAVEL, context, chanceAt, pickType } from './encounters.js';
 import { ROAD_SCENES } from './scenes-road.js';
 import { MEET_SCENES } from './scenes-meet.js';
+import { BEAST_SCENES, beastChance, beastType } from './beasts.js';
 import { cultName } from './kit.js';
 
 // ---- Travel: the roads, the weather, the glitch storms, and what he meets on the way (docs/sim-travel.md) ----
@@ -15,8 +16,9 @@ import { cultName } from './kit.js';
 export * from './roads.js';
 export * from './storms.js';
 export * from './encounters.js';
+export * from './beasts.js';
 
-export const SCENES = { ...ROAD_SCENES, ...MEET_SCENES,
+export const SCENES = { ...ROAD_SCENES, ...MEET_SCENES, ...BEAST_SCENES,
   // an escort that reached its town: the promised pay
   arrived: { make: (L, c) => { const e = L.sys.travel.escort;
     return { title: 'Arrived', who: [], data: { pay: e.pay, who: e.who }, choices: [{ id: 'ok', label: 'Take the pay' }], text: `${e.name} counts out ${e.pay} mon at the gate of ${e.toName}, and means every one of them.` }; },
@@ -25,7 +27,7 @@ export const SCENES = { ...ROAD_SCENES, ...MEET_SCENES,
 
 system({ id: 'travel', order: 60,
   init(L) { const st = L.sys.travel;
-    Object.assign(st, { v: 1, storms: [], past: [], dark: {}, residue: {}, heat: {}, scene: null, escort: null, safeUntil: 0, quiet: 0, lastK: 0, steps: 0, met: {} });
+    Object.assign(st, { v: 1, beasts: { faced: 0, ko: 0, slain: {} }, storms: [], past: [], dark: {}, residue: {}, heat: {}, scene: null, escort: null, safeUntil: 0, quiet: 0, lastK: 0, steps: 0, met: {} });
     initRoads(L, st); },
   onDay(L, cal, r) { const st = L.sys.travel;
     roadsDay(L, st, cal, r); stormsDay(L, st, cal, r);
@@ -41,15 +43,19 @@ on('travel.bountyPaid', (e, L) => { delete L.sys.travel.heat[e.culture]; });
 
 // ---- live ----
 // he has just crossed into zone (x, y): returns a scene he is now in, or null. The scene stays in L.sys.travel.scene until chosen.
-export function enterZone(L, x, y) {
+// opts.level: his character level (the live game's; kept on his record as `level`), which decides what the creatures of the voids do
+export function enterZone(L, x, y, opts = {}) {
   const st = L.sys.travel; if (st.scene) return st.scene;
+  st.beasts ||= { faced: 0, ko: 0, slain: {} }; if (opts.level) L.actors[L.player].level = opts.level;
   const r = rngFor(L.seed, 'travel', L.hour, x, y, st.steps++), c = context(L, x, y), k = c.storm.k;
   let type = null;
   if (st.escort && st.escort.to[0] === x && st.escort.to[1] === y) type = 'arrived';
   // a storm: stepping into it is always felt; each further zone inside it can take time from him
   else if (k > TRAVEL.stormFelt) type = st.lastK <= TRAVEL.stormFelt ? 'storm' : r.chance(stormEffects(k).lostTime) ? 'slip' : null;
   st.lastK = k;
-  if (!type) { if (st.quiet > 0) { st.quiet--; return null; } if (!r.chance(chanceAt(c))) return null; type = pickType(c, r); }
+  if (!type) { if (st.quiet > 0) { st.quiet--; return null; }
+    if (r.chance(beastChance(c))) type = beastType(L, c, r);          // the voids: a creature, or its sign
+    else if (!r.chance(chanceAt(c))) return null; else type = pickType(c, r); }
   return type ? open(L, type, c, r) : null;
 }
 // put a scene on his road now, whatever the odds (a quest, a world event, a test): returns it, or the scene he is already in
@@ -90,6 +96,7 @@ function apply(L, sc, out) {
   for (const d of out.deeds || []) emit(L, 'travel.deed', { ...at, witnesses: [], standing: {}, ...d });
   for (const l of out.loot || []) emit(L, 'travel.loot', { ...at, ...l });
   if (out.hurt) emit(L, 'travel.hurt', { ...at, amount: out.hurt });
+  if (out.move) p.at = out.move;   // he ran, or woke, somewhere else: the live game puts him there
   for (const [t, d] of out.events || []) emit(L, t, { ...at, ...d });
 }
 function dead(L, id, by, zone) {
