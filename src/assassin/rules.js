@@ -57,6 +57,9 @@ export const RULES = {
   'Sky Split': { ...std, ending: true, ...L },               // the world closes on the last man
   'Derez': { ...std, ...L },                                  // was rare: he deletes a man
   'Rewind': { ...std, foes: ['elite', 'boss'], ...L },        // was rare: time runs backwards; too much for a minion
+  // batch 5 (prototypes/34): clean swordwork, all common, in review
+  'Draw Cut': { ...std, ...C }, 'Kesa': { ...std, ...C }, 'Rising Kesa': { ...std, ...C }, 'Heart Thrust': { ...std, ...C }, 'Boot': { ...std, ...C },
+  'Knee, then Neck': { ...std, ...C }, 'Hamstring': { ...std, ...C }, 'Trip': { ...std, ...C }, 'Side Step': { ...std, ...C }, 'Under the Swing': { ...std, ...C },
 };
 const need = name => ({ weapons: SHEATHED, hat: null, ending: false, opening: false, foes: ['minion', 'elite', 'boss'], rarity: 'common', level: 1, ...RULES[name] });
 export const RARITY = { common: { w: 10, power: 1 }, uncommon: { w: 5, power: 1 }, rare: { w: 2, power: 2 }, legendary: { w: .6, power: 3 } };
