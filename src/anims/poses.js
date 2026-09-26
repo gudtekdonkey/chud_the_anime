@@ -1,4 +1,6 @@
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
+import { gaitFrames } from '../traits/bake.js';
+import { BASE } from '../traits/knobs.js';
 
 // ---- Poses, one per frame ----
 const run8 = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);
@@ -35,6 +37,8 @@ export const POSES = {
   idle: idle16,
   idleGlitch: idle16.filter((_, i) => i % 2 === 0),
   run: run8,
+  // his plain walk; a personality (player/personality.js) re-bakes idle, walk and run
+  walk: gaitFrames(BASE.walk),
   // a push-off step, the drop, the long lean-back glide with the back arm up for balance, then momentum carries him up
   slide: [
     pz({ hy: 2, lean: .35, fl: [.6, .9], bl: [-.7, .3], fa: [.6, .6], ba: [-.9, .3] }),

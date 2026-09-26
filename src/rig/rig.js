@@ -43,6 +43,9 @@ export function rig(R, p) {
     seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
   const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
 
+  if (p.noUpper) {   // cut in two: only the pelvis and legs are left, and they fold on their own
+    z = Z.farLeg; leg(p.bl, 'D', -.5); z = Z.body; poly([L(0, -2), L(0, 2), L(2.6, 2.2), L(2.6, -2.2)], 'K'); z = Z.nearLeg; leg(p.fl, 'K', .5); return { hc: null };
+  }
   // far side first: scabbard, far arm, far leg
   z = Z.scab; seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
   // the back hand can carry the blade too, for the counter stances
@@ -52,10 +55,15 @@ export function rig(R, p) {
   z = Z.body; poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
   z = Z.obi; for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
   z = Z.nearLeg; leg(p.fl, 'K', .5);
-  // head
-  const hc = L(10 - p.bow * .7, .6 + p.bow * 1.1);
-  z = Z.head; for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
-  z = Z.eye; put(hc[0] + 1.5, hc[1], p.dim ? 'e' : 'E');
+  // head: it lags and lolls on the neck (+ forward), carried by the chest
+  const nk = p.neck || 0, hc = L(10 - p.bow * .7 - Math.abs(nk) * 1.2, .6 + p.bow * 1.1 + nk * 2.2);
+  if (!p.noHead) {   // noHead: the head has come off and is its own piece now
+    z = Z.head; for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
+    const hf = p.headFlip ? -1 : 1;   // headFlip: the head is wrenched round to face backward
+    z = Z.eye; put(hc[0] + 1.5 * hf, hc[1], p.dim ? 'e' : 'E');
+    // bare: the samurai's bare head and topknot (the ronin's hair and hat are items)
+    z = Z.head; if (p.bare) { for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] - 2, 'K'); put(hc[0] - hf, hc[1] - 3, 'K'); put(hc[0] - 2 * hf, hc[1] - 4, 'K'); put(hc[0] - 2 * hf, hc[1] - 3, 'D'); }
+  }
   // (the hat and the mantle are clothing now: src/wardrobe/items.js)
   // the back hand's blade is drawn over the body and the sash, so it is never lost behind them
   z = Z.bblade;
@@ -63,7 +71,7 @@ export function rig(R, p) {
   // near arm and the sword
   z = Z.nearArm; const hand = arm(p.fa, 'K');
   z = Z.blade;
-  if (p.sword === null && !p.sheathing && p.bsword == null) {                    // sheathed: hilt pokes forward-up out of the scabbard
+  if (p.sword === null && !p.sheathing && p.bsword == null && !p.empty) {                    // sheathed (empty: no sword at all): hilt pokes forward-up out of the scabbard
     put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W');
   } else if (p.sheathing) {                                  // sliding home: blade runs from the hand into the scabbard mouth
     seg(hand, mouth, 1, 'W'); put(...hand, 'S'); put(...add(hand, [hand[0] - mouth[0], hand[1] - mouth[1]].map(v => v / (Math.hypot(hand[0] - mouth[0], hand[1] - mouth[1]) || 1)), 2), 'K');

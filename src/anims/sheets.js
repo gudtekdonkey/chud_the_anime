@@ -37,7 +37,7 @@ function placeholderSheet(name) {
     let p = null;
     if (name === 'sit' || name === 'sitDown' || name === 'standUp') p = sitFrame(g, i * FW, name, i) || null;
     else if (name === 'ready4' || name === 'ready5') frontFrame(g, i * FW, name === 'ready4' ? OPEN_FRONT : INVITE_FRONT, i);
-    else p = POSES[name][i % POSES[name].length] || null;
+    else { const ps = POSES[name]; p = (ps && ps[i % ps.length]) || null; }   // exec has no sheet: its stage draws him live
     if (p) g.drawImage(dress(R, makeFigure(), p), i * FW, 0);
     const gl = GLF[name] && GLF[name][i];
     if (gl) sliceGlitch(g, i * FW, gl, glitchSeed(name, i));
@@ -51,3 +51,5 @@ for (const k in POSES) if (ANIMS[k]) ANIMS[k].n = POSES[k].length;   // keyframe
 export const SHEETS = {};
 for (const k in ANIMS) SHEETS[k] = placeholderSheet(k);
 export const dur = k => ANIMS[k].n / ANIMS[k].fps;
+// after a move's poses change (a new personality): bake its sheet again, unless a dropped-in strip has replaced it
+export function rebake(k) { ANIMS[k].n = POSES[k].length; if (!SHEETS[k].custom) SHEETS[k] = placeholderSheet(k); }

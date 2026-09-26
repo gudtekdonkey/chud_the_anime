@@ -2,7 +2,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>body { margin: 0; }</style>
-<title>Ronin Executions, Batch 3</title>
+<title>Deaths Pass, Batch 3</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
 <style>
   :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
@@ -28,8 +28,9 @@
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">K · executions · batch 3</div>
+    <div class="eyebrow">Deaths pass · batch 3</div>
     <h1>Ten more ways to die</h1>
+    <p><b style="color:var(--ink)">Deaths pass.</b> The same batch 3 executions, with one change to how the enemy's body works, applied to every kill at once. His joints chase their poses on springs, so the hips lead, the chest follows and the arms, blade and head trail and overshoot, and as he dies they go loose. A body going down speeds up into the floor and stops dead on it; the rest of him flops on, dust comes up, a twitch or two, and the red eye goes out. Sword hits knock him away from the blade, he shakes through the hit pause, light and blood leave out the far side, and a killing blow gets two impact frames. Untick <b style="color:var(--ink)">Death pass</b> to see the page as it was on the same loop.</p>
     <p>Executions 18 to 27, on the same rig, enemy and effects as batch 1. Each one starts the same way: he glitches out and lands beside the enemy. From there some are fast and heavy (a kick that throws the man into the air, a club blow that knocks him off his feet, lightning that lifts him off the floor), and some are quiet and precise (two fingers on the chest, a walk past, a reflection in the floor). The enemy reacts to everything in one continuous movement, and every death ends with him on the ground, whole or in pieces.</p>
     <div class="bar"><label for="slow"><input type="checkbox" id="slow"> Half speed</label></div>
   </header>
@@ -104,7 +105,7 @@ function rig(g, fx, p) {
   for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
   leg(p.fl, 'K', .5);
   // head and hat
-  const hc = L(10, .6);
+  const hc = p.neck ? (([x, y], [cx, cy]) => { const c = Math.cos(p.neck), s = Math.sin(p.neck); return [cx + (x - cx) * c - (y - cy) * s, cy + (x - cx) * s + (y - cy) * c]; })(L(10, .6), L(8, .3)) : L(10, .6);
   if (!p.noHead) {   // noHead: the head has come off and is its own piece now
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
   const hf = p.headFlip ? -1 : 1;   // headFlip: the head is wrenched round to face backward
@@ -863,6 +864,218 @@ const EXECS = [
       for (const b of C.br) if (k >= b.at) for (let i = 0; i < b.pts.length; i += 2) { g.fillStyle = '#1f2224'; g.fillRect(b.pts[i], b.pts[i + 1], 1, 1); }
       if (k < 1 && n) { g.fillStyle = WH; g.fillRect(C.pts[n - 2] - 1, C.pts[n - 1], 3, 1); g.fillRect(C.pts[n - 2], C.pts[n - 1] - 1, 1, 3); } } },
 ];
+
+// ================= DEATHS PASS =================
+// Sits on top of this page's own code and changes how the enemy's body moves, falls and takes a hit, for every kill at once.
+// Untick "Death pass" and the page plays exactly as it did before the pass, so the two can be compared on the same loop.
+// It is one closed block: it only replaces the page's own functions (at, withShadow, pixelsOf, paint, F.hit, updatePieces, updateFx, drawFx).
+(() => {
+const PASS = { on: true, blood: true, impact: true };
+{ const bar = document.querySelector('.bar');
+  const add = (id, label, key) => { const l = document.createElement('label'); l.htmlFor = id;
+    l.innerHTML = `<input type="checkbox" id="${id}" checked> ${label}`; bar.append(l); l.querySelector('input').addEventListener('change', e => PASS[key] = e.target.checked); };
+  add('pass', 'Death pass (untick for before)', 'on'); add('blood', 'Blood', 'blood'); add('impact', 'Impact frames', 'impact'); }
+let CUR = null, DTP = 0, EYE_DARK = false;   // the scene being stepped, its time step (0 while the hit pause holds), whose eye is out
+const clp = (v, a, b) => Math.min(b, Math.max(a, v));
+const EYE_ON = 'rgb(255,90,74)', EYE_OFF = '#2b2023', EYE_OFF_RGB = 'rgb(43,32,35)';
+const BLOOD = ['#7a1b24', '#5a121a', '#931f2c'], STAIN = ['#4c1f24', '#55222a', '#43191e'];
+// the enemies of a scene: one (the executions) or several (the counters)
+const foes = S => { const L = Array.isArray(S.E) ? S.E.slice() : S.E ? [S.E] : []; if (S.__E2) L.push(S.__E2); return L; };
+const foeOf = (S, pose) => pose && foes(S).find(E => E.pose === pose);
+
+// ---- 1. Motion that flows through its poses. The pages ease in and out of every key, so the body comes to a dead stop at each pose, like a puppet
+// being set. The enemy's timeline is re-read here as one curve per joint: it keeps its speed through a pose when the motion carries on, and only
+// settles where the motion turns back. A body going down to the floor falls under gravity (slow off the mark, fastest at the floor), then stops dead ----
+const lying = p => typeof p.hy === 'number' && (p.hy >= 9 || (p.hy >= 8 && (Math.abs(p.lean) >= 1.2 || p.noUpper)));
+const at0 = at;
+at = function (keys, t) {   // same result as before; it just remembers where it came from, so the enemy's drawn pose can be re-read smoothly
+  const r = at0(keys, t);
+  if (PASS.on && t > keys[0][0] && r !== keys[0][1] && Object.isExtensible(r)) Object.defineProperties(r, { __k: { value: keys }, __t: { value: t } });
+  return r;
+};
+function smoothAt(keys, t) {
+  if (t <= keys[0][0]) return keys[0][1];
+  let j = 0; while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+  const [t0, a] = keys[j], [t1, b, e] = keys[j + 1], k = clp((t - t0) / (t1 - t0), 0, 1);
+  if (e || k >= 1) return lerpP(a, b, (e || ease)(k));   // hard cuts and linear moves stay as authored
+  const land = lying(b) && !lying(a), dT = t1 - t0;
+  const soft = i => i > 0 && i < keys.length - 1 && !keys[i][2] && !keys[i + 1][2];
+  const tan = (i, get) => { const p = get(i - 1), c = get(i), n = get(i + 1);
+    if (![p, c, n].every(Number.isFinite)) return 0;
+    const d0 = (c - p) / Math.max(1e-3, keys[i][0] - keys[i - 1][0]), d1 = (n - c) / Math.max(1e-3, keys[i + 1][0] - keys[i][0]);
+    return d0 * d1 <= 0 ? 0 : 2 * d0 * d1 / (d0 + d1); };
+  const k2 = k * k, k3 = k2 * k, h00 = 2 * k3 - 3 * k2 + 1, h10 = k3 - 2 * k2 + k, h01 = 3 * k2 - 2 * k3, h11 = k3 - k2;
+  const val = (va, vb, get) => { const m0 = soft(j) ? tan(j, get) * dT : 0, m1 = land ? 2 * (vb - va) : soft(j + 1) ? tan(j + 1, get) * dT : 0;
+    return h00 * va + h10 * m0 + h01 * vb + h11 * m1; };
+  const o = {};
+  for (const key in a) { const x = a[key], y = b[key];
+    if (Array.isArray(x) && Array.isArray(y)) o[key] = x.map((v, i) => val(v, y[i], ii => { const q = keys[ii][1][key]; return Array.isArray(q) ? q[i] : NaN; }));
+    else if (typeof x === 'number' && typeof y === 'number') o[key] = val(x, y, ii => keys[ii][1][key]);
+    else o[key] = k < .5 ? x : y; }
+  return o;
+}
+
+// ---- 2. A body, not a puppet. Every joint chases its pose on a spring: the hips lead, the chest follows, the arms, blade and head trail and
+// overshoot. As he goes down the muscles let go (softer, floppier springs); the floor stops him hard and the rest of him flops on; then a twitch or two, and still ----
+// [natural frequency, damping ratio]
+const CH = { hx: [38, .8], hy: [40, .8], lean: [30, .62], chest: [22, .5], fl: [46, .85], bl: [46, .85], fa: [19, .42], ba: [17, .4], sword: [17, .36] };
+const CH2 = ['fl', 'bl', 'fa', 'ba'];
+function spState(E) {
+  if (!E.__sp) Object.defineProperty(E, '__sp', { value: { x: null, v: {}, neck: 0, nv: 0, prevAng: null, prevAv: 0, t: 0, thudT: null, lastThud: -9, tw: 0, frame: -1, out: null, tgt: null }, enumerable: true, writable: true });
+  return E.__sp;
+}
+function flat(p) { const o = { hx: p.hx, hy: p.hy, lean: p.lean, chest: p.chest, sword: p.sword };
+  for (const k of CH2) { o[k + '0'] = p[k][0]; o[k + '1'] = p[k][1]; } return o; }
+function pool(S, x, y, max, delay) { if (PASS.blood) S.fx.pools.push({ x, y, r: 0, max, t: -delay }); }
+function thud(S, E, sp, speed) {
+  if (sp.t - sp.lastThud < .14) return; sp.lastThud = sp.t; if (sp.thudT == null) sp.thudT = sp.t;
+  const k = clp(speed, .4, 1.4);
+  // the rest of him is still moving when the trunk stops: arms slap down, the head knocks
+  sp.v.fa0 += sgn() * rr(3, 6) * k; sp.v.ba0 += sgn() * rr(3, 6) * k; sp.v.fa1 += rr(2, 5) * k; sp.nv += sgn() * 7 * k;
+  F.dust(S, E.x, E.y, Math.round(4 + 6 * k)); S.shake = Math.max(S.shake, .03 + .03 * k);
+  F.ring(S, E.x, E.y + 1, 2, 1, .12, 4 + 3 * k);
+  if (!sp.pooled) { sp.pooled = true; pool(S, E.x + rr(-3, 3), E.y + 1, rr(3.5, 5.5), .35); }
+}
+// on the floor the trunk is where it landed, now, with no spring left in it
+function X0(sp, T) { for (const k of ['hy', 'lean', 'hx']) { sp.x[k] = T[k]; sp.v[k] = 0; } }
+function sprung(S, E, raw) {
+  const sp = spState(E);
+  if (sp.frame === S.__frame) return sp.tgt === raw ? sp.out : raw;   // drawn twice this frame: step once
+  sp.frame = S.__frame; sp.tgt = raw;
+  const tgt = raw.__k ? smoothAt(raw.__k, raw.__t) : raw, T = flat(tgt), dt = DTP;
+  if (!sp.x) { sp.x = { ...T }; for (const k in T) sp.v[k] = 0; }
+  const X = sp.x, V = sp.v, limp = clp(((tgt.hy || 0) - 4) / 4, 0, 1);
+  // the trunk hitting the floor: the hips or the chest were coming down fast and now they have stopped
+  if (dt > 0 && sp.pT) { const vy = (T.hy - sp.pT.hy) / dt, vl = Math.abs(T.lean - sp.pT.lean) / dt;
+    if (sp.pv && lying(tgt) && ((sp.pv.hy > 14 && vy < sp.pv.hy * .3) || (sp.pv.l > 2 && vl < sp.pv.l * .3))) {
+      thud(S, E, sp, Math.max(sp.pv.hy / 40, sp.pv.l / 5)); X0(sp, T); }
+    sp.pv = { hy: vy, l: vl }; }
+  if (dt > 0) sp.pT = T;
+  if (T.sword == null) X.sword = null; else if (X.sword == null) { X.sword = T.sword; V.sword = 0; }
+  sp.t += dt;
+  const steps = Math.ceil(dt / (1 / 240)), h = dt / Math.max(1, steps);
+  for (let s = 0; s < steps; s++) {
+    for (const k in T) { if (T[k] == null || X[k] == null) continue;
+      let [w, z] = CH[k.replace(/[01]$/, '')];
+      if (/^(fa|ba|sword)/.test(k)) { w *= 1 - .45 * limp; z *= 1 - .3 * limp; }   // the arms let go first
+      else if (/^(fl|bl)/.test(k)) w *= 1 - .3 * limp;                                  // then the legs
+      else if (/^(hy|lean|hx)$/.test(k)) w *= 1 + limp;                                  // a falling trunk is carried by its weight, not held back
+      V[k] += (w * w * (T[k] - X[k]) - 2 * z * w * V[k]) * h; X[k] += V[k] * h; }
+    // the floor is hard: nothing sinks through it
+    if (lying(tgt) && X.hy > T.hy) { X.hy = T.hy; V.hy = Math.min(0, V.hy); }
+    // the head is carried by the chest: it lags when the chest whips, and drops as he loses his strength
+    const ang = X.lean + X.chest, av = sp.prevAng == null ? 0 : (ang - sp.prevAng) / h, aa = (av - sp.prevAv) / h; sp.prevAng = ang; sp.prevAv = av;
+    const nw = 22 - 8 * limp, nz = .38, nT = Math.abs(X.lean) < 1 ? limp * .45 : 0;
+    sp.nv += (nw * nw * (nT - sp.neck) - 2 * nz * nw * sp.nv - clp(aa, -900, 900) * .5) * h; sp.neck = clp(sp.neck + sp.nv * h, -.9, .9);
+  }
+  // lying still: the last of him goes out of him. One twitch, a smaller one, then nothing
+  if (sp.thudT != null && tgt.hy >= 8) { const u = sp.t - sp.thudT;
+    if (sp.tw === 0 && u > .5) { sp.tw = 1; V.fl1 += rr(5, 8); V.bl1 -= rr(2, 4); V.fa1 += rr(3, 5); }
+    if (sp.tw === 1 && u > 1.05) { sp.tw = 2; V.fa1 += rr(2, 3.5); sp.nv += .8; } }
+  // the eye: it flickers and goes out once he is down
+  sp.eyeDark = sp.thudT != null && (sp.t - sp.thudT > .45 || (sp.t - sp.thudT > .12 && (sp.t * 30 | 0) % 3 === 0));
+  const out = { ...tgt, hx: X.hx, hy: X.hy, lean: X.lean, chest: X.chest, sword: X.sword, neck: sp.neck };
+  for (const k of CH2) out[k] = [X[k + '0'], X[k + '1']];
+  sp.out = out; return out;
+}
+
+// the rig reads p.neck; the enemies are drawn through withShadow
+const withShadow0 = withShadow;
+withShadow = function (g, R) {
+  const S = CUR, E = PASS.on && S && R.enemy && R.pose ? foeOf(S, R.pose) : null;
+  if (!E) return withShadow0(g, R);
+  const pose = sprung(S, E, R.pose);
+  let x = R.x;
+  if (S.stop > 0 && S.__frame - (E.__hitF || -99) < 14) x += S.__frame & 1 ? 1 : -1;   // he shakes in the hit pause
+  EYE_DARK = E.__sp.eyeDark; try { return withShadow0(g, { ...R, pose, x }); } finally { EYE_DARK = false; }
+};
+// pieces are cut from the body as it is seen, not from where it is headed
+const pixelsOf0 = pixelsOf;
+pixelsOf = function (A) {
+  const S = CUR, E = PASS.on && S && A.enemy ? foeOf(S, A.pose) : null, sp = E && E.__sp;
+  if (!sp || !sp.out) return pixelsOf0(A);
+  EYE_DARK = sp.eyeDark; try { return pixelsOf0({ ...A, pose: { ...sp.out, noHead: A.pose.noHead, noUpper: A.pose.noUpper, lower: A.pose.lower } }); } finally { EYE_DARK = false; }
+};
+const paint0 = paint;
+paint = function (pose, enemy, eye) {
+  if (!(PASS.on && enemy && EYE_DARK)) return paint0(pose, enemy, eye);
+  const e = ENEMY_RC.E; ENEMY_RC.E = EYE_OFF; try { return paint0(pose, enemy, eye); } finally { ENEMY_RC.E = e; }
+};
+
+// ---- 3. The sword lands. The body is knocked away from the blade, it shakes through the hit pause, light and blood leave out the far side,
+// and a killing blow gets two impact frames (black, then white) ----
+const hit0 = F.hit;
+F.hit = function (S, E, stop = .06, shake = 1 / 60) {
+  hit0.call(F, S, E, stop, shake);
+  if (!PASS.on) return;
+  const R = S.__R || S.R, dir = R && Math.abs(E.x - R.x) > .5 ? Math.sign(E.x - R.x) : -E.face, mag = clp(stop / .1, .4, 1.4);
+  const cx = E.x, cy = E.y - (E.z || 0) - 13;
+  E.__hitF = S.__frame; for (const Q of foes(S)) if (Q.__sp && Q.__sp === E.__sp) Q.__hitF = S.__frame;
+  for (let i = 0; i < 4 + 8 * mag; i++) { const a = (dir > 0 ? 0 : Math.PI) + rr(-.5, .5), v = rr(110, 230) * mag;
+    F.spark(S, cx + dir * 2, cy + rr(-5, 5), Math.cos(a) * v, Math.sin(a) * v * .6, rr(.07, .15), i % 2 ? WH : CY2, true); }
+  if (PASS.blood) for (let i = 0; i < 5 + 12 * mag; i++) S.fx.drops.push({ x: cx + dir * rr(0, 3), y: E.y + rr(-2, 2), z: E.y - cy + rr(-5, 5) + (E.z || 0),
+    vx: dir * rr(15, 65) * mag, vy: rr(-8, 8), vz: rr(5, 45), c: BLOOD[i % 3], big: Math.random() < .3 });
+  const sp = E.__sp;
+  if (sp && sp.x) { const p = dir * E.face, V = sp.v;   // p = +1: knocked toward where he faces
+    V.lean += p * 5 * mag; V.chest += p * 8 * mag; V.hx += p * 30 * mag; sp.nv += p * 9 * mag;
+    V.fa0 -= p * 7 * mag; V.ba0 -= p * 6 * mag; if (sp.x.sword != null) V.sword -= p * 9 * mag; }
+  if (PASS.impact && stop >= .09) S.__impact = 2;
+};
+function impactFrame(g, second) {
+  const c = g.canvas, im = g.getImageData(0, 0, c.width, c.height), d = im.data, bg = second ? 235 : 10, fg = second ? 12 : 245;
+  for (let i = 0; i < d.length; i += 4) { const l = .3 * d[i] + .59 * d[i + 1] + .11 * d[i + 2], on = l < 58 || l > 165;
+    d[i] = d[i + 1] = d[i + 2] = on ? fg : bg; }
+  g.putImageData(im, 0, 0);
+}
+
+// ---- 4. Pieces land with weight: a thud, dust, blood where they fall, a trail while they fly; the eye in a severed head goes out.
+// The legs left standing after a cut (the counters' corpses) hit the floor the same way ----
+const pLow = P => { let m = -1e9; const s = Math.sin(P.a), c = Math.cos(P.a); for (const [dx, dy] of P.pts) m = Math.max(m, dx * s + dy * c); return m; };
+const updatePieces0 = updatePieces;
+updatePieces = function (S, dt) {
+  const h0 = PASS.on ? new Map(S.pieces.map(P => [P, P.z - pLow(P)])) : null;
+  updatePieces0(S, dt);
+  if (!PASS.on) return;
+  for (const P of S.pieces) {
+    P.__age = (P.__age || 0) + dt; const n = P.pts.length, hNow = P.z - pLow(P), hb = h0.get(P);
+    if (!P.__landed && hb != null && hb > .6 && hNow <= .3) { P.__landed = true;
+      F.dust(S, P.x, P.fy, clp(Math.round(n / 14), 2, 10)); if (n > 60) S.shake = Math.max(S.shake, .04);
+      if (n > 12) pool(S, P.x + rr(-2, 2), P.fy + 1, clp(n / 40, 1.5, 4.5), .15); }
+    if (PASS.blood && !P.__landed && n > 20 && P.__age < .9 && Math.random() < .5)
+      S.fx.drops.push({ x: P.x + rr(-2, 2), y: P.fy + rr(-1, 1), z: P.z, vx: rr(-15, 15), vy: 0, vz: rr(-10, 10), c: BLOOD[Math.random() * 3 | 0] });
+    if (P.__age > .35 && !P.__eyeOut && (P.__age > .6 || (P.__age * 30 | 0) % 3 === 0)) { P.__eyeOut = P.__age > .6;
+      for (const q of P.pts) if (q[2] === EYE_ON) q[2] = EYE_OFF_RGB; }
+  }
+  for (const C of S.corpses || []) if (!C.__thud && S.clock - C.t0 >= .46) { C.__thud = true;
+    F.dust(S, C.x, C.y, 8); S.shake = Math.max(S.shake, .05); F.ring(S, C.x, C.y + 1, 2, 1, .12, 6); pool(S, C.x + rr(-2, 2), C.y + 1, rr(3, 4.5), .3); }
+};
+const updateFx0 = updateFx;
+updateFx = function (S, dt) {
+  CUR = S; DTP = S.stop > 0 ? 0 : dt; S.__frame = (S.__frame || 0) + 1;
+  if (!S.fx.drops) Object.assign(S.fx, { drops: [], stains: [], pools: [] });
+  updateFx0(S, dt);
+  if (!PASS.on) return;
+  const L = S.fx;
+  for (let i = L.drops.length - 1; i >= 0; i--) { const q = L.drops[i]; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; q.vz -= 320 * dt;
+    if (q.z <= 0) { L.stains.push({ x: Math.round(q.x), y: Math.round(q.y), c: STAIN[Math.random() * 3 | 0], w: q.big ? 2 : 1 }); if (q.big && Math.abs(q.vx) > 40) L.stains.push({ x: Math.round(q.x + Math.sign(q.vx)), y: Math.round(q.y), c: STAIN[0], w: 1 }); L.drops.splice(i, 1); } }
+  for (const p of L.pools) { p.t += dt; if (p.t > 0) p.r = p.max * (1 - Math.exp(-p.t * 1.6)); }
+};
+const drawFx0 = drawFx;
+drawFx = function (g, S, layer) {
+  if (PASS.on && S.fx.stains && layer === 'floor') {
+    for (const p of S.fx.pools) if (p.r >= .5) { g.fillStyle = STAIN[1];
+      for (let y = -Math.ceil(p.r * .5); y <= Math.ceil(p.r * .5); y++) { const w = Math.round(p.r * Math.sqrt(Math.max(0, 1 - (y / (p.r * .5 + .01)) ** 2))); g.fillRect(Math.round(p.x) - w, Math.round(p.y) + y, 2 * w + 1, 1); } }
+    for (const s of S.fx.stains) { g.fillStyle = s.c; g.fillRect(s.x, s.y, s.w, 1); }
+  }
+  drawFx0(g, S, layer);
+  if (PASS.on && S.fx.drops && layer !== 'floor') for (const q of S.fx.drops) { g.fillStyle = q.c; g.fillRect(Math.round(q.x), Math.round(q.y - q.z), 1, q.big ? 2 : 1); }
+  if (PASS.on && PASS.impact && layer !== 'floor' && S.__impact > 0) { impactFrame(g, S.__impact === 1); S.__impact--; }
+};
+
+// every execution: note who is where, for the direction of each hit (the counters keep the ronin on S.R already)
+if (typeof EXECS !== 'undefined') for (const ex of EXECS) { const run0 = ex.run; ex.run = function (S, t, R, E) { S.__R = R; S.__E2 = E; return run0.call(this, S, t, R, E); }; }
+})();
+// ================= END DEATHS PASS =================
 
 // ---------- scenes ----------
 const W = 200, H = 100;

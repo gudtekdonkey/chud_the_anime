@@ -2,6 +2,8 @@ import { rig } from '../rig/rig.js';
 import { Cloth, clothStep, drawCloth, dims, isCloth } from './cloth.js';
 import { BY_ID, drawPart } from './items.js';
 import { fromSide, solve } from './skeleton.js';
+import { Raster, packPal } from './raster.js';
+import { FW, FH, OX, OY, RC } from '../config.js';
 
 // ---- Dressing a figure: the rig's pose and everything it wears, into one depth raster ----
 // a figure: the item ids it wears, the cloth state of each loose part, its clock and its velocity (px/s, in its own facing)
@@ -28,4 +30,13 @@ export function dress(R, F, p, dt = 0) {
 // he turned round: the side view mirrors him, so mirror his cloth too and it swings across to the new side instead of snapping
 export function turnCloth(F) {
   for (const C of F.cloth.values()) for (let i = 0; i < C.p.length; i += 3) { C.p[i] = -C.p[i]; C.o[i] = -C.o[i]; }
+}
+
+// ---- A pose straight onto a canvas at x = fx, in a palette (the samurai's red-grey), for the drawing that is not a baked sheet:
+// the enemies and the execution stage. p.bare (the samurai) is the body alone; the ronin wears his default outfit, as in his sheets.
+const RS = new Map(), DEFAULT = makeFigure();
+export function rigTo(g, fx, p, pal = RC) {
+  let R = RS.get(pal); if (!R) RS.set(pal, R = new Raster(FW, FH, OX, OY, .3, packPal({ ...RC, ...pal })));
+  if (p.bare || p.noUpper) { R.clear(); rig(R, p); g.drawImage(R.flush(), fx, 0); }
+  else g.drawImage(dress(R, DEFAULT, p, 0), fx, 0);
 }
