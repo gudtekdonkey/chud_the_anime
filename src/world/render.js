@@ -18,6 +18,11 @@ import { weapon } from '../weapons/weapons.js';
 import { drawHud } from '../ui/hud.js';
 import { itemDrawables, drawItemsOver } from '../items/items.js';
 import { PILLARS, bg, drawPillar } from './room.js';
+import { partyDrawables } from '../party/companions.js';
+import { recruitDrawables } from '../party/recruit.js';
+import { pairedDrawables, drawPairLines } from '../party/paired.js';
+import { drawPartyHud, drawPartyPrompts } from '../ui/party-hud.js';
+import { KIT, drawKit } from '../ui/kit-screen.js';
 
 export function render() {
   g.save();
@@ -30,10 +35,10 @@ export function render() {
   // depth-sort the pillars, the enemies, their dropped swords, the player and any execution by their feet
   const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), ...ENEMIES.map(e => ({ y: e.y - (e.alive ? 0 : .5), d: () => drawEnemy(e) })),
     ...blades.map(b => ({ y: b.y - .2, d: () => drawBlade(b, fade) })), ...(P.state === 'exec' ? [] : [{ y: P.y, d: drawPlayer }]), ...stageItems(), ...itemDrawables(),
-    ...mirrors.map(m => ({ y: m.y, d: () => drawMirror(m) })),
+    ...mirrors.map(m => ({ y: m.y, d: () => drawMirror(m) })), ...partyDrawables(), ...recruitDrawables(), ...pairedDrawables(),
     ...debris.map(d => ({ y: d.state === 'in' ? d.cy + Math.sin(d.a) * d.r * .45 : d.py, d: () => drawDebris(d) }))];
   items.sort((a, b) => a.y - b.y).forEach(i => i.d());
-  drawFx(); drawDrops(); drawStagesTop(); drawPrompt(t);
+  drawFx(); drawDrops(); drawStagesTop(); drawPairLines(); drawPrompt(t); drawPartyPrompts();
   for (const q of parts) {
     g.globalAlpha = Math.min(1, q.life / q.max * 1.6); g.fillStyle = cc(q.col);
     g.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);
@@ -44,7 +49,8 @@ export function render() {
   drawItemsOver();   // unshaken, like the HUD: the lock-on and prompt stay put while the world shakes
   if (S.scr.t > 0) { g.globalAlpha = S.scr.a * S.scr.t / S.scr.max; g.fillStyle = COL.flash; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   if (S.impact > 0) impactFrame(S.impact === 1);
-  drawHud();
+  drawHud(); drawPartyHud();
+  if (KIT.open) drawKit();
   const chg = P.charge != null && !P.cv ? ` · charge <b>${Math.round(P.charge * 100)}%</b>` : P.cv ? ` · ${P.cv.name} at <b>${Math.round(P.pow * 100)}%</b>` : '';
   const qi = P.storm > 0 ? ` · <b>STORM CHAIN ${P.storm.toFixed(1)} s</b>` : ` · qi <b>${Math.round(P.qi * 100)}%</b>`;
   const inv = ` · hp <b>${Math.round(INV.hp * 100)}%</b> · mon ${INV.mon} · shards ${INV.shards} · LV ${INV.lv} (${Math.round(INV.exp)} exp)`;

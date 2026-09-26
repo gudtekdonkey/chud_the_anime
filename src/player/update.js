@@ -21,6 +21,9 @@ import { EL } from '../fx/element.js';
 import { reach } from '../weapons/weapons.js';
 import { updateItems, itemInput, itemState, mirrorCut } from '../items/items.js';
 import { sheathClick } from '../items/harvest.js';
+import { updateParty, liftInput, toggleOrder, hurtNearest } from '../party/companions.js';
+import { recruitInput, updateRecruits } from '../party/recruit.js';
+import { X, pairCandidate, startPair, pairStep } from '../party/paired.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
@@ -32,9 +35,13 @@ export function update(dt, inp) {
   S.shake = Math.max(0, S.shake - dt); S.impact = Math.max(0, S.impact - 1); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
   updateCds(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
   updateFx(dt); updateEnemies(dt, S.hitstop > 0); updateStages(dt); updateMarkers();
+  updateParty(dt, S.hitstop > 0, X && X.a); updateRecruits(dt);   // the partner in a paired execution is moved by it, not by their own head
+  if (inp.order) toggleOrder();   // party orders are not lost to a hit pause
+  if (inp.hurt) hurtNearest();
   if (S.hitstop > 0) { S.hitstop -= dt; return; }
   updateCuts(dt); updateMirrors(dt); tickStages(dt);
   for (const t of timers.splice(0)) if ((t.t -= dt) <= 0) t.fn(); else timers.push(t); // sequenced payoffs (implosions, chain links)
+  if (pairStep(dt)) return;   // a paired execution moves him (party/paired.js)
 
   P.t += dt;
   const s = P.state, T = P.t, D = dur(s), u = T / D;
@@ -58,11 +65,14 @@ export function update(dt, inp) {
     return;
   }
   if (s === 'standUp') { if (T >= D) { /* handled in the switch */ } else return; }
+  // E beside a downed companion is for lifting them (hold); beside a recruit, a tap takes them on; otherwise it is the items'
+  if (liftInput(dt, held.has('act')) || (canAttack && recruitInput(inp))) { inp.act = false; P.ePress = false; }
   if (itemInput(inp, canAttack, dt)) return;
   if (canAttack) {
     if (inp.slash) return setState(P.armed ? 'slash1r' : 'slash1');
     if (inp.jump) { setState('jump'); P.vz = 150; return; }
     if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); startCd('slide'); return; }
+    if (inp.tele) { const c = pairCandidate(); if (c) return startPair(c); }   // a companion close by and set up for it: they cut him down together
     if (inp.tele && K.pick) return assassinate(K.pick);   // an isolated enemy in reach: K flashes to him and executes
     if (inp.tele) { setState('tele'); P.blinkDir = inputDir(inp); startCd('tele'); return; }
     if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'double'; startCd('double'); return; }

@@ -101,6 +101,13 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `ui/element-picker.js` | The element buttons over the game, `[` / `]` to step through them |
 | `ui/strip-tester.js` | "Test a sprite strip": drop a PNG strip in place of any animation |
 | `ui/wardrobe.js` | The wardrobe under the game: one item per slot, outfit presets |
+| `party/kit.js` | The party: `ROSTER` (him bound to `P.weapon` / `wear` / `INV.charms`, then companions), kits, the `BAG`, charms by scope, paired-execution needs, companion levels and stats, equipping |
+| `party/figures.js` | Drawing anyone in the party: weapon + trait frames (cached), the ally palette, `place` |
+| `party/companions.js` | Companions in the room: ranks of six, weapon roles, hits and Qi, EXP, downed / lifted / dead (`hurtAlly`), Iron Oath |
+| `party/recruit.js` | Recruiting: the road wanderer, the guarded captive, the camp board |
+| `party/paired.js` | Paired executions on K (the crossing cut) |
+| `ui/kit-screen.js` | Tab: the kit screen for him and every companion (pauses the game) |
+| `ui/party-hud.js` | The party panel under the skill bar, and the E / K prompts over the world |
 | `styles.css` / `index.html` | The page; `index.html` holds markup only |
 
 - Shared state lives in `state.js` and is imported, never copied. A value other modules reassign goes on `S`, because an imported `let` cannot be reassigned.
@@ -122,7 +129,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, a darker red-grey.
 - Executions are short and brutal, show only the key frames (each leaning into the motion), and cut the enemy into real pieces.
 - Assassination markers: every enemy has an isolation bubble (empty glows cyan; overlapping ones go grey and are joined by a link line); a kill line runs to the nearest enemy he can dash to; the K prompt appears only when that enemy is in range AND outside every other enemy's bubble; lock-on brackets are reserved for big pickups.
-- Skills and keys: move WASD / arrows · hold V walk · J slash (again for the answer cut) · Shift or L slide · Space jump · K glitch teleport, or on a lone enemy in reach an execution · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing) · E tap: the locked-on item's verb, hold near the fallen: Harvest · 1-4 quick slots. Reserved by the design (not built yet): F counter, R Blade Recall, Q Lightning Chain; X becomes Time Slice and C Breath of Qi. Storm Chain is passive: 8 s whenever the Qi meter fills.
+- Skills and keys: move WASD / arrows · hold V walk · J slash (again for the answer cut) · Shift or L slide · Space jump · K glitch teleport, or on a lone enemy in reach an execution · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing) · E tap: the locked-on item's verb, hold near the fallen: Harvest · 1-4 quick slots · Tab kit screen · G party hold / follow · E by a recruit: take them on, held by a downed companion: lift them · K with a companion set up for it: a paired execution · H cut a companion down (testing). Reserved by the design (not built yet): F counter, R Blade Recall, Q Lightning Chain; X becomes Time Slice and C Breath of Qi. Storm Chain is passive: 8 s whenever the Qi meter fills.
 - Items and HUD (`prototypes/20-items.html`, built as displayed): big items are the only things with lock-on brackets; small pickups magnetise within about 22 px; relics go to the first empty charm slot. Qi from items fills the meter but only a landed hit wakes Storm Chain. Health and Qi are 0..1; Qi is notched in thirds. `INV.power` (1..3) is the I / II / III tier; where it comes from is still the owner's call.
 - Facing (`P.view`, the port system): idle, walk, run and runArmed face the way he last moved: E, SE, S, NE or N; the west side mirrors the east with `P.face`. Harvest faces N. Every attack, skill and stance is still side on. Guard: the check's "eight facings" step.
 - Cooldowns (`player/cooldowns.js`): K 3 s (none with no enemy near; 0.2 s after an assassination) · I 2 s, Thousand Cuts 8 s · O 10 s · P 12 s · N 14 s · U 8 s · slide 1 s. J and jump have none.

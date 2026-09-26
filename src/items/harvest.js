@@ -40,7 +40,10 @@ export function sheathClick() {
   for (const d of living()) if (Math.hypot(d.x - P.x, (d.y - P.y) * 1.4) < 56) { zap(P.x + P.face * 3, P.y - 10, d.x, d.y - 14, .18, 2.5, COL.fx2, { every: 1 }); chainHit(d); }
 }
 // damage to him (n in 0..1): a hit puts the incense out; the Paper Crane saves one killing blow per area, glitching him out at 1 health
+// HURT_HOOKS: anything that can take the blow for him first (a companion's Iron Oath) returns true
+export const HURT_HOOKS = [];
 export function hurt(n) {
+  if (HURT_HOOKS.some(fn => fn(n))) return;
   putOut(); if (P.state === 'incense') setState('idle');
   if (INV.hp - n <= 0 && has('crane') && !P.craneUsed) { P.craneUsed = true; INV.hp = .02; P.glitchNow = .3; P.after = 1.5; return; }
   INV.hp = Math.max(0, INV.hp - n); S.shake = Math.max(S.shake, 1 / 60); P.flash = .034;
