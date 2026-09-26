@@ -1,0 +1,72 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The World Map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 15px/1.5 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 22px; }
+  header { display: grid; gap: 8px; max-width: 76ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 18px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  h3 { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  b { color: var(--ink); font-weight: 600; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  .bar label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 14px; cursor: pointer; }
+  .bar input[type=radio], .bar input[type=checkbox] { accent-color: var(--cyan); }
+  .bar input[type=number] { width: 7em; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); padding: 4px 6px; font: inherit; }
+  button { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .06em; color: var(--ink); background: transparent; border: 1px solid var(--rule); padding: 7px 10px; cursor: pointer; }
+  button:hover { border-color: #4a5157; } button:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .main { display: grid; grid-template-columns: minmax(0, 620px) minmax(0, 1fr); gap: 22px; align-items: start; }
+  @media (max-width: 980px) { .main { grid-template-columns: 1fr; } }
+  .mapbox { position: relative; background: var(--panel); border: 1px solid var(--rule); }
+  canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+  #map { cursor: crosshair; }
+  .tip { position: absolute; pointer-events: none; background: #0d0f10ee; border: 1px solid var(--rule); padding: 6px 8px; font-size: 13px; color: var(--ink); max-width: 260px; }
+  .side { display: grid; gap: 16px; }
+  .panel { background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 10px; }
+  .zonebox { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 14px; align-items: start; }
+  @media (max-width: 560px) { .zonebox { grid-template-columns: 1fr; } }
+  #zone { cursor: pointer; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: 14px; }
+  dt { color: var(--muted); } dd { margin: 0; }
+  .list { display: grid; gap: 4px; font-size: 14px; max-height: 260px; overflow: auto; }
+  .row { display: flex; gap: 8px; align-items: baseline; }
+  .sw { width: 10px; height: 10px; flex: none; display: inline-block; border: 1px solid #0006; }
+  .rel { font-variant-numeric: tabular-nums; margin-left: auto; }
+  .neg { color: #e0737a; } .pos { color: #8fd6a0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">World · prototype 35</div>
+    <h1>The world map</h1>
+    <p>The whole world from one seed, on the simulation core every system now builds on: a 100 × 100 grid of zones, each a large area he walks and fights in. <b>Hover</b> a zone to read it; <b>click</b> it to open its 64 × 64 tiles, cut into 16 plots, each with its <b>title</b> (who owns it on paper) and <b>holder</b> (who has it now). The cyan mark is where the ronin starts.</p>
+    <div class="bar">
+      <span>Show</span>
+      <label for="v-land"><input type="radio" name="view" id="v-land" value="land" checked> Land</label>
+      <label for="v-cult"><input type="radio" name="view" id="v-cult" value="culture"> Cultures</label>
+      <label for="v-reg"><input type="radio" name="view" id="v-reg" value="region"> Regions</label>
+      <label for="v-own"><input type="radio" name="view" id="v-own" value="owner"> Who holds it</label>
+      <label for="roads"><input type="checkbox" id="roads" checked> Roads</label>
+      <label for="places"><input type="checkbox" id="places" checked> Places</label>
+      <label for="seed">Seed <input type="number" id="seed" value="12345"></label>
+      <button type="button" id="gen">Make this world</button>
+      <button type="button" id="rand">Another world</button>
+    </div>
+    <div class="legend" id="legend"></div>
+  </header>
+  <div class="main">
+    <div class="mapbox"><canvas id="map" width="600" height="600" role="img" aria-label="The world map"></canvas><div class="tip" id="tip" hidden></div></div>
+    <div class="side">
+      <div class="panel" id="summary"></div>
+      <div class="panel" id="zonepanel"><h2 id="zname">Pick a zone</h2><p id="zsub">Click anywhere on the land.</p>
+        <div class="zonebox"><canvas id="zone" width="320" height="320" role="img" aria-label="The zone's tiles and plots"></canvas><div id="plot"></div></div></div>
+      <div class="panel" id="culturepanel"></div>
+    </div>
+  </div>
+</div>
+<!-- BUNDLE -->

@@ -64,7 +64,7 @@ Plot holder → zone lord (all of one zone) → domain (merged zones) → kingdo
 - NPCs commit crimes too, and have their own karma and bounties.
 
 ### Still open
-- How a legal title passes (sale, grant, inheritance, a court, forgery?): the mechanic behind possession vs title.
+- ~~How a legal title passes~~ **Answered (owner, 2026-09-26):** sale, blood money, a lord's grant, inheritance, a court case, time with no claimant left, and a forged deed (a crime that may come out, less likely each year). See `docs/sim-crime.md`.
 - Answered above: single-player, real time while away, death and heirs.
 
 ## Wealth (proposed, for the owner to confirm)
@@ -115,6 +115,17 @@ All four run on the same ledger as ownership and wealth: the world keeps going w
   - **an ambition**, for the ones who matter: a farmer wants more land, a retainer wants his lord's seat, a bandit chief wants a zone.
   - **memory** of the ronin: what they saw him do, what they heard.
 - Most NPCs live only in the ledger until he walks into their zone. Named ones (lords, elders, rivals, companions) are always tracked in full.
+
+### People remember (owner, 2026-09-26)
+- Everything he does is remembered by the people who saw it or heard of it: kindness, cruelty, a village saved or burned, a promise kept or broken, how he ruled. Memory lives on the people (the people lane's per-person memory), spreads by word of mouth through their relationships and culture, and outlives him: his heirs inherit his name's reputation, and a tyrant's grandson is met with old hatred.
+- **Battles are remembered where there were witnesses** (owner, 2026-09-26): a fight people saw becomes a story they tell (the duel at the bridge, the night he held the village gate alone), and grows as it travels; a fight nobody saw is known only to him. Witnesses come from the enemy plan's senses (sight, hearing), the same as for crimes.
+- This sits under karma and standing: karma is the sum of who he is, standing what a culture thinks now, memory the particular things particular people will not forget.
+
+### Companions grow through what you live through together (owner, 2026-09-26)
+- **Bonds are earned in deeds.** Fighting beside the ronin raises a companion's relationship and loyalty to him; reviving them in battle or saving them from a bad situation raises it most. Neglect, abandoning them in a fight, or cruelty lowers it.
+- **They pick up traits from you and from their work.** A companion slowly gains endearing traits from the ronin's example (his conduct, his karma) and from the tasks they do (a woodcutter grows strong and patient, a guard wary). Traits are the 52 personality traits every person already has.
+- **Bad traits can fade.** A good example wears a companion's bad traits away over time (a drunk sobers, a coward steadies); a bad example can do the reverse.
+- The people lane owns relationships and traits changing over time; the party code (`src/party/`) reports the deeds (fought together, revived, saved) as events.
 
 ### Jobs
 - **NPC jobs** by class: farmer, fisher, woodcutter, miner, smith, merchant, innkeeper, monk, retainer, ashigaru, guard, magistrate, tax collector, courier, bandit, bounty hunter, shinobi, lord. A job decides where they go, what they carry, what they fight with, and what they produce into the ledger.

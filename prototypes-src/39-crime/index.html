@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Karma and Bounties</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+  /* one look on purpose: the game's own night floor, cyan for his glitch light, a dried-blood red for crime */
+  :root {
+    color-scheme: dark;
+    --ground: #151817; --panel: #1d2120; --line: #2f3533; --floor: #474c4a;
+    --ink: #e6ebe9; --dim: #99a3a0; --faint: #66706d;
+    --cyan: #6ff3e4; --cyan-2: #52e8d6; --blood: #c4574d; --gold: #d8b25a;
+    --display: 'Pixelify Sans', 'Courier New', monospace;
+    --body: 'Zen Kaku Gothic New', 'Hiragino Sans', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 14px/1.5 var(--body); }
+  .wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 40px; display: grid; gap: 16px; }
+  h1, h2 { font-family: var(--display); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: .02em; }
+  h1 { font-size: 28px; }
+  h2 { font-size: 15px; color: var(--dim); text-transform: uppercase; letter-spacing: .08em; font-weight: 500; }
+  .num, .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  button, select { font: 600 12px var(--mono); color: var(--ink); background: #262b2a; border: 1px solid var(--line); border-radius: 3px; padding: 6px 10px; cursor: pointer; }
+  button:hover:not(:disabled) { border-color: var(--cyan-2); color: var(--cyan); }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 1px; }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.crime { border-color: #4a2e2b; }
+  button.crime:hover:not(:disabled) { border-color: var(--blood); color: #f0a49b; }
+  label { display: inline-flex; gap: 6px; align-items: center; color: var(--dim); font-size: 13px; cursor: pointer; }
+
+  header { display: grid; grid-template-columns: 1fr auto; gap: 12px 24px; align-items: end; }
+  header p { margin: 4px 0 0; color: var(--dim); max-width: 64ch; }
+  .clock { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: flex-end; }
+  .clock .date { font-family: var(--mono); color: var(--cyan); margin-right: 6px; }
+
+  /* karma: the one big instrument on the page (owner: karma is shown to the player) */
+  .karma { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; display: grid; grid-template-columns: auto 1fr auto; gap: 8px 20px; align-items: center; }
+  .karma .val { font: 700 40px/1 var(--display); min-width: 3.2ch; text-align: right; }
+  .karma .band { font: 500 18px var(--display); text-transform: uppercase; letter-spacing: .1em; }
+  .meter { position: relative; height: 18px; background: linear-gradient(90deg, #5a2622 0%, #3a2b29 30%, #2a302e 50%, #25403d 70%, #2d6660 100%); border-radius: 2px; }
+  .meter i { position: absolute; top: -3px; bottom: -3px; width: 3px; background: var(--ink); box-shadow: 0 0 6px var(--cyan); transition: left .4s; }
+  .meter b { position: absolute; top: 0; bottom: 0; width: 1px; background: #0008; }
+  .meter span { position: absolute; top: 20px; transform: translateX(-50%); font: 10px var(--mono); color: var(--faint); }
+  .purse { text-align: right; color: var(--gold); }
+  .purse small { display: block; color: var(--faint); font-size: 11px; }
+
+  .main { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 14px; display: grid; gap: 10px; align-content: start; }
+  canvas { width: 100%; max-width: 100%; aspect-ratio: 1; image-rendering: pixelated; display: block; border: 1px solid var(--line); cursor: crosshair; background: #101211; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .hint { color: var(--faint); font-size: 12px; margin: 0; }
+  .target { font-size: 13px; color: var(--dim); min-height: 2.8em; }
+  .target strong { color: var(--ink); }
+  .toast { font: 12px var(--mono); color: var(--cyan); min-height: 1.5em; }
+  .toast.bad { color: #f0a49b; }
+
+  .side { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; align-items: start; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; font: 500 10.5px var(--mono); color: var(--faint); text-transform: uppercase; letter-spacing: .06em; padding: 0 6px 4px 0; }
+  td { padding: 4px 6px 4px 0; border-top: 1px solid var(--line); vertical-align: top; }
+  td.num { text-align: right; }
+  .scroll { overflow-x: auto; }
+  .bar { position: relative; height: 8px; background: #121514; border-radius: 1px; min-width: 80px; }
+  .bar::after { content: ''; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--faint); }
+  .bar i { position: absolute; top: 0; bottom: 0; }
+  .pill { display: inline-block; font: 600 10.5px var(--mono); padding: 1px 6px; border-radius: 2px; text-transform: uppercase; letter-spacing: .04em; }
+  .pill.attack { background: #4d1f1b; color: #ffb3aa; } .pill.arrest { background: #4a3a1b; color: #f2d38a; }
+  .pill.wary { background: #2f3533; color: var(--dim); } .pill.ok { background: #183b37; color: var(--cyan); }
+  .pill.split { background: #4d1f1b; color: #ffb3aa; } .pill.his { background: #183b37; color: var(--cyan); }
+  tr.sel td { background: #232a28; }
+  tr[data-plot] { cursor: pointer; }
+  .log { max-height: 320px; overflow-y: auto; font: 12px/1.5 var(--mono); display: grid; gap: 2px; }
+  .log div { color: var(--dim); } .log div.me { color: var(--ink); } .log div.bad { color: #f0a49b; } .log div.land { color: var(--gold); }
+  .log time { color: var(--faint); margin-right: 8px; }
+  .world { font: 12px var(--mono); color: var(--dim); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 11.5px; color: var(--faint); }
+  .legend i { display: inline-block; width: 9px; height: 9px; margin-right: 5px; vertical-align: -1px; }
+  @media (max-width: 820px) { .main { grid-template-columns: 1fr; } header { grid-template-columns: 1fr; } .clock { justify-content: flex-start; } }
+  @media (max-width: 520px) { .karma { grid-template-columns: auto 1fr; } .purse { grid-column: 1 / -1; text-align: left; } }
+  @media (prefers-reduced-motion: reduce) { .meter i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Karma and Bounties</h1>
+      <p>Prototype 39, the crime lane. Commit crimes as the ronin in his start village, with and without witnesses, then let time pass and watch karma, standing, bounties and the land.</p>
+    </div>
+    <div class="clock">
+      <span class="date" id="date"></span>
+      <button id="wDay">+1 day</button><button id="wWeek">+7 days</button><button id="wSeason">+1 season</button><button id="wYear">+1 year</button>
+    </div>
+  </header>
+
+  <section class="karma" aria-label="Karma">
+    <div class="val num" id="kVal">0</div>
+    <div>
+      <div class="band" id="kBand">wanderer</div>
+      <div class="meter" id="kMeter"><i></i></div>
+    </div>
+    <div class="purse num" id="purse"></div>
+  </section>
+
+  <div class="main">
+    <section class="card">
+      <div class="row" style="justify-content: space-between"><h2 id="zoneName">The village</h2><select id="goto" aria-label="Go to another place"></select></div>
+      <canvas id="map" width="384" height="384"></canvas>
+      <div class="legend"><span><i style="background:#6ff3e4"></i>him</span><span><i style="background:#c9c2b0"></i>villager</span><span><i style="background:#d8b25a"></i>lord, elder</span><span><i style="background:#8f98a0"></i>soldier, monk</span><span><i style="background:#c4574d"></i>dead</span><span><i style="border:1px solid #6ff3e4"></i>witness</span></div>
+      <p class="hint">Click the ground to walk there. Click a person to step up to them. Anyone inside the circle sees what he does (half as far at night). Someone within 3 tiles sees through a mask about a third of the time.</p>
+      <div class="row"><label><input type="checkbox" id="mask"> Masked</label><label><input type="checkbox" id="night"> Night</label><span class="num hint" id="seen"></span></div>
+      <div class="target" id="target"></div>
+      <div class="row">
+        <button class="crime" id="cTrespass">Trespass</button><button class="crime" id="cTheft">Steal</button><button class="crime" id="cAssault">Assault</button>
+        <button class="crime" id="cMurder">Murder</button><button class="crime" id="cDrive">Drive off, take plot</button><button class="crime" id="cPlot">Murder, take plot</button>
+      </div>
+      <div class="toast" id="toast" role="status"></div>
+    </section>
+
+    <div class="side">
+      <section class="card">
+        <h2>Standing</h2>
+        <div class="scroll"><table><thead><tr><th>People</th><th>Thinks of him</th><th>Guards</th></tr></thead><tbody id="standing"></tbody></table></div>
+        <p class="hint">Standing is fast: it drifts back toward what his karma says (karma ÷ 200) by 2% of the gap a day. Karma never drifts.</p>
+      </section>
+      <section class="card">
+        <h2>Bounties</h2>
+        <div class="scroll"><table><thead><tr><th>Wanted by</th><th>Worst</th><th class="num">Mon</th><th></th></tr></thead><tbody id="bounties"></tbody></table></div>
+        <div id="hunters" class="world"></div>
+      </section>
+      <section class="card">
+        <h2>Who deals with him</h2>
+        <div id="doors" class="world"></div>
+        <div class="scroll"><table><thead><tr><th>Companion</th><th class="num">Honour</th><th>With him</th><th>Asked to join</th></tr></thead><tbody id="comps"></tbody></table></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="side">
+    <section class="card">
+      <h2>Plots of this zone: title and possession</h2>
+      <div class="scroll"><table><thead><tr><th>Plot</th><th>Title (on paper)</th><th>Holder (has it)</th><th>State</th></tr></thead><tbody id="plots"></tbody></table></div>
+      <div class="row">
+        <button id="lBuy">Buy the title</button><button id="lBlood">Pay blood money</button><button id="lGrant">Petition the lord</button>
+        <button id="lCourt">Heir sues in court</button><button class="crime" id="lForge">Forge a deed</button>
+      </div>
+      <p class="hint" id="plotHint">Pick a plot in the table.</p>
+    </section>
+    <section class="card">
+      <h2>What happened</h2>
+      <div class="log" id="log"></div>
+      <div class="world" id="world"></div>
+    </section>
+  </div>
+</div>
+<!-- BUNDLE -->
+</body>
+</html>

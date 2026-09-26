@@ -13,7 +13,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
-- The check reads the player, the facing he is drawn in, the enemies, what he wears, the inventory and `S` through `window.__game = { P, PF, E, wear, INV, S }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
+- The check reads the player, the facing he is drawn in, the enemies, what he wears, the inventory, `S` and the K markers through `window.__game = { P, PF, E, wear, INV, S, K }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
 
 ## Module map (`src/`)
 
@@ -141,9 +141,13 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Facing (`P.view` + `P.face`, the port system, `rig/turn.js`): idle, walk, run and runArmed face the way he last moved in all eight true facings; W, SW and NW are his true left side, never the east mirrored (the blade in his right hand, the scabbard at his left hip from every side), and a turn steps through the facings between. Harvest faces N. Every attack, skill and stance is still side on (owner: "Same side attack is fine"), and facing west it is his true left, never mirrored (owner: "don't mirror"): the scabbard stays at his left hip in every move. The samurai (guard, flinch, stagger) and the companions (idle, walk, run) turn the same way; the dead stay side on. Guard: the check's "eight facings" and "true left" steps.
 - Cooldowns (`player/cooldowns.js`): K 3 s (none with no enemy near; 0.2 s after an assassination) · I 2 s, Thousand Cuts 8 s · O 10 s · P 12 s · N 14 s · U 8 s · slide 1 s. J and jump have none.
 
+## The simulation core (`src/sim/`, `docs/sim-core.md`)
+
+The living world as plain data (the ledger): the 100 × 100 zone grid, regions, cultures, people, plots, the clock. No drawing. Every world system registers with `system()` and keeps its state in the ledger. Read `docs/foundations.md` and `docs/sim-core.md` before touching it. `node scripts/sim-smoke.mjs [seed] [years]` makes and lives a world in Node; `node scripts/proto-bundle.mjs` turns a prototype built on it into one standalone page.
+
 ## Working conventions
 
-- Iterate on design as standalone pages in `prototypes/`, numbered in order (`35` to `41` are taken by lanes in flight). A prototype built from the game's own modules keeps its source in `scripts/protoNN/` and is bundled into one page (`node scripts/proto36/build.mjs`). Never edit an old prototype; make a new one.
+- Iterate on design as standalone pages in `prototypes/`, numbered in order (`45-…html` next; 35 to 42 are reserved by the parallel lanes in `docs/sim-core.md`). A prototype built from the game's own modules keeps its source in `scripts/protoNN/` and is bundled into one page (`node scripts/proto36/build.mjs`). Never edit an old prototype; make a new one.
 - Record every decision the owner makes in `docs/design-notes.md`.
 - Every culture moves through the trait system: a character from a culture gets `setPersonality`/`bake(personOf(culture, seed))`, never hand-made idle or walk poses. A culture's mannerisms go in `CULTURES` (a new mannerism is a new trait or fidget).
 - Personality traits (`src/traits/`) never import player, enemy or clothing code, so any rig character can take them. A new trait is a new entry in `TRAITS`; a new knob goes in `BASE` with the plain ronin's value, so no-trait output never changes.

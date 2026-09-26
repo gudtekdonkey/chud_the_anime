@@ -60,6 +60,15 @@ export const RULES = {
   // batch 5 (prototypes/34): clean swordwork, all common, in review
   'Draw Cut': { ...std, ...C }, 'Kesa': { ...std, ...C }, 'Rising Kesa': { ...std, ...C }, 'Heart Thrust': { ...std, ...C }, 'Boot': { ...std, ...C },
   'Knee, then Neck': { ...std, ...C }, 'Hamstring': { ...std, ...C }, 'Trip': { ...std, ...C }, 'Side Step': { ...std, ...C }, 'Under the Swing': { ...std, ...C },
+  // batch 6 (prototypes/43): two beats and holds, in review
+  'Two Step': { ...std, ...C }, 'Through the Guard': { ...std, ...U }, 'Shoulder Check': { ...std, ...C }, 'Elbow': { ...std, ...U }, 'Hold and Cut': { ...std, ...C },
+  'Cross': { ...std, ...U }, 'Half Turn': { ...std, ...C }, 'Wrist': { ...std, ...U }, 'Pull In': { ...std, ...U },
+  'Blood Flick': { ...std, ending: true, ...U },                  // he never turns round: an ending
+  // batch 7 (prototypes/44): small tricks, in review
+  'Tap': { ...std, ...U }, 'Coin': { ...std, ...U }, 'Offer': { weapons: LONG_SAYA, ...U }, 'Saya Block': { weapons: LONG_SAYA, ...U },
+  'Swallow Return': { ...std, ...U }, 'Spin Behind': { ...std, ...C }, 'Low Sweep': { ...std, ...C }, 'Seated Draw': { ...std, ...U },
+  'Lean Away': { ...std, ...U },
+  'Borrowed Blade': { weapons: ANY, ...U },                       // his own stays sheathed: the enemy's sword does it
 };
 const need = name => ({ weapons: SHEATHED, hat: null, ending: false, opening: false, foes: ['minion', 'elite', 'boss'], rarity: 'common', level: 1, ...RULES[name] });
 export const RARITY = { common: { w: 10, power: 1 }, uncommon: { w: 5, power: 1 }, rare: { w: 2, power: 2 }, legendary: { w: .6, power: 3 } };
