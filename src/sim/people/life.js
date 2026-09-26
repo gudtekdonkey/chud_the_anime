@@ -23,7 +23,7 @@ export function live(L, a, r) {
   const P = L.sys.people, ag = age(L, a), k = zkey(a.home), s = k ? P.settle[k] : null, fed = s ? s.fed : 1;
   // ---- death ----
   let base = hazard(ag) * (CLASS_HAZARD[a.cls] || 1), fam = fed < FAMINE_FROM ? FAMINE * (FAMINE_FROM - fed) / FAMINE_FROM * (ag < 5 || ag > 60 ? 2 : 1) : 0;
-  let vio = ag < 14 ? 0 : VIOLENCE[a.cls] ?? VIOLENCE_OTHER;
+  let vio = ag < AGE.ADULT || L.sys.crime ? 0 : VIOLENCE[a.cls] ?? VIOLENCE_OTHER;   // with the crime system running, it does the killing
   const tr = a.traits;
   for (let i = 0; i < tr.length; i++) { const t = tr[i][0], v = tr[i][1]; if (t === 'drunk') base *= 1 + .3 * v; else if (t === 'brawler' || t === 'menacing' || t === 'cocky') vio *= 1 + .5 * v; }
   if (a.id === L.player) { fam = vio = 0; if (ag < AGE.OLD) base = 0; }   // the ledger never kills him young off screen; old age can
@@ -80,7 +80,7 @@ function birth(L, m, r) {
   }
   if (r.chance(CHILDBIRTH)) killActor(L, m.id, 'childbirth');
 }
-// a trade at twelve: a son usually follows his father's, anyone may take another of the class
+// a trade at eighteen: a son usually follows his father's, anyone may take another of the class
 function trade(L, a, r) {
   const jobs = (CLASSES[a.cls] || CLASSES.commoner).jobs.filter(j => j !== 'lord' && j !== 'abbot'), f = act(L, a.parents[0]);
   if (f && jobs.includes(f.job) && r.chance(a.sex === 'm' ? .7 : .35)) return f.job;

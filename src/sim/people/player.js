@@ -51,7 +51,7 @@ export function lootGrave(L, deadId, finderId) {
   return taken;
 }
 // killActor calls this when the played actor dies: the estate has already passed (death.js); the heir becomes L.player, or the run ends.
-// A child heir is played at once (owner 2026-09-26); his mother, else his next of kin, is his regent until he is 16
+// A child heir is played at once (owner 2026-09-26); his mother, else his next of kin, is his regent until he is 18
 export function handOff(L, p, est) {
   const P = L.sys.people, heir = est.heir && playableHeirs(L, p).includes(est.heir) ? est.heir : playableHeirs(L, p)[0] || null;
   P.lineage.push({ actor: p.id, from: p.playedFrom ?? 0, died: L.hour, cause: p.cause, grave: p.grave });

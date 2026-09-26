@@ -119,7 +119,7 @@ function catchDay(L, r, day) {
       if (!r.chance(1 - (1 - p) ** WEEK)) continue;
       C.stats.caught++;
       if (CRIMES[b.worst].rank >= CRIMES.murder.rank && r.chance(WORLD.EXECUTE)) {
-        kill(L, a, 'executed'); C.stats.executed++; delete C.bounty[id];
+        kill(L, a, 'executed', null, a.home); C.stats.executed++; delete C.bounty[id];
         emit(L, 'crime.executed', { actor: id, culture: +c, worst: b.worst, zone: a.home }); break; }
       const fine = Math.min(purse(a), Math.round(b.mon)); spend(a, fine); C.stats.fined++; clearBounty(L, id, c);
       emit(L, 'crime.caught', { actor: id, culture: +c, worst: b.worst, fine, zone: a.home }); break; }

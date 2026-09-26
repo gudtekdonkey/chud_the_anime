@@ -131,7 +131,7 @@ function passSeat(L, a, heir) {
   let to = heir && heir.alive ? heir : null, how = to ? (adult(L, to) ? 'heir' : 'regent') : 'seized';
   if (!to) {
     const P = L.sys.people, cands = [];
-    for (const k in P.settle) if (P.settle[k].region === reg.id) for (const p of residents(L, k)) { const ag = age(L, p); if (ag >= 20 && ag < 65 && p.id !== L.player) cands.push(p); }
+    for (const k in P.settle) if (P.settle[k].region === reg.id) for (const p of residents(L, k)) { const ag = age(L, p); if (ag >= 20 && ag < 65 && p.id !== L.player && p.lord == null) cands.push(p); }   // a lord already seated elsewhere keeps one seat
     cands.sort((x, y) => y.rank - x.rank || (y.sex === 'm') - (x.sex === 'm') || x.born - y.born || (x.id < y.id ? -1 : 1));
     to = cands[0] || null;
   }

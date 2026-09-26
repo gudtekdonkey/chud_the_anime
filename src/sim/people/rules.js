@@ -1,10 +1,11 @@
 // ---- The numbers of a life: every age, rate, price and rule the people system uses, in one place to tune (docs/sim-people.md) ----
 // Pure data and small pure functions. Proposals until the owner confirms them.
 
+// children stay at home until 18, unseen (owner 2026-09-26): no trade, no marriage, no crime, fight or witness before it
 export const AGE = {
-  WORK: 12,              // a child takes up a trade (job 'child' before)
-  ADULT: 16,             // comes of age: may marry, inherits in his own right, may be played
-  WED_M: [17, 55], WED_F: [16, 42], FERTILE: [16, 45],
+  WORK: 18,              // a child takes up a trade (job 'child' before)
+  ADULT: 18,             // comes of age: may marry, inherits in his own right, may be played
+  WED_M: [18, 55], WED_F: [18, 42], FERTILE: [18, 45],
   OLD: 55,               // deaths past this are mostly 'age'
 };
 export const VISITS = 2;         // each person is lived twice a year (a 56-day bucket), so a day costs about a hundred people
@@ -18,7 +19,8 @@ export function hazard(age) {
 // better fed, better doctored
 export const CLASS_HAZARD = { royal: .7, noble: .75, retainer: .9, monk: .85 };
 // yearly chance of a violent death, the baseline for the ledger's quiet fights and robberies; the crime and war lanes kill on top
-// of it through killActor (and can lower these once they do)
+// of it through killActor. When the crime system runs it owns violence (owner 2026-09-26: a violent time, 30% of grown people a year),
+// and these are not used (life.js)
 export const VIOLENCE = { outlaw: .035, ronin: .02, shinobi: .02, ashigaru: .012, retainer: .01, rebel: .008 };
 export const VIOLENCE_OTHER = .0015;
 // famine: extra yearly hazard at fed 0 (children and elders twice as likely), falling linearly to nothing at fed FAMINE_FROM (a lean year
@@ -93,7 +95,8 @@ export const SCHEDULES = {
   temple: [[0, 'sleep', 'temple'], [4, 'pray', 'shrine'], [6, 'eat', 'temple'], [7, 'work', 'temple'], [12, 'eat', 'temple'], [13, 'work', 'temple'], [17, 'pray', 'shrine'], [19, 'sleep', 'temple']],
   court: [[0, 'sleep', 'hall'], [7, 'eat', 'hall'], [9, 'court', 'hall'], [12, 'eat', 'hall'], [13, 'court', 'hall'], [17, 'walk', 'village'], [19, 'eat', 'hall'], [22, 'sleep', 'hall']],
   road: [[0, 'sleep', 'inn'], [5, 'eat', 'inn'], [6, 'travel', 'road'], [18, 'eat', 'inn'], [19, 'drink', 'inn'], [22, 'sleep', 'inn']],
-  child: [[0, 'sleep', 'home'], [6, 'eat', 'home'], [7, 'play', 'village'], [12, 'eat', 'home'], [13, 'help', 'field'], [18, 'eat', 'home'], [20, 'sleep', 'home']],
+  // children stay at home, unseen (owner 2026-09-26)
+  child: [[0, 'sleep', 'home'], [6, 'eat', 'home'], [7, 'play', 'home'], [12, 'eat', 'home'], [13, 'help', 'home'], [18, 'eat', 'home'], [20, 'sleep', 'home']],
   elder: [[0, 'sleep', 'home'], [6, 'eat', 'home'], [7, 'sit', 'village'], [12, 'eat', 'home'], [13, 'sit', 'home'], [18, 'eat', 'home'], [20, 'sleep', 'home']],
 };
 export const JOB_SCHEDULE = {

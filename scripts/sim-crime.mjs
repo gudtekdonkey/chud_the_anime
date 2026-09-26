@@ -1,6 +1,7 @@
 // node scripts/sim-crime.mjs [seed] [years]: live a world with the crime system for some years (10 by default) and print what happened:
 // crimes by kind, bounties, land that changed hands by force vs by title. Asserts the lane's rules and exits 1 if one breaks.
 import { generateWorld, advance, hoursFromYears, serialize, deserialize, HOURS_PER_YEAR, ownerOf } from '../src/sim/index.js';
+import { findHeir } from '../src/sim/people/index.js';
 import { crimeState, commit, takePlotByMurder, bountyOf, karmaName, payOff, claimantOf, courtCase, heirOf, payBloodPrice, fadeOf } from '../src/sim/crime/index.js';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 10);
 let fails = 0; const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if (!ok) fails++; };
@@ -20,9 +21,9 @@ const before = bountyOf(L, me.id, c); commit(L, 'assault', { by: me.id, victim: 
 check(bountyOf(L, me.id, c) === before && me.karma < -3, `masked assault: karma ${me.karma}, bounty unchanged`);
 const head = folk.find(a => a.holds.length && a.id !== L.regions[L.zones[zy * 100 + zx].region].lord), pid = head.holds[0];
 takePlotByMurder(L, me.id, head.id, pid, { witnesses: w });
-const o = ownerOf(L, pid);
-check(o.holder === me.id && o.title === head.id, `plot ${pid} taken by murder: holder is him, title stays with ${head.given} (dead)`);
-check(claimantOf(L, pid) === heirOf(L, head, me.id), `the heir claims it: ${claimantOf(L, pid)}`);
+const o = ownerOf(L, pid), heir = findHeir(L, head).heir;
+check(o.holder === me.id && o.title !== me.id && o.title === heir?.id, `plot ${pid} taken by murder: holder is him, the title passed to ${head.given}'s heir ${heir?.given} (people lane)`);
+check(claimantOf(L, pid) === o.title, `the heir claims it: ${claimantOf(L, pid)}`);
 check(courtCase(L, pid).won === 'claimant' && ownerOf(L, pid).holder !== me.id, 'the heir sues with living witnesses and wins possession back');
 console.log(`him: karma ${me.karma} (${karmaName(me.karma)}), bounty ${bountyOf(L, me.id, c)} mon, standing ${me.standing[c]}`);
 me.money.ryo = 10; check(payOff(L, me.id, c, 'magistrate').ok && bountyOf(L, me.id, c) === 0, 'paid off at the magistrate');
@@ -38,13 +39,15 @@ check(fadeOf(me, 'regicide') === 0 && fadeOf({ cls: 'royal' }, 'regicide') > 0, 
 const days = [], H = hoursFromYears(years);
 t0 = performance.now();
 // the share of grown people (18 and over, the ones the world shows) alive at the start of each year who die in it
+const aliveAll = () => Object.values(L.actors).filter(a => a.alive).length, pop = [];
 const grown = () => Object.values(L.actors).filter(a => a.alive && (L.hour - a.born) / HOURS_PER_YEAR >= 18), slain = [];
-for (let y = 0; y < years; y++) { const g = grown(), t = performance.now(); advance(L, HOURS_PER_YEAR); days.push((performance.now() - t) / 112); slain.push(g.filter(a => !a.alive).length / g.length); }
+for (let y = 0; y < years; y++) { const g = grown(), t = performance.now(); advance(L, HOURS_PER_YEAR); days.push((performance.now() - t) / 112); slain.push(g.filter(a => !a.alive).length / g.length); pop.push(aliveAll()); }
 const ms = performance.now() - t0;
 const C = crimeState(L), s = C.stats;
 console.log(`\nlived ${years} years (${H / 24} days) in ${ms.toFixed(0)} ms: ${(ms / (H / 24)).toFixed(3)} ms a day on average (per year: ${days.map(d => d.toFixed(3)).join(' ')})`);
 console.log('crimes by kind', s.byKind);
-console.log(`died by the sword each year (share of grown people): ${slain.map(x => (x * 100).toFixed(0) + '%').join(' ')}`);
+console.log(`people living at the end of each year (births from the people lane): ${pop.join(' ')}`);
+console.log(`died each year, any cause (share of grown people): ${slain.map(x => (x * 100).toFixed(0) + '%').join(' ')}`);
 console.log(`known ${s.known} · unseen ${s.unseen} · masked ${s.masked} · justice (the victim was wanted) ${s.justice}`);
 console.log(`bounties raised ${s.bounties} · paid ${s.paid} · faded ${s.faded} · caught ${s.caught} (fined ${s.fined}, executed ${s.executed}) · raids ${s.raids} · feuds ${s.feuds} · hunters ${s.hunters}`);
 const open = Object.entries(C.bounty).flatMap(([id, bs]) => Object.values(bs).map(b => b.mon));
