@@ -1,6 +1,7 @@
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
 import { RY } from '../rig/rig.js';
 import { grip, twoHanded, breathe, slungDraw, slungStow } from './grip.js';
+import { YARI_3D } from './art3d.js';
 
 // ---- The naginata: a long haft with a curved blade, slung across his back. It cuts in wide sweeps, low at the legs and
 //   down from overhead, the haft sliding through both hands ----
@@ -16,6 +17,7 @@ function naginata(k, at, d, back, fwd) {
     k.put(...q, 'W'); if (i < BLADE - 1) k.put(...k.add(q, n, 1), 'S'); } }
 const stowed = p => p.sword === null && !p.sheathing && p.bsword == null;
 const ART = {
+  d3: YARI_3D,   // the other facings draw it as the yari's haft (art3d.js)
   far(k, p) { if (stowed(p)) naginata(k, k.L(9, -4.3), along(SLUNG), 16, SHAFT - 16); },
   stowed() {},
   held(k, hand, a) { const t = twoHanded(k, hand, a); if (t) naginata(k, k.bh, t, 5, SHAFT - 5); else naginata(k, hand, along(a), 12, SHAFT - 12); },

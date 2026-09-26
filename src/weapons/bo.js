@@ -1,6 +1,7 @@
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
 import { RY } from '../rig/rig.js';
 import { grip, twoHanded, breathe, slungDraw, slungStow } from './grip.js';
+import { staff3d } from './art3d.js';
 
 // ---- The bo: a plain hardwood staff a head taller than him, slung across his back. Held in the middle, so both ends strike:
 //   one end cracks down from overhead, then the staff spins and the other end rises from below ----
@@ -19,6 +20,7 @@ function held(k, hand, a) { const t = twoHanded(k, hand, a);
   if (t) staff(k, [(hand[0] + k.bh[0]) / 2, (hand[1] + k.bh[1]) / 2], t, HALF, HALF); else staff(k, hand, along(a), 10, 2 * HALF - 10); }
 const stowed = p => p.sword === null && !p.sheathing && p.bsword == null;
 const ART = {
+  d3: staff3d('T', 15, 15),   // the same weapon from any other facing (art3d.js)
   // slung across the back like the yari, one end at his calves and the other over the hat
   far(k, p) { if (stowed(p)) staff(k, k.L(9, -4.3), along(SLUNG), HALF + 2, HALF - 2); },
   stowed() {},

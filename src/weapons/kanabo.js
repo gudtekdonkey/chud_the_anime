@@ -1,6 +1,7 @@
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
 import { RY } from '../rig/rig.js';
 import { breathe, shoulderDraw, shoulderStow, runWith } from './grip.js';
+import { staff3d } from './art3d.js';
 
 // ---- The kanabo: an iron-studded war club hung down his back, grip over the shoulder. No edge, only weight: it is raised
 //   high and dropped, and the floor takes what the enemy doesn't ----
@@ -17,6 +18,7 @@ function club(k, hand, a) { const d = along(a), n = [-d[1], d[0]]; let e = 20;
   k.put(...k.add(hand, d, e + 1), 'W'); }
 const MOUTH = k => k.L(10, -3.4);
 const ART = {
+  d3: staff3d('S', 5, 20),   // the same weapon from any other facing (art3d.js)
   // hung down his back from a cord, the grip standing up behind the shoulder
   far(k, p) { if (stowed(p)) club(k, MOUTH(k), 1.95); },
   stowed() {},
