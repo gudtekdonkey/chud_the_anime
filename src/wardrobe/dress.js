@@ -15,7 +15,7 @@ export function dress(R, F, p, dt = 0, yaw = 0) {
   R.clear(); let J;
   if (!yaw) { const { hc } = rigR(R, p); J = solve(fromSide(p), 0, true); J.hc = hc; }
   else { J = solve(port(p), yaw);
-    drawBody3d(R, J, { blink: p.dim > .5, hat: [...F.outfit].some(id => BY_ID[id] && BY_ID[id].slot === 'head'), blade: p.wp && p.wp.blade3d }); }
+    drawBody3d(R, J, { blink: p.dim > .5, hat: [...F.outfit].some(id => BY_ID[id] && BY_ID[id].slot === 'head'), art: p.wp && p.wp.d3 }); }
   const live = new Set();
   // the breeze, plus the wind of his own motion
   const env = { t: F.t, wind: [Math.sin(F.t * .9) * 9 + Math.sin(F.t * 2.1) * 4 - F.vel[0] * 1.3, 0, Math.sin(F.t * .7 + 1) * 3 - F.vel[1] * 1.3] };

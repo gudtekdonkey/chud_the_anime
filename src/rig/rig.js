@@ -1,4 +1,4 @@
-import { OX, OY, RC } from '../config.js';
+import { FW, FH, OX, OY, RC } from '../config.js';
 import { KATANA_ART } from '../weapons/katana.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
@@ -7,21 +7,26 @@ import { KATANA_ART } from '../weapons/katana.js';
 //   rigR(R, p): into a depth raster (src/wardrobe/raster.js), the body only: what he wears is items (src/wardrobe/items.js) layered
 //   between his limbs by depth: the far arm and leg behind the body, the near arm over whatever he wears, a held blade over everything.
 // The depths follow the painter's order, so the bare raster rig draws exactly what the canvas rig does without the hat and mantle.
+// it works in its original 48x48 frame (feet at 24, 40) and is shifted by whole pixels into the bigger frame, so the rounding
+//   of every pose stays exactly as it was
+export const RX = 24, RY = 40;
+const DX = OX - RX, DY = OY - RY;
 const Z = { scab: -3.5, farArm: -3, offHand: -2.9, farLeg: -2.5, body: 0, obi: .01, nearLeg: 1.2, head: 2.5, eye: 2.51, hat: 3, mantle: 3.5, bblade: 40, nearArm: 45, blade: 50 };
 export const NEAR_ARM_Z = Z.nearArm;
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
 // pal swaps the colours (the samurai's red-grey); p.bare drops the hat and mantle for a bare head and topknot
 export function rig(g, fx, p, pal = RC) {
-  return draw((x, y, z, c) => { g.fillStyle = pal[c]; g.fillRect(fx + x, y, 1, 1); }, p, true);
+  // pixels past the frame's edge are dropped, so a long weapon never bleeds into the next frame of the sheet
+  return draw((x, y, z, c) => { if (x < 0 || x >= FW || y < 0 || y >= FH) return; g.fillStyle = pal[c]; g.fillRect(fx + x, y, 1, 1); }, p, true);
 }
 // returns the head's centre, so the hat, hair and masks sit on exactly the pixels the head does
 export const rigR = (R, p) => draw((x, y, z, c) => R.px(x, y, z, c), p, false);
 
 function draw(out, p, clothed) {
   let z = 0;
-  const put = (x, y, c) => out(Math.round(x), Math.round(y), z, c);
+  const put = (x, y, c) => out(DX + Math.round(x), DY + Math.round(y), z, c);
   const blob = (x, y, w, c) => { const x0 = Math.round(x - (w - 1) / 2), y0 = Math.round(y - (w - 1) / 2);
-    for (let j = 0; j < w; j++) for (let i = 0; i < w; i++) out(x0 + i, y0 + j, z, c); };
+    for (let j = 0; j < w; j++) for (let i = 0; i < w; i++) out(DX + x0 + i, DY + y0 + j, z, c); };
   const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
     for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
   const poly = (pts, c) => {
@@ -36,7 +41,7 @@ function draw(out, p, clothed) {
         if (inside) put(x, y, c);
       }
   };
-  const hip = [OX + p.hx, OY - 11 + p.hy];
+  const hip = [RX + p.hx, RY - 11 + p.hy];
   const up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
   // breath lifts the chest, shoulders and head but not the hips, so it reads as breathing, not bobbing
   // the chest pivots at the waist (u = 4), so a cut can be driven by the hips and then the chest
@@ -57,11 +62,11 @@ function draw(out, p, clothed) {
     z = Z.farLeg; leg(p.bl, 'D', -.5); z = Z.body; poly([L(0, -2), L(0, 2), L(2.6, 2.2), L(2.6, -2.2)], 'K'); z = Z.nearLeg; leg(p.fl, 'K', .5); return { hc: null };
   }
   // the weapon's art draws itself through these hooks (src/weapons/); a pose carries it as p.wp, the katana if none
-  const wp = p.wp || KATANA_ART, kit = { put, seg, blob, add, L };
+  const wp = p.wp || KATANA_ART, kit = { put, seg, blob, add, L, p };
   // far side first: scabbard, far arm, far leg
   z = Z.scab; wp.far(kit, p, mouth, sd);
   // the back hand can carry the blade too, for the counter stances
-  z = Z.farArm; const bh = arm(p.ba, 'D');
+  z = Z.farArm; const bh = arm(p.ba, 'D'); kit.bh = bh;   // a two-handed weapon runs its shaft through both hands
   z = Z.offHand; if (wp.offHand) wp.offHand(kit, p, bh);                  // a second weapon in the back hand (twin blades)
   z = Z.farLeg; leg(p.bl, 'D', -.5);
   // torso, near leg
@@ -94,5 +99,5 @@ function draw(out, p, clothed) {
   if (p.sword === null && !p.sheathing && p.bsword == null && !p.empty) wp.stowed(kit, p, mouth, sd);
   else if (p.sheathing) wp.sheathing(kit, hand, mouth);
   else if (p.sword !== null) wp.held(kit, hand, p.sword);
-  return { hc: p.noHead ? null : hc };
+  return { hc: p.noHead ? null : [hc[0] + DX, hc[1] + DY] };
 }

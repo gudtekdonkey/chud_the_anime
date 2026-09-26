@@ -1,6 +1,6 @@
 import { pz, HILT, lerpP } from '../rig/pose.js';
 import { rr, sgn } from '../fx/util.js';
-import { at, hold, lin, IDLE, EG, RX, whiff, quickSheathe } from './enemy-poses.js';
+import { at, hold, lin, IDLE, EG, RX, whiff } from './enemy-poses.js';
 import { partOf, toPieces, splitPiece, shatter, sever, dropSword, fallScript, slideOff } from './pieces.js';
 import { F } from './stage-fx.js';
 
@@ -8,6 +8,8 @@ import { F } from './stage-fx.js';
 // Each runs in the stage's own frame, where the enemy faces left (-1) and the ronin came from the left; the stage mirrors it.
 // side: where he lands (+1 behind the enemy, -1 in front), gap: how far from him, dur: until the enemy has come to rest,
 // free: when the ronin has sheathed and the player has him back. run(S, t, R, E) poses both bodies at time t.
+// S.tail(t0, from): how he ends from pose `from` at t0: sheathed if nobody is left near, else the blade stays out for the next K.
+// bare: he never draws, so he never has to sheathe.
 const CY = '#6ff3e4', CY2 = '#b8fff6', WH = '#ffffff';
 const head = (S, E, pose, vx, vz, va) => S.pieces.push(...toPieces(partOf(E, pose, { noHead: true }), [], E.y, P => { P.vz = vz; P.vx = vx; P.va = va; }));
 export const EXECS = [
@@ -16,7 +18,7 @@ export const EXECS = [
       const wait = pz({ hy: 3, lean: .25, chest: .15, fl: [.55, .85], bl: [-.5, .3], fa: HILT, ba: [-.3, .6] });
       const stab = pz({ hx: 1, hy: 3, lean: .38, chest: .36, fl: [.75, 1.05], bl: [-.65, .3], fa: [-2.25, .05], sword: Math.PI + .3, ba: [-.5, .5], hat: 1, flutter: 1 });   // the blade swept back, high: neck height
       const SLICE = .5;
-      R.face = 1; R.pose = at([[0, wait], [SLICE - .02, wait], [SLICE, stab, lin], [.95, pz({ ...stab, lean: .4, flutter: 0 })], ...quickSheathe(.95, stab).slice(1)], t);
+      R.face = 1; R.pose = at([[0, wait], [SLICE - .02, wait], [SLICE, stab, lin], [.95, pz({ ...stab, lean: .4, flutter: 0 })], ...S.tail(.95, stab)], t);
       // the enemy, still facing away: resignation, then his arms open and the sword slips out of his hand
       const slump = pz({ hy: 3, lean: .2, chest: .38, fl: [.3, .45], bl: [-.3, .3], fa: [.55, .25], ba: [.35, .35], sword: 1.25 });
       const open = pz({ hy: 3, lean: .16, chest: .34, fl: [.3, .45], bl: [-.3, .3], fa: [1.2, -.1], ba: [-1.05, 0], sword: .9 });
@@ -39,7 +41,7 @@ export const EXECS = [
       const crouch = pz({ hy: 4, lean: .6, chest: .15, fl: [.85, 1.45], bl: [-.85, .5], fa: HILT, ba: [-.05, .8] });
       const past = pz({ hx: 2, hy: 6, lean: .85, chest: .5, fl: [1.4, 1.6], bl: [-1.35, .05], fa: [1.5, -.05], sword: .25, ba: [-1.85, 0], hat: 1, flutter: 1 });
       const settle = pz({ hx: 1, hy: 5, lean: .7, chest: .4, fl: [1.3, 1.5], bl: [-1.2, .1], fa: [1.45, 0], sword: .35, ba: [-1.7, .05], hat: 1 });
-      R.face = 1; R.pose = at([[0, crouch], [.07, past, hold], [.1, past], [.2, settle], [.42, settle], ...quickSheathe(.42, settle).slice(1)], t);
+      R.face = 1; R.pose = at([[0, crouch], [.07, past, hold], [.1, past], [.2, settle], [.42, settle], ...S.tail(.42, settle)], t);
       if (t >= .07) R.x = E.x + 28;
       S.once('pass', t >= .07, () => { const x0 = E.x - 22;
         for (let k = 0; k < 3; k++) F.ghost(S, { x: x0 + (E.x + 28 - x0) * (k + 1) / 4, y: R.y, face: 1, pose: lerpP(crouch, past, (k + 1) / 3) }, k % 2 ? CY2 : WH, .14 + k * .02);
@@ -57,7 +59,7 @@ export const EXECS = [
       const low = pz({ hy: 6, lean: .55, chest: .2, fl: [1.2, 1.9], bl: [-.2, 2.3], fa: [.4, .3], sword: 2.2, ba: [-.4, .5] });
       const up = pz({ hy: 0, lean: -.3, chest: -.45, fl: [.8, .3], bl: [-.8, .15], fa: [2.8, -.05], sword: -1.5, ba: [2.3, .2], hat: 1, flutter: 1 });
       const land = pz({ hx: 1, hy: 6, lean: .7, chest: .35, fl: [1.3, 1.7], bl: [-1.1, .2], fa: [1.05, .05], sword: 1.3, ba: [-1.2, .1], hat: 1 });
-      R.face = 1; R.pose = at([[0, low], [.05, up, lin], [.14, up], [.62, land, hold], [.9, pz({ ...land, hy: 5, lean: .6 })], ...quickSheathe(.9, land).slice(1)], t);
+      R.face = 1; R.pose = at([[0, low], [.05, up, lin], [.14, up], [.62, land, hold], [.9, pz({ ...land, hy: 5, lean: .6 })], ...S.tail(.9, land)], t);
       R.hidden = t >= .13 && t < .62;   // gone from the ground: he is up among the pieces
       R.z = t >= .62 && t < .68 ? (1 - (t - .62) / .06) * 40 : 0;
       S.once('rise', t >= .05, () => { F.hit(S, E, .05, 1 / 60); F.cres(S, E.x - 3, E.y - 12, 1, 12, -1.2, 1, .14);
@@ -87,7 +89,7 @@ export const EXECS = [
       let i = steps.length - 1; while (i > 0 && t < steps[i].t) i--;
       const st = steps[i];
       R.x = ex + st.dx; R.y = E.y + 1 + st.dy; R.face = st.f; R.z = st.z || 0;
-      R.pose = t < .42 ? st.p : at([[.42, st.p], [.75, st.p], ...quickSheathe(.75, st.p).slice(1)], t);
+      R.pose = t < .42 ? st.p : at([[.42, st.p], [.75, st.p], ...S.tail(.75, st.p)], t);
       steps.forEach((s, k) => S.once('w' + k, t >= s.t, () => {
         if (k) { const q = steps[k - 1]; F.ghost(S, { x: ex + q.dx, y: E.y + 1 + q.dy, z: q.z || 0, face: q.f, pose: q.p }, k % 2 ? CY : WH, .16); }
         F.cres(S, ex, E.y - 10, s.f, s.big ? 17 : 11, s.rot, sgn(), s.big ? .24 : .12);
@@ -115,7 +117,7 @@ export const EXECS = [
   { name: 'Far behind', side: +1, gap: 52, dur: 1.4, free: 1.1,
     run(S, t, R, E) {
       const after = pz({ hx: 1, hy: 6, lean: .8, chest: .45, fl: [1.35, 1.6], bl: [-1.3, .05], fa: [1.45, -.05], sword: .3, ba: [-1.85, 0], hat: 1, flutter: 1 });
-      R.face = 1; R.pose = at([[0, after], [.1, pz({ ...after, hy: 5, lean: .72, flutter: 0 })], [.5, pz({ ...after, hy: 5, lean: .7, flutter: 0 })], ...quickSheathe(.5, pz({ ...after, hy: 5, lean: .7 })).slice(1)], t);
+      R.face = 1; R.pose = at([[0, after], [.1, pz({ ...after, hy: 5, lean: .72, flutter: 0 })], [.5, pz({ ...after, hy: 5, lean: .7, flutter: 0 })], ...S.tail(.5, pz({ ...after, hy: 5, lean: .7 }))], t);
       S.once('line', true, () => { F.cut(S, E.x - 30, E.y - 11, R.x - 4, E.y - 11, .5); F.speed(S, E.x - 30, R.x, R.y, 12); F.hit(S, E, .06, 1 / 60); });
       const chestTouch = pz({ ...RX.guardUp, fa: [.9, .4], sword: .6, ba: [1.25, 1.55], lean: .08, chest: .15 });   // he feels something across his chest
       E.pose = at([[0, EG], [.1, RX.flinch], [.28, RX.turning], [.4, RX.guardUp], [.62, chestTouch], [.84, pz({ ...chestTouch, hy: 4 })], [.85, pz({ ...RX.legsSag, hy: 3 })], [1.15, RX.legsKneel], [1.45, RX.legsDown]], t);
@@ -131,7 +133,7 @@ export const EXECS = [
       const home = pz({ hy: 2, lean: .2, fa: [1.45, .05], sword: 1.2, ba: [-.4, .3] });
       R.face = 1;
       if (t < .32) { R.pose = beside; R.glitch = t > .24 ? (t - .24) * 18 : 0; }
-      else { R.x = S.start.x; R.y = S.start.y; R.pose = at([[.32, home], [.42, pz({ hy: 1, lean: .12, fa: [1.0, .6], sheathing: true, ba: [.45, 1.1] })], [.56, pz({ hy: 1, lean: .06, fa: HILT, ba: [.3, 1.0] })], [.9, IDLE]], t);
+      else { R.x = S.start.x; R.y = S.start.y; R.pose = S.armed ? at([[.32, home], ...S.tail(.32, home)], t) : at([[.32, home], [.42, pz({ hy: 1, lean: .12, fa: [1.0, .6], sheathing: true, ba: [.45, 1.1] })], [.56, pz({ hy: 1, lean: .06, fa: HILT, ba: [.3, 1.0] })], [.9, IDLE]], t);
         R.glitch = t < .38 ? (.38 - t) * 18 : 0; }
       S.once('back', t >= .32, () => { F.slivers(S, E.x - 9, E.y, 8); F.slivers(S, S.start.x, S.start.y, 6); });
       if (!E.gone) E.pose = at([[0, EG], [.06, RX.flinch], [.22, RX.windup], [.3, RX.windup], [.36, RX.swung, lin], [.48, pz({ ...RX.swung, lean: .35, hy: 3 })], [.56, RX.turning], [.7, RX.handsLook]], t);
@@ -145,7 +147,7 @@ export const EXECS = [
         shatter(S, E, [[x - 10, y - 20, x + 10, y], [x + 10, y - 20, x - 10, y], [x - 12, y - 12, x + 12, y - 8], [x - 3, y - 22, x + 2, y + 2]], (P, cx) => { P.vx = (cx - x) * 2.2; P.vz = rr(-25, -5); P.va = (cx - x) * .35 + rr(-1, 1); });
         S.shake = .08; F.burst(S, x, y - 10, 12); });
     } },
-  { name: 'Peek-a-boo, from behind', side: +1, gap: 6, dur: 1.9, free: .6, stay: true,
+  { name: 'Peek-a-boo, from behind', side: +1, gap: 6, dur: 1.9, free: .6, stay: true, bare: true,
     run(S, t, R, E) {
       const reach = pz({ hy: 1, lean: .12, fl: [.3, .3], bl: [-.35, .3], fa: [2.0, .9], ba: [1.8, 1.0] });
       const grip = pz({ hy: 2, lean: .2, chest: .1, fl: [.4, .5], bl: [-.45, .4], fa: [2.25, 1.15], ba: [2.05, 1.25] });
