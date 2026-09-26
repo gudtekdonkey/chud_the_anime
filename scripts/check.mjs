@@ -98,7 +98,8 @@ try {
     await reach(/^idle$/, 4000);
     // the deaths pass: the blade landed on him (knockback, blood) and his body moved on its springs
     const d = await page.evaluate(() => { const E = window.__st.E; return { name: window.__st.ex.name, hit: E.hitAt != null, t: E.body.t }; });
-    if (!d.hit || !(d.t > .5)) fail(`"${d.name}": the deaths pass never ran on the executed body (${JSON.stringify(d)})`);
+    // the two Peek-a-boos use no blade (a whiff, a neck snap), so only the springs are asked of them
+    if ((!d.hit && !/^Peek-a-boo/.test(d.name)) || !(d.t > .5)) fail(`"${d.name}": the deaths pass never ran on the executed body (${JSON.stringify(d)})`);
     const cd = await page.evaluate(() => ({ t: window.__game.P.cd.tele, max: window.__game.P.cdMax.tele }));
     if (!(cd.max <= .2 + 1e-9)) fail(`K was not reset to 0.2 s after the kill (${JSON.stringify(cd)})`);
     await until('K ready again', () => !(window.__game.P.cd.tele > 0), undefined, 1000); await sleep(500); await shot('11-after'); });
@@ -106,7 +107,8 @@ try {
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
   await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
     // out of every samurai's reach first (the top-left corner), so K is the plain teleport, not an assassination
-    await kb.down('a'); await kb.down('w'); await sleep(4200); await kb.up('a'); await kb.up('w'); await reach(FREE);
+    // walked to by position, not for a fixed time: on a slow machine the game runs slower and a timed walk falls short
+    await walkTo(24, 60, 15000); await reach(FREE);
     await kb.press('k'); await reach(/^tele$/); await reach(FREE);
     await until('K on cooldown', () => window.__game.P.cd.tele > 0);
     await kb.press('k'); await until('the refused press', () => window.__game.P.cdDeny.tele > 0);
@@ -128,7 +130,8 @@ try {
     if (cd.tele !== 0) fail(`K is still cooling down (${cd.tele})`);
     await shot('08-skill-bar'); });
   await run('walk into coins: they fly to him and mon goes up', async () => {
-    const m0 = (await inv()).mon; await walkTo(388, 150); await until('a coin collected', m => window.__game.INV.mon > m, m0); await shot('09-coins'); });
+    // the three coins, wherever he picked them up (a dash through them on the way counts too)
+    await walkTo(388, 150); await until('the coins collected', () => window.__game.INV.mon >= 3); await shot('09-coins'); });
   await run('E at the shrine: brackets, pray, health full', async () => {
     await walkTo(78, 98); await sleep(250); await shot('10-lock-on'); await kb.press('e'); await reach(/^pray$/); await sleep(700); await shot('11-pray'); await reach(FREE);
     const v = await inv(); if (v.hp !== 1) fail(`health is ${v.hp} after praying`); });

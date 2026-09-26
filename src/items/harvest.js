@@ -23,7 +23,7 @@ export function harvest(dt, holding) {
   const f = harvestable();
   if (!holding || !f) { setState('idle'); return; }
   const n = Math.min(f.left, RATE * dt); f.left -= n; addExp(n);
-  if ((P.hv = (P.hv || 0) + dt) > .03) { P.hv = 0; arc(f.x + rr(-8, 8), f.y - rr(0, 4), { dur: .45, h: rr(4, 10), col: '#a08288', col2: COL.fx, trail: false }); }
+  if ((P.hv = (P.hv || 0) + dt) > .03) { P.hv = 0; arc(f.x + rr(-8, 8), f.y - rr(0, 4), { dur: .45, h: rr(4, 10), col: COL.fx, col2: '#ffffff', trail: false }); }
 }
 export function fallenDrawables() { return FALLEN.filter(f => !f.e && f.left > 0).map(f => ({ y: f.y, d: () => drawS(REMAINS, f.x, f.y, { alpha: .35 + .65 * f.left / f.exp }) })); }
 
