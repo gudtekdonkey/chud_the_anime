@@ -1,0 +1,351 @@
+<title>Void Kings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@600;900&family=Zen+Kaku+Gothic+New:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ground: #0b0d10; --panel: #121518; --rule: #23282c; --ink: #dfe6e8; --muted: #86929a; --faint: #5a656b;
+    --ghost: #cfe3e6; --cyan: #6ff3e4;
+    --display: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
+    --body: "Zen Kaku Gothic New", "Hiragino Sans", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  }
+  body { background: var(--ground); color: var(--ink); font: 16px/1.65 var(--body); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 56px 80px; }
+  header { max-width: 68ch; display: grid; gap: 14px; margin-bottom: 56px; }
+  .eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  h1 { font: 900 clamp(44px, 8vw, 84px)/1 var(--display); letter-spacing: .01em; margin: 0; color: var(--ghost); text-wrap: balance; }
+  header p { margin: 0; color: #b9c3c7; }
+  .key { display: flex; flex-wrap: wrap; gap: 8px 22px; font: 400 13px/1.4 var(--mono); color: var(--muted); margin-top: 6px; }
+  .key b { color: var(--ink); font-weight: 500; }
+  .race { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr); gap: 28px; align-items: start; padding-block: 36px; border-top: 1px solid var(--rule); }
+  .stage { position: relative; }
+  canvas { display: block; width: 100%; max-width: 100%; aspect-ratio: 16 / 9; image-rendering: pixelated; image-rendering: crisp-edges; background: #07090b; }
+  .scale { position: absolute; left: 10px; bottom: 8px; font: 500 11px/1 var(--mono); letter-spacing: .08em; color: var(--faint); text-transform: uppercase; }
+  .dossier { display: grid; gap: 14px; }
+  .dossier .n { font: 500 12px/1 var(--mono); color: var(--faint); letter-spacing: .1em; }
+  h2 { font: 900 clamp(30px, 3.6vw, 40px)/1.05 var(--display); margin: 0; color: var(--ghost); text-wrap: balance; }
+  .was { font: 400 13px/1.4 var(--mono); color: var(--muted); }
+  .dossier p { margin: 0; color: #c3ccd0; }
+  dl { margin: 0; display: grid; gap: 10px; }
+  dl div { display: grid; grid-template-columns: 7.5em 1fr; gap: 10px; border-top: 1px solid var(--rule); padding-top: 10px; }
+  dt { font: 500 11px/1.6 var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--faint); }
+  dd { margin: 0; font-size: 14.5px; color: #c9d2d6; }
+  footer { border-top: 1px solid var(--rule); padding-top: 28px; max-width: 70ch; color: var(--muted); font-size: 14.5px; display: grid; gap: 10px; }
+  footer b { color: var(--ink); font-weight: 500; }
+  @media (max-width: 820px) { .race { grid-template-columns: 1fr; gap: 18px; } dl div { grid-template-columns: 6.5em 1fr; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">chud the anime · creatures of the voids · design study</span>
+    <h1>Void Kings</h1>
+    <p>The voids are where the wars ended. What lives there now is what the wars left: the dead who were never buried or mourned, grown together into things far bigger than men. They are spirits, ghouls and abominations, and each race is one kind of war dead. Each is shown at night, when they walk, in the game's own pixels at its own scale. The small dark figure in the hat is the ronin.</p>
+    <div class="key"><span><b>1 px</b> = 1 game pixel</span><span><b>Ronin</b> 17 px tall</span><span>Night, 320 × 180 of the 480 × 270 screen</span></div>
+  </header>
+
+  <section class="race">
+    <div class="stage"><canvas id="c-king" width="320" height="180" aria-label="The Hollow King: a robed, crowned spectre with an empty hood, planting a pale blade, beside the tiny ronin"></canvas><span class="scale">≈ 9 × the ronin</span></div>
+    <div class="dossier">
+      <span class="n">I · mountains</span>
+      <h2>The Hollow King</h2>
+      <span class="was">new · replaces the great toad</span>
+      <p>A warlord who lost everything on one field and would not lie down. It is a robe with nothing in it, as tall as a watchtower, and the arrows that killed it are still in it. A crown of broken spikes floats above the empty hood, and two cold points of light sit where the eyes were.</p>
+      <dl>
+        <div><dt>Moves</dt><dd>It never walks. It is simply nearer each time you look. The hem trails into ribbons that stream upward, never down.</dd></div>
+        <div><dt>Weapon</dt><dd>A blade of pale light as long as it is tall, planted point-down like a staff.</dd></div>
+        <div><dt>Scare</dt><dd>The crown tilts toward you and the eyes open wider. Nothing else moves. You run.</dd></div>
+        <div><dt>Knockout</dt><dd>The blade lifts once. Cut to white.</dd></div>
+        <div><dt>War</dt><dd>A lost battle on an open field.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="race">
+    <div class="stage"><canvas id="c-weaver" width="320" height="180" aria-label="The Veiled Weaver: a hanging shroud with a white mask, held up by threads from the sky, standing on eight long legs of light"></canvas><span class="scale">≈ 8 × the ronin, legs span 300 px</span></div>
+    <div class="dossier">
+      <span class="n">II · forest</span>
+      <h2>The Veiled Weaver</h2>
+      <span class="was">was the earth spider</span>
+      <p>The widows of a forest war, who went into the trees to look for their husbands. It is a shroud hanging in the canopy from threads that go up out of sight, with a white mask looking out. Eight legs of light come down from it, each longer than a tree. The soldiers it found hang under it, wrapped in thread.</p>
+      <dl>
+        <div><dt>Moves</dt><dd>One leg at a time, slowly. The body does not bob; it is carried, like a lantern on a pole.</dd></div>
+        <div><dt>Sign</dt><dd>Threads across the path at head height, lit faintly from inside.</dd></div>
+        <div><dt>Scare</dt><dd>A leg comes down in front of you, then another behind. The mask turns to face you.</dd></div>
+        <div><dt>Knockout</dt><dd>The legs close round you like fingers.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="race">
+    <div class="stage"><canvas id="c-serpent" width="320" height="180" aria-label="The Drowned Serpent: a vast translucent serpent with visible ribs and antlered skull head, swimming through the air toward the ronin"></canvas><span class="scale">longer than a village</span></div>
+    <div class="dossier">
+      <span class="n">III · marsh, coast</span>
+      <h2>The Drowned Serpent</h2>
+      <span class="was">was the river serpent</span>
+      <p>An army that was driven into a flooded river and never came out. It swims through the air as if the marsh were still underwater. Its body is clear enough to see its ribs, and the drowned are still inside it, carried along. Its head is a skull with antlers and a hanging jaw.</p>
+      <dl>
+        <div><dt>Moves</dt><dd>A slow wave from head to tail that never stops. It is always longer than the screen.</dd></div>
+        <div><dt>Sign</dt><dd>Reeds lying flat in a path wider than a road, still moving.</dd></div>
+        <div><dt>Scare</dt><dd>The head rises out of the dark right beside you and passes on without looking. The body keeps coming for a long time.</dd></div>
+        <div><dt>Knockout</dt><dd>The coils pass over you. Cut to black water.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="race">
+    <div class="stage"><canvas id="c-beast" width="320" height="180" aria-label="The Lantern Beast: a ghostly striped beast on stilt-like legs with a masked face, a serpent for a tail and paper lanterns hanging from its spine"></canvas><span class="scale">≈ 7.5 × the ronin</span></div>
+    <div class="dossier">
+      <span class="n">IV · bamboo, plains</span>
+      <h2>The Lantern Beast</h2>
+      <span class="was">was the nue</span>
+      <p>A burned town's dead and the war horses that burned with it, stitched into one thing. It has an iron war mask for a face and a horse's mane gone white. Its striped body stands high on four thin legs, and a serpent for a tail watches behind it. The funeral lanterns nobody lit for them hang from its spine, lit now.</p>
+      <dl>
+        <div><dt>Moves</dt><dd>Walks like a heron, lifting each leg high. The lanterns sway after every step.</dd></div>
+        <div><dt>Sign</dt><dd>Lantern light between the bamboo, far too high up.</dd></div>
+        <div><dt>Scare</dt><dd>Every lantern turns to you at once, and so does the tail.</dd></div>
+        <div><dt>Knockout</dt><dd>The mask comes down to your height. Its mouth is much bigger than the mask.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="race">
+    <div class="stage"><canvas id="c-step" width="320" height="180" aria-label="The Thousand-Step: a vast segmented body rising out of the ground like a tower, with blade legs and a crowned mask at the top"></canvas><span class="scale">≈ 9 × the ronin, above ground</span></div>
+    <div class="dossier">
+      <span class="n">V · hills</span>
+      <h2>The Thousand-Step</h2>
+      <span class="was">was the great centipede</span>
+      <p>A column of soldiers buried alive in a hill fort's tunnels, grown into one body. It rises out of the hillside like a tower, and each segment is one of them: a skull, and a pair of spears for legs. At the top, a war mask with mandibles and a great V-shaped helmet crest looks down. No one has seen how much of it is still underground.</p>
+      <dl>
+        <div><dt>Moves</dt><dd>Sways as a whole, slow, while the legs ripple fast in a wave from the ground up.</dd></div>
+        <div><dt>Sign</dt><dd>Hills with holes in them big enough for a house.</dd></div>
+        <div><dt>Scare</dt><dd>The ground opens beside you and the tower rises until the head is out of sight.</dd></div>
+        <div><dt>Knockout</dt><dd>The mask comes straight down.</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <footer>
+    <p><b>How they're drawn.</b> Each body is one layer of pale light: its brightness comes from shape and folds, and it thins out in dithered steps, 1 px at a time with no blur, where it fades. Nothing about them is solid: the edges crawl slowly, and the only fully opaque pixels are eyes, masks and crowns.</p>
+    <p><b>In the game.</b> The five races take over the five creature slots in the travel code, and each keeps to its own ground. The great toad is dropped, and the Hollow King takes the mountains.</p>
+    <p><b>What they do to him (your rulings).</b> Before level 11 they scare him off, then knock him out. He wakes in town to someone telling him to train before he goes out like that again: things aren't like they used to be. From level 11 a fight with one can kill him, and his heir goes on. At level 11 he can also claim his first plot, anywhere in the wilderness, and the voids can be pushed back.</p>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const W = 320, H = 180, FY = 162;
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const hash = (x, y) => { let h = (x * 374761393 + y * 668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177 | 0; return ((h ^ (h >>> 16)) >>> 0) / 4294967295; };
+  const smooth = t => t * t * (3 - 2 * t);
+  function noise(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = smooth(x - xi), yf = smooth(y - yi);
+    const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+    return a + (b - a) * xf + (c - a) * yf + (a - b - c + d) * xf * yf; }
+  const clamp = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
+  const hex = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+
+  function scene(id) {
+    const c = document.getElementById(id), g = c.getContext('2d'), img = g.createImageData(W, H);
+    return { c, g, img, d: img.data, A: new Float32Array(W * H), S: new Float32Array(W * H) };
+  }
+  function put(s, x, y, rgb, a) { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= H || a <= 0) return; const i = (y * W + x) * 4, d = s.d;
+    d[i] = d[i] + (rgb[0] - d[i]) * a; d[i + 1] = d[i + 1] + (rgb[1] - d[i + 1]) * a; d[i + 2] = d[i + 2] + (rgb[2] - d[i + 2]) * a; d[i + 3] = 255; }
+  // the ghost layer: shapes write their coverage (max) and brightness; composite() turns it into dithered pixel light
+  function stamp(s, x, y, a, sh) { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= H) return; const i = y * W + x; if (a > s.A[i]) { s.A[i] = a; s.S[i] = sh; } }
+  function disc(s, cx, cy, r, a, shFn) { for (let y = Math.floor(cy - r); y <= cy + r; y++) for (let x = Math.floor(cx - r); x <= cx + r; x++) {
+    const k = 1 - Math.hypot(x - cx, y - cy) / r; if (k > 0) stamp(s, x, y, a * clamp(k * 3), shFn ? shFn(x, y, k) : .5); } }
+  function limb(s, x0, y0, x1, y1, w0, w1, a, sh) { const L = Math.hypot(x1 - x0, y1 - y0), n = Math.ceil(L * 1.5);
+    for (let i = 0; i <= n; i++) { const t = i / n; disc(s, x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, w0 + (w1 - w0) * t, a, typeof sh === 'function' ? sh : () => sh); } }
+  function line(s, x0, y0, x1, y1, rgb, a) { const n = Math.ceil(Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0))) || 1;
+    for (let i = 0; i <= n; i++) put(s, Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), rgb, a); }
+
+  function sky(s) { const d = s.d; s.A.fill(0);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = (y * W + x) * 4; let r, g, b;
+      if (y < FY) { const k = y / FY; r = 7 + k * 12; g = 9 + k * 13; b = 11 + k * 15; }
+      else { const sp = hash(x, y) > .9 ? 7 : 0, k = (y - FY) / (H - FY); r = 25 + sp - k * 6; g = 28 + sp - k * 6; b = 30 + sp - k * 6; }
+      d[i] = r; d[i + 1] = g; d[i + 2] = b; d[i + 3] = 255; }
+    for (let x = 0; x < W; x++) put(s, x, FY, [40, 45, 48], 1); }
+  // the layer becomes light: slow crawling noise thins it, and it steps down through dithered levels, never blurred
+  function composite(s, t, pal) { const [D, M, B] = pal.map(hex);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { const i = y * W + x, a = s.A[i]; if (a <= .01) continue;
+      const n = noise(x * .085, y * .085 - t * .35), n2 = noise(x * .31 + 50, y * .31 + t * .6);
+      const aa = a * (.55 + .6 * n) * (.85 + .3 * n2), th = (BAYER[(y & 3) * 4 + (x & 3)] / 16 - .5) * .3, q = aa + th;
+      const lv = q > .78 ? .9 : q > .52 ? .62 : q > .3 ? .38 : q > .12 ? .18 : 0; if (!lv) continue;
+      const sh = clamp(s.S[i] + (n - .5) * .35), col = sh < .5 ? D.map((v, k) => v + (M[k] - v) * sh * 2) : M.map((v, k) => v + (B[k] - v) * (sh - .5) * 2);
+      put(s, x, y, col, lv); } }
+  function motes(s, t, n, cx, spread, rgb) { for (let i = 0; i < n; i++) { const life = 7 + hash(i, 3) * 5, u = ((t + hash(i, 1) * life) % life) / life;
+    const x = cx + (hash(i, 2) - .5) * spread + Math.sin(t * .7 + i) * 3, y = FY - 6 - u * 120; put(s, x, y, rgb, Math.sin(u * Math.PI) * .7); } }
+
+  // a war mask (menpo): dark iron, eye holes lit from inside, teeth bared; the face every void race wears in some form
+  function menpo(s, cx, cy, rw, rh, glow, t) {
+    for (let y = cy - rh; y <= cy + rh; y++) for (let x = cx - rw; x <= cx + rw; x++) { const k = 1 - Math.hypot((x - cx) / rw, (y - cy) / rh); if (k > 0) put(s, x, y, y < cy - rh * .2 ? [58, 60, 66] : [40, 41, 46], clamp(k * 5)); }
+    for (let x = cx - rw + 1; x <= cx + rw - 1; x++) put(s, x, cy - rh * .2, [92, 94, 100], .8);                 // the brow ridge
+    const f = .8 + .2 * Math.sin(t * 3);
+    for (const sx of [-1, 1]) for (let k = 0; k < 3; k++) { put(s, cx + sx * (2 + k), cy - 1 + (k === 0 ? 0 : k === 2 ? -1 : 0), glow, f); put(s, cx + sx * (2 + k), cy, [10, 10, 12], .9); }
+    for (let x = cx - 3; x <= cx + 3; x++) { put(s, x, cy + rh * .45, [12, 12, 14], 1); if ((x & 1) === 0) put(s, x, cy + rh * .45 - 1, [226, 222, 210], .95); if ((x & 1) === 1) put(s, x, cy + rh * .45 + 1, [226, 222, 210], .8); }
+  }
+  // a soldier's skull, small: two dark holes and a jaw
+  function skull(s, x, y, a = .7) { for (const [dx, dy, c] of [[-1, 0, 0], [1, 0, 0], [0, 1, 1], [-1, 2, 1], [1, 2, 1], [0, -1, 1]]) put(s, x + dx, y + dy, c ? [200, 206, 204] : [8, 9, 10], a); }
+  // the ronin at game scale: near-black, straw hat, the one cyan eye
+  const RONIN = ['....HHHH....', '..HHHHHHHH..', 'HHhhhhhhhhHH', '...KKKKK....', '...KKKEK....', '....KKK.....', '...KKKKKK...', '..KKKKKKKK..', '..KKKKKKKS..', '..KKKKKKK.S.', '...KKKKK...S', '...KKKKK....', '...KK.KK....', '...KK..KK...', '..KK...KK...', '..KK....KK..', '.KKK....KKK.'];
+  const RC = { H: [58, 54, 44], h: [40, 38, 32], K: [18, 21, 25], E: hex('#6ff3e4'), S: [120, 128, 132] };
+  function ronin(s, x0, face = 1) { for (let r = 0; r < RONIN.length; r++) for (let c = 0; c < 12; c++) { const ch = RONIN[r][face > 0 ? c : 11 - c]; if (ch !== '.') put(s, x0 + c, FY - RONIN.length + r + 1, RC[ch], 1); }
+    for (let x = -1; x < 13; x++) put(s, x0 + x, FY + 1, [10, 11, 12], .5); }
+
+  // ---------- I. the Hollow King ----------
+  function king(s, t) { sky(s); const cx = 205, bob = Math.sin(t * .8) * 2, hy = 40 + bob;
+    // robe: widening down, folds as brightness, the hem streaming up into ribbons
+    for (let y = Math.floor(hy + 10); y < FY; y++) { const hw = 17 + (y - hy - 10) * .45 + Math.sin(y * .13 + t) * 1.2;
+      for (let x = Math.floor(cx - hw - 2); x <= cx + hw + 2; x++) { const dx = x - cx, e = clamp((hw - Math.abs(dx)) / 5); if (e <= 0) continue;
+        const end = FY - 8 - 34 * noise(x * .22, t * .22) - 6 * Math.sin(x * .5 + t * 1.3), hem = clamp((end - y) / 26);
+        const fold = .42 + .22 * Math.cos(dx * .38 + Math.sin(y * .03) * 2) - Math.abs(dx) / hw * .2 + (y < hy + 22 ? .12 : 0);
+        stamp(s, x, y + bob * .5, e * hem * .95, fold); } }
+    // sleeves: one hanging, one reaching to the blade
+    limb(s, cx - 17, hy + 16, cx - 29, hy + 78, 7, 5, .9, .38); limb(s, cx + 17, hy + 16, cx + 33, hy + 52, 7, 4, .9, .45);
+    // the hood
+    disc(s, cx, hy, 17, 1, (x, y, k) => .45 + (y < hy ? .25 : 0) + k * .15);
+    composite(s, t, ['#2f3d42', '#7f989f', '#dcebed']);
+    // the empty hood and the two points of light
+    for (let y = hy - 7; y < hy + 16; y++) for (let x = cx - 11; x <= cx + 12; x++) { const k = 1 - Math.hypot((x - cx - 1) / 10.5, (y - hy - 4) / 12); if (k > 0) put(s, x, y, [4, 5, 6], clamp(k * 4) * .95); }
+    const blink = (t % 7) < .15 ? 0 : 1;
+    for (const ex of [cx - 4, cx + 5]) { put(s, ex, hy + 3, [236, 248, 249], blink); put(s, ex - 1, hy + 3, [180, 210, 214], .35 * blink); put(s, ex + 1, hy + 3, [180, 210, 214], .35 * blink); }
+    // the blade: planted, pale, a bright core with a thin halo
+    const bx0 = cx + 35, by0 = hy + 42;
+    line(s, bx0 - 1, by0 - 12, bx0, by0, [60, 70, 74], .9);
+    for (let k = 0; k < 2; k++) line(s, bx0 + k, by0, bx0 + 9 + k, FY, [228, 242, 243], .9 - k * .25);
+    line(s, bx0 - 1, by0 + 2, bx0 + 8, FY, [160, 196, 202], .25); line(s, bx0 + 2, by0 + 2, bx0 + 11, FY, [160, 196, 202], .25);
+    for (let k = -3; k <= 3; k++) put(s, bx0 + k, by0 - 1, [140, 160, 166], .8);
+    for (let k = 0; k < 4; k++) put(s, bx0 - 2 + k, by0 + 1 + (k & 1), [220, 236, 238], .9);   // the fingers on the hilt
+    // the crown: spikes floating a hand's width above the hood, each on its own slow drift
+    for (let i = 0; i < 7; i++) { const sx = cx - 15 + i * 5, top = hy - 30 - [6, 10, 4, 13, 5, 9, 3][i] + Math.sin(t * 1.1 + i) * 1.2;
+      for (let y = top; y < hy - 22; y++) put(s, sx, y, [226, 240, 241], .85 * (1 - (y - top) / 20 * .4)); put(s, sx, top - 1, [255, 255, 255], .6); }
+    for (let a = 0; a < Math.PI * 2; a += .05) put(s, cx + Math.cos(a) * 18, hy - 22 + Math.sin(a) * 2.5, [150, 180, 186], .35);
+    // arrows still in it from the last battle it lost
+    for (const [ax, ay, a] of [[cx - 10, hy + 40, -.7], [cx + 6, hy + 58, -.5], [cx - 22, hy + 70, -.9], [cx + 14, hy + 30, -.35], [cx - 2, hy + 86, -.6]]) {
+      const ex = ax - Math.cos(a) * 12, ey = ay + Math.sin(a) * 12; line(s, ax, ay, ex, ey, [34, 30, 26], .95);
+      put(s, ex, ey, [150, 146, 136], .9); put(s, ex - 1, ey - 1, [150, 146, 136], .7); put(s, ex + 1, ey - 1, [150, 146, 136], .7); }
+    motes(s, t, 16, cx, 90, [200, 225, 228]); ronin(s, 26); }
+
+  // ---------- II. the Veiled Weaver ----------
+  function weaver(s, t) { sky(s); const cx = 196, by = 30;
+    for (let i = 0; i < 5; i++) { const x0 = cx - 10 + i * 5 + Math.sin(t * .5 + i) * 1.5; for (let y = 0; y < by + 4; y++) put(s, x0 + Math.sin(y * .05 + t + i) * 1.2, y, [180, 200, 196], .22 + (i & 1) * .08); }
+    // the legs: from the shroud up to a high knee, down to a foot that lifts in turn
+    const legs = [];
+    for (let i = 0; i < 4; i++) for (const side of [-1, 1]) { const ph = t * .55 + i * 1.7 + (side > 0 ? 3 : 0), lift = Math.max(0, Math.sin(ph)) * 7;
+      const root = [cx + side * 7, by + 30 + i * 4], knee = [cx + side * (34 + i * 24), by - 8 + i * 7 + Math.sin(ph) * 2], foot = [cx + side * (52 + i * 30) + Math.cos(ph) * 3, FY - lift];
+      legs.push([root, knee, foot]); limb(s, ...root, ...knee, 2.2, 1.6, .9, .6); limb(s, ...knee, ...foot, 1.6, .8, .85, .55); }
+    // the shroud: a hanging teardrop that frays at the bottom
+    for (let y = by; y < by + 82; y++) { const u = (y - by) / 70, hw = 21 * Math.pow(Math.max(0, Math.sin(Math.PI * Math.min(u, .98))), .6) + 3;
+      for (let x = Math.floor(cx - hw); x <= cx + hw; x++) { const e = clamp((hw - Math.abs(x - cx)) / 4), end = by + 62 + 18 * noise(x * .3, t * .3), fr = clamp((end - y) / 14);
+        stamp(s, x, y, e * fr, .5 + .2 * Math.cos((x - cx) * .5) - u * .15); } }
+    composite(s, t, ['#3a3d37', '#9aa39a', '#eef0e8']);
+    for (const [, k] of legs) { put(s, k[0], k[1], [240, 244, 236], .9); put(s, k[0], k[1] - 1, [240, 244, 236], .4); }
+    for (const [, , f] of legs) put(s, f[0], f[1], [240, 244, 236], .8);
+    // the mask
+    const my = by + 18;
+    for (let y = my - 9; y <= my + 9; y++) for (let x = cx - 7; x <= cx + 7; x++) { const k = 1 - Math.hypot((x - cx) / 7, (y - my) / 9); if (k > 0) put(s, x, y, [238, 238, 230], clamp(k * 5)); }
+    for (const sx of [-1, 1]) for (let k = 0; k < 3; k++) put(s, cx + sx * (2 + k), my - 1 - (sx > 0 ? k : 2 - k) * .34, [30, 30, 32], 1);
+    for (let k = -2; k <= 2; k++) put(s, cx + k, my + 5, [20, 20, 22], .9);
+    // what it keeps: soldiers wrapped in its thread, hanging under it, turning slowly
+    for (const [dx, len, ph] of [[-16, 34, 0], [4, 48, 1.7], [22, 28, 3.1]]) { const x0 = cx + dx, sw = Math.sin(t * .6 + ph) * 3, top = by + 64, bot = top + len;
+      line(s, x0, top - 8, x0 + sw, bot, [190, 204, 196], .35);
+      for (let y = bot; y < bot + 16; y++) { const w = 3 * Math.sin(Math.PI * (y - bot) / 16) + .5; for (let x = -w; x <= w; x++) put(s, x0 + sw + x, y, (y + ((x * 2) | 0)) % 3 ? [196, 204, 192] : [120, 128, 120], .75); }
+      put(s, x0 + sw - 1, bot + 4, [10, 10, 12], .8); put(s, x0 + sw + 1, bot + 4, [10, 10, 12], .8); }
+    // threads across the path, lit from inside
+    for (let x = 60; x < 140; x++) put(s, x, 120 + Math.sin(x * .04 + t * .4) * 3, [190, 210, 200], .18);
+    motes(s, t, 12, cx, 160, [220, 228, 214]); ronin(s, 16); }
+
+  // ---------- III. the Drowned Serpent ----------
+  function serpent(s, t) { sky(s); const P = [], N = 420;
+    for (let i = 0; i <= N; i++) { const u = i / N; P.push([108 + u * 330, 64 + Math.sin(u * 7.5 - t * .8) * 30 * Math.min(1, u * 4) + u * 26]); }
+    // body: thick behind the head, thinning to the tail; the ribs are bright bands across it
+    for (let i = 8; i <= N; i++) { const u = i / N, r = 11 * Math.pow(1 - u, .45) + 2.5, [x, y] = P[i], rib = (i % 11) < 2 ? .35 : 0;
+      disc(s, x, y, r, .9, (px, py, k) => .38 + (py < y ? .18 : -.05) + rib + k * .1);
+      if (i % 9 === 0 && u < .9) { const top = y - r; for (let k = 0; k < 6; k++) stamp(s, x - k * .4, top - k, .5 * (1 - k / 6), .7); } }
+    // the skull: long, low, jaw a little open
+    const [hx, hy] = P[0];
+    for (let y = hy - 12; y <= hy + 12; y++) for (let x = hx - 30; x <= hx + 10; x++) { const k = 1 - Math.hypot((x - hx + 8) / 22, (y - hy) / 10); if (k > 0) stamp(s, x, y, clamp(k * 3), .62 + (y < hy ? .15 : 0)); }
+    for (let x = hx - 32; x <= hx - 6; x++) { const k = (x - hx + 32) / 26; stamp(s, x, hy + 7 + (1 - k) * 4, .9, .55); stamp(s, x, hy + 8 + (1 - k) * 4, .9, .5); }
+    composite(s, t, ['#1f3a36', '#6f9a90', '#d6efe8']);
+    for (let y = hy - 6; y <= hy + 2; y++) for (let x = hx - 16; x <= hx - 4; x++) { const k = 1 - Math.hypot((x - hx + 10) / 6, (y - hy + 2) / 4); if (k > 0 && y >= hy - 6 + (x - hx + 16) * .25) put(s, x, y, [3, 5, 5], .97); }
+    put(s, hx - 9, hy - 1, [210, 240, 230], .9);                                                       // a point of light, deep in the socket
+    for (let x = hx - 30; x <= hx - 4; x++) put(s, x, hy - 7 - (x - hx + 30) * .08, [200, 226, 218], .5); // the brow ridge
+    for (let x = hx - 31; x <= hx - 9; x += 3) { put(s, x, hy + 5, [226, 240, 234], .95); put(s, x, hy + 6, [226, 240, 234], .7); }
+    for (let x = hx - 30; x <= hx - 12; x += 3) { const jy = hy + 9 + (1 - (x - hx + 32) / 26) * 4; put(s, x, jy, [226, 240, 234], .9); put(s, x, jy - 1, [226, 240, 234], .6); }
+    for (let x = hx - 30; x <= hx - 10; x++) put(s, x, hy + 7, [4, 7, 7], .8);                            // the open mouth
+    // the drowned, still inside it: dark shapes of men, curled, carried along
+    for (let i = 60; i < N - 40; i += 52) { const [x, y] = P[i], a = .45;
+      for (const [dx, dy] of [[0, -3], [-1, -2], [0, -2], [1, -2], [0, -1], [-1, 0], [0, 0], [1, 0], [-1, 1], [1, 2], [-2, 1], [2, -1]]) put(s, x + dx, y + dy, [10, 22, 20], a); }
+    // antlers, branching back
+    const ant = (x0, y0, a, len, depth) => { if (depth > 3 || len < 3) return; const x1 = x0 + Math.cos(a) * len, y1 = y0 + Math.sin(a) * len;
+      line(s, x0, y0, x1, y1, [214, 236, 228], .85 - depth * .12); ant(x1, y1, a - .5, len * .62, depth + 1); ant(x1, y1, a + .35, len * .5, depth + 1); };
+    ant(hx - 2, hy - 9, -2.2 + Math.sin(t) * .03, 16, 0); ant(hx + 3, hy - 8, -1.9 + Math.sin(t + 1) * .03, 13, 1);
+    motes(s, t, 10, 170, 220, [190, 226, 214]); ronin(s, 26); }
+
+  // ---------- IV. the Lantern Beast ----------
+  function beast(s, t) { sky(s); const cx = 196, bob = Math.sin(t * 1.2) * 1.5, by = 88 + bob;
+    // legs: stilts with a high, slow step
+    for (let i = 0; i < 4; i++) { const ph = t * .9 + [0, 2, 1, 3][i] * 1.57, lift = Math.max(0, Math.sin(ph)) * 8, lx = cx - 38 + i * 25;
+      const hip = [lx, by + 14], knee = [lx + 7 + Math.cos(ph) * 3, by + 44 - lift], foot = [lx + 2 + Math.cos(ph) * 5, FY - lift * .6];
+      limb(s, ...hip, ...knee, 3.2, 2, .9, .45); limb(s, ...knee, ...foot, 2, 1.1, .85, .4); }
+    // body with its stripes, which are gaps in the light
+    for (let y = Math.floor(by - 24); y <= by + 24; y++) for (let x = cx - 58; x <= cx + 58; x++) { const k = 1 - Math.hypot((x - cx) / 56, (y - by) / 22); if (k <= 0) continue;
+      const stripe = Math.sin((x + y * .6) * .32 + noise(x * .1, y * .1) * 2) > .45 ? .35 : 1; stamp(s, x, y, clamp(k * 3) * stripe, .45 + (y < by ? .18 : 0) + k * .15); }
+    // the tail: a serpent rising behind, with a head of its own
+    let tx = cx + 52, ty = by - 6; for (let i = 0; i < 70; i++) { const u = i / 70; tx += 1.1 - u * .6; ty -= 1.2 - u * .2 + Math.sin(u * 6 + t) * .5; disc(s, tx, ty, 4.5 - u * 2, .85, () => .5 + u * .2); }
+    disc(s, tx + 3, ty - 1, 4, 1, () => .7);
+    // the head and its mane (a war horse's, gone white)
+    const hx = cx - 58, hy = by - 16 + Math.sin(t * .7) * 1.5;
+    for (let i = 0; i < 22; i++) { const a = -1.9 + i * .13; limb(s, hx + 2, hy, hx + 2 + Math.cos(a + Math.PI) * -18 + 10, hy + Math.sin(a) * 16 + Math.sin(t * 2 + i) * 1.5, 1.4, .5, .6, .82); }
+    disc(s, hx, hy, 12, 1, (x, y, k) => .55 + k * .2);
+    composite(s, t, ['#332f3e', '#8c869e', '#ebe6f2']);
+    // the mask
+    menpo(s, hx, hy, 8, 9, [255, 214, 150], t);
+    put(s, tx + 5, ty - 2, [255, 244, 210], 1);
+    // lanterns on the spine, the one warm light in the voids
+    for (let i = 0; i < 4; i++) { const lx = cx - 30 + i * 20 + Math.sin(t * 1.2 - i * .6) * 1.5, ly = by - 26 - Math.cos((lx - cx) / 56 * 1.3) * 2;
+      line(s, cx - 30 + i * 20, by - 23, lx, ly + 3, [150, 140, 120], .5);
+      const f = .75 + .25 * Math.sin(t * 5 + i * 2.1);
+      for (let y = 0; y < 6; y++) for (let x = 0; x < 4; x++) put(s, lx - 2 + x, ly + 3 + y, (y === 0 || y === 5) ? [90, 70, 50] : [232, 214, 164], y === 0 || y === 5 ? .9 : .85 * f);
+      for (const [dx, dy] of [[-3, 2], [2, 2], [-3, 5], [2, 5]]) put(s, lx + dx, ly + 3 + dy, [232, 214, 164], .18 * f); }
+    motes(s, t, 10, cx, 150, [220, 212, 232]); ronin(s, 22); }
+
+  // ---------- V. the Thousand-Step ----------
+  function step(s, t) { sky(s); const N = 17, pts = [];
+    for (let i = 0; i < N; i++) { const u = i / (N - 1), sway = Math.sin(t * .6 + u * 2.4) * 8 * u;
+      pts.push([238 - u * 48 + Math.sin(u * 3.2) * 18 + sway, FY + 6 - u * 140]); }
+    // legs first, behind: blade legs rippling in a wave from the ground up
+    for (let i = 1; i < N - 1; i++) { const [x, y] = pts[i], ph = t * 3.2 - i * .7, spread = 15 + Math.sin(ph) * 5;
+      for (const side of [-1, 1]) { const kx = x + side * spread, ky = y - 2 + Math.cos(ph) * 3, fx = kx + side * 7, fy = ky + 10 + Math.sin(ph) * 2;
+        if (y > FY) continue; line(s, x + side * 6, y, kx, ky, [120, 146, 160], .8); line(s, kx, ky, fx, fy, [210, 228, 238], .85); put(s, fx, fy, [255, 255, 255], .9); } }
+    for (let i = 0; i < N - 1; i++) { const [x, y] = pts[i], u = i / (N - 1), rx = 12 - u * 4, ry = 6;
+      for (let yy = Math.floor(y - ry); yy <= y + ry; yy++) for (let xx = Math.floor(x - rx); xx <= x + rx; xx++) { if (yy > FY) continue; const k = 1 - Math.hypot((xx - x) / rx, (yy - y) / ry); if (k <= 0) continue;
+        stamp(s, xx, yy, clamp(k * 3) * .95, .4 + (yy < y ? .22 : 0) + (Math.abs(yy - y + 3) < 1 ? .2 : 0)); } }
+    const [hx, hy] = pts[N - 1];
+    disc(s, hx, hy, 10, 1, (x, y, k) => .55 + k * .2);
+    composite(s, t, ['#27323f', '#7890a6', '#dde9f3']);
+    // the ground it came out of: a dark lip round the hole
+    for (let x = -18; x <= 18; x++) { put(s, pts[0][0] + x, FY + 1, [8, 9, 10], .9 - Math.abs(x) / 30); put(s, pts[0][0] + x, FY, [60, 62, 60], .5 * (1 - Math.abs(x) / 18)); }
+    // the crowned mask with its mandibles
+    for (let i = 1; i < N - 1; i++) if (pts[i][1] < FY - 2) skull(s, pts[i][0] + 3, pts[i][1] - 1, .75);   // a column of the dead, one to a segment
+    menpo(s, hx, hy, 9, 9, [196, 228, 255], t);
+    for (const sx of [-1, 1]) {
+      const m = Math.sin(t * 1.8) * .25; for (let k = 0; k < 9; k++) { const a = Math.PI / 2 + sx * (.5 - k * .09 + m); put(s, hx + sx * 4 + Math.cos(a) * k * sx * -.2 + sx * k * .5, hy + 6 + k * .9, [210, 222, 230], .9); } }
+    for (const sx of [-1, 1]) for (let k = 0; k < 20; k++) put(s, hx + sx * (3 + k * .55), hy - 9 - k * .95 + (k > 14 ? (k - 14) * .5 : 0), [228, 236, 244], .9);   // the helmet's crest, a great V
+    for (let k = -2; k <= 2; k++) put(s, hx + k, hy - 9, [200, 180, 120], .9);
+    motes(s, t, 12, pts[0][0], 60, [200, 218, 232]); ronin(s, 70); }
+
+  const SCENES = [['c-king', king], ['c-weaver', weaver], ['c-serpent', serpent], ['c-beast', beast], ['c-step', step]].map(([id, fn]) => ({ s: scene(id), fn, on: true }));
+  const draw = (o, t) => { o.fn(o.s, t); o.s.g.putImageData(o.s.img, 0, 0); };
+  SCENES.forEach(o => draw(o, 2.4));
+  const still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!still) {
+    if ('IntersectionObserver' in window) { const io = new IntersectionObserver(es => es.forEach(e => { const o = SCENES.find(q => q.s.c === e.target); if (o) o.on = e.isIntersecting; }));
+      SCENES.forEach(o => io.observe(o.s.c)); }
+    let last = 0; const t0 = performance.now();
+    const loop = now => { requestAnimationFrame(loop); if (now - last < 1000 / 24) return; last = now; const t = 2.4 + (now - t0) / 1000;
+      for (const o of SCENES) if (o.on) draw(o, t); };
+    requestAnimationFrame(loop);
+  }
+})();
+</script>

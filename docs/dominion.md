@@ -92,10 +92,10 @@ A settlement is any zone with homes in it. It grows by tiers, from what is built
 
 The world has three rings (`src/sim/wild.js`, docs/foundations.md → "The wild"): the settled lands, the bandits' edge, and the voids where the mystical creatures live. What it means for land and armies:
 
-- **Nobody settles a void.** Worldgen places no settlement in one (zone `void: true`), and a plot inside a void cannot be claimed, built on or given a settlement until the ronin has the strength to hold it. Proposed: a void zone can be claimed only from level 30 (his first power spike), and only next to land he already holds.
+- **He can claim land from level 11, and his first plot can be anywhere in the wilderness** (owner, 2026-09-26), the edge and the voids included. Nobody else settles a void: worldgen places no settlement in one (zone `void: true`).
 - **The edge is where land is cheap and unsafe.** Claims on the edge are open to anyone, but bandit raids there run higher (the travel lane's ambush weight is ×2.5 on the edge).
-- **Armies and settlers go round the voids.** Roads already do (worldgen makes a void 8× dearer to build a road through), and outlaw bands never step into one. An army that marches through a void loses men to the creatures; one camped at its edge loses a few at night.
-- **Pushing a void back** is open for the owner: whether a strong enough lord, once he has slain what lives there, can turn part of a void into wild land that people will settle.
+- **Armies and settlers go round the voids.** Roads already do (worldgen makes a void 8× dearer to build a road through), and outlaw bands never step into one. Proposed: an army that marches through a void loses men to the creatures, and one camped at its edge loses a few at night.
+- **The voids can be pushed back** (owner, 2026-09-26). Proposed: once the creatures of a stretch are slain and he holds land beside it, its zones lose `void` a few at a time, and people will settle there.
 
 ## Defaults until the owner says otherwise (Claude, 2026-09-26)
 The owner approved the design without answering these, so the lane starts from:

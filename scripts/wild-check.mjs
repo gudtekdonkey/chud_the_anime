@@ -12,12 +12,12 @@ function walk(level, night, n = 4000) {
   let dead = 0;
   for (let i = 0; i < n; i++) { const z = voids[(i * 7919) % voids.length]; rings[wildRing(L, z.x, z.y)]++;
     const sc = enterZone(L, z.x, z.y, { level }); if (!sc) continue; tally[sc.type] = (tally[sc.type] || 0) + 1;
-    const out = choose(L, sc.choices[0].id); if (out?.next) choose(L, out.next.choices[0].id); if (!L.actors[L.player].alive) dead++; }
+    const out = choose(L, sc.choices[0].id); if (out?.next) choose(L, out.next.choices[0].id); const me = L.actors[L.player]; if (!me.alive) { dead++; me.alive = true; delete me.died; } }
   return { tally, faced: st.beasts.faced, ko: st.beasts.ko, slain: st.beasts.slain, rings, dead };
 }
 const t0 = performance.now();
 for (const lv of [1, BEASTS.FIGHT, BEASTS.SPIKE]) for (const night of [false, true]) {
-  const w = walk(lv, night); console.log(`level ${String(lv).padStart(2)} ${night ? 'night' : 'day  '}: ${JSON.stringify(w.tally)} faced ${w.faced} knocked out ${w.ko} slain ${JSON.stringify(w.slain)}${w.dead ? ' DEAD ' + w.dead : ''}`); }
+  const w = walk(lv, night); console.log(`level ${String(lv).padStart(2)} ${night ? 'night' : 'day  '}: ${JSON.stringify(w.tally)} faced ${w.faced} knocked out ${w.ko} slain ${JSON.stringify(w.slain)} killed him ${w.dead}`); }
 // the rings of a fresh world
 const L = generateWorld(seed), rings = { settled: 0, edge: 0, void: 0 }; for (const z of L.zones) if (z.kind !== 'sea') rings[wildRing(L, z.x, z.y)]++;
 console.log('rings:', JSON.stringify(rings), '· settlements in a void:', L.zones.filter(z => z.void && ['town', 'village', 'fort', 'shrine', 'camp'].includes(z.kind)).length);

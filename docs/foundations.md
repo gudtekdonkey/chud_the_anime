@@ -155,7 +155,11 @@ Events are the ledger's big moves, felt in every zone they reach:
 - **Three rings.** People live in the settled lands and don't travel far out of them. On the edge of the inhabited lands are the bandits. Out in the real extreme lands, the **voids**, live mystical creatures: very powerful, and the reason nobody goes there.
 - **The creatures are rare by day, and at night still elusive** (signs of them far more often than the thing itself).
 - **Before level 11 he cannot fight one.** The first meetings scare him off, and after that they knock him out (both are cut scenes); he wakes somewhere safe. The point: he explores a little, gets caught by these random meetings, and learns he has to stay, build and get far stronger if he wants to succeed.
-- **From level 11** they come for him at night, and they can be fought. They are still far stronger than he is.
+- **From level 11** they come for him at night, and they can be fought. They are still far stronger than he is, and **they can kill him** (his heir goes on).
+- **The first knockouts come with a warning** from whoever carried him back: he should really train before heading out of town like that; things aren't like they used to be.
+- **What they are:** abominations, spirits and ghouls of the wars. Each race is one kind of war dead (design: `prototypes/45-void-kings.html`).
+- **Land from level 11:** he can claim land at level 11, and his first plot can be anywhere in the wilderness.
+- **The voids can be pushed back.**
 - **At about level 30** he gets his first power spike: a mystical skill that makes him quite powerful. Past it, he stands a real chance against them.
 - Built: `src/sim/wild.js` (the rings; worldgen carves the voids), `src/sim/travel/beasts.js` (the creatures). Numbers in `docs/sim-travel.md` → "The voids". The dominion lane owns what the voids mean for settling land and moving armies (`docs/dominion.md` → "The voids").
 
