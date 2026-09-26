@@ -35,6 +35,7 @@ const STANCES = [
 ];
 const BREATH = [0, 0, .3, .7, 1, 1, 1, .7, .3, 0, 0, 0, .2, .5, .2, 0];
 export const TANTO = { id: 'tanto', name: 'Twin tanto', about: 'Two short blades at the obi: tight, fast cuts up close, the lead hand first and the back hand answering in a reverse grip.', art: ART,
+  reach: .8, weight: { stop: .7, shake: 1 },
   poses: {
     ...Object.fromEntries(STANCES.map((q, k) => ['ready' + k, BREATH.map((b, i) => pz({ ...q, breath: b, flutter: i === 5 || i === 13 ? 1 : 0 }))])),
     ready: BREATH.map((b, i) => pz({ ...GUARD, breath: b, flutter: i === 5 || i === 13 ? 1 : 0 })),

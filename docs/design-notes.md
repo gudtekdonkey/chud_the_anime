@@ -41,7 +41,7 @@ Decisions made in the design sessions so far, newest last.
 - **Counters by attack** (`prototypes/23-counters.html`): the enemy has several attacks, each with a readable tell (a glint running up the blade, the eye flashing, plus the wind-up itself). A blow that lands while he holds F plays the counter that answers that attack: overhead chop → receive and flow; horizontal sweep → under the sweep; thrust → along the blade; diagonal cut → disarm; low rising cut → pin the blade; charge → matador; leaping strike → under the leap; three-cut flurry → break the rhythm.
 - **Nothing left to fight:** if no enemy is within two screens (960 px) when an attack or execution ends, he skips the blade-out stance and sheathes at once, unbothered.
 
-- **Weapons:** his attacks depend on the equipped weapon. Every move works with every weapon, on the same timing and hits, but each weapon has its own poses. First set, in review: katana (as before), yari (thrusts, slung on the back), odachi (heavy cuts, worn on the back, hilt over the shoulder), twin tanto (short blades at the obi, the back hand in a reverse grip). Q switches.
+- **Weapons:** his attacks depend on the equipped weapon. Every move works with every weapon, on the same timing and hits, but each weapon has its own poses. First set, in review: katana (as before), yari (thrusts, slung on the back), nodachi (the Grave Nodachi pickup: heavy cuts, worn on the back, hilt over the shoulder, longer reach, a longer hit pause and more shake), twin tanto (short blades at the obi, the back hand in a reverse grip). In play a weapon comes from a pickup; a picker under the game switches for testing.
 
 ## Next
 

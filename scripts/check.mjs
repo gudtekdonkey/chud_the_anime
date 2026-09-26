@@ -70,9 +70,9 @@ try {
   await run('C: sit, then a key to stand', async () => {
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });
-  await run('Q: every weapon slashes, stands in a stance and sheathes', async () => {
-    for (const id of ['yari', 'odachi', 'tanto', 'katana']) {
-      await kb.press('q'); await until(`weapon ${id}`, w => window.__game.P.weapon === w, id);
+  await run('every weapon (the picker) slashes, stands in a stance and sheathes', async () => {
+    for (const id of ['yari', 'nodachi', 'tanto', 'katana']) {
+      await page.selectOption('#weapon', id); await until(`weapon ${id}`, w => window.__game.P.weapon === w, id);
       await kb.press('j'); await reach(/^slash1$/); await sleep(200); await shot(`08-${id}-slash`);
       await reach(/^ready\d$/); await reach(/^idle$/, 5000); } });
   await run('X: die and come back', async () => { await kb.press('x'); await reach(/^death$/); await reach(/^idleGlitch$/, 5000); });

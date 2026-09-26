@@ -30,9 +30,9 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `anims/poses.js` | `POSES` for every rig animation, the guard and counter stances, `GLF` (baked glitch frames) |
 | `anims/hand-drawn.js` | Hand-drawn rows the rig can't pose: the two open stances (front view) and sit / sit down / stand up (back view) |
 | `anims/sheets.js` | Bakes every animation to a sheet at load (`SHEETS`, the equipped weapon's), `dur()` |
-| `weapons/weapons.js` | `WEAPONS`, `weapon()`, `equip`/`nextWeapon` (swaps `SHEETS`), `framesFor` (a weapon's poses, or the katana's run through its `adapt`) |
+| `weapons/weapons.js` | `WEAPONS`, `weapon()`, `setWeapon(id)` (the API for pickups: bakes once, swaps `SHEETS`), `reach()`, `framesFor` (a weapon's poses, or the katana's run through its `adapt`) |
 | `weapons/katana.js` | `KATANA_ART`: the drawing hooks every weapon's art has (`far`, `stowed`, `held`, `backHeld`, `sheathing`, optional `offHand`, `front`/`sit` rows) |
-| `weapons/yari.js`, `odachi.js`, `tanto.js` | Each weapon's art and its own poses (cuts, guard, the four side-on stances, what it does with the hilt hand) |
+| `weapons/yari.js`, `nodachi.js`, `tanto.js` | Each weapon's art, its own poses (cuts, guard, the four side-on stances, what it does with the hilt hand), `reach` and `weight` |
 | `player/update.js` | The state machine: one `update(dt, inp)` step |
 | `player/actions.js` | `setState`, `once`, stance picking, the two-screen threat check, movement, `ghost`, `frameOf`, `inputDir` |
 | `player/skills.js` | Charging (`chargeUp`), Thousand Cuts (`TC`), Cross Rift (`RIFT`), the dash, `release`/`charged` |
@@ -54,12 +54,13 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `world/render.js` | `render()`: depth sort by feet, effects, particles, screen flash, Qi meter, HUD text |
 | `ui/qi-meter.js` | The pixel-font Qi meter, bottom left |
 | `ui/moveset.js` | The moveset table under the game (from `ANIMS` "about" rows + skill rows) |
+| `ui/weapon-picker.js` | The test weapon picker under the game |
 | `ui/strip-tester.js` | "Test a sprite strip": drop a PNG strip in place of any animation |
 | `styles.css` / `index.html` | The page; `index.html` holds markup only |
 
 - Shared state lives in `state.js` and is imported, never copied. A value other modules reassign goes on `S`, because an imported `let` cannot be reassigned.
 - Keep files focused and under about 400 lines. Keep the compact style and the short WHY comments.
-- A weapon changes poses and art only: its frames match the katana's count for every move, so timing, hit beats and effects stay shared. A new move needs a pose per weapon (or the weapon's `adapt` covers it).
+- A weapon changes poses and art only: its frames match the katana's count for every move, so timing, hit beats and effects stay shared. Reach and weight (hit pause, shake) are per weapon, 1 for the katana. A new move needs a pose per weapon (or the weapon's `adapt` covers it).
 - Effects are drawn in world space, never baked into sheets, so they survive real art replacing a placeholder.
 
 ## Design rules (from `docs/design-notes.md`)
@@ -75,7 +76,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, a darker red-grey.
 - Executions are short and brutal, show only the key frames (each leaning into the motion), and cut the enemy into real pieces.
 - Assassination markers: every enemy has an isolation bubble (empty glows cyan; overlapping ones go grey and are joined by a link line); a kill line runs to the nearest enemy he can dash to; the K prompt appears only when that enemy is in range AND outside every other enemy's bubble; lock-on brackets are reserved for big pickups.
-- Skills and keys: move WASD / arrows · J slash (again for the answer cut) · Shift or L slide · Space jump · K glitch teleport · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing) · Q switch weapon. Storm Chain is passive: 8 s whenever the Qi meter fills.
+- Skills and keys: move WASD / arrows · J slash (again for the answer cut) · Shift or L slide · Space jump · K glitch teleport · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing). Storm Chain is passive: 8 s whenever the Qi meter fills.
 
 ## Working conventions
 

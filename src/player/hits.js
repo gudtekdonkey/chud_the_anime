@@ -3,12 +3,15 @@ import { P, S, cuts } from '../state.js';
 import { rr, residue, spark } from '../fx/util.js';
 import { QI_GAIN, qiAdd, chainFrom } from './qi.js';
 import { DUMMIES } from '../world/dummies.js';
+import { weapon } from '../weapons/weapons.js';
 
 // ---- Hits: each dummy once per kind per move; P.struck remembers them for the sheath-click burst ----
 export function hitOne(dummy, i, kind, fx = P.x, fy = P.y) {
   P.hitDone[kind + i] = true; P.struck.add(dummy);
   // short on purpose: a 3-frame white dummy, a 3-frame freeze, ONE shaken frame
-  dummy.flash = .05; dummy.wob = .25; S.hitstop = Math.max(S.hitstop, .05); S.shake = Math.max(S.shake, 1 / 60);
+  // a heavier weapon holds the freeze and the shake longer (weight: 1 for the katana)
+  const wt = weapon().weight;
+  dummy.flash = .05; dummy.wob = .25; S.hitstop = Math.max(S.hitstop, .05 * wt.stop); S.shake = Math.max(S.shake, wt.shake / 60);
   if (kind === 'sw') dummy.zap = .25;
   // 6-12 short streaks, mostly thrown away from whoever cut it
   const away = Math.atan2(dummy.y - fy, dummy.x - fx), n = 6 + (Math.random() * 7 | 0);

@@ -1,7 +1,7 @@
 import { OY } from '../config.js';
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
 
-// ---- The odachi: a greatsword worn on the back, hilt over the shoulder. Every cut is heavy, wound up far and followed through low ----
+// ---- The nodachi (the Grave Nodachi pickup): a greatsword worn on the back, hilt over the shoulder. Every cut is heavy, wound up far and followed through low ----
 const along = a => [Math.cos(a), Math.sin(a)];
 const stowed = p => p.sword === null && !p.sheathing && p.bsword == null;
 const LEN = 19;
@@ -42,7 +42,8 @@ const STANCES = [
   pz({ hx: -1, hy: 3, lean: .02, chest: .1, fl: [.55, .8], bl: [-.55, .5], fa: [.7, 2.0], ba: [.45, 2.1], sword: -1.5 }),
 ];
 const BREATH = [0, 0, .3, .7, 1, 1, 1, .7, .3, 0, 0, 0, .2, .5, .2, 0];
-export const ODACHI = { id: 'odachi', name: 'Odachi', about: 'A greatsword worn on his back, hilt over the shoulder: the same moves, wound up further and followed through low, heavy.', art: ART,
+export const NODACHI = { id: 'nodachi', name: 'Nodachi', about: 'A greatsword worn on his back, hilt over the shoulder: the same moves, wound up further and followed through low. Longer reach, and every cut lands a beat heavier.', art: ART,
+  reach: 1.35, weight: { stop: 1.6, shake: 2 },
   poses: {
     ...Object.fromEntries(STANCES.map((q, k) => ['ready' + k, BREATH.map((b, i) => pz({ ...q, breath: b, flutter: i === 5 || i === 13 ? 1 : 0 }))])),
     ready: BREATH.map((b, i) => pz({ ...GUARD, breath: b, sword: GUARD.sword - b * .03, flutter: i === 5 || i === 13 ? 1 : 0 })),

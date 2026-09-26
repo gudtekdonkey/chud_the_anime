@@ -40,6 +40,7 @@ const STANCES = [
 ];
 const BREATH = [0, 0, .3, .7, 1, 1, 1, .7, .3, 0, 0, 0, .2, .5, .2, 0];
 export const YARI = { id: 'yari', name: 'Yari', about: 'A spear slung across his back: he thrusts where the katana cuts, with more reach and a longer lunge.', art: ART,
+  reach: 1.4, weight: { stop: 1, shake: 1 },
   poses: {
     ...Object.fromEntries(STANCES.map((q, k) => ['ready' + k, BREATH.map((b, i) => pz({ ...q, breath: b, flutter: i === 5 || i === 13 ? 1 : 0 }))])),
     ready: BREATH.map((b, i) => pz({ ...GUARD, breath: b, sword: GUARD.sword + b * .03, flutter: i === 5 || i === 13 ? 1 : 0 })),
