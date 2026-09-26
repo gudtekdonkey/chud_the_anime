@@ -55,6 +55,10 @@ Decisions made in the design sessions so far, newest last.
      - **Lock-on brackets** are reserved for big items you can pick up.
    - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, in a darker red-grey.
    - Executions are short and brutal, show only the key frames (each one leaning into the motion), and cut the enemy into real pieces.
-3. **Clothing redesign.** The mantle was flattened because it read as a hump; the rest still needs a pass.
+3. **Clothing** (`prototypes/19-rig-v2-and-clothing.html`, loved: "great job on the clothing system", "let's do more"):
+   - **All fifteen items stay**, and **the slots are good as they are**. More items to come.
+   - **Lamellar and samurai armour may be coloured, but only faintly** (muted, low-saturation tints over the blacks). Cloth stays shades of black, never bright red.
+   - Still open: the default outfit; his true left side or a mirror when facing left; whether the hat brim shows more of its top when he faces the camera.
+   - Earlier: the mantle was flattened because it read as a hump.
 4. **Front, back and diagonal views** for every move. Everything uses the side view today. The 8-direction rig (`prototypes/19-rig-v2-and-clothing.html`) is the path: port each move's key poses onto it, starting with walk, idle and the stances. Harvest facing north waits on this.
 5. **Real enemies** with health, needed by K.
