@@ -63,11 +63,42 @@ try {
     await until('slash 1 follow-through', () => window.__game.P.t > .18);
     await kb.press('j'); await reach(/^slash2$/); await shot('02-slash2');
     await reach(/^ready\d$/); });
+  await run('J on a samurai: flinch, stagger, death', async () => {
+    // walk up to the nearest samurai, then cut until he falls; every state he passes through is logged
+    await page.evaluate(() => { window.__eLog = []; const e = window.__game.E[0];
+      const tick = () => { if (window.__eLog[window.__eLog.length - 1] !== e.state) window.__eLog.push(e.state); requestAnimationFrame(tick); }; tick(); });
+    await kb.down('d'); await until('walking up to him', () => window.__game.P.x > 236); await kb.up('d'); await reach(FREE);
+    // J, J each round: the answer cut lands inside 0.5 s of the first, so he staggers wherever the steps before left the ronin
+    for (let i = 0; i < 10 && await page.evaluate(() => window.__game.E[0].alive); i++) {
+      await kb.press('j'); await reach(/^slash1/); await until('slash 1 follow-through', () => window.__game.P.t > .18);
+      await kb.press('j'); await reach(FREE); }
+    const e = await page.evaluate(() => ({ alive: window.__game.E[0].alive, hp: window.__game.E[0].hp, log: window.__eLog }));
+    if (e.alive) fail(`the samurai is still standing after 10 cuts (hp ${e.hp}, states ${e.log.join(' > ')})`);
+    for (const st of ['flinch', 'stagger', 'dead']) if (!e.log.includes(st)) fail(`the samurai never went through ${st} (states ${e.log.join(' > ')})`);
+    await until('him hitting the floor', () => window.__game.E[0].body.thudT != null); await sleep(600); await shot('08-samurai-down'); });
+  await run('K on a lone samurai in reach: the kill line and K prompt, an execution, K ready 0.2 s after', async () => {
+    await sleep(200); await shot('09-k-prompt');
+    await kb.press('k'); await reach(/^exec$/); await page.evaluate(() => { window.__st = window.__game.P.exec; });
+    await sleep(700); await shot('10-execution');
+    await reach(/^idle$/, 4000);
+    // the deaths pass: the blade landed on him (knockback, blood) and his body moved on its springs
+    const d = await page.evaluate(() => { const E = window.__st.E; return { name: window.__st.ex.name, hit: E.hitAt != null, t: E.body.t }; });
+    if (!d.hit || !(d.t > .5)) fail(`"${d.name}": the deaths pass never ran on the executed body (${JSON.stringify(d)})`);
+    const cd = await page.evaluate(() => ({ t: window.__game.P.cd.tele, max: window.__game.P.cdMax.tele }));
+    if (!(cd.max <= .2 + 1e-9)) fail(`K was not reset to 0.2 s after the kill (${JSON.stringify(cd)})`);
+    await until('K ready again', () => !(window.__game.P.cd.tele > 0), undefined, 1000); await sleep(500); await shot('11-after'); });
   await run('Shift: ground slide', async () => { await kb.press('Shift'); await reach(/^slide$/); await reach(FREE); });
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
-  await run('K: glitch teleport', async () => { await kb.press('k'); await reach(/^tele$/); await reach(FREE); });
+  await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
+    // out of every samurai's reach first (the top-left corner), so K is the plain teleport, not an assassination
+    await kb.down('a'); await kb.down('w'); await sleep(4200); await kb.up('a'); await kb.up('w'); await reach(FREE);
+    await kb.press('k'); await reach(/^tele$/); await reach(FREE);
+    await until('K on cooldown', () => window.__game.P.cd.tele > 0);
+    await kb.press('k'); await until('the refused press', () => window.__game.P.cdDeny.tele > 0);
+    if (await state() === 'tele') fail('K teleported again while cooling down'); });
   await run('tap I: glitch double slash', async () => { await kb.press('i'); await reach(/^double$/); await reach(FREE); });
   await run('hold I: Thousand Cuts', async () => {
+    await until('the I cooldown to end', () => !(window.__game.P.cd.double > 0), undefined, 4000);
     await kb.down('i'); await until('the I charge', () => window.__game.P.charge > .5); await shot('03-charge');
     await sleep(300); await kb.up('i'); await cv('Thousand Cuts'); await reach(FREE); });
   await run('hold O: Crescent Moon', async () => {
@@ -76,6 +107,11 @@ try {
   await run('P: Cross Rift', async () => { await kb.press('p'); await cv('Cross Rift'); await sleep(200); await shot('05-rift'); await reach(FREE); });
   await run('N: Mirror Meditation', async () => { await kb.press('n'); await reach(/^meditate$/); await sleep(500); await shot('06-mirrors'); await reach(FREE); });
   await run('U: storm slam', async () => { await kb.press('u'); await reach(/^sweep$/); await reach(FREE, 8000); });
+  await run('skill bar: the skills just used are cooling down, K has recovered', async () => {
+    const cd = await page.evaluate(() => ({ ...window.__game.P.cd }));
+    for (const k of ['moon', 'rift', 'mirror', 'sweep']) if (!(cd[k] > 0)) fail(`${k} is not cooling down (${JSON.stringify(cd)})`);
+    if (cd.tele !== 0) fail(`K is still cooling down (${cd.tele})`);
+    await shot('08-skill-bar'); });
   await run('C: sit, then a key to stand', async () => {
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });

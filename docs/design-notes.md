@@ -66,6 +66,20 @@ Decisions made in the design sessions so far, newest last.
 - In the game: a picker under the screen, and hold **V** to walk (new). The samurai can take the same traits, since they share his rig.
 - **Approved:** keep all 52 traits as they are ("they're all great"). Merged to main.
 - **Decided:** the ronin keeps the personality he has: no traits by default, so he stands, walks and runs as drawn. The picker stays for trying mixes.
+## HUD
+
+- **Skill bar, like League of Legends:** bottom centre. The Storm Chain passive on the left (the Qi fills its icon; during the storm its 8 s drain as a sweep), then I, O, P, N and U, then K (the flash) and slide as the two summoner-style slots. Each slot shows its cooldown as a dark clockwise sweep with the seconds left, whole seconds then tenths under one.
+- **Cooldowns on every active.** The flash (K) is recastable after an assassination: its cooldown drops to 0.2 s. Starting values, to tune: K 3 s, I 2 s (Thousand Cuts 8 s), O 10 s, P 12 s, N 14 s, U 8 s, slide 1 s. K keeps the old rule that with no enemy near you can spam it.
+
+## Deaths pass (approved: prototypes 28 to 31)
+
+The owner said the deaths still don't feel like someone dying, and the executions lack impact when the sword lands. Prototypes 28, 29 and 30 replay execution batches 1, 2 and 3 (all 28 executions), and 31 replays the 14 counters, with one shared change to the enemy's body and a toggle to compare against the page as it was. The owner approved all of it, blood and impact frames included ("with blood"):
+
+- **Flow through poses.** The pages ease in and out of every key, so the body stops dead at each pose. The enemy's timeline is now read as one curve per joint that keeps its speed through a pose and only settles where the motion turns back.
+- **Limp joints.** Every joint chases its pose on a spring: the hips lead, the chest follows, the arms, blade and head trail and overshoot. As he goes down the springs soften, so the arms and head go loose.
+- **Gravity and the floor.** The last move into lying down accelerates like a fall and stops dead on the floor, with dust and a small shake; the arms and head flop on after the trunk stops. Then one twitch, a smaller one, and stillness. The red eye flickers and goes out, in a severed head too.
+- **Sword impact.** Each hit knocks him away from the blade, he shakes through the hit pause, light sparks leave out the far side, and a killing blow (hit pause of 0.09 s or more) gets two impact frames, black then white.
+- **Blood.** Dark red drops fly out with the spray and stain the floor, pieces trail a little and pool where they land. Approved as a new palette colour, alongside the impact frames.
 
 ## Next
 
@@ -80,10 +94,17 @@ Decisions made in the design sessions so far, newest last.
      - **Lock-on brackets** are reserved for big items you can pick up.
    - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, in a darker red-grey.
    - Executions are short and brutal, show only the key frames (each one leaning into the motion), and cut the enemy into real pieces.
+   - **In the game** (`src/assassin/`): the markers, the seven approved batch 1 executions and the 0.2 s K reset. Claude's guesses, open to tuning: K reaches 120 px; the bubbles are drawn at half the isolation distance so two overlap exactly when the enemies guard each other; the prototype's 0.75 s lock-on beat before he flashes is cut to 0.2 s; the execution is picked at random, never the same twice running. Decapitation (the eighth in prototype 14) is not in the approved list, so it is left out.
 3. **Clothing** (`prototypes/19-rig-v2-and-clothing.html`, loved: "great job on the clothing system", "let's do more"):
    - **All fifteen items stay**, and **the slots are good as they are**. More items to come.
    - **Lamellar and samurai armour may be coloured, but only faintly** (muted, low-saturation tints over the blacks). Cloth stays shades of black, never bright red.
    - Still open: the default outfit; his true left side or a mirror when facing left; whether the hat brim shows more of its top when he faces the camera.
    - Earlier: the mantle was flattened because it read as a hump.
 4. **Front, back and diagonal views** for every move: **the port system is built** (`src/rig/port.js`, `prototypes/27-port-system.html`, `docs/port-system.md`). It turns every existing side-view animation, and every personality bake, into all eight directions on rig v2 automatically. Wiring it into the game waits on the clothing branch, which brings rig v2's skeleton into `src/wardrobe/`. Harvest facing north waits on that too.
-5. **Real enemies** with health, needed by K.
+5. **Real enemies** with health, needed by K. Built in the game (`src/world/enemies.js`), waiting on the owner's review:
+   - Seven topknot samurai replace the dummies, on his rig: bare head and topknot, no hat or mantle, red-grey, a red eye, blade out in guard.
+   - Health 4. Damage per hit: slash 1, double slash 1 per cut, sheath-click burst 1, storm slam 2, Thousand Cuts 2, Crescent Moon 3, Cross Rift 1 per arm and 2 on the detonation, mirror 1, chain 1. Starting numbers, open to tuning.
+   - Reactions: a hit makes him flinch; a blow of 2 or more, or a second hit within 0.5 s, staggers him back a step. He turns to face whoever hit him, and in guard turns to keep facing the ronin a beat late. A thin red health bar shows once he is hurt.
+   - Death uses the deaths pass (PR #2): spring joints, knees give, kneel, a gravity fall that stops dead with dust, a twitch or two, the eye going out; his sword falls from his hands; blood drops, stains and a pool.
+   - Clear the room and the fallen fade after about 3 s and a new squad steps in.
+   - Not yet: enemy movement and attacks (the counters' attacks come with them), executions cutting into pieces (K).
