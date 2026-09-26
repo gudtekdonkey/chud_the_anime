@@ -308,7 +308,7 @@ try {
   await run('G: hold here, then with me', async () => {
     await kb.press('g'); await until('the hold order', () => window.__game.party.order === 'hold');
     await kb.press('g'); await until('the follow order', () => window.__game.party.order === 'follow'); });
-  await run('K beside a companion set up for it: the crossing cut', async () => {
+  await run('K beside a companion set up for it: a paired execution', async () => {
     const t0 = Date.now();
     while (!(await page.evaluate(() => window.__game.PAIRS.done))) {
       if (Date.now() - t0 > 25000) fail('no paired execution');
@@ -316,6 +316,18 @@ try {
       const e = await page.evaluate(() => { const { P, E } = window.__game, l = E.filter(e => e.alive).sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y))[0]; return l && [l.x, l.y]; });
       if (e) await walkTo(Math.max(30, e[0] - 24), e[1], 4000).catch(() => {}); else await sleep(300); }
     await reach(FREE); });
+  await run('the paired K waits 5 s for the whole party, then any of them plays (the test picker forces Batter Up)', async () => {
+    if (!(await page.evaluate(() => window.__game.PAIRS.cd > 3 && !window.__game.pairReady()))) fail('a paired execution is ready again at once');
+    await until('the 5 s to pass', () => !(window.__game.PAIRS.cd > 0), undefined, 8000);
+    await page.selectOption('#pair', 'batter'); await page.locator('#game').click();
+    const n = await page.evaluate(() => window.__game.PAIRS.done), t0 = Date.now();
+    while ((await page.evaluate(() => window.__game.PAIRS.done)) === n) {
+      if (Date.now() - t0 > 25000) fail('no second paired execution');
+      if (await page.evaluate(() => window.__game.pairReady())) { await kb.press('k'); await sleep(500); await shot('12b-paired-batter'); await sleep(1500); continue; }
+      const e = await page.evaluate(() => { const { P, E } = window.__game, l = E.filter(e => e.alive).sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y))[0]; return l && [l.x, l.y]; });
+      if (e) await walkTo(Math.max(30, e[0] - 24), e[1], 4000).catch(() => {}); else await sleep(300); }
+    const last = await page.evaluate(() => window.__game.PAIRS.ran.at(-1)); if (last !== 'batter') fail(`the picker asked for Batter Up, ${last} played`);
+    await page.selectOption('#pair', ''); await page.locator('#game').click(); await reach(FREE); });
   await run('H: a companion is cut down, then held E lifts them', async () => {
     for (let i = 0; i < 6 && !(await party()).allies.some(a => a.state === 'down'); i++) { await kb.press('h'); await sleep(120); }
     await until('someone down', () => window.__game.allies.some(a => a.state === 'down'));
