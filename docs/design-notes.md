@@ -156,3 +156,21 @@ The owner said the deaths still don't feel like someone dying, and the execution
    - Death uses the deaths pass (PR #2): spring joints, knees give, kneel, a gravity fall that stops dead with dust, a twitch or two, the eye going out; his sword falls from his hands; blood drops, stains and a pool.
    - Clear the room and the fallen fade after about 3 s and a new squad steps in.
    - Not yet: enemy movement and attacks (the counters' attacks come with them), executions cutting into pieces (K).
+
+## Companions (`prototypes/34-companions.html`)
+
+- Owner: "a companion system, and you can equip items to your companions and yourself."
+- Companions are samurai on his rig, near-black like him, told apart by eyes: the ronin cyan, companions white, enemies red. Three by name: **Kuro** (yari, Grim + Soldier), **Suzume** (twin tanto, Nimble + Restless), **Tetsu** (nodachi, Heavy + Lumbering); every other recruit is generated from the wardrobe, weapons and traits.
+- **Up to 30 companions** (owner). They fall in behind him in ranks of six and spread across enemies (approved) (no more than about four on one). The HUD shows one small bar each, ten to a row.
+- **One kit for everyone:** a weapon, one piece per wardrobe layer (the 11 layers of the Clothing branch) and charms (the ronin 4, a companion 2). Mon, shards, EXP and quick slots stay shared on `INV`; `INV.weapon` / `INV.charms` become the hero's kit. Gear nobody wears is in the bag; there can be several of a piece.
+- Taking a piece from someone takes it off them; taking their weapon is a trade. Hat × mask fit rules apply per person.
+- **The weapon sets a companion's role:** katana duelist, yari holds the line, tanto flanks, nodachi breaks. Poses and weights come from the weapon system.
+- **Charms by scope:** anyone (Thunder Bead, Split Tsuba, Paper Crane, Sageo Knot), ronin only (Cracked Mirror, Temple Bell), companion only (new: Iron Oath).
+- **Downed companions MAY die** (owner, confirmed): cut to nothing, they kneel with 15 s to live; hold E beside them to lift them. If time runs out or they are struck again while down, they die for good and their gear returns to the bag.
+- **Paired executions, on the odd occasion** (owner: "if the companion is nearby and set up for it … seamless and smooth"). No charm for it (owner cut Bond Cord): each paired execution declares what a partner needs, a weapon, an item they wear or a skill they know, like the solo executions' rules, and any nearby companion who meets it joins K. First one: the crossing cut, which needs a blade drawn from a scabbard (katana, tanto, nodachi): he glitches to the near side, they close on the far side, both pass through, hold, resheathe together, the kill on the click.
+- **Companions level up like him** (owner), **but choose their own stats**: EXP from kills and fights nearby, the same 100 × level curve. He spends his points; a companion picks each point by weighted chance from their weapon and traits. Stats in the prototype: vigor, edge, speed, focus (placeholders until he has a stat system).
+- **Recruiting, all three** (owner): met on the road, freed from the enemy (captives march in with waves), hired at camp for mon.
+- Keys: **Tab** kit screen, **G** hold here / with me, **E** recruit (tap) or lift (hold), **K** paired execution.
+- Open: more paired executions, what else sets a companion up, the bleed-out time.
+- **In the game** (`src/party/`, 2026-09-26): all of the above runs in the room on main's systems. His kit is the game's own state (`P.weapon`, `wear.outfit`, `INV.charms`), so the kit screen and the pickers stay in step. Companions wear main's wardrobe (7 slots; the prototype's masks and hair are not on main yet). The camp board is at the west wall, the wanderer walks in on the west edge, the captive kneels among the samurai (guarded while one is within 50 px) and a new one comes with every other squad. Enemies do not attack yet, so `hurtAlly` waits for them; H cuts the nearest companion down for testing. Iron Oath takes a blow meant for him through `hurt()`. Thunder Bead counts on anyone in the party. He keeps INV's level; companions keep their own stats.
+- Owner idea (2026-09-26): press K during an execution to queue the next and chain straight into it. Built by the K assassinations work; the paired cut should chain the same way once it lands.

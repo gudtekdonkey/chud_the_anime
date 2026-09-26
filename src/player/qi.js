@@ -9,6 +9,7 @@ import { DMG, living, damage } from '../world/enemies.js';
 import { qiFx } from '../fx/matter.js';
 import { EL } from '../fx/element.js';
 import { has } from '../items/inventory.js';
+import { partyHas } from '../party/kit.js';
 import { T, pw, powerCast } from './power.js';
 
 // ---- Qi and the Storm Chain passive: hits fill it, a full meter wakes the storm for 8 s ----
@@ -37,7 +38,7 @@ export function updateQi(dt) {
 export function chainFrom(d0) {
   const seen = new Set([d0]); let a = d0;
   ring(d0.x, d0.y - 2, 6, 3, .3, 3, COL.fx2);
-  for (let hop = 0, hops = T('chain', 'hops') + (has('bead') ? 1 : 0); hop < hops; hop++) {   // Thunder Bead: one more jump
+  for (let hop = 0, hops = T('chain', 'hops') + (has('bead') || partyHas('bead') ? 1 : 0); hop < hops; hop++) {   // Thunder Bead: one more jump
     let b = null, best = 130;
     for (const d of living()) { const r = Math.hypot(d.x - a.x, (d.y - a.y) * 1.3); if (!seen.has(d) && r < best) { best = r; b = d; } }
     if (!b) break; seen.add(b);
