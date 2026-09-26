@@ -19,3 +19,8 @@
 - Never tip a whole body over like a rigid plank. A body crumples through its joints: knees give, hips drop, hands catch the floor, face down (or onto the back).
 - A body cut in two keeps its legs as a live rig that buckles and folds on its own; the severed part falls separately.
 - The end state is always lying on the ground, whole or in pieces. Pieces come to rest lying flat.
+
+## Heavy hits throw the body (owner)
+- When a blow is heavy (a huge swing, a blunt strike, an energy burst), the enemy absorbs it and is thrown: off his feet, flung back with height, often coming apart mid-air with the pieces tumbling and skidding to rest.
+- Suits: storm slam (U), Crescent Moon (O), Cross Rift's detonation (P), Thousand Cuts' final cut, and the Whirlwind, Pommel, Overload, Kick Launch, Scabbard and Fault Line executions. The quiet, precise executions stay quiet.
+- The counter stance (blade in the back hand, drawn over the body) is approved.

@@ -413,7 +413,7 @@ const EXECS = [
       S.once('down', t >= .68, () => { S.shake = .15; F.dust(S, R.x, R.y, 14); F.ring(S, R.x, R.y, 5, 2, .25, 20); F.crack(S, R.x + 4, R.y); });
       S.once('click', t >= 1.24, () => { for (const P of S.pieces) P.rest = 1, P.life = Math.min(P.life, .4); F.slivers(S, E.x, E.y + 4, 10); });
     } },
-  { name: 'Whirlwind', note: 'Six cuts from six places in half a second: a low sweep in front, a high cut from behind, a rising cut, one from above, a thrust from behind, and a wide final cut in front. Each frame shows him mid-motion, leaning into where he is going, with an afterimage left where he was. The enemy comes apart all at once.',
+  { name: 'Whirlwind', note: 'Six cuts from six places in half a second: a low sweep in front, a high cut from behind, a rising cut, one from above, a thrust from behind, and a wide final cut in front. Each frame shows him mid-motion, leaning into where he is going, with an afterimage left where he was. The enemy reels from every hit, and the last one lands so hard it throws him off his feet: he flies back, comes apart in the air, and the pieces tumble and skid across the floor.',
     side: -1, gap: 12, dur: 1.5,
     run(S, t, R, E) {
       const steps = [
@@ -435,12 +435,16 @@ const EXECS = [
       // every cut knocks him the way it came from, so he reels from side to side
       E.face = -1;
       const reel = k => { const from = -steps[k].f; return pz({ ...EG, hx: from, lean: -from * .3, chest: .3 + (k % 2) * .1, fa: [.8 + (k % 2) * .6, .4], sword: [.5, -1.1, 1.2, -.4, .9, .2][k], hy: 2 + (k % 2) }); };
-      if (!E.gone) E.pose = at([[0, EG], ...steps.flatMap((q, k) => [[q.t + .001, k ? reel(k - 1) : EG], [q.t + .05, reel(k)]]), [.62, RX.doubled], [.85, RX.sag], [1.05, RX.kneel]], t);
+      if (!E.gone && t < .42) E.pose = at([[0, EG], ...steps.flatMap((q, k) => [[q.t + .001, k ? reel(k - 1) : EG], [q.t + .05, reel(k)]])], t);
+      // the wide final cut hits hard enough to throw him: off his feet, flung back, coming apart in the air, pieces tumbling and skidding to rest
+      if (t >= .42 && !E.gone) { const u = t - .42; if (S.fx0 == null) S.fx0 = E.x;
+        E.x = S.fx0 + 80 * u; E.z = Math.max(0, 115 * u - 160 * u * u);
+        E.pose = at([[.42, reel(4)], [.47, pz({ hy: 1, lean: -.95, chest: -.45, fl: [1.3, .9], bl: [.7, 1.3], fa: [-1.9, .3], ba: [-2.4, .2], sword: null }), lin]], t); }
+      S.once('fling', t >= .42, () => { S.fx0 = E.x; dropSword(S, E, reel(4), 1); });
+      S.once('apart', t >= .51, () => { const x = E.x, y = E.y - (E.z || 0), vz = 115 - 320 * .09;
+        shatter(S, E, [[x - 10, y - 18, x + 8, y - 3], [x + 10, y - 16, x - 8, y - 4], [x - 12, y - 10, x + 12, y - 9]], (P, cx) => { P.vx = 62 + (cx - x) * 3 + rr(-12, 12); P.vz = vz + rr(-20, 25); P.va = rr(3, 8) * sgn(); });
+        F.burst(S, x, y - 10, 14); F.slivers(S, x, E.y, 8); S.shake = .12; });
       if (t > .5) E.jit = 0;
-      S.once('fall', t >= 1.09, () => { const x = E.x, y = E.y;
-        // he was already going over forward: every piece keeps that pitch and drops
-        shatter(S, E, [[x - 10, y - 18, x + 8, y - 3], [x + 10, y - 16, x - 8, y - 4], [x - 12, y - 10, x + 12, y - 9]], (P, cx, cy) => { P.vx = -8 + (cx - x) * 1.5 + rr(-3, 3); P.vz = rr(-15, 0); P.va = -1.8 + rr(-1, 1); });
-        F.burst(S, x, y - 10, 14); F.slivers(S, x, y, 10); });
     } },
   { name: 'Far behind', note: 'He is simply somewhere else: far behind the enemy, low, blade out, the cut line glowing through the space between them. The enemy flinches, raises his guard and starts turning toward him. He flicks the blade and sheathes, and on the click the enemy splits down the middle and both halves drop away.',
     side: +1, gap: 52, dur: 1.4,
@@ -547,7 +551,7 @@ function frame(now) {
     S.once = (k, cond, fn) => { if (cond && !S.ev.has(k)) { S.ev.add(k); fn(); } };
     updateFx(S, dt); updatePieces(S, dt); S.shake = Math.max(0, S.shake - dt);
     if (S.stop > 0) S.stop -= dt; else S.clock += dt;
-    if (S.clock > PRE + ex.dur + POST) { S.clock = 0; S.ev.clear(); S.fx = FX(); S.pieces = []; S.E = null; }
+    if (S.clock > PRE + ex.dur + POST) { S.clock = 0; S.ev.clear(); S.fx = FX(); S.pieces = []; S.E = null; S.fx0 = null; }
     const c = Math.max(0, S.clock);
     if (!S.E) S.E = { x: EPOS.x, y: EPOS.y, face: -1, pose: EG, enemy: true };
     const E = S.E, R = { x: START.x, y: START.y, face: 1, pose: IDLE };
