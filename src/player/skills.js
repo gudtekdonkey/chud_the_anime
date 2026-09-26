@@ -5,7 +5,7 @@ import { zap } from '../fx/bolts.js';
 import { STONE } from '../fx/debris.js';
 import { crescent, strike } from '../fx/slash.js';
 import { rr, sgn, residue, ring, after, spark, scrFlash } from '../fx/util.js';
-import { tear } from '../fx/void.js';
+import { tear, xTear } from '../fx/void.js';
 import { setState, once, moveBy, blink, ghost, frameOf, inputDir } from './actions.js';
 import { silPts, bodyPt, motes } from './body.js';
 import { hit, hitSeg, burst } from './hits.js';
@@ -50,8 +50,12 @@ export const TC = { name: 'Thousand Cuts', dist: 110, V: .34, hold: .24,
     [P.x, P.y] = collide(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad * .6); P.face = Math.sign(cx - P.x) || 1; P.fr = 5 + j % 4;
     zap(P.last[0], P.last[1], P.x, P.y - 12, .07, 1.2, COL.fx); P.last = [P.x, P.y - 12];
     ghost(.08); crescent(P.x + P.face * 8, P.y - 12, P.face, rr(-1.1, 1.1), sgn(), 17 + 6 * P.k, 5, .05);
+    { const b = a + 1.57 + rr(-.5, .5), h = 10 + 8 * P.k, F = this.V + .16 + this.hold + .06;   // a black slash through the target on every cut; they all snap shut on the click
+      tear(cx - Math.cos(b) * h, cy - 12 - Math.sin(b) * h * .6, cx + Math.cos(b) * h, cy - 12 + Math.sin(b) * h * .6, 1.5 + 1.5 * P.k, F - t); }
     P.flash = .02; for (let i = 0; i < 4; i++) spark(cx + rr(-6, 6), cy - 12 + rr(-6, 6), rr(-90, 90), rr(-60, 60), rr(.08, .14), i % 2 ? '#ffffff' : COL.fx2, true); },
-  c1() { P.face = P.face0; [P.x, P.y] = collide(P.C[0] - P.face * 16, P.C[1]); strike(-.5, 1, true); }, c2() { strike(.5, -1, true); },
+  // the closing X: two black slashes over the target, shut on the click like the rift's
+  c1() { P.face = P.face0; [P.x, P.y] = collide(P.C[0] - P.face * 16, P.C[1]); strike(-.5, 1, true); xTear(P.C[0], P.C[1] - 12, 18 + 8 * P.k, 1, 2 + 1.5 * P.k, .16 + this.hold + .06); },
+  c2() { strike(.5, -1, true); xTear(P.C[0], P.C[1] - 12, 18 + 8 * P.k, -1, 2 + 1.5 * P.k, .06 + this.hold + .06); },
   click() { const [cx, cy] = P.C, R = 30 + 30 * P.k;
     ring(cx, cy - 10, R, R * .55, .1); ring(cx, cy - 10, R * .6, R * .33, .22, 1, COL.fx2); residue(cx, cy, 10);
     for (let i = 0; i < 28; i++) { const a = rr(0, 6.28); spark(cx, cy - 12, Math.cos(a) * rr(90, 200), Math.sin(a) * rr(60, 130), rr(.12, .24), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
@@ -60,7 +64,7 @@ export const RIFT = { name: 'Cross Rift', dist: 120, V: .08, hold: .3,
   go() { dash(); },
   arm(sign) { const h = (30 + 42 * P.k) * T('rift', 'size'), cx = P.x + P.face * (30 + 26 * P.k), cy = P.y - 12, hx = h * .85, hy = h * .42 * sign;
     P.X = [cx, cy, h]; hitSeg('cr' + sign, cx - hx, cy - hy, cx + hx, cy + hy, 12 + 8 * P.k);
-    return tear(cx - hx, cy - hy, cx + hx, cy + hy, 2.5 + 3.5 * P.k); },
+    return xTear(cx, cy, h, sign, 2.5 + 3.5 * P.k); },
   c1() { strike(-.5, 1, true); P.r1 = this.arm(1); }, c2() { strike(.5, -1, true); P.r2 = this.arm(-1); },
   tick(t, dt) { if (!P.r2 || P.r2.shut != null) return;
     // the tear drinks the room: stone chips lift off the floor and motes stream in, dying as they reach its lips

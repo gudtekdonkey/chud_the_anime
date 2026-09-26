@@ -3,6 +3,7 @@ import { P, S, INV } from '../state.js';
 import { SHEETS } from '../anims/sheets.js';
 import { zap } from '../fx/bolts.js';
 import { rr, ring, after, spark } from '../fx/util.js';
+import { tear } from '../fx/void.js';
 import { frameOf } from './actions.js';
 import { silPts, bodyPt } from './body.js';
 import { DMG, living, damage } from '../world/enemies.js';
@@ -48,5 +49,6 @@ export function chainFrom(d0) {
     a = b;
   }
 }
-export function chainHit(d, fx = P.x) { if (!d.alive) return; d.zap = .35; P.struck.add(d); damage(d, DMG.chain * pw('dmg'), fx, d.y);
+export function chainHit(d, fx = P.x) { if (!d.alive) return; d.zap = .35;
+  { const a = rr(-1.2, 1.2), h = 11; tear(d.x - Math.cos(a) * h, d.y - 16 - Math.sin(a) * h * .7, d.x + Math.cos(a) * h, d.y - 16 + Math.sin(a) * h * .7, 2, .2); }   // the black slash through each link's target P.struck.add(d); damage(d, DMG.chain * pw('dmg'), fx, d.y);
   for (let i = 0; i < 9; i++) { const a = rr(0, 6.28); spark(d.x, d.y - 16, Math.cos(a) * rr(60, 130), Math.sin(a) * rr(40, 90), rr(.08, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); } }

@@ -3,6 +3,7 @@ import { P, frags, mirrors } from '../state.js';
 import { SHEETS } from '../anims/sheets.js';
 import { SLASH_BREAK, crescent } from '../fx/slash.js';
 import { rr, residue, spark } from '../fx/util.js';
+import { tear } from '../fx/void.js';
 import { setState } from './actions.js';
 import { hitOne } from './hits.js';
 import { ease } from '../rig/pose.js';
@@ -40,7 +41,7 @@ export function updateMirrors(dt) {
       if (Math.random() < .5) P.ghosts.push({ state: 'tele', f: 3, x: m.x, y: m.y, face: m.face, age: 0, hold: 0, white: 0 }); }
     else if (t < MS + MD + MC) { const tc = t - MS - MD; m.st = 'slash1'; m.f = Math.min(SHEETS.slash1.n - 1, tc * 30 | 0); m.glitch = .4; m.y = m.ty;
       if (!m.done.cut && tc >= .16) { m.done.cut = 1; m.white = .05;
-        crescent(m.x + m.face * 5, m.y - 12, m.face, .15, 1, 16, 5, .05, SLASH_BREAK, .9); hitOne(m.d, m.di, 'mi' + m.j, m.x, m.y);
+        crescent(m.x + m.face * 5, m.y - 12, m.face, .15, 1, 16, 5, .05, SLASH_BREAK, .9); tear(m.x + m.face * 6, m.y - 18, m.x + m.face * 24, m.y - 8, 2, .22); hitOne(m.d, m.di, 'mi' + m.j, m.x, m.y);
         for (let k = 0; k < 4; k++) { const life = rr(.06, .12); frags.push({ x: m.x - m.face * rr(4, 18), y: m.y - rr(4, 24), w: 3 + (Math.random() * 6 | 0), col: k % 2 ? '#ffffff' : COL.fx2, vx: m.face * rr(10, 30), vy: 0, life, max: life, jx: 0, on: true }); } } }
     else { const k = (t - MS - MD - MC) / MF; m.a = 1 - k; m.glitch = .6 + 3 * k;
       if (!m.done.fade) { m.done.fade = 1; for (let i = 0; i < 12; i++) { const life = rr(.4, .8); frags.push({ x: m.x + rr(-8, 8), y: m.y - rr(2, 28), w: 1 + (Math.random() * 4 | 0), col: [COL.fx, COL.fx2, '#ffffff'][i % 3], vx: rr(-6, 6), vy: rr(-10, -2), life, max: life, jx: 0, on: true }); } } } }

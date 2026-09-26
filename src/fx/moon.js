@@ -2,6 +2,7 @@ import { COL, SQ } from '../config.js';
 import { g } from '../screen.js';
 import { P, S, frags, moons } from '../state.js';
 import { crescent } from './slash.js';
+import { tearArc } from './void.js';
 import { rr, FRAG_COLS, ring, spark, dust, scrFlash, after } from './util.js';
 import { hit, burst } from '../player/hits.js';
 import { T, powerCast } from '../player/power.js';
@@ -13,6 +14,8 @@ export function unleashMoon(pow, twin = false) {
   const face = twin ? -P.face : P.face, k = .35 + .65 * pow, R = Math.round(23 * (1 + 2 * k) * (twin ? .75 : 1)), cx = P.x + face * R * .25, cy = P.y - 13;
   if (!twin) { powerCast(); if (T('moon', 'twin')) after(.1, () => unleashMoon(pow, true)); }   // power III: a smaller second moon sweeps the other way
   moons.push({ x: cx, y: cy, fy: P.y, face, R, d: 6 + 9 * k, k, age: 0, SW: .15, HOLD: .3 + .14 * k, GLOW: .55, seed: Math.random(), echo: 0, shat: false, hit: false, struck: [], twin });
+  // the black slash: a slit of void opens along the arc just inside the blade, sweeping with it, and snaps shut as the moon shatters
+  const m = moons[moons.length - 1]; tearArc(cx, cy, face, m.R - m.d - 1, arcA(0), arcA(1), 2 + 4 * k, m.SW + m.HOLD, m.SW);
   P.flash = .05; scrFlash(.08, .12 + .16 * pow); S.shake = .1; P.shakeAmp = 1 + Math.round(2 * pow);
   ring(P.x + P.face * R * .3, P.y + 1, R * .35, R * .12, .5, 2.2, COL.fx2); ring(P.x, P.y + 1, 12, 5, 2 / 60);
   dust(10 + 10 * pow | 0);

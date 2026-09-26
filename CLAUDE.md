@@ -14,7 +14,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
-- The check reads the player, the facing he is drawn in, the enemies, what he wears, the inventory, `S` and the K markers through `window.__game = { P, PF, E, wear, INV, S, K }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
+- The check reads the player, the facing he is drawn in, the enemies, what he wears, the inventory, `S` and the K markers and the black slashes through `window.__game = { P, PF, E, V, wear, INV, S, K }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
 
 ## Module map (`src/`)
 
@@ -71,7 +71,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `fx/bolts.js` | Jagged whole-pixel lightning (`zap`) |
 | `fx/debris.js` | Stone chips the storm slam gathers and flings, floor cracks |
 | `fx/moon.js` | The Crescent Moon: sweep, hang, shatter, its light on the floor |
-| `fx/void.js` | Cross Rift's tear in reality |
+| `fx/void.js` | The black slash: Cross Rift's tear in reality (`tear`, `xTear`, `tearArc` bent round a crescent), which every offensive skill cuts on its hit beat and shuts on its own (`close`) or on the caller's click |
 | `fx/element.js` | `ELEMENTS` (palette + kit per element), `EL` (the current one), `setElement`, `cc`/`ec` (storm white and cyan to the element's tones) |
 | `fx/matter.js` | The non-lightning elements' matter (flames, goo, drops, gusts, motes), floor stains, the kits `FIRE`/`SLIME`/`WATER`/`WIND`/`PSYCHIC`, `qiFx` |
 | `fx/blood.js` | Blood drops, floor stains and pools |

@@ -11,6 +11,7 @@ import { setState } from '../player/actions.js';
 import { collide } from '../world/room.js';
 import { residue, rr } from '../fx/util.js';
 import { bleed, pool } from '../fx/blood.js';
+import { tear } from '../fx/void.js';
 import { PAIRED, fits, ROSTER } from './kit.js';
 import { RUNS } from './paired-moves.js';
 import { standing, busy, say } from './companions.js';
@@ -79,7 +80,8 @@ export function halve(x, cuts, push) {
 }
 // a white cut line through local (lx, ly), along (dx, dy), n pixels each way
 export function cutLine(x, lx, ly, dx, dy, n = 11) { const m = Math.max(Math.abs(dx), Math.abs(dy)) || 1;
-  lines.push({ x: wx(x, lx), y: wy(x, ly), dx: x.s * dx / m, dy: dy / m, n, t: 0 }); }
+  const l = { x: wx(x, lx), y: wy(x, ly), dx: x.s * dx / m, dy: dy / m, n, t: 0 }; lines.push(l);
+  tear(l.x - l.dx * n, l.y - l.dy * n, l.x + l.dx * n, l.y + l.dy * n, 2.5, .5); }   // the black slash along every paired cut
 // a rope, chain or scarf from one local point to another this frame (kind: 'chain' | 'cloth')
 export const rope = (x, a, b, kind) => { x.rope = { a: [wx(x, a[0]), wy(x, a[1])], b: [wx(x, b[0]), wy(x, b[1])], kind }; };
 // an afterimage of an actor as it is now
