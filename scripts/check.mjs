@@ -107,15 +107,20 @@ try {
     await sleep(200); await shot('09-k-prompt');
     await kb.press('k'); await reach(/^exec$/); await page.evaluate(() => { window.__st = window.__game.P.exec; });
     await sleep(700); await shot('10-execution');
+    // chaining K: the pick lands him in reach of another lone samurai whenever one of the executions can, and lands where it said
+    const ch = await page.evaluate(() => ({ name: window.__st.ex.name, k: window.__st.k, open: window.__st.open }));
+    if (ch.open.length && !ch.open.includes(ch.k)) fail(`"${ch.name}" was picked though ${JSON.stringify(ch.open)} keep K open`);
     // other samurai are near, so he keeps the blade out in a stance for the next K (unless that execution never drew it)
     await reach(/^(idle|ready\d)$/, 4000);
+    const ld = await page.evaluate(() => ({ name: window.__st.ex.name, land: window.__st.land, at: window.__st.landed }));
+    if (!(Math.hypot(ld.land[0] - ld.at[0], ld.land[1] - ld.at[1]) < 2)) fail(`"${ld.name}" landed away from where K foresaw it (${JSON.stringify(ld)})`);
     const end = await page.evaluate(() => ({ s: window.__game.P.state, armed: window.__game.P.armed, bare: !!window.__st.ex.bare }));
     if (!end.bare && !(/^ready\d$/.test(end.s) && end.armed)) fail(`he sheathed after "${await page.evaluate(() => window.__st.ex.name)}" with samurai still near (${JSON.stringify(end)})`);
     // with the blade kept out he is free before the execution has played out: let it finish first
     await until('the execution to play out', () => window.__st.clock >= window.__st.ex.dur, undefined, 3000);
     // the deaths pass: the blade landed on him (knockback, blood) and his body moved on its springs
-    const d = await page.evaluate(() => { const E = window.__st.E; return { name: window.__st.ex.name, hit: E.hitAt != null, t: E.body.t, bare: !!window.__st.ex.bare }; });
-    // (peek-a-boo from behind never draws, so no blade lands: only the body's springs are asked of it)
+    const d = await page.evaluate(() => { const E = window.__st.E; return { name: window.__st.ex.name, hit: E.hitAt != null, t: E.body.t, bare: !!window.__st.ex.bare || !!window.__st.ex.unseen }; });
+    // (the peek-a-boos never land a blow we see: only the body's springs are asked of them)
     if ((!d.hit && !d.bare) || !(d.t > .5)) fail(`"${d.name}": the deaths pass never ran on the executed body (${JSON.stringify(d)})`);
     const cd = await page.evaluate(() => ({ t: window.__game.P.cd.tele, max: window.__game.P.cdMax.tele }));
     if (!(cd.max <= .2 + 1e-9)) fail(`K was not reset to 0.2 s after the kill (${JSON.stringify(cd)})`);
@@ -164,7 +169,7 @@ try {
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });
   await run('every weapon (the picker) slashes, stands in a stance and sheathes', async () => {
-    for (const id of ['yari', 'nodachi', 'tanto', 'naginata', 'kanabo', 'kusarigama', 'tessen', 'bo', 'katana']) {
+    for (const id of ['yari', 'nodachi', 'tanto', 'naginata', 'kanabo', 'kusarigama', 'tessen', 'bo', 'tetsubo', 'kama', 'jitte', 'daisho', 'nunchaku', 'wakizashi', 'katana']) {
       await page.selectOption('#weapon', id); await until(`weapon ${id}`, w => window.__game.P.weapon === w, id);
       await kb.press('j'); await reach(/^slash1$/); await sleep(200); await shot(`08-${id}-slash`);
       await reach(/^ready\d$/); await reach(/^idle$/, 5000); } });

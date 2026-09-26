@@ -59,3 +59,20 @@ export const TANTO_3D = {
     knife(S, A.hand, d, top, 5); grip(S, A, top); },
   sheathing(S, J, hand) { const d = V.sub(J.mouth, hand), l = V.len(d) || 1; knife(S, hand, V.mul(d, 1 / l), .3, Math.min(6, l)); },
 };
+
+// a straight blade at the hip like the katana's, of any length: the wakizashi, the daisho's short sword, the jitte (no edge)
+export function blade3d(len, saya = len - 1, key = 'W') { return {
+  carried(S, J, p, home) {
+    const tip = V.add(J.mouth, V.mul(J.sd, saya)); if (saya) { S.seg(J.mouth, tip, 1, 's'); dotAt(S, tip, 0, 1, 'S'); }
+    if (home && !p.empty) { dotAt(S, J.mouth, .2, 1, 'S'); S.seg(V.sub(J.mouth, J.sd), V.sub(J.mouth, V.mul(J.sd, 3)), 1, saya ? 'W' : key, .2); } },
+  held(S, A, d, top) { const h = A.hand; S.seg(h, V.sub(h, V.mul(d, 2)), 1, 'K', top); S.seg(V.add(h, d), V.add(h, V.mul(d, len)), 1, key, top);
+    grip(S, A, top); },
+  sheathing(S, J, hand) { S.seg(hand, J.mouth, 1, key, .3); },
+}; }
+// a haft slung across the back like the yari's, no head: the bo (wood), the tetsubo (iron)
+export function staff3d(key, back, front) { return {
+  carried(S, J, p, home) { if (!home) return; const [b, t] = sling(J); S.seg(b, t, 1, key); dotAt(S, b, 0, 1, 'S'); dotAt(S, t, 0, 1, 'S'); },
+  held(S, A, d, top) { const b = V.sub(A.hand, V.mul(d, back)), f = V.add(A.hand, V.mul(d, front));
+    S.seg(b, f, 1, key, top); dotAt(S, b, top, 1, 'S'); dotAt(S, f, top, 1, 'S'); grip(S, A, top); },
+  sheathing(S, J, hand) { const [b, t] = sling(J); S.seg(hand, V.add(hand, V.mul(V.norm(V.sub(t, b)), 15)), 1, key, .3); },
+}; }

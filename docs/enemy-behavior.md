@@ -1,6 +1,6 @@
 # Enemy behaviour: the plan
 
-A proposal for how enemies think, move, fight and live in the world. Nothing here is built yet except what "Today" says. Every number is a starting value to tune in play.
+**Approved by the owner (2026-09-26).** How enemies think, move, fight and live in the world. Nothing here is built yet except what "Today" says. Every number is a starting value to tune in play.
 
 ## Today
 
@@ -103,6 +103,7 @@ The 14 counters are all katana answers. Each weapon the ronin holds should answe
 - **Yari (reach):** he answers from outside the enemy's range. The butt or the haft does the parrying, and the kill is a thrust through the gap the attack opened. Against the charge: plant the spear and let him run onto it. Against the leaping strike: the point up.
 - **Nodachi (weight):** he does not dodge much. He meets the blow and overpowers it: beats the blade down, cuts through the guard, one huge cut that takes the attacker and whoever stands behind him.
 - **Twin tanto (inside):** he steps inside every attack. The reverse-grip hand catches or hooks the blade, the lead hand cuts at close range, several fast small cuts instead of one big one.
+- **Every weapon, the new ones too** (owner, 2026-09-26: "and the newly added weapons?"): each weapon the ronin can hold gets its own answers to the 14 attacks as it arrives: naginata, bo staff, kama, kusarigama, bamboo spear, flail, club (the bow answers from range). So the table is 14 attacks × every weapon, built in batches.
 - **The enemy's weapon matters too:** a spear thrust is countered differently from a sword thrust, so later the table grows a third axis (attack × his weapon × their weapon class). Start with attack × his weapon: 14 × 3 = 42 new counters, made the way the first 14 were.
 
 ## 6. Personality drives behaviour, not just the walk
@@ -158,4 +159,4 @@ Each step gets a prototype page first, as every system so far has, then goes int
 - **Stealth weight:** should a detected ronin still be able to K (loudly), or only the unaware?
 - **The archer and the monk** bring the first attacks the counters do not cover (arrows, the staff sweep). Add them?
 - **Grudges:** should killing a culture's people make its whole region hostile for a while?
-- **Clothes:** may enemy cultures wear colour or beige, with only the ronin kept to black? (Still open from the world system.)
+- ~~Clothes~~ **Answered (owner, 2026-09-26):** only very high royalty wear colour (red and the like). Everyone else wears beige, earth tones and black by class. The ronin stays in black unless he acquires coloured clothing, which is rare.

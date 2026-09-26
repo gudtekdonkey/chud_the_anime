@@ -10,6 +10,12 @@ import { KANABO } from './kanabo.js';
 import { KUSARIGAMA } from './kusarigama.js';
 import { TESSEN } from './tessen.js';
 import { BO } from './bo.js';
+import { TETSUBO } from './tetsubo.js';
+import { KAMA } from './kama.js';
+import { JITTE } from './jitte.js';
+import { DAISHO } from './daisho.js';
+import { NUNCHAKU } from './nunchaku.js';
+import { WAKIZASHI } from './wakizashi.js';
 
 // ---- Weapons: every move exists for every weapon, on the same timeline and hits; each weapon brings its own poses and art ----
 // a weapon: { id, name, about, art (drawing hooks, see katana.js), poses: { anim: frames } that replace the katana's,
@@ -17,7 +23,7 @@ import { BO } from './bo.js';
 // Its frames must match the katana's count, so timing and hit beats never move.
 const KATANA = { id: 'katana', name: 'Katana', about: 'The sheathed blade at his hip: quick draw, clean arcs, the slow resheathe.', art: KATANA_ART, poses: {},
   reach: 1, weight: { stop: 1, shake: 1 } };
-export const WEAPONS = [KATANA, YARI, NODACHI, TANTO, NAGINATA, KANABO, KUSARIGAMA, TESSEN, BO];
+export const WEAPONS = [KATANA, YARI, NODACHI, TANTO, NAGINATA, KANABO, KUSARIGAMA, TESSEN, BO, TETSUBO, KAMA, JITTE, DAISHO, NUNCHAKU, WAKIZASHI];
 export const weapon = () => WEAPONS.find(w => w.id === P.weapon) || KATANA;
 
 export function framesFor(w, name) {

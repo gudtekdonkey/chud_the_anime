@@ -11,7 +11,8 @@ import { EXECS } from './executions.js';
 import { withShadow, drawPieces } from './pieces.js';
 import { SETTLE, stageBody, stepStageBody, updateStagePieces } from './stage-body.js';
 import { F, FX, updateStageFx, drawStageFloor, drawStageTop } from './stage-fx.js';
-import { hold, faceOf, roomFade } from './targets.js';
+import { K_RANGE } from './markers.js';
+import { ISOLATION, targets, hold, faceOf, roomFade } from './targets.js';
 
 // ---- K on an isolated enemy: he flashes to him and plays an execution ----
 // Each execution plays on its own stage: the two bodies, the pieces and the effects, in a frame where the enemy faces left.
@@ -21,11 +22,30 @@ export const stages = [];
 const PRE = .2;       // the set and the vanish before he lands (the prototype's 0.75 s lock-on beat, cut down for play)
 const INTO_GUARD = .15;   // blade kept out: from the last cut into his stance, then the player has him
 let lastExec = -1;
+// where the player gets him back after execution ex on e, in the world (the stage is mirrored when e faces right)
+export function landing(ex, e) {
+  if (ex.end === 'start') return [P.x, P.y];
+  const ox = Math.round(e.x); return collide(ox - faceOf(e) * (ex.end ?? ex.side * ex.gap), e.y + 1);
+}
+// would K have a lone enemy in reach from (x, y) once e is gone? The markers' own rules, with e left out of the bubbles
+export function opensK(x, y, e) {
+  const rest = targets().filter(o => o !== e);
+  const alone = o => S.smoke > 0 || !rest.some(q => q !== o && Math.hypot(q.x - o.x, q.y - o.y) <= ISOLATION);
+  return rest.some(o => Math.hypot(o.x - x, o.y - y) < K_RANGE && alone(o));
+}
+// chaining K: he picks an execution that lands him in reach of the next lone enemy; if none does, any of them.
+// Never the same one twice running, unless it is the only one that keeps the chain going
+function pickExec(e) {
+  const all = EXECS.map((_, k) => k), open = all.filter(k => opensK(...landing(EXECS[k], e), e));
+  const fresh = ks => ks.length > 1 ? ks.filter(k => k !== lastExec) : ks;
+  const pool = fresh(open.length ? open : all);
+  return { k: pool[Math.random() * pool.length | 0], open };
+}
 export function assassinate(e) {
-  let k; do k = Math.random() * EXECS.length | 0; while (k === lastExec && EXECS.length > 1); lastExec = k;
+  const { k, open } = pickExec(e); lastExec = k;
   const ox = Math.round(e.x), m = -faceOf(e);
   const St = { ex: EXECS[k], target: e, ox, m, clock: -PRE, stop: 0, shake: 0, fx: FX(), pieces: [], ev: new Set(), flashUntil: 0,
-    start: { x: ox + m * (P.x - ox), y: P.y }, E: { x: ox, y: e.y, face: -1, pose: EG, enemy: true, z: 0 }, R: null, freed: false };
+    k, open, land: landing(EXECS[k], e), start: { x: ox + m * (P.x - ox), y: P.y }, E: { x: ox, y: e.y, face: -1, pose: EG, enemy: true, z: 0 }, R: null, freed: false };
   St.once = (key, cond, fn) => { if (cond && !St.ev.has(key)) { St.ev.add(key); fn(); } };
   stageBody(St.E); hold(e); stages.push(St);
   // chaining K: with anyone else near he keeps the blade out and ends in a counter stance, ready for the next one;
@@ -68,7 +88,7 @@ export function tickStages(dt) {
 // he has sheathed: the player has him back where the stage left him, and the kill resets K
 function free(St) {
   St.freed = true; const R = St.R;
-  [P.x, P.y] = collide(St.ox + St.m * (R.x - St.ox), R.y); P.face = St.m * R.face;
+  [P.x, P.y] = St.landed = collide(St.ox + St.m * (R.x - St.ox), R.y); P.face = St.m * R.face;
   P.inv = false; P.exec = null;
   if (St.armed) { setState(St.stance); P.armed = true; P.still = 0; }   // blade out; ~2 s of calm and he sheathes as after any attack
   else { P.armed = false; setState('idle'); if (!St.ex.bare) sheathClick(); }
