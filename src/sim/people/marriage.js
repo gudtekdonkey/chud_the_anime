@@ -1,9 +1,9 @@
-import { emit, zoneAt } from '../ledger.js';
+import { emit } from '../ledger.js';
 import { marry } from '../actors.js';
 import { KINDS } from '../cultures.js';
-import { AGE, WED_CHANCE, REWED_CHANCE, WED_RANK_GAP, MUKOYOSHI, BRIDE_PRICE, SILVER_MON, RYO_MON, worth } from './rules.js';
+import { AGE, WED_STANDING, WED_CHANCE, REWED_CHANCE, WED_RANK_GAP, MUKOYOSHI, BRIDE_PRICE, SILVER_MON, RYO_MON, worth } from './rules.js';
 import { act, alive, age, closeKin, livingChildren, siblings, zkey } from './kin.js';
-import { SETTLED, residents, moveHome, freePlot, grantPlot } from './settle.js';
+import { SETTLED, residents, moveHome } from './settle.js';
 import { recordDeed, notable } from './player.js';
 import { tieValue, setTie } from './ties.js';
 
@@ -76,12 +76,10 @@ export function wed(L, h, w, price = 0, r = null) {
     if (w.household === w.id && w.holds.length && !h.holds.length && h.household !== h.id) {   // a landed widow takes her new husband in
       h.household = w.id; if (zkey(h.home) !== zkey(w.home)) moveHome(L, h, w.home);
     } else {
-      // a younger son founds his own house on a plot the lord grants, if there is one; the heir stays in his father's house
+      // a younger son wants land of his own to found a house on; he stays in his father's house until he has it (owner 2026-09-26: no free
+      // plots from the lord; the economy lane prices land and sells or auctions it). The heir stays in his father's house for good
       const fatherH = act(L, h.parents[0]);
-      if (h.household !== h.id && !(fatherH && fatherH.alive && eldestSon(L, fatherH) === h) && h.home) {
-        const z = zoneAt(L, h.home[0], h.home[1]), pid = z ? freePlot(L, z) : null;
-        if (pid) { h.household = h.id; grantPlot(L, pid, h); P.stats.granted++; }
-      }
+      if (h.household !== h.id && !(fatherH && fatherH.alive && eldestSon(L, fatherH) === h) && !h.ambition && h.id !== L.player) h.ambition = { kind: 'land', since: L.hour };
       if (w.household === w.id && w.id !== h.household) for (const m of residents(L, zkey(w.home))) if (m.household === w.id && m !== w && m.parents.includes(w.id)) {
         m.household = h.household; if (h.home && zkey(m.home) !== zkey(h.home)) moveHome(L, m, h.home); }   // her children come with her
       w.household = h.household;
@@ -89,6 +87,8 @@ export function wed(L, h, w, price = 0, r = null) {
     }
   }
   if (h.dynasty || w.dynasty || h.id === L.player || w.id === L.player) h.dynasty = w.dynasty = true;
+  for (const [me, them] of [[h, w], [w, h]]) if (me.id === L.player && them.culture != null)   // her people count him as one of their own now
+    me.standing[them.culture] = Math.min(1, Math.round(((me.standing[them.culture] || 0) + WED_STANDING) * 100) / 100);
   P.stats.marriages++; P.year.marriages++;
   if (notable(L, h) || notable(L, w)) {
     recordDeed(L, h.id, `married ${w.given} ${w.family}`); recordDeed(L, w.id, `married ${h.given} ${h.family}`);

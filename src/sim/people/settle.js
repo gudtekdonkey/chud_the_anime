@@ -2,7 +2,7 @@ import { zoneAt, emit } from '../ledger.js';
 import { hash } from '../rng.js';
 import { CLASSES } from '../cultures.js';
 import { AGE, CAP, FEEDS, HARVEST, FAMINE_AT, KEEP, HOUSE_PLOTS, worth } from './rules.js';
-import { act, age, zk, zkey, idKey } from './kin.js';
+import { alive, age, zk, zkey, idKey } from './kin.js';
 
 // ---- Settlements: who lives where, what the land feeds, and people moving to where there is room ----
 // L.sys.people.settle[key]: { kind, region, cap (people its land feeds; a fort, camp or shrine: its garrison's target), pop, fed, danger }
@@ -90,7 +90,8 @@ export function grantPlot(L, pid, a) {
   if (!a.holds.includes(pid)) a.holds.push(pid);
 }
 
-// ---- moving: crowded settlements send young people and landless households to places in their region (then their culture) with room ----
+// ---- moving: crowded settlements send young people and landless households to places in their region (then their culture) with room;
+// they arrive landless (tenants) and want land ----
 export function migrate(L, r) {
   const P = L.sys.people, keys = Object.keys(P.settle).filter(k => SETTLED.has(P.settle[k].kind));
   const room = k => { const s = P.settle[k]; return s.pop / Math.max(1, s.cap); };
@@ -111,8 +112,8 @@ export function migrate(L, r) {
       const d = dests[di], dz = zoneAt(L, ...d.split(',').map(Number)), home = [dz.x, dz.y];
       if (group.some(m => m.home[0] !== z.x || m.home[1] !== z.y)) continue;   // already moved with another group
       for (const m of group) moveHome(L, m, home);
-      if (head.household !== head.id) { head.household = head.id; }
-      const pid = freePlot(L, dz); if (pid) grantPlot(L, pid, head);
+      if (head.household !== head.id) head.household = head.id;
+      if (!head.ambition) head.ambition = { kind: 'land', since: L.hour };
       over -= group.length; moved += group.length;
       if (room(d) >= .9) di++;
     }
@@ -120,24 +121,27 @@ export function migrate(L, r) {
   }
 }
 
-// ---- new houses: a married man still in his father's (or brother's) house founds his own when the lord has a plot to grant; the heir stays ----
+// ---- new houses: a married man still in his father's (or brother's) house founds his own once he holds land (the economy lane sells it;
+// owner 2026-09-26: no free plots from the lord), or, landless, as a tenant once he has a child of his own. His wife and unmarried children
+// come with him; the house's heir stays ----
 export function foundHouses(L) {
   const P = L.sys.people;
   for (const k in P.settle) {
     const s = P.settle[k]; if (!SETTLED.has(s.kind)) continue;
-    let z = null;
     for (const a of residents(L, k)) {
       if (a.sex !== 'm' || a.spouse == null || a.household === a.id || a.household == null || a.id === L.player) continue;
-      const head = act(L, a.household);
-      if (head && head.alive && head.heir === a.id) continue;   // taken in as the house's heir
-      if (head && head.alive && a.parents[0] === head.id && !head.children.some(c => c !== a.id && L.actors[c] && L.actors[c].alive && L.actors[c].sex === 'm' && L.actors[c].born < a.born)) continue;   // the eldest son stays
-      z = z || zoneAtKey(L, k); const pid = freePlot(L, z); if (!pid) break;
-      a.household = a.id; grantPlot(L, pid, a); P.stats.granted++;
+      const head = alive(L, a.household);
+      if (head && head.heir === a.id) continue;   // taken in as the house's heir
+      if (!a.holds.length) {
+        if (!a.children.some(c => L.actors[c] && L.actors[c].alive)) continue;
+        if (head && a.parents[0] === head.id && !head.children.some(c => c !== a.id && L.actors[c] && L.actors[c].alive && L.actors[c].sex === 'm' && L.actors[c].born < a.born)) continue;   // the eldest son stays
+        P.stats.tenants++;
+      } else { P.stats.founded++; if (a.ambition && a.ambition.kind === 'land') a.ambition = null; }
+      a.household = a.id;
       for (const m of residents(L, k)) if (m.id !== a.id && (m.id === a.spouse || (m.parents.includes(a.id) && m.spouse == null))) m.household = a.id;
     }
   }
 }
-const zoneAtKey = (L, k) => { const i = k.indexOf(','); return zoneAt(L, +k.slice(0, i), +k.slice(i + 1)); };
 
 // ---- garrisons, bands and temples keep their numbers from their region's young (a hungry, broke young man turns bandit) ----
 export function recruit(L, r) {

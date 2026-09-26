@@ -50,6 +50,8 @@ Cost (`scripts/people-test.mjs`, 60 years, ~7,000 living): about 0.55 ms a game 
 | `ambition` | `{ kind, target?, victim?, since }` or `null`: `land`, `wealth`, `zone` (a chief), `seat` (a lord's younger son), `favour` (a retainer), `revenge` (kin of the murdered) |
 | `dynasty` | `true` on the ronin, his wives, his children and theirs |
 | `playedFrom` | the game hour the ronin (or his heir) became the played actor |
+| `oaths` | on the played actor: ids of companions sworn to carry on his name (`swear`) |
+| `swornTo` | on a sworn companion: whom they swore to |
 | `deeds` | `[{ h, text }]`, at most 40, only for the notable (his house, lords, rank 5+). `recordDeed(L, id, text)` adds one; carved on the grave |
 | `died`, `cause`, `killer`, `grave` | set by `killActor`. `grave: { zone: [x, y], tile: [tx, ty], goods? }`: where he fell, or his settlement's graveyard corner. `goods: { weapon, money }` on the played actor's grave: what he carried (`lootGrave`). `killer` only when there was one |
 | `formerSpouses` | ids of dead spouses (on the widowed) |
@@ -66,7 +68,7 @@ Core fields this lane writes: `alive`, `spouse` (through core `marry`), `family`
 | `settle["x,y"]` | `{ kind, region, cap, pop, fed, danger, fedCap?, base? }` for towns, villages, forts, camps, shrines. `cap`: people the land feeds (towns and villages), `fed`: 0..1.3, `danger`: 0.3 per camp within 3 zones (other lanes may raise it). `fedCap: { fed, until }` is a famine another system imposed. `base`: the population when newcomers first looked at it, what they refill to |
 | `res["x,y"]` | living actor ids whose `home` is that zone. Read it through `residents(L, key)` |
 | `harvest[region]` | this year's yield, around 1 |
-| `stats` | lifetime counts: `births`, `deaths: { cause: n }`, `marriages`, `adopted`, `inherited` (plots), `estates`, `regencies`, `toLord`, `toNature`, `seats`, `granted`, `migrated`, `recruited`, `arrived` (newcomers) |
+| `stats` | lifetime counts: `births`, `deaths: { cause: n }`, `marriages`, `adopted`, `inherited` (plots), `estates`, `regencies`, `toLord`, `toNature`, `seats`, `founded` (houses on land of their own), `tenants` (landless houses), `migrated`, `recruited`, `arrived` (newcomers) |
 | `year` | this year's `{ births, deaths, marriages }` |
 | `census` | one row a year `{ year, pop, houses, births, deaths, marriages }`, last 400 |
 | `graves` | the graves the world remembers: `{ actor, name, zone, tile, born, died, cause, by, player, deeds }` for the notable |
@@ -90,6 +92,7 @@ Core fields this lane writes: `alive`, `spouse` (through core `marry`), `family`
 | `people.heir` | `actor, from, zone, age, regent` | the game continues as his heir |
 | `people.graveLooted` | `actor, from, zone, kin, weapon, money` | someone takes what lay in the played actor's grave |
 | `people.heirNamed` | `actor, heir` | he names an heir |
+| `people.sworn` | `actor` (companion), `to` | a companion swears to carry on his name |
 | `people.lineEnded` | `actor, zone, cause` | he died with no heir |
 | `people.vendetta` | `actor` (avenger), `target, victim, zone` | a murder: the eldest grown kinsman swears revenge |
 | `people.succession` | `actor, lord, heir, region, zone` | an old lord's younger son covets the seat |
@@ -107,7 +110,7 @@ Listens for `econ.famine` (`zone` or `region`): caps those settlements' `fed` at
 - `killActor(L, id, cause, by, { zone, tile })`: **the one way to kill anyone** (other lanes too). Causes used here: `age`, `illness`, `famine`, `violence`, `childbirth`; lanes add their own (`duel`, `execution`, `raid`...). Handles the body and grave, the widow, grudges and the vendetta, inheritance, the house, a lord's seat, a band's chief, a dead regent's wards, the event, and the ronin's hand-off. Returns `{ heir, rule, regent, plots }`, or `null` if already dead.
 - `findHeir(L, a)`, `passEstate(L, a)`, `rulesFor(L, a)`, `pickRegent(L, heir, dead)`.
 - `wed(L, a, b, price, r)`, `judge(L, suitor, bride)`, `court(L, suitorId, brideId, r?)`, `propose(L, suitorId, brideId)`, `brides(L, suitorId, radius = 6)`, `pay(from, to, mon)`.
-- `playableHeirs(L, p)`, `nameHeir(L, id)`, `lootGrave(L, deadId, finderId)`, `recordDeed(L, id, text)`, `notable(L, a)`.
+- `playableHeirs(L, p)`, `nameHeir(L, id)`, `swear(L, companionId)` (the party lane calls it for a companion who is a ledger actor), `sworn(L, p)`, `lootGrave(L, deadId, finderId)`, `recordDeed(L, id, text)`, `notable(L, a)`.
 - `residents(L, "x,y")`, `freePlot(L, zone)`, `grantPlot(L, pid, a)`, `moveHome(L, a, [x, y])`, `starve(L, key, fed, hours)`, `graveTile(L, zone, id)`.
 - `activity(L, a, hour)` → `[what, where]`; `tieOf`, `tieValue`, `setTie`, `bond`; `tree(L, id, depth)`, `founder`, `children`, `livingChildren`, `siblings`, `closeKin`, `nearKin`; `PEOPLE_RULES`.
 
@@ -133,9 +136,10 @@ Listens for `econ.famine` (`zone` or `region`): caps those settlements' `fed` at
 ### Marriage
 - Spring and autumn, per region: each single woman (16–41) has a 65% chance (32% if widowed) to be matched; up to 10 men (17–54) are tried and the best taken: same zone +1, same class +0.5, age gap near 3, a little chance. Rules: within one rank, same culture (or two cultures with relations above 0.3), not close kin (parents, siblings and half-siblings, grandparents; cousins may wed), the man −4..+16 years from her. Monks, soldiers in forts and outlaws in camps do not marry.
 - Bride price (yuinō): the groom's house pays the bride's 30% of `BRIDE_PRICE[her class]` (royal 500,000 mon; noble 60,000; retainer 12,000; shinobi 3,000; ashigaru 2,000; ronin 1,500; commoner 1,000; rebel 800; outlaw 500), or what it can.
-- Where they live: she joins his house. A younger son founds his own house on a plot the lord grants, if there is a free one in the zone (plots 1–15; plot 0 is the lord's); the eldest son stays in his father's house (the stem family). A landed widow takes a landless husband into hers. Her children from before come with her.
+- Where they live: she joins his house. The eldest son stays in his father's house for good (the stem family). A younger son stays too and wants land (`ambition: land`): **the lord grants no free plots** (owner, 2026-09-26); the economy lane prices land and sells or auctions it. A landed widow takes a landless husband into hers. Her children from before come with her.
 - **Mukoyōshi:** a sonless house head of a clan, the court or a merchant league takes in a younger son who marries his daughter (60%): he takes her family name and is named the house's heir.
-- Each spring and autumn a married man still in his father's or brother's house (not the heir) founds his own if a plot is free.
+- Each spring and autumn a married man still in his father's or brother's house founds his own: at once if he holds land (bought, or inherited), else as a landless tenant once he has a child (never the house's heir or the eldest son).
+- The ronin marrying: her people's standing of him rises by 0.25 (`WED_STANDING`, owner 2026-09-26).
 
 ### Inheritance (owner 2026-09-26: land and wealth pass to heirs)
 The first rule that finds a living person (never a monk) wins. `named`: the heir he named.
@@ -149,7 +153,7 @@ The first rule that finds a living person (never a monk) wins. `named`: the heir
 | free valleys (rebels) | named, widow, eldest child, grandchild, sibling | equal |
 | temple lands | named, eldest child, widow, grandchild, sibling | equal |
 | outlaw coast | son, child, widow, sibling | equal |
-| the ronin's line | named, son, eldest child, grandchild, brother | heir (his purse is on his body, not in the estate) |
+| the ronin's line | named, son, grandson (through any child), brother, sworn companion; only then a daughter or the widow (who never play) | heir (his purse is on his body, not in the estate) |
 
 - **Land:** every plot titled to the dead passes its title to the heir; where the dead also held it, possession passes too. A plot someone else holds by force keeps its holder (owner: raids take possession, never the title).
 - **A minor heir** (under 16) takes the title at once; possession goes to a regent (his living parent, else his eldest grown sibling, else the dead man's eldest grown kin) until he comes of age, when he takes it and, if his parent was regent, heads the house. A dead regent's wards get a new one.
@@ -158,11 +162,11 @@ The first rule that finds a living person (never a monk) wins. `named`: the heir
 - **A lord's seat** goes to his heir (a minor rules through the regent); with no heir, the region's highest-ranked grown person (20–64, men first, eldest first) seizes it and moves to the seat. **A band's chief** is followed by the eldest grown man of the band.
 
 ### Newcomers (owner, 2026-09-26: keep 30% violence, refill with newcomers)
-- Each season a town or village below its founding size (`settle.base`, the population first seen; never past 80% of what its land feeds) takes in 35% of the gap, at most 12 people: a household at a time, a grown head (18–40, a man 80% of the time; a ronin 8%), a spouse 60% of the time, 0–3 children under 13. Nine in ten are the region's own culture, one in ten from any other. The head is granted a free plot if there is one. Each newcomer gets `arrived` (the hour they came). `people.arrived` is emitted per settlement.
+- Each season a town or village below its founding size (`settle.base`, the population first seen; never past 80% of what its land feeds) takes in 35% of the gap, at most 12 people: a household at a time, a grown head (18–40, a man 80% of the time; a ronin 8%), a spouse 60% of the time, 0–3 children under 13. Nine in ten are the region's own culture, one in ten from any other. They arrive landless and want land (`ambition.kind === 'land'`; owner: no free plots, the economy sells it). Each newcomer gets `arrived` (the hour they came). `people.arrived` is emitted per settlement.
 - Without the crime system, births keep most villages near their founding size and few newcomers come. With it (30% of grown people a year), seed 12345 holds about 5,950 of its 6,714 people over 10 years (children stay home and are never killed, so fewer grown people are left).
 
 ### Moving, and keeping garrisons
-- A settlement over 112% of what it feeds sends landless households and unmarried young adults (16–29) to settlements of its region (then its culture) under 90%, granting the head a free plot there.
+- A settlement over 112% of what it feeds sends landless households and unmarried young adults (16–29) to settlements of its region (then its culture) under 90%. They arrive landless and want land.
 - A fort, camp or shrine under its minimum (5, 5, 1) recruits to 5–8, 5–8, 1–3 from its region's villages (its whole culture if the region has fewer than 40 people): forts take unmarried young men (commoners become ashigaru), camps take the broke first (`people.turnedOutlaw`), shrines take unmarried adults under 40 (they become monks).
 
 ### Needs, living, ties, ambitions
@@ -176,7 +180,7 @@ Children play and help; elders sit. Field work (farmers, fishers, woodcutters, m
 ### The ronin's line (owner 2026-09-26: death costs everything unless he has an heir)
 - `L.player` is always the played actor. Courting: `brides` lists unmarried women 16–44 in settlements within 6 zones; `court` is a visit that warms her by 0.12 (+0.06 a shared trait, −0.05 a trait her people despise). `judge` says whether her house accepts: acceptance 0.55 + her culture's standing of him × 0.5 + the cultures' relation × 0.25 + karma × 0.2 (at most 0.2) − 0.22 per rank she stands above him − 0.15 per despised trait; refused if she is married, under 16, a nun or close kin, if her house is 3+ ranks above him without standing 0.8, if his karma is below −0.4 (the outlaw coast does not mind), if her people's standing of him is below −0.2, if she hardly knows him (fondness under 0.4), or if he cannot pay. Bride price: `BRIDE_PRICE` × (1 + 0.5 per rank above him) × (1 − 0.4 × standing). He pays it all to her house head.
 - Married, he heads a house where she lives; her home becomes his. Children are born to them like anyone else's, and are his house (`dynasty`).
-- **When he dies** (`killActor` on `L.player`): what he carried (his weapon and his purse) becomes his grave's `goods` (owner, 2026-09-26: finders keepers; his heir can take it back if they reach the grave first, and anyone can rob it: `lootGrave`). His land and anything not on him pass by the ronin rule; his grave lies at the zone and tile where he fell and is remembered with his deeds (`P.graves`). His playable heir becomes `L.player` at once, whatever their age (owner): the named one if among his children, grandchildren or brothers, else sons, daughters, grandchildren, brothers. A child heir is played now; the widow, else the next of kin (a grown sibling, else the dead man's eldest grown kin), is regent and holds the land until 16. No heir: `P.over`, `people.lineEnded`, the run is over.
+- **When he dies** (`killActor` on `L.player`): what he carried (his weapon and his purse) becomes his grave's `goods` (owner, 2026-09-26: finders keepers; his heir can take it back if they reach the grave first, and anyone can rob it: `lootGrave`). His land and anything not on him pass by the ronin rule; his grave lies at the zone and tile where he fell and is remembered with his deeds (`P.graves`). His playable heir becomes `L.player` at once, whatever their age: the named one if a playable heir, else his sons, his grandsons, his brothers, then the companions sworn to him (owner: never a daughter). A sworn companion keeps their own name and joins his house (`dynasty`). A child heir is played now; the widow, else the next of kin, is regent and holds the land until 16. No playable heir: `P.over`, `people.lineEnded`, the run is over (his land still passes to a daughter or the widow).
 
 ### Forgetting the long dead (owner, 2026-09-26: ok)
 A save grows by the dead. Once a year, the dead of more than `fadeAfter` years (20) who are not notable (not his house, a lord or rank 5+) keep only `id, given, family, sex, born, died, alive, cause, killer, culture, cls, job, parents, children, spouse, grave` and get `faded: true`; other systems must not read any other field of a faded record. Family trees still reach them. Sizes: about 3.2 MB fresh, 9.5 MB after 60 years (11 MB without forgetting; most of the weight is the recently dead). Set `fadeAfter = 0` to keep everything.
@@ -188,15 +192,14 @@ A save grows by the dead. Once a year, the dead of more than `fadeAfter` years (
 - Fixed in the merge: a lord already seated in one region can no longer take a second seat, by inheritance or by seizing it (his first seat was left to a dead man).
 
 - Old age may take him while you are away ("yes he may die").
-- Heirs: "only his children and grandchildren, maybe a brother or companion". Built: children, grandchildren, then brothers. A companion as heir is still open (the party lane's companions are not actors in the ledger yet).
+- Heirs: his sons and grandsons, a brother, and a sworn companion ("sure"); a daughter can never be the played heir ("no"). The party lane's companions must be ledger actors for `swear` to work.
 - A child heir is played at once; "widow/next of kin is regent".
 - "If his gear was on him and he died in an unrecoverable place, it's finders keepers": his weapon and purse lie in his grave for whoever reaches it.
-- Land is bought or bid for, and that belongs in the economy lane: the people lane keeps only the want (`ambition.kind === 'land'`) and the lord's grant of a free plot to a new household.
+- Land is bought or bid for, and that belongs in the economy lane, which sets the price. No free plots from the lord, not even for a new household: the people lane keeps only the want (`ambition.kind === 'land'`).
+- Marrying into a culture raises its standing of him.
 - Forgetting the long dead is ok.
 
-## Still open
+## For the economy lane
 
-1. May a sworn companion carry on as his heir?
-2. Can a daughter be the played heir? (Built: yes, after the sons.)
-3. Should marrying into a culture change his standing with it?
-4. Is a lord's grant of a free plot to a new couple the people lane's to keep, or should the economy lane price it too?
+- `actor.ambition.kind === 'land'` marks who wants land: married younger sons, migrants, small landholders. Sell or auction them plots with `grantPlot(L, pid, actor)` (moves the title from the old owner's `holds`); `freePlot(L, zone)` finds a plot titled to no living person. A married man who comes to hold land founds his own house at the next spring or autumn.
+- Set `L.sys.people.wages = false` when the economy pays wages; emit `econ.famine` with a `zone` or `region` to starve a place for a season.

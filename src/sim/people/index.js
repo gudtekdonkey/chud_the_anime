@@ -18,7 +18,7 @@ export const PEOPLE = system({
   init(L) {
     const P = L.sys.people;
     Object.assign(P, {
-      stats: { births: 0, deaths: {}, marriages: 0, adopted: 0, inherited: 0, estates: 0, regencies: 0, toLord: 0, toNature: 0, seats: 0, granted: 0, migrated: 0, recruited: 0, arrived: 0 },
+      stats: { births: 0, deaths: {}, marriages: 0, adopted: 0, inherited: 0, estates: 0, regencies: 0, toLord: 0, toNature: 0, seats: 0, founded: 0, tenants: 0, migrated: 0, recruited: 0, arrived: 0 },
       year: { births: 0, deaths: 0, marriages: 0 }, census: [], graves: [], lineage: [], over: null, wages: true, fadeAfter: FADE_AFTER,
     });
     for (const id in L.actors) {
@@ -48,7 +48,7 @@ on('econ.famine', (e, L) => {
 
 export { killActor, findHeir, passEstate, rulesFor } from './death.js';
 export { wed, judge, court, propose, brides, pay, single } from './marriage.js';
-export { playableHeirs, nameHeir, recordDeed, notable, lootGrave } from './player.js';
+export { playableHeirs, nameHeir, swear, sworn, recordDeed, notable, lootGrave } from './player.js';
 export { residents, freePlot, grantPlot, starve, graveTile, moveHome } from './settle.js';
 export { activity } from './schedule.js';
 export { bond, tieOf, tieValue, setTie } from './ties.js';

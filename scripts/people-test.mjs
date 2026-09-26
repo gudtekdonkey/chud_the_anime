@@ -1,6 +1,6 @@
 // node scripts/people-test.mjs [seed] [years]: live a world for 60 years with the people system and print what became of its people:
 // population by decade, households, marriages, deaths by cause, lands inherited, one family tree; then check the rules hold.
-import { killActor, tree, brides, judge, court, propose, tieValue, nameHeir, livingChildren, freePlot, grantPlot, lootGrave, PEOPLE_RULES } from '../src/sim/people/index.js';
+import { killActor, tree, brides, judge, court, propose, tieValue, nameHeir, playableHeirs, swear, freePlot, grantPlot, lootGrave, PEOPLE_RULES } from '../src/sim/people/index.js';
 import { generateWorld, advance, hoursFromYears, serialize, deserialize, calendar, HOURS_PER_YEAR, bear, rngFor } from '../src/sim/index.js';
 const worth = PEOPLE_RULES.worth, nm = (W, id) => id && W.actors[id] ? W.actors[id].given : 'nobody';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 60);
@@ -22,7 +22,7 @@ const P = L.sys.people, S = P.stats;
 console.log('marriages', S.marriages, '| adopted heirs (mukoyōshi)', S.adopted, '| births', S.births);
 console.log('deaths by cause', S.deaths);
 console.log(`lands inherited: ${S.inherited} plots in ${S.estates} estates; ${S.regencies} held by regents for minors; ${S.toLord} to the lord (no heir), ${S.toNature} to nature`);
-console.log(`lords' seats passed ${S.seats} | plots granted to new households ${S.granted} | moved ${S.migrated} | recruited ${S.recruited} | the long dead forgotten ${Object.values(L.actors).filter(a => a.faded).length}`);
+console.log(`lords' seats passed ${S.seats} | houses founded on land of their own ${S.founded}, as tenants ${S.tenants} | moved ${S.migrated} | recruited ${S.recruited} | the long dead forgotten ${Object.values(L.actors).filter(a => a.faded).length}`);
 const dead = Object.values(L.actors).filter(a => !a.alive && a.died > 0), ages = dead.map(a => (a.died - a.born) / HOURS_PER_YEAR);
 console.log(`mean age at death ${(ages.reduce((s, x) => s + x, 0) / ages.length).toFixed(1)}; of those who reached 16: ${(ages.filter(x => x >= 16).reduce((s, x) => s + x, 0) / ages.filter(x => x >= 16).length).toFixed(1)}`);
 
@@ -71,29 +71,41 @@ console.log(`\nhis line in the 60-year world: ${line.join(' → ') || 'the first
   const res = propose(W, p.id, bride.id);
   check(res.wed && p.spouse === bride.id && bride.household === p.id, `he marries (${res.reasons.join(', ')})`);
   console.log(`married: ${p.given} wed ${bride.given} ${bride.family} (${bride.cls}), bride price ${res.price} mon, her people's acceptance ${res.accept}`);
-  let y = 0; while (!livingChildren(W, p).length && y < 12) { advance(W, hoursFromYears(1)); y++; }
-  const kids = livingChildren(W, p);
-  check(kids.length > 0, 'a child is born to him');
-  if (kids.length) {
-    // a second son, so a brother can carry on after the first
-    const second = bear(W, rngFor(seed, 'test'), bride, p); second.born = W.hour; second.sex = 'm'; second.job = 'child'; second.dynasty = true;
-    check(nameHeir(W, kids[0].id), 'he names his heir');
-    const plot = freePlot(W, W.zones[p.home[1] * 100 + p.home[0]]); if (plot) grantPlot(W, plot, p);   // give him land to pass on
-    const carried = worth(p.money), blade = p.weapon, at = [...p.at];
-    killActor(W, p.id, 'violence', null, { zone: at, tile: [12, 40] });
-    const h = W.actors[W.player];
-    check(W.player === kids[0].id && h.dynasty && !W.sys.people.over, 'his named heir carries on, played at once');
-    check(h.regent === bride.id, 'the child\'s mother is his regent');
-    check(!plot || (h.holds.includes(plot) && W.plots[plot].holder === bride.id), 'the land is the heir\'s, held by his mother until he is grown');
-    check(p.grave.goods && p.grave.goods.weapon === blade && worth(p.grave.goods.money) === carried && worth(p.money) === 0, 'what he carried lies in his grave');
-    const took = lootGrave(W, p.id, h.id);
-    check(took && h.weapon === blade && !lootGrave(W, p.id, bride.id), 'finders keepers: his heir takes the blade, the grave is bare after');
-    console.log(`after ${y} year(s) ${kids.length} child(ren); he fell at ${at} and ${h.given} (${Math.floor((W.hour - h.born) / HOURS_PER_YEAR)}) carries on with ${nm(W, h.regent)} as regent; the heir took his ${took && took.weapon} and ${worth(took ? took.money : {})} mon from the grave`);
-    killActor(W, h.id, 'illness');
-    const b2 = W.actors[W.player];
-    check(W.player === second.id, 'with no child of his own, his brother carries on');
-    console.log(`${h.given} died a child; his brother ${b2.given} carries on`);
+  check((p.standing[bride.culture] || 0) >= .25, 'marrying into her people raises their standing of him');
+  let y = 0; while (!p.children.length && y < 12) { advance(W, hoursFromYears(1)); y++; }
+  check(p.children.length > 0, 'a child is born to him');   // born: whether he lives through childhood is the sim's own luck
+  // make sure of two sons and a daughter (the test's own births), so each rule has someone to find
+  const r = rngFor(seed, 'test'), born = sex => { const c = bear(W, r, bride, p); c.born = W.hour; c.sex = sex; c.job = 'child'; c.dynasty = true; return c; };
+  born('m'); born('m'); const girl = born('f');
+  const heirs = playableHeirs(W, p);
+  check(heirs.length >= 2 && heirs.every(h => h.sex === 'm') && !heirs.includes(girl), 'only sons are offered as heirs, never a daughter');
+  const first = heirs[heirs.length - 1];
+  check(nameHeir(W, first.id) && !nameHeir(W, girl.id), 'he names a son his heir; a daughter cannot be named');
+  const plot = freePlot(W, W.zones[p.home[1] * 100 + p.home[0]]); if (plot) grantPlot(W, plot, p);   // give him land to pass on (in the game the economy lane sells it)
+  const carried = worth(p.money), blade = p.weapon, at = [...p.at];
+  killActor(W, p.id, 'violence', null, { zone: at, tile: [12, 40] });
+  const h = W.actors[W.player];
+  check(W.player === first.id && h.dynasty && !W.sys.people.over, 'his named heir carries on, played at once');
+  check(h.regent === bride.id, 'the child\'s mother is his regent');
+  check(!plot || (h.holds.includes(plot) && W.plots[plot].holder === bride.id), 'the land is the heir\'s, held by his mother until he is grown');
+  check(p.grave.goods && p.grave.goods.weapon === blade && worth(p.grave.goods.money) === carried && worth(p.money) === 0, 'what he carried lies in his grave');
+  const took = lootGrave(W, p.id, h.id);
+  check(took && h.weapon === blade && !lootGrave(W, p.id, bride.id), 'finders keepers: his heir takes the blade, the grave is bare after');
+  console.log(`after ${y} year(s): he fell at ${at}; ${h.given} (${Math.floor((W.hour - h.born) / HOURS_PER_YEAR)}) carries on with ${nm(W, h.regent)} as regent, and took his ${took && took.weapon} and ${worth(took ? took.money : {})} mon from the grave`);
+  // his brothers after him, then, with only sisters left, a sworn companion
+  let n = 0; while (W.actors[W.player].sex === 'm' && W.actors[W.player].dynasty && n++ < 5) {
+    const cur = W.actors[W.player], next = playableHeirs(W, cur);
+    if (!next.length) break;
+    check(next.every(x => x.sex === 'm') && !next.includes(girl), 'the brothers carry on, never the sister');
+    killActor(W, cur.id, 'illness');
+    console.log(`${cur.given} died young; his brother ${W.actors[W.player].given} carries on`);
   }
+  const cur = W.actors[W.player];
+  const friend = Object.values(W.actors).find(a => a.alive && a.sex === 'm' && !a.dynasty && (W.hour - a.born) / HOURS_PER_YEAR > 20 && a.cls === 'ronin');
+  check(swear(W, friend.id), 'a companion swears to carry on his name');
+  killActor(W, cur.id, 'violence');
+  check(W.player === friend.id && !W.sys.people.over, 'with only a sister left, his sworn companion carries on');
+  console.log(`${cur.given} fell with only a sister left; ${friend.given} ${friend.family}, sworn to him, carries on`);
 }
 console.log('json', (serialize(L).length / 1024).toFixed(0), 'KB after', years, 'years, now', calendar(L.hour).year);
 if (fail.length) { console.error('FAILED:\n  ' + fail.join('\n  ')); process.exit(1); }

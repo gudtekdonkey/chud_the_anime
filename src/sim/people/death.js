@@ -2,7 +2,7 @@ import { emit, zoneAt } from '../ledger.js';
 import { INHERIT } from './rules.js';
 import { act, alive, age, adult, livingChildren, siblings, grandchildren, nearKin, eldest, pickRegent } from './kin.js';
 import { residents, dropResident, moveHome, graveTile } from './settle.js';
-import { handOff, layOut, recordDeed, notable } from './player.js';
+import { handOff, layOut, recordDeed, notable, sworn } from './player.js';
 import { setTie } from './ties.js';
 
 // ---- Death: the one door every system kills through (docs/sim-people.md) ----
@@ -58,6 +58,8 @@ export function findHeir(L, a) {
     else if (r === 'daughter') c = eldest(livingChildren(L, a).filter(k => k.sex === 'f' && k.cls !== 'monk'));
     else if (r === 'child') c = eldest(livingChildren(L, a).filter(k => k.cls !== 'monk'));
     else if (r === 'grandson') c = eldest(grandchildren(L, a, true));
+    else if (r === 'grandsons') c = eldest(grandchildren(L, a, false).filter(g => g.sex === 'm'));
+    else if (r === 'sworn') c = sworn(L, a)[0] || null;
     else if (r === 'grandchild') c = eldest(grandchildren(L, a, false));
     else if (r === 'widow') c = alive(L, a.spouse) && adult(L, alive(L, a.spouse)) ? alive(L, a.spouse) : null;
     else if (r === 'brother') c = eldest(siblings(L, a).filter(s => s.alive && s.sex === 'm' && adult(L, s) && s.cls !== 'monk'));

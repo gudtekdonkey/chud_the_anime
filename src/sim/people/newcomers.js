@@ -3,7 +3,7 @@ import { makeActor, marry, bear } from '../actors.js';
 import { CLASSES, KINDS } from '../cultures.js';
 import { HOURS_PER_YEAR } from '../time.js';
 import { AGE, NEWCOMERS } from './rules.js';
-import { SETTLED, addResident, freePlot, grantPlot } from './settle.js';
+import { SETTLED, addResident } from './settle.js';
 
 // ---- Newcomers: a violent time (owner 2026-09-26: 30% of grown people die by the sword a year) empties villages faster than children
 // can grow up, so the owner chose to refill them: wanderers, refugees and settlers arrive from beyond the map ----
@@ -40,7 +40,7 @@ function household(L, r, culture, home, z) {
     const [mo, fa] = head.sex === 'f' ? [head, sp] : [sp, head];
     for (let i = 0, kids = r.int(0, NEWCOMERS.KIDS); i < kids; i++) { const c = bear(L, r, mo, fa, { age: r.int(0, 12), cls }); c.job = 'child'; c.arrived = L.hour; came(L, c); n++; }
   }
-  const pid = freePlot(L, z); if (pid) grantPlot(L, pid, head);
+  head.ambition = { kind: 'land', since: L.hour };   // they come landless and want land (owner: no free plots; the economy sells it)
   return n;
 }
 function came(L, a) { if (a.job !== 'child' && (L.hour - a.born) / HOURS_PER_YEAR < AGE.WORK) a.job = 'child'; a.needs = { food: 1, money: 1, safety: 1 }; addResident(L, a); }
