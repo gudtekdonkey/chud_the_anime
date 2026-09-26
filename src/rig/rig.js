@@ -45,7 +45,7 @@ export function rig(g, fx, p) {
   const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
 
   // the weapon's art draws itself through these hooks (src/weapons/); a pose carries it as p.wp, the katana if none
-  const wp = p.wp || KATANA_ART, kit = { put, seg, blob, add, L };
+  const wp = p.wp || KATANA_ART, kit = { put, seg, blob, add, L, p };
   // far side first: scabbard, far arm, far leg
   wp.far(kit, p, mouth, sd);
   // the back hand can carry the blade too, for the counter stances

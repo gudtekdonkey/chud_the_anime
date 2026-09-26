@@ -1,7 +1,7 @@
 // ---- Pose helpers: a pose is a flat object of joint angles; keyframes are eased between them ----
 // angles in radians: limbs 0 = straight down, + swings forward; knee + folds the shin back; elbow + folds the forearm forward
 const REST = { hx: 0, hy: 0, lean: .04, chest: 0, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
-  sword: null, bsword: null, sheathing: false, hat: 0, flutter: 0, bow: 0, dim: 0 };   // bow: head dips forward; dim: eyes dimmed (meditation)
+  sword: null, bsword: null, sheathing: false, hat: 0, flutter: 0, bow: 0, dim: 0, spread: 0 };   // bow: head dips forward; dim: eyes dimmed (meditation); spread: a folding weapon opened, 0..1
 export const pz = o => ({ ...REST, ...o });
 export const HILT = [.42, 1.0];          // front hand resting on the hilt at the hip
 const lerpP = (a, b, k) => { const o = {}; for (const key in a) {
