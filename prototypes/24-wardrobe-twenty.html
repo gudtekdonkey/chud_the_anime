@@ -45,6 +45,8 @@
   .tag { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--rule); padding: 2px 6px; }
   .tag.cloth { color: var(--cyan); border-color: #2b5a55; }
   .card p { font-size: 14px; line-height: 1.45; }
+  #masks { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; }
+  .card.mask canvas { aspect-ratio: 30 / 26; }
   /* layering */
   .tbl { overflow-x: auto; border: 1px solid var(--rule); }
   table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 14px; }
@@ -71,7 +73,7 @@
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Clothing · twenty pieces · eight slots and layers</div>
+    <div class="eyebrow">Clothing · twenty pieces · ten masks · nine slots</div>
     <h1>The ronin's wardrobe</h1>
     <p>Twenty pieces of clothing for the ronin, each hung on the game's own rig and posed with the game's own frames. Loose parts are live cloth. Everything is a shade of black. Dress him below, then see how the layers stack.</p>
   </header>
@@ -88,6 +90,8 @@
           <button type="button" class="chip" data-pose="stance" aria-pressed="false">Counter stance</button>
           <button type="button" class="chip" data-pose="moon" aria-pressed="false">Crescent Moon</button>
           <button type="button" class="chip" id="turn">Turn round</button>
+          <button type="button" class="chip" id="tint">Random mask colour</button>
+          <button type="button" class="chip" id="untint">Mask's own colour</button>
         </div>
       </div>
       <div class="ctl">
@@ -101,6 +105,12 @@
   <section aria-labelledby="twenty-h">
     <div class="intro"><h2 id="twenty-h">The twenty</h2><p>Each figure wears one piece alone and loops through a breath, a run, a cut and the counter stance. Thirteen are from the rig study; seven are new: hakama, leg wraps, haori, maedare apron, tasuki, straw rain cape and cowl.</p></div>
     <div id="twenty"></div>
+  </section>
+
+  <section aria-labelledby="masks-h">
+    <div class="intro"><h2 id="masks-h">Masks</h2><p>Ten masks in a new face slot. Unlike the clothes they come in any colour, so they are the one place his silhouette can carry a colour of its own. Each is drawn on the side of his face under the hat brim, and his cyan eye shows through all but the visor. Shuffle for random colours, or wear one in the fitting room.</p></div>
+    <div class="chips" role="group" aria-label="Mask colours"><button type="button" class="chip" id="shuffle">Shuffle colours</button><button type="button" class="chip" id="original">Their own colours</button></div>
+    <div id="masks"></div>
   </section>
 
   <section aria-labelledby="layer-h">
@@ -117,19 +127,19 @@
       <div><h3>Cloth</h3><p>Loose parts are cloth pinned to the bones. They fall under gravity and catch the breeze and his own speed, and they are kept out of his body and legs. Stiff pieces pull back to their cut.</p></div>
       <div><h3>Turning and other views</h3><p>Each piece is measured from the skeleton, not drawn in pixels. When the port system brings the front and back views, only the skeleton changes and all twenty follow.</p></div>
     </div>
-    <div class="intro"><h3>The palette</h3><p>Seven shades of black, nothing brighter. The accents come from the effects and his eyes.</p></div>
+    <div class="intro"><h3>The palette</h3><p>Seven shades of black for the clothes, nothing brighter. The accents come from the effects, his eyes and the masks, which can be any colour.</p></div>
     <div class="swatches" id="swatches"></div>
   </section>
 
   <section aria-labelledby="slots-h">
-    <div class="intro"><h2 id="slots-h">Clothing slots: recommended, one per layer</h2><p>Each slot is a layer, and he wears at most one piece in each: legs, body, back, waist, ties, shoulders, neck and hands. That gives him a head-to-toe outfit of up to eight pieces and never two mantles.</p></div>
+    <div class="intro"><h2 id="slots-h">Clothing slots: recommended, one per layer</h2><p>Each slot is a layer, and he wears at most one piece in each: legs, body, back, waist, ties, shoulders, neck, hands and face (the masks). That gives him a head-to-toe outfit of up to nine pieces and never two mantles.</p></div>
     <div class="rules">
       <div><h3>Why slots</h3><p>Two pieces in the same place would fight for the same pixels, like two mantles or a cape inside a cape. One per slot rules that out, so any outfit a player builds reads cleanly.</p></div>
       <div><h3>Why slot = layer</h3><p>The slot tells you the layer, so the stacking order never needs tuning outfit by outfit. A new piece only has to pick its slot to layer correctly.</p></div>
       <div><h3>What slots give the game</h3><p>Drops and loot can name a slot ("a new waist piece"). Each slot can carry one kind of bonus later, such as armour on the body or speed on the legs, and the wardrobe screen is just eight rows.</p></div>
       <div><h3>Not recommended</h3><p>Free stacking with no slots looks messy at 20 px tall and needs a rule for every pair. Fewer slots, such as merging waist and ties, would stop the Pilgrim wearing a sash and a tasuki together.</p></div>
     </div>
-    <p>The head (hats) is held back for now: the straw hat is part of his silhouette and stays on the rig. It can become a ninth slot later.</p>
+    <p>Hats are held back for now: the straw hat is part of his silhouette and stays on the rig. It can become a tenth slot later.</p>
   </section>
 
   <div class="ask">
@@ -137,7 +147,8 @@
     <ol>
       <li><b>Which pieces stay?</b> Keep, cut or change any of the twenty.</li>
       <li><b>His default outfit.</b> In the game today he starts in the flat mantle alone.</li>
-      <li><b>Slots.</b> Keep the eight, one piece in each? Add a head slot for hats?</li>
+      <li><b>Slots.</b> Keep the nine, one piece in each? Add a head slot for hats?</li>
+      <li><b>Masks.</b> Which of the ten stay, and should their colours be random per drop, dyed by the player, or fixed?</li>
       <li><b>The layer order.</b> For example, should the sash go over the coat (as now) or under it?</li>
     </ol>
   </div>
@@ -2620,9 +2631,15 @@
 			name: "Hands",
 			z: .3,
 			what: "Wraps and armoured sleeves ride on the arm itself: under the near arm only when it is behind him."
+		},
+		{
+			id: "face",
+			name: "Face",
+			z: null,
+			what: "Masks sit on the head itself, over the face and under the hat brim, so the hat still frames them. Any colour."
 		}
 	];
-	const LZ = Object.fromEntries(LAYERS.map((l) => [l.id, l.z]));
+	const LZ = Object.fromEntries(LAYERS.map((l) => [l.id, l.z || 0]));
 	const NEW = [
 		{
 			id: "hakama",
@@ -2924,6 +2941,170 @@
 			}]
 		}
 	];
+	const MASK_PAL = {
+		mR: "#c8322b",
+		mr: "#7e1c17",
+		mW: "#ece8de",
+		mw: "#b9b2a4",
+		mG: "#d8a23c",
+		mg: "#8a6420",
+		mK: "#2a262e",
+		mk: "#4d4654",
+		mB: "#e4dcc6",
+		mb: "#5a5248",
+		mV: "#6a4a9c",
+		mv: "#3f2b60",
+		mC: "#6ff3e4",
+		mM: "#e04fd0",
+		mS: "#a9b0b8",
+		ms: "#5d646c",
+		mY: "#e8c24a",
+		mX: "#ffffff",
+		mx: "#888888"
+	};
+	const MASKS = [
+		{
+			id: "oni",
+			name: "Oni",
+			A: "mR",
+			a: "mr",
+			fix: { W: "mW" },
+			rows: [
+				"AAAA.",
+				"AAAEa",
+				"AWAWA",
+				".aAa."
+			],
+			about: "A red demon face with bared fangs."
+		},
+		{
+			id: "kitsune",
+			name: "Kitsune",
+			A: "mW",
+			a: "mw",
+			fix: { R: "mR" },
+			rows: [
+				"AAAA..",
+				"AARE..",
+				"AAAAAA",
+				".aaa.."
+			],
+			about: "A white fox with a pointed snout and red markings at the eye."
+		},
+		{
+			id: "tengu",
+			name: "Tengu",
+			A: "mR",
+			a: "mr",
+			fix: {},
+			rows: [
+				"AAAA....",
+				"AAAEAAAA",
+				"aAAA....",
+				".aa....."
+			],
+			about: "The mountain goblin. A long red nose that points where he looks."
+		},
+		{
+			id: "menpo",
+			name: "Menpo",
+			A: "mK",
+			a: "mk",
+			fix: { S: "mS" },
+			rows: [
+				".....",
+				".....",
+				"ASSAA",
+				".AAA."
+			],
+			about: "A lacquered half mask over the jaw with a grey moustache. The eyes stay bare."
+		},
+		{
+			id: "porcelain",
+			name: "Porcelain",
+			A: "mW",
+			a: "mw",
+			fix: {},
+			rows: [
+				"AAAA",
+				"AAAE",
+				"AAaA",
+				".AA."
+			],
+			about: "Plain and white, no expression at all. Only the eye shows."
+		},
+		{
+			id: "skull",
+			name: "Skull",
+			A: "mB",
+			a: "mb",
+			fix: {},
+			rows: [
+				"AAAA",
+				"AaAE",
+				"AaAa",
+				".AA."
+			],
+			about: "Bone, with his eye burning in the socket."
+		},
+		{
+			id: "shinobi",
+			name: "Shinobi wrap",
+			A: "mV",
+			a: "mv",
+			fix: {},
+			rows: [
+				".....",
+				".....",
+				"AAAAA",
+				"aAAa."
+			],
+			about: "A cloth pulled up over the nose and mouth."
+		},
+		{
+			id: "crow",
+			name: "Crow beak",
+			A: "mK",
+			a: "mk",
+			fix: { Y: "mY" },
+			rows: [
+				"AAAA...",
+				"AAAEYY.",
+				"AAAAYYY",
+				".aa...."
+			],
+			about: "A black bird face with a long yellow beak."
+		},
+		{
+			id: "visor",
+			name: "Glitch visor",
+			A: "mC",
+			a: "mM",
+			fix: {},
+			rows: [
+				"....",
+				"aAAAA",
+				"....",
+				"...."
+			],
+			about: "A band of light across the eyes that replaces them, cyan edged in magenta."
+		},
+		{
+			id: "somen",
+			name: "Iron somen",
+			A: "mS",
+			a: "ms",
+			fix: {},
+			rows: [
+				"AAAA",
+				"AaAE",
+				"AAAA",
+				".aA."
+			],
+			about: "A full iron face with a dark cheek slit, from the armour sets."
+		}
+	];
+	const MASK_BY = Object.fromEntries(MASKS.map((m) => [m.id, m]));
 	const SLOT_OF = {
 		mantle: "shoulders",
 		ragged: "shoulders",
@@ -2939,23 +3120,36 @@
 		wraps: "hands",
 		kote: "hands"
 	};
-	const ITEMS = [...ITEMS$1.map((it) => {
-		const lo = Math.min(...it.parts.map((p) => p.bias || 0));
-		return {
+	const ITEMS = [
+		...ITEMS$1.map((it) => {
+			const lo = Math.min(...it.parts.map((p) => p.bias || 0));
+			return {
+				...it,
+				slot: SLOT_OF[it.id],
+				parts: it.parts.map((p) => p.kind === "drape" ? p : {
+					...p,
+					bias: LZ[SLOT_OF[it.id]] + (p.bias || 0) - lo
+				})
+			};
+		}),
+		...NEW.map((it) => ({
 			...it,
-			slot: SLOT_OF[it.id],
-			parts: it.parts.map((p) => p.kind === "drape" ? p : {
+			parts: it.parts.map((p) => ({
 				...p,
-				bias: LZ[SLOT_OF[it.id]] + (p.bias || 0) - lo
-			})
-		};
-	}), ...NEW.map((it) => ({
-		...it,
-		parts: it.parts.map((p) => ({
-			...p,
-			bias: LZ[it.slot] + p.bias
+				bias: LZ[it.slot] + p.bias
+			}))
+		})),
+		...MASKS.map((m) => ({
+			id: "mask-" + m.id,
+			slot: "face",
+			name: m.name,
+			about: m.about,
+			parts: [{
+				kind: "mask",
+				mask: m.id
+			}]
 		}))
-	}))];
+	];
 	const ORDER = LAYERS.map((l) => l.id);
 	ITEMS.sort((a, b) => ORDER.indexOf(a.slot) - ORDER.indexOf(b.slot));
 	const BY_ID = Object.fromEntries(ITEMS.map((i) => [i.id, i]));
@@ -3005,6 +3199,16 @@
 			S.dot(kq[0], kq[1], kq[2] + b + .02, 2, part.knot);
 			return true;
 		}
+		if (part.kind === "mask") {
+			const m = MASK_BY[part.mask], p = J.p, hc = S.P(J.L(10 - p.bow * .7, .6 + p.bow * 1.1, 0));
+			const x0 = Math.round(hc[0] - 1.5), y0 = Math.round(hc[1]) - 1, tint = S.tint;
+			m.rows.forEach((r, y) => [...r].forEach((ch, x) => {
+				if (ch === ".") return;
+				const key = ch === "E" ? p.dim ? "e" : "E" : ch === "A" ? tint ? "mX" : m.A : ch === "a" ? tint ? "mx" : m.a : m.fix[ch];
+				S.px(x0 + x, y0 + y, ch === "E" ? 2.57 : 2.56, key);
+			}));
+			return true;
+		}
 		if (part.kind === "shin") {
 			const p = J.p;
 			for (const [lg, off, dz] of [[
@@ -3030,11 +3234,58 @@
 		outfit: new Set(items),
 		cloth: /* @__PURE__ */ new Map(),
 		t: Math.random() * 9,
-		vel: [0, 0]
+		vel: [0, 0],
+		tint: null
 	});
+	const hex = (r, g, b) => "#" + [
+		r,
+		g,
+		b
+	].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+	function randomTint() {
+		const h = Math.random() * 6, s = .45 + Math.random() * .5, v = .55 + Math.random() * .45, i = Math.floor(h), f = h - i;
+		const R6 = [
+			[
+				v,
+				v * (1 - s * (1 - f)),
+				v * (1 - s)
+			],
+			[
+				v * (1 - s * f),
+				v,
+				v * (1 - s)
+			],
+			[
+				v * (1 - s),
+				v,
+				v * (1 - s * (1 - f))
+			],
+			[
+				v * (1 - s),
+				v * (1 - s * f),
+				v
+			],
+			[
+				v * (1 - s * (1 - f)),
+				v * (1 - s),
+				v
+			],
+			[
+				v,
+				v * (1 - s),
+				v * (1 - s * f)
+			]
+		][i];
+		return [hex(...R6.map((c) => c * 255)), hex(...R6.map((c) => c * 255 * .55))];
+	}
 	function dress(R, F, p, dt, only) {
 		R.clear();
 		rig(R, p);
+		R.tint = F.tint;
+		if (F.tint) Object.assign(R.pk, packPal({
+			mX: F.tint[0],
+			mx: F.tint[1]
+		}));
 		const J = solve(fromSide(p), 0, true);
 		const env = {
 			t: F.t,
@@ -3119,7 +3370,10 @@
 		}
 		return ["idle", 0];
 	};
-	const R = new Raster(48, 48, 24, 40);
+	const R = new Raster(48, 48, 24, 40, .3, packPal({
+		...RC,
+		...MASK_PAL
+	}));
 	function stage(g, W, H, F, p, dt, x, y, face = 1, only) {
 		const cv = dress(R, F, p, dt, only);
 		g.fillStyle = "#474c4a";
@@ -3160,7 +3414,8 @@
 				"legwraps",
 				"tattered",
 				"cord",
-				"longscarf"
+				"longscarf",
+				"mask-porcelain"
 			]
 		},
 		{
@@ -3198,7 +3453,19 @@
 				"haori",
 				"obi",
 				"tasuki",
-				"cowl"
+				"cowl",
+				"mask-kitsune"
+			]
+		},
+		{
+			name: "Demon",
+			items: [
+				"hakama",
+				"plates",
+				"crow",
+				"obi",
+				"kote",
+				"mask-oni"
 			]
 		},
 		{
@@ -3248,11 +3515,32 @@
 		ui.face = -ui.face;
 		turnCloth(hero);
 	});
-	const cards = ITEMS.map((it, i) => ({
+	const cards = ITEMS.filter((i) => i.slot !== "face").map((it, i) => ({
 		it,
 		F: makeFigure([it.id]),
 		phase: i * .37
 	}));
+	const maskCards = MASKS.map((m, i) => ({
+		m,
+		F: makeFigure(["mask-" + m.id]),
+		phase: i * .5
+	}));
+	$("masks").innerHTML = maskCards.map((c) => `<article class="card mask"><canvas width="30" height="26" aria-label="The ${c.m.name} mask on his face"></canvas><h3>${c.m.name}</h3><p>${c.m.about}</p></article>`).join("");
+	document.querySelectorAll("#masks canvas").forEach((cv, i) => {
+		maskCards[i].g = cv.getContext("2d");
+	});
+	$("shuffle").addEventListener("click", () => {
+		for (const c of maskCards) c.F.tint = randomTint();
+	});
+	$("original").addEventListener("click", () => {
+		for (const c of maskCards) c.F.tint = null;
+	});
+	$("tint").addEventListener("click", () => {
+		hero.tint = randomTint();
+	});
+	$("untint").addEventListener("click", () => {
+		hero.tint = null;
+	});
 	$("twenty").innerHTML = LAYERS.map((l) => {
 		return cards.filter((c) => c.it.slot === l.id).map((c) => {
 			const n = ITEMS.indexOf(c.it) + 1, cl = c.it.parts.some(isCloth);
@@ -3292,7 +3580,7 @@
 		$("bu-labels").innerHTML = steps.map((s) => `<span><b>${s.label}</b>${s.item ? "<br>" + s.item : "<br>the rig"}</span>`).join("");
 		$("bu-labels").style.setProperty("--n", steps.length);
 	}
-	$("layers").innerHTML = LAYERS.map((l, i) => `<tr><td class="ord">${i + 1}</td><td><b>${l.name}</b></td><td class="z">+${l.z.toFixed(2)}</td><td>${ITEMS.filter((x) => x.slot === l.id).map((x) => x.name).join(", ")}</td><td>${l.what}</td></tr>`).join("");
+	$("layers").innerHTML = LAYERS.map((l, i) => `<tr><td class="ord">${i + 1}</td><td><b>${l.name}</b></td><td class="z">${l.z == null ? "on the head" : "+" + l.z.toFixed(2)}</td><td>${ITEMS.filter((x) => x.slot === l.id).map((x) => x.name).join(", ")}</td><td>${l.what}</td></tr>`).join("");
 	$("swatches").innerHTML = [
 		"c0",
 		"c1",
@@ -3321,6 +3609,14 @@
 			c.F.t = clock + c.phase;
 			c.F.vel = [SHOW[k].speed, 0];
 			stage(c.g, 56, 50, c.F, poseAt(k, u), dt, 26, 43);
+		}
+		for (const c of maskCards) {
+			if (!c.g) continue;
+			c.F.t = clock + c.phase;
+			const cv = dress(R, c.F, poseAt("idle", clock + c.phase), dt);
+			c.g.fillStyle = "#474c4a";
+			c.g.fillRect(0, 0, 30, 26);
+			c.g.drawImage(cv, 10, 6, 30, 26, 0, 0, 30, 26);
 		}
 		const bp = poseAt(ui.pose, ui.clock);
 		buFigs.forEach((s, i) => {
