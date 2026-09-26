@@ -93,7 +93,7 @@ The owner approved the design without answering these, so the lane starts from:
 1. English names with the Japanese in brackets: plot, estate, zone (*mura*), domain (*han*), province (*kuni*), realm.
 2. In a battle he is at, he gives his squads simple orders (hold, charge, follow me, fall back) and fights with his own blade.
 3. Buildings go anywhere on tiles he holds, by footprint.
-4. He can unite every province, and the game goes on (rebellions, successions, his heirs).
+4. **Owner (2026-09-26):** he can unite the whole land, and the game goes on: "be a tyrant or rule peacefully, or even give everything back to the people: the choice is yours". Tyranny (crushing taxes, fear, purges), peaceful rule (low taxes, justice, prosperity) and giving it all back (freeing the land: titles returned to those who work it, the lords' seats dissolved into free villages) are all real paths with their own consequences, and **people remember** what he did.
 5. Vassals can rise and take back possession of their land, never its title.
 
 ## Open, for the owner
