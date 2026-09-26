@@ -23,4 +23,5 @@ export const bodyPt = q => { q = q[Math.random() * q.length | 0]; return [Math.r
 export function motes(p) { const sil = silPts(SHEETS[P.state], frameOf()); if (!sil.top.length || Math.random() > p) return;
   const [x, y] = bodyPt(sil.top); if (EL.cur.kit) return EL.cur.kit.aura(...bodyPt(sil), 0); spark(x, y - 1, rr(-4, 4), -rr(6, 14), rr(.5, .9), Math.random() < .6 ? COL.fx : COL.fx2, false, -14); }
 // the glow: 0 when calm, grows with the charge; the meditation aura and the storm borrow it faintly
-export const glowK = () => P.charge != null && !P.cv ? .3 + .7 * P.charge : P.state === 'meditate' ? P.aura : P.storm > 0 && Math.random() < .35 ? .12 : 0;
+const BREATH_GLOW = new Set(['kata', 'seiza', 'lotus', 'sbreath']);   // Breath of Qi (player/breath.js) glows like the meditation
+export const glowK = () => P.charge != null && !P.cv ? .3 + .7 * P.charge : P.state === 'meditate' || BREATH_GLOW.has(P.state) ? P.aura : P.storm > 0 && Math.random() < .35 ? .12 : 0;

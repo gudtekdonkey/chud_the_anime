@@ -26,6 +26,7 @@ import { updateParty, liftInput, toggleOrder, hurtNearest } from '../party/compa
 import { recruitInput, updateRecruits } from '../party/recruit.js';
 import { X, pairCandidate, startPair, pairStep } from '../party/paired.js';
 import { T as pT, powerCast } from './power.js';
+import { BREATHS, breathKey, breathWait, breathState, updateBreath } from './breath.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
@@ -41,7 +42,7 @@ export function update(dt, inp) {
   if (inp.order) toggleOrder();   // party orders are not lost to a hit pause
   if (inp.hurt) hurtNearest();
   if (S.hitstop > 0) { S.hitstop -= dt; return; }
-  updateCuts(dt); updateMirrors(dt); tickStages(dt);
+  updateCuts(dt); updateMirrors(dt); tickStages(dt); updateBreath(dt);
   for (const t of timers.splice(0)) if ((t.t -= dt) <= 0) t.fn(); else timers.push(t); // sequenced payoffs (implosions, chain links)
   if (pairStep(dt)) return;   // a paired execution moves him (party/paired.js)
 
@@ -57,6 +58,7 @@ export function update(dt, inp) {
   updateItems(dt, canAttack && s !== 'sit' && s !== 'sitDown');
   if (s === 'exec') return;   // the execution's stage moves him (assassin/assassinate.js)
   if (inp.die && s !== 'death') { setState('death'); return; }
+  if (breathWait(dt, canAttack)) return;   // C held: which breath (player/breath.js)
   if (s === 'sit' || s === 'sitDown') {
     if (moving || inp.slash || inp.jump || inp.slide || inp.tele || inp.double || inp.sweep || inp.sit || inp.moon || inp.rift || inp.mirror) {
       P.pending = { slash: inp.slash, jump: inp.jump, slide: inp.slide, tele: inp.tele, double: inp.double, sweep: inp.sweep,
@@ -82,7 +84,7 @@ export function update(dt, inp) {
     if (inp.moon) { setState('moonHold'); P.charge = 0; return; }
     if (inp.mirror) { startCd('mirror'); return meditate(); }
     if (inp.sweep) { startCd('sweep'); return setState('sweep'); }
-    if (inp.sit && s !== 'sit' && s !== 'sitDown') return setState('sitDown');
+    if (breathKey(inp)) return;   // C: sit on a tap, a Breath of Qi on a hold, Storm breath during the storm
   }
 
   switch (s) {
@@ -253,6 +255,7 @@ export function update(dt, inp) {
         else if (q.slide) { setState('slide'); P.slideDir = q.dir; dust(6, q.dir[0]); startCd('slide'); } else if (q.jump) { setState('jump'); P.vz = 150; } }
       break;
     }
+    case 'kata': case 'seiza': case 'lotus': case 'sbreath': breathState(s, T, dt); break;
     default: itemState(s, T, D, dt, moving); break;
     case 'death': {
       if (u > .8 && !P.burst) { P.burst = true; if (EL.cur.kit) EL.cur.kit.residue(P.x, P.y, 16); for (let i = 0; i < 30; i++) spark(P.x + (Math.random() - .5) * 26, P.y - Math.random() * 8, (Math.random() - .5) * 40, -20 - Math.random() * 40, .7, Math.random() < .5 ? COL.fx : COL.body, false); }
