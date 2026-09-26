@@ -1,6 +1,6 @@
 import { FW, FH, OX, OY } from '../config.js';
 import { g } from '../screen.js';
-import { rigTo } from '../wardrobe/dress.js';
+import { rig } from '../rig/rig.js';
 import { eyeDark } from './enemy-body.js';
 import { spriteTo, solid } from './sprite.js';
 
@@ -12,7 +12,7 @@ const cg = cv.getContext('2d'), sheet = { img: cv, fw: FW, fh: FH, n: 1, ox: OX,
 
 export function drawEnemy(e) {
   if (e.alpha <= 0 || e.held || e.state === 'gone') return;
-  cg.clearRect(0, 0, FW, FH); rigTo(cg, 0, e.body.out, eyeDark(e.body) ? PAL_OUT : PAL);
+  cg.clearRect(0, 0, FW, FH); rig(cg, 0, e.body.out, eyeDark(e.body) ? PAL_OUT : PAL);
   const x = e.x + (e.shk > 0 ? ((e.shk * 60 | 0) % 2 ? 1 : -1) : 0);   // he shakes in the hit pause
   const down = e.body.out.hy >= 8;
   g.globalAlpha = e.alpha;

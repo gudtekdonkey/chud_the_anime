@@ -1,5 +1,5 @@
 import { FW, FH, OX, OY, RC } from '../config.js';
-import { rigTo } from '../wardrobe/dress.js';
+import { rig } from '../rig/rig.js';
 import { pz, ease } from '../rig/pose.js';
 import { rr } from '../fx/util.js';
 
@@ -10,7 +10,7 @@ const ERC_OUT = { ...ERC, E: '#2b2023' };   // his eye gone out
 export const EYE_ON = 'rgb(255,90,74)', EYE_OFF = 'rgb(43,32,35)';
 const off = document.createElement('canvas'); off.width = FW; off.height = FH; const og = off.getContext('2d', { willReadFrequently: true });
 const tint = document.createElement('canvas'); tint.width = FW; tint.height = FH; const tg = tint.getContext('2d');
-function paint(pose, enemy, dark) { og.clearRect(0, 0, FW, FH); rigTo(og, 0, enemy ? { ...pose, bare: true } : pose, enemy ? dark ? ERC_OUT : ERC : RC); return off; }
+function paint(pose, enemy, dark) { og.clearRect(0, 0, FW, FH); rig(og, 0, enemy ? { ...pose, bare: true } : pose, enemy ? dark ? ERC_OUT : ERC : RC); return off; }
 // R: { x, y, z, face, pose, enemy, dark (his eye out), col (solid tint), glitch (0..2: rows jump sideways) }
 export function figure(g, R, alpha = 1) {
   let img = paint(R.pose, R.enemy, R.dark);
