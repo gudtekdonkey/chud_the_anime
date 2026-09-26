@@ -4,6 +4,7 @@ import { P, frags, slashes, cuts } from '../state.js';
 import { updateMoons } from './moon.js';
 import { rr } from './util.js';
 import { updateVoids } from './void.js';
+import { EL } from './element.js';
 
 // ---- Crescents and cut lines ----
 export const SLASH_HOLD = .05, SLASH_BREAK = .15;
@@ -22,10 +23,12 @@ export function strike(rot, flip, big) { smear(P.face, rot, flip, big); P.flash 
 // slashes and cut lines age only outside hit pause, so the cut hangs frozen on impact
 export function updateCuts(dt) {
   for (const s of slashes) { s.age += dt;
+    if (EL.cur.kit && s.age < s.hold + .06 && Math.random() < .5 + s.R / 60) { const a = rr(-1.2, 1.2), v = rr(30, 80) * s.a; // the element comes off the blade's edge
+      EL.cur.kit.spark(s.x + s.face * Math.cos(a) * s.R, s.y + Math.sin(a) * s.R * .8, s.face * Math.cos(a) * v, Math.sin(a) * v * .8, .2); }
     if (s.age > s.hold && !s.broke) { s.broke = true; // shed a few slivers that trail back off the arc (more off a bigger arc, slower off a slow break)
       const sl = s.brk / SLASH_BREAK;
       for (let i = 0; i < 5 * Math.max(1, s.R / 20) * s.a; i++) { const a = rr(-1.3, 1.3), life = rr(.1, .16) * sl;
-        frags.push({ x: s.x + s.face * Math.cos(a) * s.R, y: s.y + Math.sin(a) * s.R * .8, w: 2 + (Math.random() * 3 | 0), col: i % 2 ? '#ffffff' : COL.fx2,
+        frags.push({ x: s.x + s.face * Math.cos(a) * s.R, y: s.y + Math.sin(a) * s.R * .8, w: 2 + (Math.random() * 3 | 0), col: i % 2 ? COL.core : COL.fx2,
           vx: -s.face * rr(20, 50) / Math.sqrt(sl), vy: rr(-10, 10), life, max: life, jx: 0, on: true }); } } }
   for (const c of cuts) c.life -= dt;
   updateMoons(dt); updateVoids(dt);
@@ -47,6 +50,6 @@ export function drawSlash(s) {
   g.globalAlpha = (1 - k * .5) * s.a;
   g.fillStyle = COL.eye; for (let i = 0; i < edge.length; i += 2) g.fillRect(edge[i], edge[i + 1], 1, 1);
   g.fillStyle = COL.fx2; for (let i = 0; i < trail.length; i += 2) g.fillRect(trail[i], trail[i + 1], 1, 1);
-  g.fillStyle = '#ffffff'; for (let i = 0; i < core.length; i += 2) g.fillRect(core[i], core[i + 1], 1, 1);
+  g.fillStyle = COL.core; for (let i = 0; i < core.length; i += 2) g.fillRect(core[i], core[i + 1], 1, 1);
   g.globalAlpha = 1;
 }

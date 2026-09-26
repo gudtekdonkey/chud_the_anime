@@ -7,6 +7,7 @@ import { readInput } from './input.js';
 import { fillMoveset } from './ui/moveset.js';
 import { initStripTester } from './ui/strip-tester.js';
 import { initPersonality } from './ui/personality.js';
+import { initElementPicker } from './ui/element-picker.js';
 import { initWeaponPicker } from './ui/weapon-picker.js';
 import { initWardrobe } from './ui/wardrobe.js';
 
@@ -22,6 +23,7 @@ requestAnimationFrame(frame);
 fillMoveset();
 initStripTester();
 initPersonality();
+initElementPicker();
 initWeaponPicker();
 initWardrobe();
 

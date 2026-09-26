@@ -8,6 +8,7 @@ import { ICON } from './icons.js';
 import { panel, meter, slot, banner } from './hud-kit.js';
 import { text } from './pixfont.js';
 import { drawSkills } from './skill-bar.js';
+import { EL } from '../fx/element.js';
 
 // ---- The HUD (prototypes/20-items.html heroHud), in screen space after the world. It reads only INV, P.qi and the cooldowns ----
 const WH = '#ffffff', CY = '#6ff3e4', CY2 = '#b8fff6', LOW = '#ff5a4a';
@@ -19,12 +20,12 @@ function healthAndQi(now) {
   meter(10, 9, 70, 4, INV.hp, INV.hp < .35 && Math.floor(now / 250) % 2 ? LOW : WH, 0, INV.fx.hp > 0);
   // Qi, notched in thirds; while Storm Chain runs it glows and crackles and says so
   if (full) { g.globalAlpha = .35 + .35 * Math.random(); g.fillStyle = COL.fx; g.fillRect(8, 14, 74, 7); g.globalAlpha = 1; }
-  meter(10, 16, 70, 3, P.qi, full ? (blink ? WH : CY2) : CY, 3, INV.fx.qi > 0);
+  meter(10, 16, 70, 3, P.qi, full ? (blink ? WH : COL.fx2) : COL.eye, 3, INV.fx.qi > 0);   // Qi takes the element's colours
   if (P.qiPop > 0) { g.globalAlpha = P.qiPop * 2; g.fillStyle = WH; g.fillRect(9, 15, 72, 5); g.globalAlpha = 1; }
   if (full) { const fill = Math.round(70 * P.qi); g.fillStyle = WH;
     for (let i = 0; i < 3; i++) if (Math.random() < .5) { let px = 10 + (Math.random() * fill | 0), py = 15 - (Math.random() * 2 | 0);
       for (let k = 0; k < 4; k++) { g.fillRect(px, py, 1, 1); px += 1; py += Math.random() < .5 ? -1 : 1; } }
-    panel(87, 13, 25, 9); text('STORM', 90, 15, blink ? CY2 : WH); }
+    panel(87, 13, 25, 9); text(EL.cur.chain, 90, 15, blink ? COL.fx2 : WH); }
 }
 function currency() {
   panel(W - 69, 5, 64, 13);

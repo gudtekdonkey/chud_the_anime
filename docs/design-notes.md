@@ -57,6 +57,7 @@ Decisions made in the design sessions so far, newest last.
 - **Counters by attack** (`prototypes/23-counters.html`): the enemy has several attacks, each with a readable tell (a glint running up the blade, the eye flashing, plus the wind-up itself). A blow that lands while he holds F plays the counter that answers that attack: overhead chop → receive and flow; horizontal sweep → under the sweep; thrust → along the blade; diagonal cut → disarm; low rising cut → pin the blade; charge → matador; leaping strike → under the leap; three-cut flurry → break the rhythm. Added (loved, "can we add more"): quick-draw → stop the draw; spinning cut → into the turn; front kick → sweep the leg; feint then thrust → don't bite; sword throw → return to sender; shoulder barge → give way.
   - **The counter window (agreed):** tap F. A blow landing within 0.2 s of the press is countered; an earlier press is only a block (pushed back, no counter). Four indicators prototyped; recommended A, the glint running up the enemy's blade and a star on the point while the window is open, with B, a closing ring, as an assist option. Not yet picked.
 - **Nothing left to fight:** if no enemy is within two screens (960 px) when an attack or execution ends, he skips the blade-out stance and sheathes at once, unbothered.
+- **Chaining K** (owner 2026-09-26): he does not sheathe between executions. With an enemy still near, an execution ends with the blade out in a counter stance, ready for the next K; he sheathes only when nobody is left (the rule above), or after the usual ~2 s of calm.
 
 ## Personality traits (`prototypes/26-personalities.html`, approved)
 
@@ -65,6 +66,7 @@ Decisions made in the design sessions so far, newest last.
 - Only idle, walk and run take the personality; attacks, skills and stances stay as drawn. With no traits he is exactly the ronin as before.
 - In the game: a picker under the screen, and hold **V** to walk (new). The samurai can take the same traits, since they share his rig.
 - **Approved:** keep all 52 traits as they are ("they're all great"). Merged to main.
+- **Cultures (owner):** every culture and place uses the trait system for its people's mannerisms and movement. A culture is a shared trait mix plus a pool of personal traits, one drawn per person, so a crowd shares a manner but no two move alike (`src/traits/cultures.js`). Seven starter cultures (court, clan, monastery, port, bandit hills, farming village, shadow village) until the cultures work names its own.
 - **Decided:** the ronin keeps the personality he has: no traits by default, so he stands, walks and runs as drawn. The picker stays for trying mixes.
 
 ## HUD
@@ -97,6 +99,14 @@ The owner said the deaths still don't feel like someone dying, and the execution
 - **Sword impact.** Each hit knocks him away from the blade, he shakes through the hit pause, light sparks leave out the far side, and a killing blow (hit pause of 0.09 s or more) gets two impact frames, black then white.
 - **Blood.** Dark red drops fly out with the spray and stain the floor, pieces trail a little and pool where they land. Approved as a new palette colour, alongside the impact frames.
 
+## Elements (approved 2026-09-26, artifact "Ronin Elements")
+- His electricity is one element of several: Storm (default), Fire, Slime, Water, Wind, Energy, Psychic. The owner loved them.
+- Each element is its own matter on every move, never recoloured lightning: only Storm and Energy use bolts and glitch slices.
+- Slime: goo gathers and sticks ON his body when he charges (never just floating round him); on K he melts into a puddle, stretches to the new spot and stands back up.
+- Floor marks: attacks and the teleport leave them (puddles, scorch, ripples); Qi skills leave nothing on the floor.
+- A new style is one palette row plus one kit. Executions layer the element on top of the deaths pass; the body motion stays.
+- `[` and `]` step through the elements for testing; 1-4 stay free for the quick slots.
+
 ## Next
 
 2. **K assassinations:**
@@ -114,6 +124,9 @@ The owner said the deaths still don't feel like someone dying, and the execution
 3. **Clothing** (`prototypes/19-rig-v2-and-clothing.html`, loved: "great job on the clothing system", "let's do more"):
    - **All fifteen items stay**, and **the slots are good as they are**. More items to come.
    - **Lamellar and samurai armour may be coloured, but only faintly** (muted, low-saturation tints over the blacks). Cloth stays shades of black, never bright red.
+   - **Armour takes dark dyes** (owner, 2026-09-26: "armor armors, not robes"): plate, mail, shin guards, tassets, gorget, sleeves, hand guards and the iron hats can be dyed a dark colour (study: oxblood, indigo, moss, plum, bronze, teal), each black tinted to the hue at the same lightness. Robes and other cloth stay black.
+   - **Cloth colour is rarity** (owner, 2026-09-26): black and dark grey are the most common; grey and whitish are rare; beige is rarer; real colours are very rare. Study odds: 78 / 15 / 6 / 1 in 100, and a very rare drop may be any hue.
+   - **Bandana** (owner): a rare head item in ANY colour, and only certain hairstyles fit under it (study: those with nothing on the crown). **Headband** (owner): a second rare head item in any colour, tied like a sweatband and open on top, so every hairstyle shows over it. **Hair: 14 more styles**, 22 in all (`prototypes/32-wardrobe-twenty.html`).
    - Still open: the default outfit; his true left side or a mirror when facing left; whether the hat brim shows more of its top when he faces the camera.
    - Earlier: the mantle was flattened because it read as a hump.
    - **In the game** (from `prototypes/19-rig-v2-and-clothing.html`): the study's items hang from a skeleton read off his side pose, with live cloth, picked from a wardrobe under the game. He starts in the flat mantle, so his look is unchanged. The hat is an item too. The executions still draw him with the old painted hat and mantle, not his outfit. Still the owner's call: which items stay, and his default outfit.
