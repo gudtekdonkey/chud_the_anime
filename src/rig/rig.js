@@ -1,5 +1,6 @@
 import { FW, FH, OX, OY, RC } from '../config.js';
 import { KATANA_ART } from '../weapons/katana.js';
+import { HILT } from './pose.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
 // Two outputs share one drawing:
@@ -13,16 +14,26 @@ export const RX = 24, RY = 40;
 const DX = OX - RX, DY = OY - RY;
 const Z = { scab: -3.5, farArm: -3, offHand: -2.9, farLeg: -2.5, body: 0, obi: .01, nearLeg: 1.2, head: 2.5, eye: 2.51, hat: 3, mantle: 3.5, bblade: 40, nearArm: 45, blade: 50 };
 export const NEAR_ARM_Z = Z.nearArm;
+// from his left, the sword hand on the hilt: its forearm comes round the front of the belly, over the body (the skeleton's sleeves follow)
+export const onHilt = p => p.sword == null && Math.abs(p.fa[0] - HILT[0]) + Math.abs(p.fa[1] - HILT[1]) < .12, HILT_FORE_Z = Z.nearLeg + .2;
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
-// pal swaps the colours (the samurai's red-grey); p.bare drops the hat and mantle for a bare head and topknot
-export function rig(g, fx, p, pal = RC) {
+// pal swaps the colours (the samurai's red-grey); p.bare drops the hat and mantle for a bare head and topknot.
+// left: his true left side, near and far swapped, for a figure that will be drawn facing left (the caller still mirrors it);
+// the depths decide the paint order then, so the pixels are gathered and painted farthest first
+export function rig(g, fx, p, pal = RC, left = false) {
   // pixels past the frame's edge are dropped, so a long weapon never bleeds into the next frame of the sheet
-  return draw((x, y, z, c) => { if (x < 0 || x >= FW || y < 0 || y >= FH) return; g.fillStyle = pal[c]; g.fillRect(fx + x, y, 1, 1); }, p, true);
+  const paint = (x, y, c) => { if (x < 0 || x >= FW || y < 0 || y >= FH) return; g.fillStyle = pal[c]; g.fillRect(fx + x, y, 1, 1); };
+  if (!left) return draw((x, y, z, c) => paint(x, y, c), p, true);
+  const px = [], hc = draw((x, y, z, c) => px.push([x, y, z, c]), p, true, true);
+  px.map((q, i) => [q, i]).sort((a, b) => a[0][2] - b[0][2] || a[1] - b[1]).forEach(([q]) => paint(q[0], q[1], q[3]));
+  return hc;
 }
-// returns the head's centre, so the hat, hair and masks sit on exactly the pixels the head does
-export const rigR = (R, p) => draw((x, y, z, c) => R.px(x, y, z, c), p, false);
+// returns the head's centre, so the hat, hair and masks sit on exactly the pixels the head does.
+// left: his true left side, still facing right (dress.js mirrors it after): the same pixels with his left arm and leg the
+// near ones, the scabbard at the near hip, the sword arm behind him. Only the raster keeps it right (depths, not paint order).
+export const rigR = (R, p, left = false) => draw((x, y, z, c) => R.px(x, y, z, c), p, false, left);
 
-function draw(out, p, clothed) {
+function draw(out, p, clothed, left = false) {
   let z = 0;
   const put = (x, y, c) => out(DX + Math.round(x), DY + Math.round(y), z, c);
   const blob = (x, y, w, c) => { const x0 = Math.round(x - (w - 1) / 2), y0 = Math.round(y - (w - 1) / 2);
@@ -54,8 +65,8 @@ function draw(out, p, clothed) {
   const add = (a, d, k) => [a[0] + d[0] * k, a[1] + d[1] * k];
   const leg = ([th, kn], c, off) => { const h = L(0, off), k = add(h, dir(th), 5), f = add(k, dir(th - kn), 6);
     seg(h, k, 2, c); seg(k, f, 2, c); seg(f, [f[0] + 2, f[1]], 1, c); };
-  const arm = ([sh, el], c) => { const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
-    seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
+  const arm = ([sh, el], c, zf = z) => { const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
+    seg(s, e, 2, c); z = zf; seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
   const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
 
   if (p.noUpper) {   // cut in two: only the pelvis and legs are left, and they fold on their own
@@ -63,16 +74,18 @@ function draw(out, p, clothed) {
   }
   // the weapon's art draws itself through these hooks (src/weapons/); a pose carries it as p.wp, the katana if none
   const wp = p.wp || KATANA_ART, kit = { put, seg, blob, add, L, p };
+  // his left side (true left): what hangs at the hip comes round to the near side; a sling across the back stays behind him
+  const near = left ? 'D' : 'K', far = left ? 'K' : 'D';
   // far side first: scabbard, far arm, far leg
-  z = Z.scab; wp.far(kit, p, mouth, sd);
+  z = left && !(wp.d3 && wp.d3.back) ? Z.nearLeg + .1 : Z.scab; wp.far(kit, p, mouth, sd);
   // the back hand can carry the blade too, for the counter stances
-  z = Z.farArm; const bh = arm(p.ba, 'D'); kit.bh = bh;   // a two-handed weapon runs its shaft through both hands
-  z = Z.offHand; if (wp.offHand) wp.offHand(kit, p, bh);                  // a second weapon in the back hand (twin blades)
-  z = Z.farLeg; leg(p.bl, 'D', -.5);
+  z = left ? Z.nearArm - 1 : Z.farArm; const bh = arm(p.ba, far); kit.bh = bh;   // a two-handed weapon runs its shaft through both hands
+  z = left ? Z.nearArm - .5 : Z.offHand; if (wp.offHand) wp.offHand(kit, p, bh);   // a second weapon in the back hand (twin blades)
+  z = left ? Z.nearLeg : Z.farLeg; leg(p.bl, far, -.5);
   // torso, near leg
   z = Z.body; poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
   z = Z.obi; for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
-  z = Z.nearLeg; leg(p.fl, 'K', .5);
+  z = left ? Z.farLeg : Z.nearLeg; leg(p.fl, near, .5);
   // head and hat
   // neck: the head lags and lolls on it (+ forward), carried by the chest
   const nk = p.neck || 0, hc = L(10 - p.bow * .7 - Math.abs(nk) * 1.2, .6 + p.bow * 1.1 + nk * 2.2);
@@ -94,7 +107,8 @@ function draw(out, p, clothed) {
   // the back hand's blade is drawn over the body and the sash, so it is never lost behind them
   z = Z.bblade; if (p.bsword != null) wp.backHeld(kit, bh, p.bsword);
   // near arm and the weapon: stowed, sliding home, or in the hand
-  z = Z.nearArm; const hand = arm(p.fa, 'K');
+  // from his left the sword arm is the far one; on the hilt, its forearm comes round the front of the belly to the near hip
+  z = left ? Z.farArm : Z.nearArm; const hand = arm(p.fa, near, left && onHilt(p) ? HILT_FORE_Z : z);
   z = Z.blade;
   if (p.sword === null && !p.sheathing && p.bsword == null && !p.empty) wp.stowed(kit, p, mouth, sd);
   else if (p.sheathing) wp.sheathing(kit, hand, mouth);

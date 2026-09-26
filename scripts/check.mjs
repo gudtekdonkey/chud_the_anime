@@ -48,12 +48,19 @@ try {
   const shot = name => page.locator('#game').screenshot({ path: `${OUT}/${name}.png` });
   // walk him somewhere with the arrow keys: the vertical leg first, then the horizontal, so the route is predictable round the pillars
   const walkTo = async (x, y, timeout = 10000) => {
-    const t0 = Date.now();
-    for (const [axis, goal, neg, pos] of [['y', y, 'ArrowUp', 'ArrowDown'], ['x', x, 'ArrowLeft', 'ArrowRight']]) {
-      for (;;) { const v = await page.evaluate(a => window.__game.P[a], axis), d = goal - v;
-        if (Math.abs(d) <= 2) break;
-        if (Date.now() - t0 > timeout) fail(`could not walk to ${x},${y} (${axis} ${v.toFixed(1)})`);
-        const k = d < 0 ? neg : pos; await kb.down(k); await sleep(Math.min(120, Math.abs(d) / 78 * 1000)); await kb.up(k); } }
+    const t0 = Date.now(), Y = ['y', y, 'ArrowUp', 'ArrowDown'], X = ['x', x, 'ArrowLeft', 'ArrowRight'];
+    // y first, then x; a pillar in the way (a step that gets him nowhere) and he tries the other axis first
+    for (let order = [Y, X], turns = 0; ; order = order.slice().reverse(), turns++) {
+      let blocked = false;
+      for (const [axis, goal, neg, pos] of order) {
+        for (let stuck = 0; ;) { const v = await page.evaluate(a => window.__game.P[a], axis), d = goal - v;
+          if (Math.abs(d) <= 2) break;
+          if (Date.now() - t0 > timeout) fail(`could not walk to ${x},${y} (${axis} ${v.toFixed(1)})`);
+          const k = d < 0 ? neg : pos; await kb.down(k); await sleep(Math.min(120, Math.abs(d) / 78 * 1000)); await kb.up(k);
+          const v2 = await page.evaluate(a => window.__game.P[a], axis);
+          if (Math.abs(v2 - v) < .5 && ++stuck > 8) { blocked = true; break; } }
+        if (blocked) break; }
+      if (!blocked) break; if (turns > 6) fail(`could not walk to ${x},${y}: blocked both ways`); }
     await reach(FREE); };
   const inv = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__game.INV)));
   const run = async (name, fn) => { step = name; await fn(); console.log(`  ok  ${name}`); };
@@ -72,6 +79,37 @@ try {
       for (const k of keys) await kb.down(k); await reach(/^run$/);
       await until(`facing ${view}`, v => window.__game.P.view === v, view); await sleep(150);
       for (const k of keys) await kb.up(k); await reach(/^idle$/); await shot(`01a-facing-${view}`); } });
+  await run('true left: W, SW and NW drawn as themselves (never the east mirrored), turned through the facings between', async () => {
+    // log every facing he is drawn in, once per animation frame, to see the turn pass through the facings between
+    await page.evaluate(() => { window.__faces = []; const tick = () => { if (!window.__faces) return; const f = window.__game.PF, s = `${f.id}${f.flip < 0 ? '~' : ''}`;
+      if (window.__faces[window.__faces.length - 1] !== s) window.__faces.push(s); requestAnimationFrame(tick); }; tick(); });
+    for (const [keys, id] of [[['a'], 'W'], [['a', 's'], 'SW'], [['a', 'w'], 'NW'], [['s'], 'S'], [['a'], 'W']]) {
+      for (const k of keys) await kb.down(k); await reach(/^run$/);
+      await until(`drawn facing ${id}`, v => window.__game.PF.id === v && window.__game.PF.flip === 1, id); await sleep(150);
+      for (const k of keys) await kb.up(k); await reach(/^idle$/);
+      const f = await page.evaluate(() => ({ ...window.__game.PF, face: window.__game.P.face }));
+      if (f.id !== id || f.flip !== 1) fail(`idle facing ${id} is drawn ${f.id}, flip ${f.flip}`);
+      await shot(`01a-true-${id}`); }
+    // back east: never a flip, one facing at a time through the camera side
+    await kb.down('d'); await until('drawn facing E', () => window.__game.PF.id === 'E'); await kb.up('d'); await reach(/^idle$/);
+    const seq = await page.evaluate(() => { const s = window.__faces; window.__faces = null; return s; });
+    const ORDER = ['E', 'SE', 'S', 'SW', 'W', 'NW', 'N', 'NE'];
+    for (let i = 1; i < seq.length; i++) { const a = ORDER.indexOf(seq[i - 1]), b = ORDER.indexOf(seq[i]), d = (b - a + 8) % 8;
+      if (a < 0 || b < 0 || (d !== 1 && d !== 7)) fail(`the turn jumped from ${seq[i - 1]} to ${seq[i]} (${seq.join(' ')})`); }
+    if (!seq.includes('S')) fail(`W to E did not turn by the camera: ${seq.join(' ')}`);
+    // a cut facing west stays side on, but from his true left, never mirrored (owner: "don't mirror", the scabbard at his left hip)
+    await kb.down('a'); await reach(/^run$/); await kb.up('a'); await reach(/^idle$/);
+    await kb.press('j'); await reach(/^slash1$/);
+    const c = await page.evaluate(() => ({ ...window.__game.PF }));
+    if (c.id !== 'W' || c.flip !== 1 || Math.abs(c.yaw - Math.PI) > 1e-6) fail(`a cut facing west is drawn ${c.id}, yaw ${c.yaw}, flip ${c.flip}: mirrored, not his true left`);
+    await shot('01a-true-W-cut'); await reach(/^idle$/, 10000);   // calm: he resheathes and stands
+    // the samurai in guard come round to their true facing too: facing left, a west facing (a beat later, turning through the ones between)
+    await sleep(700);
+    const en = await page.evaluate(() => { const IX = { E: 0, SE: 1, S: 2, SW: 3, W: 4, NW: 5, N: 6, NE: 7 }, WEST = { E: 'W', SE: 'SW', NE: 'NW' };
+      return window.__game.E.filter(e => e.alive && e.turn && e.state === 'guard').map(e => ({ at: e.turn.i, want: IX[e.face < 0 ? WEST[e.view] || e.view : e.view], face: e.face })); });
+    if (!en.length) fail('no samurai in guard to look at');
+    const off = en.filter(e => e.at !== e.want);
+    if (off.length > en.length / 2) fail(`samurai are not drawn in their true facing: ${JSON.stringify(off)}`); });
   await run('hold V: walk', async () => { await kb.down('v'); await kb.down('d'); await reach(/^walk$/); await sleep(300); await shot('01b-walk');
     await kb.up('d'); await kb.up('v'); await reach(/^idle$/); });
   await run('personality: a trait mix re-bakes how he stands and walks', async () => {
@@ -132,22 +170,22 @@ try {
     await until('K lined up during the execution', () => window.__st.queued, undefined, 1000);
     await until('the first execution to let him go', () => window.__st.freed, undefined, 4000);
     const c = await page.evaluate(() => { const X = window.__game.P.exec; return { next: !!window.__st.next, s: window.__game.P.state, same: X === window.__st, name: window.__st.ex.name,
-      from: !!(X && X.from), blade: X && X.set && X.set.sword != null }; });
+      from: !!(X && X.from), blade: X && X.set && X.set.sword != null, bare: !!window.__st.ex.bare }; });
     if (c.next && (c.s !== 'exec' || c.same)) fail(`a lone samurai was in reach after "${c.name}" but K did not chain into him (${JSON.stringify(c)})`);
-    // no snap between them: the next set eases in from the last cut, blade still out
-    if (c.next && !(c.from && c.blade)) fail(`the chained execution snapped in from "${c.name}" (${JSON.stringify(c)})`);
+    // no snap between them: the next set eases in from the last cut, blade still out (a bare-handed execution never drew it)
+    if (c.next && !(c.from && (c.blade || c.bare))) fail(`the chained execution snapped in from "${c.name}" (${JSON.stringify(c)})`);
     console.log(`  (after "${c.name}": ${c.next ? 'chained into the next execution' : 'nobody lone in reach, so no chain'})`);
     await reach(/^(idle|ready\d)$/, 8000); });
   await run('Shift: ground slide', async () => { await kb.press('Shift'); await reach(/^slide$/); await reach(FREE); });
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
-  await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
+  await run('K: glitch teleport spends his one blink charge (power I), so a second press is refused', async () => {
     // out of every samurai's reach first (the top-left corner), so K is the plain teleport, not an assassination
     // walked to by position, not for a fixed time: on a slow machine the game runs slower and a timed walk falls short
     await walkTo(24, 60, 15000); await reach(FREE);
     await kb.press('k'); await reach(/^tele$/); await reach(FREE);
-    await until('K on cooldown', () => window.__game.P.cd.tele > 0);
+    await until('no charge left, the refill counting down', () => window.__game.P.blinks === 0 && window.__game.P.cd.tele > 55);
     await kb.press('k'); await until('the refused press', () => window.__game.P.cdDeny.tele > 0);
-    if (await state() === 'tele') fail('K teleported again while cooling down'); });
+    if (await state() === 'tele') fail('K teleported again with no charge left'); });
   await run('tap I: glitch double slash', async () => { await kb.press('i'); await reach(/^double$/); await reach(FREE); });
   await run('hold I: Thousand Cuts', async () => {
     await until('the I cooldown to end', () => !(window.__game.P.cd.double > 0), undefined, 4000);
@@ -159,10 +197,10 @@ try {
   await run('P: Cross Rift', async () => { await kb.press('p'); await cv('Cross Rift'); await sleep(200); await shot('05-rift'); await reach(FREE); });
   await run('N: Mirror Meditation', async () => { await kb.press('n'); await reach(/^meditate$/); await sleep(500); await shot('06-mirrors'); await reach(FREE); });
   await run('U: storm slam', async () => { await kb.press('u'); await reach(/^sweep$/); await reach(FREE, 8000); });
-  await run('skill bar: the skills just used are cooling down, K has recovered', async () => {
-    const cd = await page.evaluate(() => ({ ...window.__game.P.cd }));
+  await run('skill bar: the skills just used are cooling down, K still waits out its minute', async () => {
+    const cd = await page.evaluate(() => ({ ...window.__game.P.cd, blinks: window.__game.P.blinks }));
     for (const k of ['moon', 'rift', 'mirror', 'sweep']) if (!(cd[k] > 0)) fail(`${k} is not cooling down (${JSON.stringify(cd)})`);
-    if (cd.tele !== 0) fail(`K is still cooling down (${cd.tele})`);
+    if (!(cd.blinks === 0 && cd.tele > 0)) fail(`K's charge came back before a minute without blinking (${JSON.stringify(cd)})`);
     await shot('08-skill-bar'); });
   await run('walk into coins: they fly to him and mon goes up', async () => {
     // the three coins, wherever he picked them up (a dash through them on the way counts too)
@@ -189,6 +227,8 @@ try {
     await shot('14-harvest'); await kb.up('e'); await reach(FREE); });
   await run('power III (the test picker): the Crescent Moon comes with its twin and the slam with its pillars', async () => {
     await page.selectOption('#power', '3'); await until('power III', () => window.__game.INV.power === 3);
+    // K holds three blink charges at III; a tier gained brings its charge at once, even mid-refill
+    await until('three blink charges', () => window.__game.P.blinkCap === 3 && window.__game.P.blinks >= 2);
     await until('O ready', () => !(window.__game.P.cd.moon > 0), null, 12000);
     await kb.down('o'); await reach(/^moonHold$/); await until('the O charge', () => window.__game.P.charge > .9);
     await kb.up('o'); await reach(/^moon$/); await sleep(200); await shot('15-power-III-moon'); await reach(FREE);

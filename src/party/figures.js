@@ -2,7 +2,7 @@ import { RC, FW, FH, OX, OY } from '../config.js';
 import { HILT } from '../rig/pose.js';
 import { ANIMS } from '../anims/anims.js';
 import { Raster, packPal } from '../wardrobe/raster.js';
-import { dress, makeFigure, turnCloth } from '../wardrobe/dress.js';
+import { dress, makeFigure } from '../wardrobe/dress.js';
 import { WEAPONS, framesFor } from '../weapons/weapons.js';
 import { bake } from '../traits/bake.js';
 
@@ -28,9 +28,10 @@ export const lenOf = f => f.poses.length / f.fps;
 const RAST = { hero: new Raster(FW, FH, OX, OY), ally: new Raster(FW, FH, OX, OY, .3, packPal({ ...RC, E: '#e9eeee', e: '#8a9294' })) };
 // a figure for a companion that shares their kit's wear Set, so dressing them on the kit screen shows at once
 export const figureFor = c => { const F = makeFigure([]); F.outfit = c.kit.wear; return F; };
-// one character's pixels this frame: a canvas FW x FH, feet at (OX, OY). The canvas is reused: draw it before the next paint
-export const paint = (F, pose, dt, pal = 'ally') => dress(RAST[pal], F, pose, dt);
-export function faceTo(F, face, want) { if (face !== want) turnCloth(F); return want; }
+// one character's pixels this frame: a canvas FW x FH, feet at (OX, OY). The canvas is reused: draw it before the next paint.
+// yaw: their true facing (rig/turn.js); flip: -1 when it will be placed mirrored (side on, facing left), so the cloth knows
+export const paint = (F, pose, dt, pal = 'ally', yaw = 0, flip = 1) => dress(RAST[pal], F, pose, dt, yaw, flip);
+export const faceTo = (F, face, want) => want;   // the cloth follows a turn on its own now (dress.js)
 
 const WHITE = document.createElement('canvas'); WHITE.width = FW; WHITE.height = FH; const wg = WHITE.getContext('2d');
 export function white(cv) { wg.clearRect(0, 0, FW, FH); wg.drawImage(cv, 0, 0);

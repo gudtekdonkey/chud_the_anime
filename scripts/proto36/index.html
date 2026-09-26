@@ -1,0 +1,126 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ronin True Left</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; --floor: #474c4a; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; margin: 0; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 64px; display: grid; gap: 28px; }
+  header { display: grid; gap: 8px; max-width: 76ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  h2 { font: 700 21px/1.15 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  p { margin: 0; color: var(--muted); max-width: 76ch; }
+  p b { color: var(--ink); font-weight: 600; }
+  canvas { image-rendering: pixelated; display: block; max-width: 100%; }
+  .sec { display: grid; gap: 12px; border-top: 1px solid var(--rule); padding-top: 20px; }
+  .controls { display: grid; gap: 10px; background: var(--panel); border: 1px solid var(--rule); padding: 12px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; }
+  .ctl { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .ctl > span { font: 500 12px/1 "Pixelify Sans", monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--cyan); min-width: 7.5em; }
+  button { font: 13px/1.2 Figtree, sans-serif; color: var(--ink); background: #23272b; border: 1px solid #3a4046; padding: 5px 9px; cursor: pointer; }
+  button[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .scroll { overflow-x: auto; padding-bottom: 6px; }
+  .grid { display: grid; gap: 4px; width: max-content; }
+  .dirs { display: grid; grid-template-columns: repeat(8, 128px); font: 500 12px/1 "Pixelify Sans", monospace; letter-spacing: .1em; color: var(--muted); text-align: center; }
+  .rowlab { font-size: 13px; color: var(--muted); padding-top: 6px; }
+  .strip { width: 1024px; max-width: none; height: 120px; }
+  .zoomcap { display: grid; grid-template-columns: repeat(8, 210px); font: 500 12px/1 "Pixelify Sans", monospace; letter-spacing: .08em; color: var(--muted); text-align: center; width: max-content; }
+  #zoom { max-width: none; }
+  .stages { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+  .stage { display: grid; gap: 6px; }
+  .stage canvas { width: 100%; height: auto; border: 1px solid var(--rule); }
+  .cap { font-size: 13px; color: var(--muted); }
+  .speeds { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 12px; }
+  #frames { max-width: none; }
+  .speeds canvas { width: 100%; height: auto; border: 1px solid var(--rule); }
+  .atk { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+  .atk canvas { width: 100%; height: auto; border: 1px solid var(--rule); }
+  .phase { font: 500 13px/1 "Pixelify Sans", monospace; color: var(--cyan); letter-spacing: .06em; }
+  .ask { background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 8px; }
+  ul { margin: 0; padding-left: 20px; color: var(--muted); display: grid; gap: 4px; max-width: 76ch; }
+  li b { color: var(--ink); }
+  label { color: var(--muted); font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
+  input[type=checkbox] { accent-color: var(--cyan); width: 16px; height: 16px; }
+  @media (prefers-reduced-motion: reduce) { .controls { position: static; } }
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Prototype 36 · the port system</div>
+    <h1>His true left side</h1>
+    <p>Until now W, SW and NW were the east facings mirrored, so the sword hand, the scabbard at his left hip and anything worn on one side swapped over whenever he turned west. Here every facing is drawn as itself: <b>the blade stays in his right hand and the scabbard at his left hip from all eight sides</b>. These are the game's own modules, the same code the build runs.</p>
+  </header>
+
+  <div class="controls">
+    <div class="ctl"><span>Move</span><div class="ctl" id="moves"></div><button type="button" id="play">Pause</button><button type="button" id="step">Next frame</button><span class="cap" id="frameno"></span></div>
+    <div class="ctl"><span>Weapon</span><div class="ctl" id="weapons"></div></div>
+    <div class="ctl"><span>Outfit</span><div class="ctl" id="outfits"></div></div>
+  </div>
+
+  <section class="sec">
+    <h2>Every facing, before and after</h2>
+    <p>Top row: today's mirror. Middle, what the game now does: SW and NW drawn by rig v2 (as SE and NE already are) and W by the side rig seen from his left, his own E pixels with the near and far sides swapped, just as E sits between SE and NE. Bottom: the other way to draw W, rig v2 at 180° like the diagonals. The west facings, now drawn as themselves, are outlined.</p>
+    <div class="scroll"><div class="grid"><div id="everyhead" style="display:contents"></div><div id="every" style="display:contents"></div></div></div>
+  </section>
+
+  <section class="sec">
+    <h2>Up close: the west side</h2>
+    <p>Five times the game's pixels: E, then SW, W and NW before and after, and W both ways. Step through the frames with <b>Next frame</b>. In the mirror the hilt and scabbard are at his right hip; drawn true, they sit at his left hip, nearer the camera, and the sword arm is the far one.</p>
+    <div class="scroll"><div class="zoomcap"><span>E</span><span>SW before</span><span>SW true</span><span>W before</span><span>W side rig</span><span>W rig v2</span><span>NW before</span><span>NW true</span></div><canvas id="zoom"></canvas></div>
+  </section>
+
+  <section class="sec">
+    <h2>The turn</h2>
+    <p>A lap round the floor. Before, facing west was a flip: the whole figure swapped in one frame. Now he turns through the facings between, 45° every 0.03 s (half a turn in about a tenth of a second), by the camera side, so the hilt and scabbard never jump. The cloth swings round on its own. Afterimages keep the facing he had when they were left.</p>
+    <label><input type="checkbox" id="ghosts" checked> Afterimages</label>
+    <div class="stages">
+      <div class="stage"><canvas id="turn0"></canvas><div class="cap" id="turnlab0"></div></div>
+      <div class="stage"><canvas id="turn1"></canvas><div class="cap" id="turnlab1"></div></div>
+      <div class="stage"><canvas id="turn2"></canvas><div class="cap" id="turnlab2"></div></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Turn speed</h2>
+    <p>The same run five times over, each turning at a different speed. He runs right, stops, runs back left, stops, then toward the camera, away, and along the diagonals. How long each in-between facing shows decides how quickly he comes round: with no turn he pops straight to the new side; slower, you see him swing round by the camera. Tick <b>Slow motion</b> to watch each step at quarter speed. Tell me which one feels right.</p>
+    <label><input type="checkbox" id="slow"> Slow motion (quarter speed)</label>
+    <div class="speeds">
+      <div class="stage"><canvas id="spd0"></canvas><div class="cap" id="spdlab0"></div></div>
+      <div class="stage"><canvas id="spd1"></canvas><div class="cap" id="spdlab1"></div></div>
+      <div class="stage"><canvas id="spd2"></canvas><div class="cap" id="spdlab2"></div></div>
+      <div class="stage"><canvas id="spd3"></canvas><div class="cap" id="spdlab3"></div></div>
+      <div class="stage"><canvas id="spd4"></canvas><div class="cap" id="spdlab4"></div></div>
+    </div>
+    <p>Frame by frame: the 14 game frames (under a quarter of a second) after he reverses from running right to running left. Each row is one speed, top to bottom as above; the label is the facing drawn that frame.</p>
+    <div class="scroll"><canvas id="frames"></canvas></div>
+  </section>
+
+  <section class="sec">
+    <h2>Attacks facing west: his true left too</h2>
+    <p>Attacks stay side on ("Same side attack is fine"), but nothing is mirrored any more ("don't mirror"): facing west a cut is drawn from his true left, so the scabbard stays at his left hip from idle, through the cut, to the sheathe. Every pixel is where the mirror put it, so hits and effects do not move; only the near and far sides are true. The executions, the samurai (the dead too), the companions and the mirror images do the same. Left: before, the mirror. Now: <span class="phase" id="atkphase"></span></p>
+    <div class="atk">
+      <div class="stage"><canvas id="atk0"></canvas><div class="cap">Before (mirror throughout)</div></div>
+      <div class="stage"><canvas id="atk1"></canvas><div class="cap">True left throughout (in the game)</div></div>
+      <div class="stage"><canvas id="atk2"></canvas><div class="cap">Rig v2 at 180° idle, the cut mirrored (not used)</div></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>Everyone turns the same way</h2>
+    <p>The samurai in guard (the blade in his right hand from every side) and the three named companions walking, each with their own weapon and clothes. Companions face the way they walk and, settled in rank, the way he faces. The true-facing rows follow this choice for W:</p>
+    <div class="ctl"><span>W drawn by</span><div class="ctl" id="westmode"></div></div>
+    <div class="scroll"><div class="grid"><div id="peoplehead" style="display:contents"></div><div id="people" style="display:contents"></div></div></div>
+  </section>
+
+  <section class="sec ask">
+    <h2>Decided and open</h2>
+    <ul>
+      <li><b>How to draw W: decided.</b> Your pick, the side rig seen from his left: W keeps his exact E pixels (the scabbard and the near arm swapped), it sits between SW and NW the way E sits between SE and NE, and a cut facing west changes only which side is near. Rig v2 at 180° stays on this page for comparison.</li>
+      <li><b>Attacks facing west: decided.</b> Drawn from his true left, never mirrored, the scabbard at his left hip throughout.</li>
+      <li><b>The turn speed: decided.</b> 0.03 s a facing, half a turn in 0.12 s (the middle row above).</li>
+    </ul>
+  </section>
+</div>
+<canvas id="game" width="480" height="270" hidden></canvas><div id="hud" hidden></div>
+<script type="module" src="./main.js"></script>

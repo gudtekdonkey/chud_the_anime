@@ -25,7 +25,11 @@ export class Raster {
         if ((yi > yc) !== (yj > yc)) xs.push((xj - xi) * (yc - yi) / (yj - yi) + xi); }
       xs.sort((a, b) => a - b);
       for (let k = 0; k + 1 < xs.length; k += 2) for (let x = Math.ceil(xs[k] - .5); x + .5 < xs[k + 1]; x++) this.px(x, y, z, key); } }
-  flush() { this.u32.set(this.c); this.g.putImageData(this.img, 0, 0); return this.cv; }
+  // mirror: flipped about the feet the way a sprite drawn facing left is (column x to 2 ox - 1 - x), for his left side from the side rig
+  flush(mirror = false) {
+    if (!mirror) this.u32.set(this.c);
+    else { const { w, h, ox } = this; this.u32.fill(0); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const x2 = 2 * ox - 1 - x; if (x2 >= 0 && x2 < w) this.u32[y * w + x2] = this.c[y * w + x]; } }
+    this.g.putImageData(this.img, 0, 0); return this.cv; }
 }
 // a cross-section ring of the body in a frame: forward reach vf, back reach vb (negative), half-width b
 export function ring(L, u, vf, vb, b, n = 16) {

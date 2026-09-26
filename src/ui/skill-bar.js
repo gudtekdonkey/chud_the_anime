@@ -4,6 +4,7 @@ import { slot, panel } from './hud-kit.js';
 import { text, textW } from './pixfont.js';
 import { g } from '../screen.js';
 import { comboMax, FLOW_KEYS, FLOW_N, FLOW_KEEP } from '../player/combo.js';
+import { blinkMax } from '../player/cooldowns.js';
 
 // ---- The skills' cooldowns (PR #1's logic), drawn in the items HUD's style: a row of small slots under health and Qi ----
 // a cooldown is the slot's shade draining upward, with the seconds left; a refused press blinks the frame white; ready again, it glints
@@ -46,7 +47,14 @@ export function drawSkills() {
     slot(x, y, SZ, 'skill', s.img, { cd: left > 0 ? left / (P.cdMax[s.k] || left) : 0, flash: deny ? blink : (P.cdPop[s.k] || 0) * 4,
       frame: s.on() ? COL.fx2 : left > 0 ? (flow && FLOW_KEYS.has(s.k) ? (blink ? COL.fx : COL.eye) : '#2c323b') : undefined });
     if (left > 0) count(x, y, left); else text(s.key, x + 1, y + 1, '#7d868e');
+    if (s.k === 'tele') blinkPips(x, y);
   });
+}
+// K's blink charges: a pip each along the slot's foot, lit while it is there to spend
+function blinkPips(x, y) {
+  const n = blinkMax(), x0 = x + Math.round((SZ - (n * 3 - 1)) / 2);
+  for (let i = 0; i < n; i++) { g.fillStyle = '#0c0d11'; g.fillRect(x0 + i * 3 - 1, y + SZ - 3, 4, 3);
+    g.fillStyle = i < P.blinks ? COL.fx : '#2c323b'; g.fillRect(x0 + i * 3, y + SZ - 2, 2, 1); }
 }
 // under the slots: how long his J combo runs now (J2..J6, it glints when it grows), and Flow: six pips for the chain of basic cuts;
 // all six lit means the next skill still cooling down casts anyway (its slot's frame blinks cyan), draining as Flow runs out
