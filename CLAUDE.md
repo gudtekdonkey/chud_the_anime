@@ -13,7 +13,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
-- The check reads the player through `window.__game = { P }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
+- The check reads the player and the enemies through `window.__game = { P, E }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
 
 ## Module map (`src/`)
 
@@ -34,7 +34,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `player/actions.js` | `setState`, `once`, stance picking, the two-screen threat check, movement, `ghost`, `frameOf`, `inputDir` |
 | `player/skills.js` | Charging (`chargeUp`), Thousand Cuts (`TC`), Cross Rift (`RIFT`), the dash, `release`/`charged` |
 | `player/mirror.js` | Mirror Meditation: the mirror images' timeline |
-| `player/hits.js` | Hit tests against the dummies, `burst` (the sheath-click payoff) |
+| `player/hits.js` | Hit tests against the enemies, `burst` (the sheath-click payoff) |
 | `player/cooldowns.js` | `CD` (every active's cooldown), `startCd`, `gate` (refuses a key on cooldown), `onAssassination` (K back in 0.2 s) |
 | `player/qi.js` | The Qi meter's gains and Storm Chain (`chainFrom`) |
 | `player/body.js` | His silhouette points (sparks and bolts land on his body), `motes`, `glowK` |
@@ -52,8 +52,11 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `fx/debris.js` | Stone chips the storm slam gathers and flings, floor cracks |
 | `fx/moon.js` | The Crescent Moon: sweep, hang, shatter, its light on the floor |
 | `fx/void.js` | Cross Rift's tear in reality |
+| `fx/blood.js` | Blood drops, floor stains and pools |
 | `world/room.js` | Floor bounds, pillars, the baked background, `collide` |
-| `world/dummies.js` | The training dummies |
+| `world/enemies.js` | The samurai and the enemy API: `ENEMIES`, `living`, `nearest`, `isolated`, `damage`, `kill`, `onKill`; `DMG`, health, reactions, respawn |
+| `world/enemy-body.js` | The samurai's poses (guard, flinch, stagger, death) and the deaths pass's spring joints, floor thud, twitch, eye going out |
+| `world/enemy-draw.js` | Drawing a samurai (red-grey palette, topknot), his health bar, dropped swords |
 | `world/sprite.js` | `spriteTo`, `solid` (a frame recoloured solid) |
 | `world/render.js` | `render()`: depth sort by feet, effects, particles, screen flash, Qi meter, skill bar, HUD text |
 | `ui/qi-meter.js` | The pixel-font Qi meter, bottom left |

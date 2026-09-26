@@ -1,13 +1,13 @@
 import { P, S } from '../state.js';
 import { ANIMS } from '../anims/anims.js';
 import { SHEETS } from '../anims/sheets.js';
-import { DUMMIES } from '../world/dummies.js';
+import { living } from '../world/enemies.js';
 import { collide } from '../world/room.js';
 
 // ---- Player actions: state changes, stances, movement, afterimages, the current frame ----
 // no enemy within two screens: nothing left to guard against, so he puts the blade away at once, unbothered
 const THREAT_RANGE = 960;
-export const threatNear = () => !S.roomClear && DUMMIES.some(d => Math.hypot(d.x - P.x, d.y - P.y) < THREAT_RANGE);
+export const threatNear = () => !S.roomClear && living().some(d => Math.hypot(d.x - P.x, d.y - P.y) < THREAT_RANGE);
 export function afterAttack(moving) { if (!threatNear()) { P.armed = true; return 'sheathe'; } return moving ? 'runArmed' : pickStance(); }
 // a different one of the six counter stances each time he stops with the blade out
 export function pickStance() { let k; do k = Math.random() * 6 | 0; while (k === P.lastStance); P.lastStance = k; return 'ready' + k; }

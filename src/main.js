@@ -1,5 +1,6 @@
 // ---- Boot: build everything, wire the page, run a fixed 60 Hz update under a render per animation frame ----
 import { P } from './state.js';
+import { ENEMIES } from './world/enemies.js';
 import { update } from './player/update.js';
 import { render } from './world/render.js';
 import { readInput } from './input.js';
@@ -21,4 +22,4 @@ initStripTester();
 initPersonality();
 
 // a read-only debug hook for `npm run check`: in dev, or in any build opened with ?test
-if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) window.__game = { P };
+if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) window.__game = { P, E: ENEMIES };

@@ -90,4 +90,10 @@ Decisions made in the design sessions so far, newest last.
    - Still open: the default outfit; his true left side or a mirror when facing left; whether the hat brim shows more of its top when he faces the camera.
    - Earlier: the mantle was flattened because it read as a hump.
 4. **Front, back and diagonal views** for every move: **the port system is built** (`src/rig/port.js`, `prototypes/27-port-system.html`, `docs/port-system.md`). It turns every existing side-view animation, and every personality bake, into all eight directions on rig v2 automatically. Wiring it into the game waits on the clothing branch, which brings rig v2's skeleton into `src/wardrobe/`. Harvest facing north waits on that too.
-5. **Real enemies** with health, needed by K.
+5. **Real enemies** with health, needed by K. Built in the game (`src/world/enemies.js`), waiting on the owner's review:
+   - Seven topknot samurai replace the dummies, on his rig: bare head and topknot, no hat or mantle, red-grey, a red eye, blade out in guard.
+   - Health 4. Damage per hit: slash 1, double slash 1 per cut, sheath-click burst 1, storm slam 2, Thousand Cuts 2, Crescent Moon 3, Cross Rift 1 per arm and 2 on the detonation, mirror 1, chain 1. Starting numbers, open to tuning.
+   - Reactions: a hit makes him flinch; a blow of 2 or more, or a second hit within 0.5 s, staggers him back a step. He turns to face whoever hit him, and in guard turns to keep facing the ronin a beat late. A thin red health bar shows once he is hurt.
+   - Death uses the deaths pass (PR #2): spring joints, knees give, kneel, a gravity fall that stops dead with dust, a twitch or two, the eye going out; his sword falls from his hands; blood drops, stains and a pool.
+   - Clear the room and the fallen fade after about 3 s and a new squad steps in.
+   - Not yet: enemy movement and attacks (the counters' attacks come with them), executions cutting into pieces (K).
