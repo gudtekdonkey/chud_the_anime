@@ -1,19 +1,20 @@
 import { W, H } from '../config.js';
 import { g, hud } from '../screen.js';
-import { P, parts, S, mirrors, debris } from '../state.js';
+import { P, INV, parts, S, mirrors, debris } from '../state.js';
 import { SHEETS } from '../anims/sheets.js';
 import { drawDebris } from '../fx/debris.js';
 import { drawFloorFx, drawFx } from '../fx/fx.js';
 import { sgn } from '../fx/util.js';
 import { frameOf } from '../player/actions.js';
 import { drawPlayer, drawMirror } from '../player/draw.js';
-import { drawQi } from '../ui/qi-meter.js';
-import { drawSkillBar } from '../ui/skill-bar.js';
 import { drawBloodFloor, drawDrops } from '../fx/blood.js';
 import { ENEMIES, blades } from './enemies.js';
 import { drawEnemy, drawBlade } from './enemy-draw.js';
 import { stageItems, drawStagesFloor, drawStagesTop } from '../assassin/assassinate.js';
 import { drawMarkers, drawPrompt } from '../assassin/markers.js';
+import { weapon } from '../weapons/weapons.js';
+import { drawHud } from '../ui/hud.js';
+import { itemDrawables, drawItemsOver } from '../items/items.js';
 import { PILLARS, bg, drawPillar } from './room.js';
 
 export function render() {
@@ -26,7 +27,7 @@ export function render() {
   const t = performance.now() / 1000; drawMarkers(t);
   // depth-sort the pillars, the enemies, their dropped swords, the player and any execution by their feet
   const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), ...ENEMIES.map(e => ({ y: e.y - (e.alive ? 0 : .5), d: () => drawEnemy(e) })),
-    ...blades.map(b => ({ y: b.y - .2, d: () => drawBlade(b, fade) })), ...(P.state === 'exec' ? [] : [{ y: P.y, d: drawPlayer }]), ...stageItems(),
+    ...blades.map(b => ({ y: b.y - .2, d: () => drawBlade(b, fade) })), ...(P.state === 'exec' ? [] : [{ y: P.y, d: drawPlayer }]), ...stageItems(), ...itemDrawables(),
     ...mirrors.map(m => ({ y: m.y, d: () => drawMirror(m) })),
     ...debris.map(d => ({ y: d.state === 'in' ? d.cy + Math.sin(d.a) * d.r * .45 : d.py, d: () => drawDebris(d) }))];
   items.sort((a, b) => a.y - b.y).forEach(i => i.d());
@@ -38,12 +39,14 @@ export function render() {
   }
   g.globalAlpha = 1;
   g.restore();
+  drawItemsOver();   // unshaken, like the HUD: the lock-on and prompt stay put while the world shakes
   if (S.scr.t > 0) { g.globalAlpha = S.scr.a * S.scr.t / S.scr.max; g.fillStyle = '#e4fffb'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   if (S.impact > 0) impactFrame(S.impact === 1);
-  drawQi(); drawSkillBar();
+  drawHud();
   const chg = P.charge != null && !P.cv ? ` · charge <b>${Math.round(P.charge * 100)}%</b>` : P.cv ? ` · ${P.cv.name} at <b>${Math.round(P.pow * 100)}%</b>` : '';
   const qi = P.storm > 0 ? ` · <b>STORM CHAIN ${P.storm.toFixed(1)} s</b>` : ` · qi <b>${Math.round(P.qi * 100)}%</b>`;
-  hud.innerHTML = `animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}${chg}${qi}`;
+  const inv = ` · hp <b>${Math.round(INV.hp * 100)}%</b> · mon ${INV.mon} · shards ${INV.shards} · LV ${INV.lv} (${Math.round(INV.exp)} exp)`;
+  hud.innerHTML = `${weapon().name} · animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}${chg}${qi}${inv}`;
 }
 
 // an execution's killing blow: two frames of the scene in two tones, black then white (the deaths pass)

@@ -1,17 +1,22 @@
-import { rig } from '../rig/rig.js';
+import { rigR } from '../rig/rig.js';
 import { Cloth, clothStep, drawCloth, dims, isCloth } from './cloth.js';
 import { BY_ID, drawPart } from './items.js';
 import { fromSide, solve } from './skeleton.js';
-import { Raster, packPal } from './raster.js';
-import { FW, FH, OX, OY, RC } from '../config.js';
+import { drawBody3d } from '../rig/body3d.js';
+import { port } from '../rig/port.js';
 
 // ---- Dressing a figure: the rig's pose and everything it wears, into one depth raster ----
 // a figure: the item ids it wears, the cloth state of each loose part, its clock and its velocity (px/s, in its own facing)
 export const makeFigure = (items = ['straw', 'mantle']) => ({ outfit: new Set(items), cloth: new Map(), t: 0, vel: [0, 0] });
-// dt > 0 steps the cloth; dt 0 draws it where it last was (or where it hangs, the first time)
-export function dress(R, F, p, dt = 0) {
-  R.clear(); const { hc } = rig(R, p);
-  const J = solve(fromSide(p), 0, true), live = new Set(); J.hc = hc;
+// dt > 0 steps the cloth; dt 0 draws it where it last was (or where it hangs, the first time).
+// yaw: the facing (port.js DIRS). 0 is the side view, drawn by the side rig on the pixels it always had; any other
+// facing runs the pose through port() and draws rig v2's body (body3d.js). The clothes hang from the same bones either way.
+export function dress(R, F, p, dt = 0, yaw = 0) {
+  R.clear(); let J;
+  if (!yaw) { const { hc } = rigR(R, p); J = solve(fromSide(p), 0, true); J.hc = hc; }
+  else { J = solve(port(p), yaw);
+    drawBody3d(R, J, { blink: p.dim > .5, hat: [...F.outfit].some(id => BY_ID[id] && BY_ID[id].slot === 'head'), blade: p.wp && p.wp.blade3d }); }
+  const live = new Set();
   // the breeze, plus the wind of his own motion
   const env = { t: F.t, wind: [Math.sin(F.t * .9) * 9 + Math.sin(F.t * 2.1) * 4 - F.vel[0] * 1.3, 0, Math.sin(F.t * .7 + 1) * 3 - F.vel[1] * 1.3] };
   const steps = dt > 0 ? Math.min(3, Math.max(1, Math.round(dt * 60))) : 0;
@@ -30,13 +35,4 @@ export function dress(R, F, p, dt = 0) {
 // he turned round: the side view mirrors him, so mirror his cloth too and it swings across to the new side instead of snapping
 export function turnCloth(F) {
   for (const C of F.cloth.values()) for (let i = 0; i < C.p.length; i += 3) { C.p[i] = -C.p[i]; C.o[i] = -C.o[i]; }
-}
-
-// ---- A pose straight onto a canvas at x = fx, in a palette (the samurai's red-grey), for the drawing that is not a baked sheet:
-// the enemies and the execution stage. p.bare (the samurai) is the body alone; the ronin wears his default outfit, as in his sheets.
-const RS = new Map(), DEFAULT = makeFigure();
-export function rigTo(g, fx, p, pal = RC) {
-  let R = RS.get(pal); if (!R) RS.set(pal, R = new Raster(FW, FH, OX, OY, .3, packPal({ ...RC, ...pal })));
-  if (p.bare || p.noUpper) { R.clear(); rig(R, p); g.drawImage(R.flush(), fx, 0); }
-  else g.drawImage(dress(R, DEFAULT, p, 0), fx, 0);
 }

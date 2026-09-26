@@ -46,9 +46,24 @@ try {
   const cv = name => until(`charged skill ${name}`, n => window.__game.P.cv && window.__game.P.cv.name === n, name);
   const FREE = /^(idle|run|walk|idleGlitch|ready\d|runArmed|sheathe)$/;   // states that take a new command
   const shot = name => page.locator('#game').screenshot({ path: `${OUT}/${name}.png` });
+  // walk him somewhere with the arrow keys: the vertical leg first, then the horizontal, so the route is predictable round the pillars
+  const walkTo = async (x, y, timeout = 10000) => {
+    const t0 = Date.now();
+    for (const [axis, goal, neg, pos] of [['y', y, 'ArrowUp', 'ArrowDown'], ['x', x, 'ArrowLeft', 'ArrowRight']]) {
+      for (;;) { const v = await page.evaluate(a => window.__game.P[a], axis), d = goal - v;
+        if (Math.abs(d) <= 2) break;
+        if (Date.now() - t0 > timeout) fail(`could not walk to ${x},${y} (${axis} ${v.toFixed(1)})`);
+        const k = d < 0 ? neg : pos; await kb.down(k); await sleep(Math.min(120, Math.abs(d) / 78 * 1000)); await kb.up(k); } }
+    await reach(FREE); };
+  const inv = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__game.INV)));
   const run = async (name, fn) => { step = name; await fn(); console.log(`  ok  ${name}`); };
 
   await run('move', async () => { await kb.down('d'); await reach(/^run$/); await sleep(300); await shot('01-run'); await kb.up('d'); await reach(/^idle$/); });
+  await run('eight facings: he turns toward and away from the camera as he moves (the port system)', async () => {
+    for (const [keys, view] of [[['s'], 'S'], [['d', 's'], 'SE'], [['w'], 'N'], [['a', 'w'], 'NE'], [['d'], 'E']]) {
+      for (const k of keys) await kb.down(k); await reach(/^run$/);
+      await until(`facing ${view}`, v => window.__game.P.view === v, view); await sleep(150);
+      for (const k of keys) await kb.up(k); await reach(/^idle$/); await shot(`01a-facing-${view}`); } });
   await run('hold V: walk', async () => { await kb.down('v'); await kb.down('d'); await reach(/^walk$/); await sleep(300); await shot('01b-walk');
     await kb.up('d'); await kb.up('v'); await reach(/^idle$/); });
   await run('personality: a trait mix re-bakes how he stands and walks', async () => {
@@ -112,9 +127,29 @@ try {
     for (const k of ['moon', 'rift', 'mirror', 'sweep']) if (!(cd[k] > 0)) fail(`${k} is not cooling down (${JSON.stringify(cd)})`);
     if (cd.tele !== 0) fail(`K is still cooling down (${cd.tele})`);
     await shot('08-skill-bar'); });
+  await run('walk into coins: they fly to him and mon goes up', async () => {
+    const m0 = (await inv()).mon; await walkTo(388, 150); await until('a coin collected', m => window.__game.INV.mon > m, m0); await shot('09-coins'); });
+  await run('E at the shrine: brackets, pray, health full', async () => {
+    await walkTo(78, 98); await sleep(250); await shot('10-lock-on'); await kb.press('e'); await reach(/^pray$/); await sleep(700); await shot('11-pray'); await reach(FREE);
+    const v = await inv(); if (v.hp !== 1) fail(`health is ${v.hp} after praying`); });
+  await run('E at the grave: take the Grave Nodachi, then cut with it', async () => {
+    await walkTo(203, 100); await kb.press('e'); await reach(/^take$/); await sleep(300); await shot('12-new-weapon'); await reach(FREE);
+    if ((await inv()).weapon !== 'nodachi') fail('the weapon slot did not swap');
+    await kb.press('j'); await reach(/^slash1$/); await reach(FREE); });
+  await run('1: throw a static bomb from the quick slot', async () => {
+    const n0 = (await inv()).quick[0].n; await kb.press('1'); await reach(/^bomb$/); await sleep(250); await shot('13-bomb'); await reach(FREE);
+    if ((await inv()).quick[0].n !== n0 - 1) fail('the bomb count did not drop'); });
+  await run('hold E by the fallen: Harvest turns them to EXP', async () => {
+    await walkTo(160, 152); await kb.down('e'); await reach(/^harvest$/); await until('EXP', () => window.__game.INV.exp > 10 || window.__game.INV.lv > 1);
+    await shot('14-harvest'); await kb.up('e'); await reach(FREE); });
   await run('C: sit, then a key to stand', async () => {
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });
+  await run('every weapon (the picker) slashes, stands in a stance and sheathes', async () => {
+    for (const id of ['yari', 'nodachi', 'tanto', 'katana']) {
+      await page.selectOption('#weapon', id); await until(`weapon ${id}`, w => window.__game.P.weapon === w, id);
+      await kb.press('j'); await reach(/^slash1$/); await sleep(200); await shot(`08-${id}-slash`);
+      await reach(/^ready\d$/); await reach(/^idle$/, 5000); } });
   await run('wardrobe: dress him, run with the cloth, dress him back', async () => {
     const has = id => page.evaluate(i => window.__game.wear.outfit.has(i), id);
     if (!await has('mantle')) fail('he should start in the flat mantle');

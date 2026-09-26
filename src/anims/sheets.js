@@ -26,18 +26,19 @@ export function sliceGlitch(g, fx, s, seed) {
   for (let k = 0; k < 3 * s; k++) g.fillRect(fx + 14 + (rnd() * 20 | 0), 14 + (rnd() * 24 | 0), 3 + (rnd() * 8 | 0), 1);
 }
 
-// each rig frame keeps its pose and glitch, so the player can be redrawn live in whatever he wears;
+// frames: the poses to bake (a weapon's, src/weapons/); art: the weapon's art for the hand-drawn rows, null for the katana.
+// Each rig frame keeps its pose and glitch, so the player can be redrawn live in whatever he wears;
 // the sheet itself is baked in his default outfit (mirror images and afterimages use it)
 const R = new Raster(FW, FH, OX, OY);
-function placeholderSheet(name) {
+export function placeholderSheet(name, frames = POSES[name], art = null) {
   const { n } = ANIMS[name];
   const c = document.createElement('canvas'); c.width = FW * n; c.height = FH;
   const g = c.getContext('2d'), poses = [], glf = [];
   for (let i = 0; i < n; i++) {
     let p = null;
-    if (name === 'sit' || name === 'sitDown' || name === 'standUp') p = sitFrame(g, i * FW, name, i) || null;
-    else if (name === 'ready4' || name === 'ready5') frontFrame(g, i * FW, name === 'ready4' ? OPEN_FRONT : INVITE_FRONT, i);
-    else { const ps = POSES[name]; p = (ps && ps[i % ps.length]) || null; }   // exec has no sheet: its stage draws him live
+    if (name === 'sit' || name === 'sitDown' || name === 'standUp') p = sitFrame(g, i * FW, name, i, art) || null;
+    else if (name === 'ready4' || name === 'ready5') frontFrame(g, i * FW, name === 'ready4' ? OPEN_FRONT : INVITE_FRONT, i, art);
+    else p = (frames && frames[i % frames.length]) || null;   // exec has no sheet: its stage draws him live
     if (p) g.drawImage(dress(R, makeFigure(), p), i * FW, 0);
     const gl = GLF[name] && GLF[name][i];
     if (gl) sliceGlitch(g, i * FW, gl, glitchSeed(name, i));
@@ -52,4 +53,7 @@ export const SHEETS = {};
 for (const k in ANIMS) SHEETS[k] = placeholderSheet(k);
 export const dur = k => ANIMS[k].n / ANIMS[k].fps;
 // after a move's poses change (a new personality): bake its sheet again, unless a dropped-in strip has replaced it
-export function rebake(k) { ANIMS[k].n = POSES[k].length; if (!SHEETS[k].custom) SHEETS[k] = placeholderSheet(k); }
+// BAKE: what a rebake bakes with, the equipped weapon's frames and art (weapons/weapons.js sets it on equip);
+// onRebake: told which move was re-baked, so the other weapons' cached sheets of it are dropped and baked again on equip
+export const BAKE = { frames: k => POSES[k], art: null }, onRebake = [];
+export function rebake(k) { ANIMS[k].n = POSES[k].length; if (!SHEETS[k].custom) SHEETS[k] = placeholderSheet(k, BAKE.frames(k), BAKE.art); onRebake.forEach(f => f(k)); }

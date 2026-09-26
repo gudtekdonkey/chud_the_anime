@@ -23,6 +23,8 @@ p { margin: 0; color: var(--muted); }
 .keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 18px; color: var(--muted); font-size: 14px; }
 kbd { font: 500 13px/1 "Pixelify Sans", monospace; background: var(--panel); border: 1px solid var(--rule); padding: 3px 6px; color: var(--ink); }
 .clear { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; cursor: pointer; }
+.clear + .clear { margin-left: 16px; }
+.clear select { font: inherit; background: var(--panel, #1b1e21); color: inherit; border: 1px solid #30353a; }
 .clear input { accent-color: var(--cyan); width: 16px; height: 16px; }
 .pad { display: flex; flex-wrap: wrap; gap: 8px; }
 .pad button { font: 500 15px/1 "Pixelify Sans", monospace; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); min-width: 48px; height: 44px; padding-inline: 12px; touch-action: none; user-select: none; }
@@ -43,6 +45,9 @@ th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rul
 th { color: var(--muted); font-weight: 600; }
 td:first-child { font-family: "Pixelify Sans", monospace; color: var(--ink); white-space: nowrap; }
 .tbl { overflow-x: auto; }
+.form .k { display: flex; gap: 8px; align-items: center; }
+.form input[type=range] { accent-color: var(--cyan); width: 110px; height: auto; padding: 0; border: 0; background: none; }
+.drop a { color: var(--cyan); }
 /* the wardrobe: a row of slots, one item per slot */
 .ward-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: end; }
 .ward-title { display: grid; gap: 6px; }
@@ -60,6 +65,3 @@ td:first-child { font-family: "Pixelify Sans", monospace; color: var(--ink); whi
 .presets button:hover, .item:hover { color: var(--ink); border-color: #4a5157; }
 .presets button[aria-pressed="true"], .item[aria-pressed="true"] { color: var(--ink); border-color: var(--cyan); background: #182423; }
 .presets button:focus-visible, .item:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
-.form .k { display: flex; gap: 8px; align-items: center; }
-.form input[type=range] { accent-color: var(--cyan); width: 110px; height: auto; padding: 0; border: 0; background: none; }
-.drop a { color: var(--cyan); }

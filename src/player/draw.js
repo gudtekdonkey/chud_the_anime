@@ -1,10 +1,11 @@
 import { COL, FW, FH, OX, OY } from '../config.js';
 import { g } from '../screen.js';
-import { P, S, wear } from '../state.js';
+import { P, S, wear, INV } from '../state.js';
 import { GLITCHY } from '../anims/anims.js';
 import { SHEETS, sliceGlitch, glitchSeed } from '../anims/sheets.js';
 import { Raster } from '../wardrobe/raster.js';
 import { dress, turnCloth } from '../wardrobe/dress.js';
+import { DIRS } from '../rig/port.js';
 import { frameOf } from './actions.js';
 import { glowK } from './body.js';
 import { spriteTo, solid } from '../world/sprite.js';
@@ -20,6 +21,10 @@ function rim(sheet, f, x, y, face, k) {
 // his frame drawn live in what he wears, the cloth stepped by the time since the last draw (held still in the hit pause).
 // A dropped-in strip or a hand-drawn frame (the views the side rig cannot pose) is used as it is.
 const R = new Raster(FW, FH, OX, OY), last = { t: 0, x: 0, y: 0, face: 1 };
+// the moves that turn with him (P.view, from the way he last moved); every attack and skill is still drawn side on.
+// Harvest faces north: he stands with his back to the camera and lets it come to him (owner).
+const YAW = Object.fromEntries(DIRS.map(d => [d.id, d.yaw])), TURNS = new Set(['idle', 'idleGlitch', 'walk', 'run', 'runArmed']);
+export const viewYaw = () => P.state === 'harvest' ? YAW.N : TURNS.has(P.state) ? YAW[P.view] || 0 : 0;
 function dressed(sheet, f) {
   const now = performance.now() / 1000, dt = S.hitstop > 0 ? 0 : Math.min(.05, Math.max(0, now - last.t));
   if (P.face !== last.face) turnCloth(wear);
@@ -29,12 +34,27 @@ function dressed(sheet, f) {
   Object.assign(last, { t: now, x: P.x, y: P.y, face: P.face }); wear.t += dt;
   const p = !sheet.custom && sheet.poses && sheet.poses[f];
   if (!p) return [sheet, f];
-  const cv = dress(R, wear, p, dt);
+  const cv = dress(R, wear, p, dt, viewYaw());
   if (sheet.glf[f]) sliceGlitch(R.g, 0, sheet.glf[f], glitchSeed(sheet.name, f));
   return [{ img: cv, fw: FW, fh: FH, ox: OX, oy: OY }, 0];
 }
+// the whetstone's cyan edge: the frame with the blade's white swapped for cyan; a baked sheet's frames are cached,
+// a live dressed frame is recoloured as it is drawn
+const EDGE = new WeakMap(), BLADE_RGB = [233, 238, 238], EDGE_RGB = [111, 243, 228], EDGE_C = document.createElement('canvas');
+function edged(sheet, f, cache) {
+  let m = cache && EDGE.get(sheet); if (cache && !m) EDGE.set(sheet, m = new Map());
+  let c = m && m.get(f);
+  if (!c) { c = cache ? document.createElement('canvas') : EDGE_C; c.width = sheet.fw; c.height = sheet.fh; const cg = c.getContext('2d', { willReadFrequently: true });
+    cg.drawImage(sheet.img, f * sheet.fw, 0, sheet.fw, sheet.fh, 0, 0, sheet.fw, sheet.fh);
+    const d = cg.getImageData(0, 0, sheet.fw, sheet.fh);
+    for (let i = 0; i < d.data.length; i += 4) if (d.data[i] === BLADE_RGB[0] && d.data[i + 1] === BLADE_RGB[1] && d.data[i + 2] === BLADE_RGB[2]) [d.data[i], d.data[i + 1], d.data[i + 2]] = EDGE_RGB;
+    cg.putImageData(d, 0, 0); if (m) m.set(f, c); }
+  return { img: c, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy };
+}
 export function drawPlayer() {
-  const [sheet, f] = dressed(SHEETS[P.state], frameOf());
+  if (P.hidden) return;   // inside the static bomb's burst
+  let [sheet, f] = dressed(SHEETS[P.state], frameOf());
+  if (INV.edge > 0 && !SHEETS[P.state].custom) { sheet = edged(sheet, f, sheet === SHEETS[P.state]); f = 0; }
   const glitchy = (GLITCHY.has(P.state) && SHEETS[P.state].custom) || P.glitchNow > 0;
   // shadow and reflection
   g.fillStyle = 'rgba(20,24,24,.35)';
