@@ -138,7 +138,10 @@ try {
     for (let i = 0; i < 10 && await page.evaluate(() => window.__game.E[0].alive); i++) {
       await kb.press('j'); await reach(/^slash1/); await until('slash 1 follow-through', () => window.__game.P.t > .18);
       await kb.press('j'); await reach(FREE); }
-    const e = await page.evaluate(() => ({ alive: window.__game.E[0].alive, hp: window.__game.E[0].hp, log: window.__eLog }));
+    const e = await page.evaluate(() => ({ alive: window.__game.E[0].alive, hp: window.__game.E[0].hp, log: window.__eLog, chip: window.__game.E[0].chip.v }));
+    // the killing blow's number is up, and his bar's chip is still draining after it
+    if (!await page.evaluate(() => window.__game.N.some(q => q.kind === 'big'))) fail('no killing-blow number over the samurai');
+    if (!(e.chip > 0)) fail('the samurai\'s health bar has no chip trail after the killing blow');
     if (e.alive) fail(`the samurai is still standing after 10 cuts (hp ${e.hp}, states ${e.log.join(' > ')})`);
     for (const st of ['flinch', 'stagger', 'dead']) if (!e.log.includes(st)) fail(`the samurai never went through ${st} (states ${e.log.join(' > ')})`);
     await until('him hitting the floor', () => window.__game.E[0].body.thudT != null); await sleep(600); await shot('08-samurai-down'); });
@@ -291,6 +294,11 @@ try {
     await kb.down('o'); await reach(/^moonHold$/); await until('the O charge', () => window.__game.P.charge > .7); await shot('09-slime-charge');
     await kb.up('o'); await reach(/^moon$/); await reach(FREE);
     await kb.press('['); await kb.press('['); if (await el() !== 'storm') fail(`[ [ left ${await el()}, not storm`); });
+  await run('H with nobody in the party: he takes the cut, a red number pops and his health bar chips', async () => {
+    if ((await party()).allies.length) fail('the party is not at camp');
+    const hp = (await inv()).hp; await kb.press('h');
+    await until('a red number', () => window.__game.N.some(q => q.kind === 'take')); await shot('15-hurt-number');
+    const h2 = (await inv()).hp; if (!(h2 < hp)) fail(`H left his health at ${h2} (was ${hp})`); });
   // ---- the party (prototypes/34-companions.html) ----
   await run('Tab: bring the three back, dress one and hand Kuro the katana from the bag', async () => {
     await kb.press('Tab'); await until('the kit screen', () => window.__game.KIT.open);

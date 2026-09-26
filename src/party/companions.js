@@ -8,8 +8,9 @@ import { collide } from '../world/room.js';
 import { qiAdd, QI_GAIN } from '../player/qi.js';
 import { WEAPONS } from '../weapons/weapons.js';
 import { showBanner } from '../items/inventory.js';
-import { HURT_HOOKS } from '../items/harvest.js';
 import { spark } from '../fx/util.js';
+import { num } from '../fx/numbers.js';
+import { HURT_HOOKS, hurt } from '../items/harvest.js';
 import { party, byId, ROLES, gainExp, stat, bury } from './kit.js';
 import { frames, poseOf, lenOf, bakeFor, figureFor, paint, place, faceTo } from './figures.js';
 
@@ -134,7 +135,7 @@ function think(a, i, dt, load) {
 export function hurtAlly(a, n) {
   if (a.state === 'down') return die(a);   // struck again while down: that is the end
   if (a.state !== 'up') return;
-  a.hp -= n * Math.max(.5, 1 - .06 * stat(a.c, 'vigor')); a.flash = 2 / 60;
+  const lost = n * Math.max(.5, 1 - .06 * stat(a.c, 'vigor')); a.hp -= lost; a.flash = 2 / 60; num(a.x, a.y - 34, lost * 100, 'take');
   if (a.hp <= 0 && a.crane && a.c.kit.charms.includes('crane')) { a.crane = false; a.hp = .05; return; }   // Paper Crane: once per area
   if (a.hp <= 0) { a.state = 'down'; a.st = 0; a.lift = 0; a.armed = false; a.anim = 'idle'; a.target = null; say(a.c.name + ' IS DOWN', 1.6); }
 }
@@ -211,11 +212,11 @@ export function drawPartyWorld(textC) {
   if (party.order === 'hold') for (const a of allies) if (a.anchor) { g.fillStyle = '#6ff3e4'; g.fillRect(Math.round(a.anchor[0]) - 1, Math.round(a.anchor[1]) + 3, 3, 1); }
   for (const p of pops) { g.save(); g.globalAlpha = Math.min(1, (1.1 - p.t) * 3); textC(p.s, Math.round(p.x), Math.round(p.y), '#b8fff6'); g.restore(); }
 }
-// a hurt spark for H (testing): the nearest standing companion takes a cut
+// a hurt spark for H (testing): the nearest standing companion takes a cut; with nobody in the party, he does
 export function hurtNearest() {
   const a = standing().sort((p, q) => Math.hypot(p.x - P.x, p.y - P.y) - Math.hypot(q.x - P.x, q.y - P.y))[0]
     || allies.find(x => x.state === 'down');
-  if (!a) return;
+  if (!a) { if (P.state !== 'death') hurt(.12); return; }
   for (let i = 0; i < 5; i++) spark(a.x, a.y - 12, (Math.random() - .5) * 60, -Math.random() * 40, .25, '#ffffff');
   hurtAlly(a, .55);
 }

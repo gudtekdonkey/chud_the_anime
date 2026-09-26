@@ -12,13 +12,14 @@ import { drawVoid } from './void.js';
 import { updateQi } from '../player/qi.js';
 import { updateRibbons, drawRibbons } from '../player/power.js';
 import { ENEMIES } from '../world/enemies.js';
+import { updateNums } from './numbers.js';
 
 // ---- Engine effects: drawn in world space, never in the sheets, so they survive real art replacing the placeholder ----
 export function storm(x, y) {
   P.flurry = .55; P.after = 3;   // the flurry of bolts, then a few seconds of random glitching as the jump settles
 }
 export function updateFx(dt) {
-  updateDebris(dt); updateMatter(dt); updateRibbons(dt);
+  updateDebris(dt); updateMatter(dt); updateRibbons(dt); updateNums(dt);
   P.glitchNow = Math.max(0, (P.glitchNow || 0) - dt);
   if (P.after > 0) { P.after -= dt;
     if (EL.cur.glitch && Math.random() < dt * 2.2 * Math.min(1, P.after / 1.5 + .3)) { P.glitchNow = rr(.05, .12);
