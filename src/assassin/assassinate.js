@@ -1,10 +1,12 @@
 import { g } from '../screen.js';
 import { P, S } from '../state.js';
 import { rr } from '../fx/util.js';
-import { setState } from '../player/actions.js';
+import { POSES } from '../anims/poses.js';
+import { setState, pickStance, threatNear } from '../player/actions.js';
+import { sheathClick } from '../items/harvest.js';
 import { onAssassination } from '../player/cooldowns.js';
 import { collide } from '../world/room.js';
-import { EG, SET } from './enemy-poses.js';
+import { EG, SET, quickSheathe } from './enemy-poses.js';
 import { EXECS } from './executions.js';
 import { withShadow, drawPieces } from './pieces.js';
 import { SETTLE, stageBody, stepStageBody, updateStagePieces } from './stage-body.js';
@@ -17,6 +19,7 @@ import { hold, faceOf, roomFade } from './targets.js';
 // and fades with them when the room is cleared.
 export const stages = [];
 const PRE = .2;       // the set and the vanish before he lands (the prototype's 0.75 s lock-on beat, cut down for play)
+const INTO_GUARD = .15;   // blade kept out: from the last cut into his stance, then the player has him
 let lastExec = -1;
 export function assassinate(e) {
   let k; do k = Math.random() * EXECS.length | 0; while (k === lastExec && EXECS.length > 1); lastExec = k;
@@ -25,6 +28,11 @@ export function assassinate(e) {
     start: { x: ox + m * (P.x - ox), y: P.y }, E: { x: ox, y: e.y, face: -1, pose: EG, enemy: true, z: 0 }, R: null, freed: false };
   St.once = (key, cond, fn) => { if (cond && !St.ev.has(key)) { St.ev.add(key); fn(); } };
   stageBody(St.E); hold(e); stages.push(St);
+  // chaining K: with anyone else near he keeps the blade out and ends in a counter stance, ready for the next one;
+  // with nobody left (the two-screen rule) he sheathes as the execution ends, and the click is the sheath click
+  St.armed = !St.ex.bare && threatNear();
+  if (St.armed) { St.stance = pickStance(); const ps = POSES[St.stance]; St.guard = (ps && ps[0]) || POSES.ready[0]; }
+  St.tail = (t0, from) => { St.t0 = t0; return St.armed ? [[t0 + INTO_GUARD, St.guard]] : quickSheathe(t0, from).slice(1); };
   setState('exec'); P.inv = true; P.exec = St;
 }
 // runs after the hit pause, so a hit's freeze stops the performance too
@@ -46,7 +54,7 @@ export function tickStages(dt) {
       ex.run(St, c, R, E);
       if (E.flashT) St.flashUntil = c + E.flashT;
       if (c < .05 && !ex.stay) R.glitch = (.05 - c) * 24;
-      if (!St.freed && c >= ex.free) free(St);
+      if (!St.freed && c >= (St.armed && St.t0 != null ? St.t0 + INTO_GUARD : ex.free)) free(St);
     }
     stepStageBody(St, dt);
     }
@@ -61,7 +69,9 @@ export function tickStages(dt) {
 function free(St) {
   St.freed = true; const R = St.R;
   [P.x, P.y] = collide(St.ox + St.m * (R.x - St.ox), R.y); P.face = St.m * R.face;
-  P.inv = false; P.exec = null; P.armed = false; setState('idle');
+  P.inv = false; P.exec = null;
+  if (St.armed) { setState(St.stance); P.armed = true; P.still = 0; }   // blade out; ~2 s of calm and he sheathes as after any attack
+  else { P.armed = false; setState('idle'); if (!St.ex.bare) sheathClick(); }
   onAssassination();
 }
 // effects and pieces move through hit pauses, like the world's own
