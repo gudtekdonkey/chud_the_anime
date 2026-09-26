@@ -116,7 +116,7 @@ try {
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });
   await run('every weapon (the picker) slashes, stands in a stance and sheathes', async () => {
-    for (const id of ['yari', 'nodachi', 'tanto', 'naginata', 'kanabo', 'kusarigama', 'tessen', 'katana']) {
+    for (const id of ['yari', 'nodachi', 'tanto', 'naginata', 'kanabo', 'kusarigama', 'tessen', 'bo', 'katana']) {
       await page.selectOption('#weapon', id); await until(`weapon ${id}`, w => window.__game.P.weapon === w, id);
       await kb.press('j'); await reach(/^slash1$/); await sleep(200); await shot(`08-${id}-slash`);
       await reach(/^ready\d$/); await reach(/^idle$/, 5000); } });
