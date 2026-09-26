@@ -26,7 +26,7 @@ export function update(dt, inp) {
   for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; q.life -= dt; }
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
   P.ghosts.forEach(g => { g.age += dt; g.white -= dt; }); P.ghosts = P.ghosts.filter(g => g.age < g.hold + .25);
-  S.shake = Math.max(0, S.shake - dt); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
+  S.shake = Math.max(0, S.shake - dt); S.impact = Math.max(0, S.impact - 1); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
   updateCds(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
   updateFx(dt); updateEnemies(dt, S.hitstop > 0); updateStages(dt); updateMarkers();
   if (S.hitstop > 0) { S.hitstop -= dt; return; }

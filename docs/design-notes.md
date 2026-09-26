@@ -84,20 +84,20 @@ Decisions made in the design sessions so far, newest last.
   - The skill cooldowns from the League-style bar now sit as a row of small slots under health and Qi, in the items HUD's style (the prototype has no place for them).
   - The whetstone use is shortened to 0.8 s (the study's was 1.7 s) so every use stays under a second; he keeps the honed blade out, in guard.
   - He starts at 60% health so healing shows; nothing damages him yet. Low health (below 35%) blinks the health bar red, as there is no HP label.
-  - Two placeholder remains lie in the room so Harvest can be tried before real kills exist; EXP needs 100 × the level.
+  - Two placeholder remains lie in the room so Harvest can be tried; every real death (a kill or an execution) now leaves a body to harvest too. EXP needs 100 × the level.
 - **Open:** where the power tier (`INV.power`, I / II / III) comes from: level, relics or upgrades.
 
-## Next
-## Deaths pass (prototypes 29 to 31, was 23 to 25, waiting on the owner)
+## Deaths pass (approved: prototypes 29 to 31 and 33)
 
-The owner said the deaths still don't feel like someone dying, and the executions lack impact when the sword lands. Prototypes 29, 30 and 31 replay batches 1, 2 and 3 with one shared change to the enemy's body, and a toggle to compare against the batch as it was:
+The owner said the deaths still don't feel like someone dying, and the executions lack impact when the sword lands. Prototypes 29, 30 and 31 replay execution batches 1, 2 and 3 (all 28 executions), and 33 replays the 14 counters, with one shared change to the enemy's body and a toggle to compare against the page as it was. The owner approved all of it, blood and impact frames included ("with blood"):
 
-- **Flow through poses.** The batches ease in and out of every key, so the body stops dead at each pose. The enemy's timeline is now read as one curve per joint that keeps its speed through a pose and only settles where the motion turns back.
+- **Flow through poses.** The pages ease in and out of every key, so the body stops dead at each pose. The enemy's timeline is now read as one curve per joint that keeps its speed through a pose and only settles where the motion turns back.
 - **Limp joints.** Every joint chases its pose on a spring: the hips lead, the chest follows, the arms, blade and head trail and overshoot. As he goes down the springs soften, so the arms and head go loose.
 - **Gravity and the floor.** The last move into lying down accelerates like a fall and stops dead on the floor, with dust and a small shake; the arms and head flop on after the trunk stops. Then one twitch, a smaller one, and stillness. The red eye flickers and goes out, in a severed head too.
 - **Sword impact.** Each hit knocks him away from the blade, he shakes through the hit pause, light sparks leave out the far side, and a killing blow (hit pause of 0.09 s or more) gets two impact frames, black then white.
-- **Blood (toggle).** Dark red drops fly out with the spray and stain the floor, pieces trail a little and pool where they land. The palette so far had no blood, so this needs the owner's call.
+- **Blood.** Dark red drops fly out with the spray and stain the floor, pieces trail a little and pool where they land. Approved as a new palette colour, alongside the impact frames.
 
+## Next
 
 2. **K assassinations:**
    - With an isolated enemy in range (no other enemy within the isolation distance, 36 px to start), K flashes to it and plays an execution.

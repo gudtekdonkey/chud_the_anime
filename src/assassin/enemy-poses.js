@@ -2,12 +2,41 @@ import { pz, HILT, lerpP, ease } from '../rig/pose.js';
 import { F } from './stage-fx.js';
 
 // ---- Poses the executions share: the enemy's guard and how a man moves when things go wrong ----
-// sample eased keyframes [time, pose, easing?] at time t
+// sample eased keyframes [time, pose, easing?] at time t. The result remembers its keys, so the stage can re-read the enemy's
+// timeline as smooth curves (smoothAt) for the deaths pass
 export function at(keys, t) {
   if (t <= keys[0][0]) return keys[0][1];
   let j = 0; while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
   const [t0, a] = keys[j], [t1, b, e] = keys[j + 1];
-  return lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0)))));
+  const r = lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0)))));
+  if (Object.isExtensible(r)) Object.defineProperties(r, { keys: { value: keys }, t: { value: t } });
+  return r;
+}
+// flat on the floor: the body a fall ends in
+export const lying = p => typeof p.hy === 'number' && (p.hy >= 9 || (p.hy >= 8 && (Math.abs(p.lean || 0) >= 1.2 || !!p.noUpper)));
+// The deaths pass: eased keys bring the body to a dead stop at every pose, like a puppet being set. Read the same keys as one
+// monotone curve per joint, it keeps its speed through a pose and only settles where the motion turns back. A drop into a
+// lying pose falls under gravity (slow off the mark, fastest at the floor). Hard cuts and linear moves stay as authored
+export function smoothAt(keys, t) {
+  if (t <= keys[0][0]) return keys[0][1];
+  let j = 0; while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+  const [t0, a] = keys[j], [t1, b, e] = keys[j + 1], k = Math.min(1, Math.max(0, (t - t0) / (t1 - t0)));
+  if (e || k >= 1) return lerpP(a, b, (e || ease)(k));
+  const land = lying(b) && !lying(a), dT = t1 - t0;
+  const soft = i => i > 0 && i < keys.length - 1 && !keys[i][2] && !keys[i + 1][2];
+  const tan = (i, get) => { const p = get(i - 1), c = get(i), n = get(i + 1);
+    if (![p, c, n].every(Number.isFinite)) return 0;
+    const d0 = (c - p) / Math.max(1e-3, keys[i][0] - keys[i - 1][0]), d1 = (n - c) / Math.max(1e-3, keys[i + 1][0] - keys[i][0]);
+    return d0 * d1 <= 0 ? 0 : 2 * d0 * d1 / (d0 + d1); };
+  const k2 = k * k, k3 = k2 * k, h00 = 2 * k3 - 3 * k2 + 1, h10 = k3 - 2 * k2 + k, h01 = 3 * k2 - 2 * k3, h11 = k3 - k2;
+  const val = (va, vb, get) => { const m0 = soft(j) ? tan(j, get) * dT : 0, m1 = land ? 2 * (vb - va) : soft(j + 1) ? tan(j + 1, get) * dT : 0;
+    return h00 * va + h10 * m0 + h01 * vb + h11 * m1; };
+  const o = {};
+  for (const key in a) { const x = a[key], y = b[key];
+    if (Array.isArray(x) && Array.isArray(y)) o[key] = x.map((v, i) => val(v, y[i], ii => { const q = keys[ii][1][key]; return Array.isArray(q) ? q[i] : NaN; }));
+    else if (typeof x === 'number' && typeof y === 'number') o[key] = val(x, y, ii => keys[ii][1][key]);
+    else o[key] = k < .5 ? x : y; }
+  return o;
 }
 export const hold = () => 0;   // easing that stays on the first pose until the next key: a hard cut, no in-betweens
 export const lin = k => k;

@@ -78,19 +78,22 @@ try {
     await page.evaluate(() => { window.__eLog = []; const e = window.__game.E[0];
       const tick = () => { if (window.__eLog[window.__eLog.length - 1] !== e.state) window.__eLog.push(e.state); requestAnimationFrame(tick); }; tick(); });
     await kb.down('d'); await until('walking up to him', () => window.__game.P.x > 236); await kb.up('d'); await reach(FREE);
-    // J, J: the answer cut lands inside 0.5 s of the first, so it staggers him by design (single cuts ~0.55 s apart were a race)
+    // J, J each round: the answer cut lands inside 0.5 s of the first, so he staggers wherever the steps before left the ronin
     for (let i = 0; i < 10 && await page.evaluate(() => window.__game.E[0].alive); i++) {
       await kb.press('j'); await reach(/^slash1/); await until('slash 1 follow-through', () => window.__game.P.t > .18);
-      if (await page.evaluate(() => window.__game.E[0].alive)) await kb.press('j');
-      await reach(FREE); }
+      await kb.press('j'); await reach(FREE); }
     const e = await page.evaluate(() => ({ alive: window.__game.E[0].alive, hp: window.__game.E[0].hp, log: window.__eLog }));
     if (e.alive) fail(`the samurai is still standing after 10 cuts (hp ${e.hp}, states ${e.log.join(' > ')})`);
     for (const st of ['flinch', 'stagger', 'dead']) if (!e.log.includes(st)) fail(`the samurai never went through ${st} (states ${e.log.join(' > ')})`);
     await until('him hitting the floor', () => window.__game.E[0].body.thudT != null); await sleep(600); await shot('08-samurai-down'); });
   await run('K on a lone samurai in reach: the kill line and K prompt, an execution, K ready 0.2 s after', async () => {
     await sleep(200); await shot('09-k-prompt');
-    await kb.press('k'); await reach(/^exec$/); await sleep(700); await shot('10-execution');
+    await kb.press('k'); await reach(/^exec$/); await page.evaluate(() => { window.__st = window.__game.P.exec; });
+    await sleep(700); await shot('10-execution');
     await reach(/^idle$/, 4000);
+    // the deaths pass: the blade landed on him (knockback, blood) and his body moved on its springs
+    const d = await page.evaluate(() => { const E = window.__st.E; return { name: window.__st.ex.name, hit: E.hitAt != null, t: E.body.t }; });
+    if (!d.hit || !(d.t > .5)) fail(`"${d.name}": the deaths pass never ran on the executed body (${JSON.stringify(d)})`);
     const cd = await page.evaluate(() => ({ t: window.__game.P.cd.tele, max: window.__game.P.cdMax.tele }));
     if (!(cd.max <= .2 + 1e-9)) fail(`K was not reset to 0.2 s after the kill (${JSON.stringify(cd)})`);
     await until('K ready again', () => !(window.__game.P.cd.tele > 0), undefined, 1000); await sleep(500); await shot('11-after'); });

@@ -12,7 +12,7 @@ export const parts = [];
 export const wear = makeFigure();
 // reassigned from many modules, so they live on one object: screen shake, hit pause, the pale screen flash,
 // and roomClear (page checkbox: treat the enemies as no threat)
-export const S = { shake: 0, hitstop: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false, banner: null };
+export const S = { shake: 0, hitstop: 0, impact: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false, banner: null };
 
 // ---- The inventory: the HUD reads only this, and every system writes to it. Qi stays on P.qi (0..1) ----
 // hp 0..1; power 1..3 is the I / II / III tier (its source is still the owner's call); edge: seconds of whetstone left

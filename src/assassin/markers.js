@@ -1,6 +1,6 @@
 import { COL } from '../config.js';
 import { g } from '../screen.js';
-import { P } from '../state.js';
+import { P, S } from '../state.js';
 import { ISOLATION as ISO, targets } from './targets.js';
 
 // ---- Who can he assassinate? The markers picked from prototypes/12-assassin-markers.html ----
@@ -13,6 +13,8 @@ const apart = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);   // the same distance
 export function updateMarkers() {
   const list = targets(); K.list = list; K.alone.clear(); K.pairs.length = 0; K.pick = K.near = null;
   for (let i = 0; i < list.length; i++) for (let j = i + 1; j < list.length; j++) if (apart(list[i], list[j]) <= ISO) K.pairs.push([list[i], list[j]]);
+  // the static bomb's smoke (S.smoke, seconds left, from the items work) hides everyone: while it hangs, every enemy counts as alone
+  if (S.smoke > 0) K.pairs.length = 0;
   for (const e of list) if (!K.pairs.some(p => p.includes(e))) K.alone.add(e);
   let best = K_RANGE, bestNear = K_RANGE;
   for (const e of list) { const d = Math.hypot(e.x - P.x, e.y - P.y);

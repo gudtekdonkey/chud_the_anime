@@ -6,7 +6,8 @@ import { onAssassination } from '../player/cooldowns.js';
 import { collide } from '../world/room.js';
 import { EG, SET } from './enemy-poses.js';
 import { EXECS } from './executions.js';
-import { withShadow, drawPieces, updatePieces } from './pieces.js';
+import { withShadow, drawPieces } from './pieces.js';
+import { SETTLE, stageBody, stepStageBody, updateStagePieces } from './stage-body.js';
 import { F, FX, updateStageFx, drawStageFloor, drawStageTop } from './stage-fx.js';
 import { hold, faceOf, roomFade } from './targets.js';
 
@@ -23,14 +24,15 @@ export function assassinate(e) {
   const St = { ex: EXECS[k], target: e, ox, m, clock: -PRE, stop: 0, shake: 0, fx: FX(), pieces: [], ev: new Set(), flashUntil: 0,
     start: { x: ox + m * (P.x - ox), y: P.y }, E: { x: ox, y: e.y, face: -1, pose: EG, enemy: true, z: 0 }, R: null, freed: false };
   St.once = (key, cond, fn) => { if (cond && !St.ev.has(key)) { St.ev.add(key); fn(); } };
-  hold(e); stages.push(St);
+  stageBody(St.E); hold(e); stages.push(St);
   setState('exec'); P.inv = true; P.exec = St;
 }
 // runs after the hit pause, so a hit's freeze stops the performance too
 export function tickStages(dt) {
   for (const St of stages) {
     St.clock += dt; const c = St.clock, ex = St.ex, E = St.E;
-    if (c >= ex.dur) { if (!St.freed) free(St); continue; }   // the body has come to rest: it just lies there
+    if (c >= ex.dur) { if (!St.freed) free(St); if (c < ex.dur + SETTLE) stepStageBody(St, dt); }   // the last of him goes out of him, then he just lies there
+    else {
     const R = St.R = { x: St.start.x, y: St.start.y, face: 1, pose: SET };
     if (c < 0) {   // the set: weight forward, hand on the hilt, breaking into slices, gone
       const u = c + PRE; R.glitch = u / PRE * 1.6;
@@ -46,10 +48,13 @@ export function tickStages(dt) {
       if (c < .05 && !ex.stay) R.glitch = (.05 - c) * 24;
       if (!St.freed && c >= ex.free) free(St);
     }
+    stepStageBody(St, dt);
+    }
     E.flash = St.flashUntil > c;
     // the stage's hit pauses and shakes are the game's
     if (St.stop) { S.hitstop = Math.max(S.hitstop, St.stop); St.stop = 0; }
     if (St.shake) { S.shake = Math.max(S.shake, St.shake); St.shake = 0; }
+    if (St.impact) { S.impact = St.impact; St.impact = 0; }
   }
 }
 // he has sheathed: the player has him back where the stage left him, and the kill resets K
@@ -61,7 +66,7 @@ function free(St) {
 }
 // effects and pieces move through hit pauses, like the world's own
 export function updateStages(dt) {
-  for (const St of stages) { updateStageFx(St, dt); updatePieces(St, dt); }
+  for (const St of stages) { updateStageFx(St, dt); updateStagePieces(St, dt); }
   const f = roomFade();
   for (let i = stages.length - 1; i >= 0; i--) { const St = stages[i]; if (f <= 0 && St.freed) St.cleared = true;
     if (St.cleared && f > 0) stages.splice(i, 1); }   // a new squad: the old bodies are gone
@@ -72,7 +77,9 @@ export function stageItems() {
   const out = [];
   const fade = roomFade();
   for (const St of stages) { const E = St.E, R = St.R; if (St.cleared) continue;
-    if (!E.gone) out.push({ y: E.y - (St.clock >= St.ex.free ? .5 : 0), d: mirrored(St, () => withShadow(g, { ...E, x: E.x + (E.jit || 0) }, fade)) });
+    // he shakes through a hit's pause
+    const jit = (E.jit || 0) + (S.hitstop > 0 && E.hitAt === St.clock ? (performance.now() / 50 | 0) % 2 ? 1 : -1 : 0);
+    if (!E.gone) out.push({ y: E.y - (St.clock >= St.ex.free ? .5 : 0), d: mirrored(St, () => withShadow(g, { ...E, pose: E.body.out, x: E.x + jit }, fade)) });
     if (R && !St.freed && !R.hidden) out.push({ y: R.y, d: mirrored(St, () => withShadow(g, R)) });
     out.push({ y: E.y + .5, d: mirrored(St, () => drawPieces(g, St, fade)) }); }
   return out;
