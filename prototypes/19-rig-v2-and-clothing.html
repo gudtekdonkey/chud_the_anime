@@ -1,0 +1,838 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Ronin Rig v2</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; margin: 0; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 28px; }
+  header { display: grid; gap: 8px; max-width: 72ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 19px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  h3 { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  canvas { image-rendering: pixelated; display: block; }
+  .panel { background: var(--panel); border: 1px solid var(--rule); }
+  .stage { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); }
+  @media (max-width: 880px) { .stage { grid-template-columns: 1fr; } }
+  .view { position: relative; border-right: 1px solid var(--rule); align-self: start; }
+  @media (max-width: 880px) { .view { border-right: 0; border-bottom: 1px solid var(--rule); } }
+  #pv { width: 100%; aspect-ratio: 160 / 108; }
+  #ov { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  .ctl { padding: 18px; display: grid; gap: 18px; align-content: start; }
+  .ctl section { display: grid; gap: 8px; }
+  .compass { display: grid; grid-template-columns: repeat(3, 44px); grid-template-rows: repeat(3, 44px); gap: 4px; }
+  .compass .hub { display: grid; place-items: center; font: 500 11px/1 "Pixelify Sans", monospace; color: var(--muted); letter-spacing: .06em; }
+  button { font: 500 13px/1.2 "Pixelify Sans", monospace; letter-spacing: .04em; color: var(--muted); background: transparent; border: 1px solid var(--rule); padding: 8px 10px; cursor: pointer; transition: color .15s, border-color .15s, background-color .15s; }
+  button:hover { color: var(--ink); border-color: #4a5157; }
+  button[aria-pressed="true"] { color: var(--ink); border-color: var(--cyan); background: #182423; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .compass button { padding: 0; font-size: 18px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .slider { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; }
+  .slider label { color: var(--muted); font-size: 14px; }
+  .slider output { font: 500 13px/1 "Pixelify Sans", monospace; color: var(--ink); min-width: 5ch; text-align: right; }
+  .slider input { grid-column: 1 / -1; accent-color: var(--cyan); width: 100%; }
+  .checks { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+  .checks label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; color: var(--muted); font-size: 14px; }
+  .checks input { accent-color: var(--cyan); width: 16px; height: 16px; margin: 0; }
+  .ward { padding: 18px; display: grid; gap: 16px; }
+  .ward-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: end; }
+  .slots { display: grid; gap: 0; }
+  .slot { display: grid; grid-template-columns: 120px 1fr; gap: 12px; padding-block: 12px; border-top: 1px solid var(--rule); align-items: start; }
+  @media (max-width: 620px) { .slot { grid-template-columns: 1fr; } }
+  .slot h3 { padding-top: 10px; }
+  .items { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+  .item { text-align: left; display: grid; gap: 4px; padding: 10px 12px; }
+  .item b { font-weight: 700; color: var(--ink); font-size: 14px; }
+  .item span { font: 13px/1.4 Figtree, system-ui, sans-serif; letter-spacing: 0; color: var(--muted); }
+  .item small { font: 500 11px/1.2 "Pixelify Sans", monospace; color: #6f7876; letter-spacing: .05em; text-transform: uppercase; }
+  #wearing { color: var(--ink); }
+  .block { display: grid; gap: 10px; }
+  #lineup { width: 100%; max-width: 1060px; aspect-ratio: 424 / 64; outline: 1px solid var(--rule); }
+  #cmp { width: 100%; max-width: 1060px; aspect-ratio: 300 / 52; outline: 1px solid var(--rule); }
+  .labels { display: grid; grid-template-columns: repeat(4, 1fr); max-width: 1060px; }
+  .labels.five { grid-template-columns: repeat(5, 1fr); }
+  .labels span { font: 500 12px/1.2 "Pixelify Sans", monospace; color: var(--muted); letter-spacing: .05em; text-align: center; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+  .two .panel { padding: 18px; display: grid; gap: 10px; align-content: start; }
+  ul { margin: 0; padding-left: 1.2em; color: var(--muted); display: grid; gap: 6px; }
+  li b, p b { color: var(--ink); font-weight: 600; }
+  pre { white-space: pre-wrap; word-break: break-word; margin: 0; background: #151719; border: 1px solid var(--rule); padding: 12px; overflow-x: auto; font: 12px/1.5 ui-monospace, monospace; color: #c5cccb; }
+  .ask { background: var(--panel); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; max-width: 72ch; }
+  .ask ol { margin: 0; padding-left: 1.3em; color: var(--muted); display: grid; gap: 6px; }
+  .ask b { color: var(--ink); font-weight: 600; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+  .legend i { display: inline-block; width: 10px; height: 3px; margin-right: 6px; vertical-align: middle; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Rig v2 · skeleton and clothing</div>
+    <h1>One skeleton, every direction</h1>
+    <p>The old rig could only draw him from the side. This one is a real skeleton in three dimensions, flattened into the game's camera, so he can face any of eight directions, turn his chest against his hips and his head against his chest. Every piece of clothing is an item hung on the bones, so it follows every pose and every direction, and the loose parts are simulated cloth. Turn him, pose him and dress him below.</p>
+  </header>
+
+  <section class="panel stage" aria-label="Live preview">
+    <div class="view">
+      <canvas id="pv" width="160" height="108" role="img" aria-label="The ronin at 4x zoom, in the chosen direction, pose and outfit"></canvas>
+      <canvas id="ov" aria-hidden="true"></canvas>
+    </div>
+    <div class="ctl">
+      <section>
+        <h3 id="facing-h">Facing</h3>
+        <div class="compass" role="group" aria-labelledby="facing-h" id="compass"></div>
+      </section>
+      <section class="slider">
+        <label for="twist">Chest twist, on top of the pose</label><output id="twist-o" for="twist">0°</output>
+        <input type="range" id="twist" min="-90" max="90" step="5" value="0">
+      </section>
+      <section class="slider">
+        <label for="head">Head yaw, on top of the pose</label><output id="head-o" for="head">0°</output>
+        <input type="range" id="head" min="-100" max="100" step="5" value="0">
+      </section>
+      <section>
+        <h3 id="pose-h">Pose</h3>
+        <div class="row" role="group" aria-labelledby="pose-h" id="poses"></div>
+      </section>
+      <section class="checks">
+        <label for="bones"><input type="checkbox" id="bones"> Show skeleton</label>
+        <label for="foe"><input type="checkbox" id="foe" checked> Show a foe</label>
+        <label for="spin"><input type="checkbox" id="spin"> Turntable</label>
+        <label for="slow"><input type="checkbox" id="slow"> Half speed</label>
+      </section>
+      <div class="legend" id="legend" hidden>
+        <span><i style="background:#eef1f0"></i>spine, head</span>
+        <span><i style="background:#6ff3e4"></i>his right side</span>
+        <span><i style="background:#7d868e"></i>his left side</span>
+        <span>arrows: hips, chest, head facing</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel ward" aria-labelledby="ward-h">
+    <div class="ward-head">
+      <div class="block" style="gap:6px">
+        <h2 id="ward-h">Wardrobe</h2>
+        <p id="wearing" aria-live="polite"></p>
+      </div>
+      <div class="row" role="group" aria-label="Outfit presets" id="presets"></div>
+    </div>
+    <div class="slots" id="slots"></div>
+  </section>
+
+  <section class="block">
+    <h2>At game scale</h2>
+    <p>Four outfits, each facing down, right, up and left, at 2x so the pixels stay readable. Each has its own cloth, breathing in the idle.</p>
+    <canvas id="lineup" width="424" height="64" role="img" aria-label="Four outfits in four directions at game scale"></canvas>
+    <div class="labels" id="lineup-labels"></div>
+  </section>
+
+  <section class="block">
+    <h2>Side-on, old rig beside new</h2>
+    <p>In each pair the current rig is on the left and rig v2 on the right, facing right, in the same pose: idle, run, guard, the follow-through, and the counter stance. Both wear the straw hat and the mantle.</p>
+    <canvas id="cmp" width="300" height="52" role="img" aria-label="Old rig and new rig side by side in five poses"></canvas>
+    <div class="labels five"><span>Idle</span><span>Run</span><span>Guard</span><span>Follow-through</span><span>Counter</span></div>
+  </section>
+
+  <section class="two">
+    <div class="panel">
+      <h2>How the skeleton works</h2>
+      <ul>
+        <li><b>Bones:</b> pelvis, a lower and an upper spine, neck and head; on each side a shoulder, upper arm, forearm and hand, and a hip, thigh, shin and foot. Every joint has a position in 3D: x to the right, y up, z toward the camera.</li>
+        <li><b>Three yaws:</b> the body faces any direction. The hips can turn against that (hip yaw), the chest against the hips (twist), and the head against the chest (head yaw). "Shoulder to him, chest to us, head in profile" is just hips +50°, chest +40°, head −90°.</li>
+        <li><b>Limbs:</b> each limb swings forward and back, folds at the knee or elbow, and spreads out sideways. The old angles carry over unchanged, so the executions' poses port directly. A hand can also reach for a point (on the hilt, say) and the elbow works itself out.</li>
+        <li><b>Projection:</b> the camera looks down on the floor at an angle, so height stays height, and a joint nearer the camera sits a little lower on screen (0.3 px per px of depth). Every pixel carries its depth, so whatever is nearer the camera is drawn on top, frame by frame.</li>
+        <li><b>Shading:</b> limbs on the far side of his body are the lighter plane, near ones near-black. The eyes only show when that side of the face points at the camera: two from the front, one in profile, none from behind.</li>
+      </ul>
+    </div>
+    <div class="panel">
+      <h2>How an item attaches</h2>
+      <p>An item is data: its slot, the bones it hangs from, its shape measured from those bones, a depth bias for layering, a palette of blacks, and whether its loose parts are cloth. Because the shape is measured from the bones, the same item fits every pose and direction.</p>
+      <pre id="sample"></pre>
+      <p>Cloth parts are verlet grids and chains: the top row is pinned to the bones, the rest falls under gravity, is pushed by the breeze and by his own motion, and is kept out of his body and legs. Stiff items (the mantle, the plates) are also pulled back toward their resting shape, so they flutter but keep their cut.</p>
+    </div>
+  </section>
+
+  <div class="ask">
+    <h2>Your call</h2>
+    <ol>
+      <li><b>Side-on:</b> does v2 read as him, next to the old rig? Anything you miss from the old one?</li>
+      <li><b>Facing left:</b> v2 shows his true left side (scabbard nearest, blade hand behind). The old rig just mirrored him. Keep it true, or mirror?</li>
+      <li><b>Items:</b> which of the fifteen stay, which go, and what his default outfit is.</li>
+      <li><b>Depth:</b> should the brim of the hat show more of its top when he faces the camera, or stay flat as now?</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+// =====================================================================================
+//  Palette. Clothing is shades of black only (c0..c6); accents come from effects and the eyes.
+// =====================================================================================
+const PAL = {
+  K: '#0c0d11', D: '#2c323b',                                  // body: near side, far plane
+  E: '#6ff3e4', W: '#e9eeee', S: '#7d868e', s: '#2c3037',      // eyes, blade, tsuba and tip, scabbard
+  G: '#3b424c', H: '#2a2f37', B: '#1a1d24',                    // hat: rim light, crown, brim
+  c0: '#0f1115', c1: '#14171c', c2: '#1b1e25', c3: '#22262e', c4: '#2b2f38', c5: '#30353e', c6: '#3d424d',
+};
+const FOE_PAL = { ...PAL, K: '#3a2e31', D: '#5a4a4e', E: '#ff5a4a', W: '#cfd4d6', s: '#3a3033' };
+const pack = hex => { const n = parseInt(hex.slice(1), 16); return ((255 << 24) | ((n & 255) << 16) | (n & 0xff00) | (n >> 16)) >>> 0; };
+const packPal = P => Object.fromEntries(Object.entries(P).map(([k, v]) => [k, pack(v)]));
+const PK = packPal(PAL), FOE_PK = packPal(FOE_PAL);
+
+// =====================================================================================
+//  Small vector kit
+// =====================================================================================
+const TAU = Math.PI * 2, KZ = 0.3, KH = 0.05;   // KZ: depth to screen-y; KH: the hat brim's (flatter) ellipse
+const V = {
+  add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+  sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+  mul: (a, k) => [a[0] * k, a[1] * k, a[2] * k],
+  dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+  len: a => Math.hypot(a[0], a[1], a[2]),
+  norm: a => { const l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; },
+  lerp: (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k],
+  cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+};
+const UP = [0, 1, 0];
+// a frame: F forward, U up, R his right. Yaw 0 faces screen-right, 90° faces the camera. Pitch tips F and U forward.
+function frame(yaw, pitch = 0) {
+  const c = Math.cos(pitch), s = Math.sin(pitch), fx = Math.cos(yaw), fz = Math.sin(yaw);
+  return { F: [fx * c, -s, fz * c], U: [fx * s, c, fz * s], R: [-fz, 0, fx] };
+}
+const loc = (fr, o, a, u, b) => [o[0] + fr.F[0] * a + fr.U[0] * u + fr.R[0] * b, o[1] + fr.F[1] * a + fr.U[1] * u + fr.R[1] * b, o[2] + fr.F[2] * a + fr.U[2] * u + fr.R[2] * b];
+// a limb direction: th swings forward (0 = straight down), sp spreads it out to side s
+const limbDir = (fr, th, sp, s) => { const c = Math.cos(th), st = Math.sin(th);
+  return [fr.F[0] * st + (-UP[0] * Math.cos(sp) + fr.R[0] * s * Math.sin(sp)) * c, fr.F[1] * st - Math.cos(sp) * c, fr.F[2] * st + fr.R[2] * s * Math.sin(sp) * c]; };
+function ik2(S, T, l1, l2, pole) {           // two-bone reach: elbow bends toward the pole
+  let d = V.sub(T, S); const L = Math.min(V.len(d), l1 + l2 - .01); d = V.norm(d);
+  const a = (l1 * l1 - l2 * l2 + L * L) / (2 * L), h = Math.sqrt(Math.max(0, l1 * l1 - a * a));
+  let q = V.sub(pole, V.mul(d, V.dot(pole, d))); q = V.norm(q);
+  return [V.add(V.add(S, V.mul(d, a)), V.mul(q, h)), V.add(S, V.mul(d, L))];
+}
+
+// =====================================================================================
+//  Poses. The side-view angles carry over from the old rig: fl→rl, bl→ll, fa→ra, ba→la, bsword→lsword.
+//  leg: [swing, knee fold, spread, toe-out]   arm: [swing, elbow fold, spread]
+//  ik: [forward, up, lateral, weight, frame 0 hips / 1 chest] a hand reaching for a point
+// =====================================================================================
+const REST = { hx: 0, hy: 0, lean: .04, chest: 0, hipYaw: 0, twist: 0, headYaw: 0, breath: 0,
+  rl: [.1, .08, .07, .3], ll: [-.1, .04, .07, .3], ra: [.12, .18, .1], la: [-.08, .12, .1],
+  rik: [0, 0, 0, 0, 0], lik: [0, 0, 0, 0, 0],
+  sword: null, swordYaw: 0, lsword: null, lswordYaw: 0, sheathing: false, hat: 0 };
+const pz = (o = {}) => { const r = { ...REST, ...o };
+  for (const k of ['rl', 'll', 'ra', 'la']) if (o[k]) r[k] = REST[k].map((v, i) => o[k][i] ?? v);
+  return r; };
+const lerpP = (a, b, k) => { const o = {}; for (const key in a) {
+  const x = a[key], y = b[key];
+  o[key] = Array.isArray(x) ? x.map((v, i) => v + (y[i] - v) * k) : typeof x === 'number' && typeof y === 'number' ? x + (y - x) * k : k < .5 ? x : y; }
+  return o; };
+const ease = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, lin = k => k;
+function at(keys, t) {
+  if (t <= keys[0][0]) return keys[0][1];
+  let j = 0; while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+  const [t0, a] = keys[j], [t1, b, e] = keys[j + 1];
+  return lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0)))));
+}
+const BREATH = [0, 0, 0, .15, .45, .75, .95, 1, 1, 1, .85, .6, .3, .1, 0, 0];
+const breathAt = t => BREATH[Math.floor(t * 8) % 16];
+const HILT_IK = [4.3, 2.3, -1.9, 1, 0];      // right hand resting on the sheathed hilt at the left hip
+
+const GUARD = pz({ hy: 3, lean: .14, chest: .06, twist: .15, rl: [.6, 1.0, .1], ll: [-.65, .4, .1], ra: [1.2, .55, -.35], la: [1.05, .75, -.6], sword: -.85 });
+const WIND = pz({ hx: -1, hy: 4, lean: -.1, chest: -.4, hipYaw: .2, twist: .5, headYaw: -.6, rl: [.6, 1.05], ll: [-.75, .45], ra: [2.6, .6, -.3], la: [2.3, .8, -.5], sword: -2.45 });
+const CUT = pz({ hx: 2, hy: 3, lean: .45, chest: .35, hipYaw: -.1, twist: -.25, headYaw: .3, rl: [1.0, 1.1], ll: [-1.0, .1], ra: [1.8, .1, -.1], la: [1.2, .3, -.3], sword: .1, hat: 1 });
+const FOLLOW = pz({ hx: 2, hy: 4, lean: .6, chest: .5, hipYaw: -.25, twist: -.5, headYaw: .7, rl: [1.1, 1.25], ll: [-1.1, .1], ra: [1.0, .2, -.15], la: [.6, .2, .35], sword: 1.3, swordYaw: -.35, hat: 1 });
+const COUNTER = pz({ hx: -1, hy: 2, lean: -.06, chest: .08, hipYaw: -.15, twist: -.35, headYaw: .45, rl: [.45, .55], ll: [-.35, .45], ra: [.55, .35], la: [-.35, .25, .25], lsword: 2.05, lswordYaw: -.3 });
+const THREEQ = pz({ hy: 2, lean: 0, hipYaw: .9, twist: .67, headYaw: -1.57, rl: [.05, .15, .38, .6], ll: [.05, .15, .38, .6], ra: [-.1, .12, .3], la: [.12, .3, .32], sword: .95, swordYaw: 1.35 });
+const runAt = t => { const a = (Math.floor(t * 12) % 8) / 8 * TAU, s = Math.sin(a), c = Math.cos(a);
+  return pz({ lean: .32, hy: Math.round(.5 - .5 * Math.cos(2 * a)), hipYaw: -.12 * s, twist: .3 * s, headYaw: -.18 * s,
+    rl: [.95 * s, .3 + 1.1 * Math.max(0, c), .05], ll: [-.95 * s, .3 + 1.1 * Math.max(0, -c), .05],
+    ra: [-.7 * s + .3, .9, .12], la: [.7 * s - .5, .5, .12] }); };
+const SLASH = [[0, GUARD], [.4, GUARD], [.55, WIND], [.61, CUT, lin], [.67, FOLLOW], [1.1, pz({ ...FOLLOW, lean: .56, chest: .46 })], [1.5, GUARD], [1.8, GUARD]];
+const POSES = [
+  { id: 'idle', name: 'Idle', at: t => { const b = breathAt(t); return pz({ breath: b, ra: [.15 + b * .03, .2], la: [-.08 - b * .03, .12] }); } },
+  { id: 'hilt', name: 'Hand on hilt', at: t => pz({ breath: breathAt(t), hy: 1, lean: .1, rik: HILT_IK, la: [-.2, .3] }) },
+  { id: 'run', name: 'Run', at: runAt, speed: 70 },
+  { id: 'guard', name: 'Guard', at: t => pz({ ...GUARD, breath: breathAt(t) }) },
+  { id: 'counter', name: 'Counter stance', at: t => { const b = breathAt(t); return pz({ ...COUNTER, breath: b, lsword: 2.05 + b * .03 }); } },
+  { id: 'threeq', name: 'Shoulder to him', at: t => pz({ ...THREEQ, breath: breathAt(t) }) },
+  { id: 'slash', name: 'Slash', at: t => at(SLASH, t % 1.8) },
+];
+
+// =====================================================================================
+//  The skeleton: pose + facing -> joints in 3D
+// =====================================================================================
+const SHW = 2.7;   // shoulder half-width
+function solve(p, yaw) {
+  const yh = yaw + p.hipYaw, yc = yh + p.twist, yd = yc + p.headYaw;
+  const Hy = frame(yh), Cy = frame(yc), Hd = frame(yd), Hh = frame(yh, p.lean), Hc = frame(yc, p.lean + p.chest);
+  const pelvis = loc(Hy, [0, 0, 0], p.hx, 11 - p.hy, 0), waist = loc(Hh, pelvis, 0, 4, 0);
+  const Lh = (u, v, b) => loc(Hh, pelvis, v, u, b);
+  const Lc = (u, v, b) => { const q = loc(Hc, waist, v, u - 4, b); if (u > 4) q[1] += p.breath * Math.min(1, (u - 4) / 3); return q; };
+  const J = { p, yaw, Hy, Cy, Hd, Hh, Hc, pelvis, waist, Lh, Lc, chest: Lc(7, 0, 0), neck: Lc(8.2, 0, 0), arm: {}, leg: {} };
+  J.head = V.add(Lc(10, 0, 0), V.mul(Hd.F, .6));
+  for (const s of [1, -1]) {
+    const k = s > 0 ? 'r' : 'l', [th, el, sp] = p[k + 'a'];
+    const sh = Lc(7, 0, s * SHW);
+    let e = V.add(sh, V.mul(limbDir(Cy, th, sp, s), 4)), h = V.add(e, V.mul(limbDir(Cy, th + el, sp, s), 4));
+    const ik = p[k + 'ik'];
+    if (ik[3] > .001) { const T = ik[4] > .5 ? Lc(ik[1], ik[0], ik[2]) : Lh(ik[1], ik[0], ik[2]);
+      const pole = V.add(V.add(V.mul(Cy.F, -1), V.mul(Cy.R, s * .9)), [0, -.4, 0]);
+      const [e2, h2] = ik2(sh, T, 4, 4, pole); e = V.lerp(e, e2, ik[3]); h = V.lerp(h, h2, ik[3]); }
+    J.arm[k] = { s, sh, el: e, hand: h, col: Cy.R[2] * s < -.35 ? 'D' : 'K' };
+    const [lt, kn, lsp, toe] = p[k + 'l'];
+    const hip = Lh(0, 0, s * 1.2), knee = V.add(hip, V.mul(limbDir(Hy, lt, lsp, s), 5)), ank = V.add(knee, V.mul(limbDir(Hy, lt - kn, lsp, s), 6));
+    const fd = V.add(V.mul(Hy.F, Math.cos(toe)), V.mul(Hy.R, s * Math.sin(toe)));
+    J.leg[k] = { s, hip, knee, ank, toe: V.add(ank, V.mul(fd, 2)), col: Hy.R[2] * s < -.35 ? 'D' : 'K' };
+  }
+  J.mouth = Lh(1.5, 2, -2.5);
+  J.sd = V.norm(V.add(V.add(V.mul(Hy.F, -Math.cos(.32)), [0, -Math.sin(.32), 0]), V.mul(Hy.R, -.1)));
+  const sw = (a, y) => { const f = V.add(V.mul(Cy.F, Math.cos(y)), V.mul(Cy.R, Math.sin(y))); return V.norm(V.add(V.mul(f, Math.cos(a)), [0, -Math.sin(a), 0])); };
+  J.swordR = p.sword == null ? null : sw(p.sword, p.swordYaw);
+  J.swordL = p.lsword == null ? null : sw(p.lsword, p.lswordYaw);
+  // colliders for cloth: the torso as an elliptic capsule, the legs as round capsules
+  J.cols = [['r', 'l'].flatMap(k => [[J.leg[k].hip, J.leg[k].knee], [J.leg[k].knee, J.leg[k].ank]])];
+  return J;
+}
+
+// =====================================================================================
+//  The raster: every pixel carries a depth, nearer wins
+// =====================================================================================
+class Sprite {
+  constructor(w, h, ox, oy) { Object.assign(this, { w, h, ox, oy }); this.c = new Uint32Array(w * h); this.z = new Float32Array(w * h);
+    this.canvas = document.createElement('canvas'); this.canvas.width = w; this.canvas.height = h; this.g = this.canvas.getContext('2d');
+    this.img = this.g.createImageData(w, h); this.u32 = new Uint32Array(this.img.data.buffer); this.pal = PK; }
+  clear() { this.c.fill(0); this.z.fill(-1e9); }
+  px(x, y, z, key) { if (x < 0 || y < 0 || x >= this.w || y >= this.h) return; const i = y * this.w + x; if (z >= this.z[i]) { this.z[i] = z; this.c[i] = this.pal[key]; } }
+  P(q) { return [this.ox + q[0], this.oy - q[1] + q[2] * KZ, q[2]]; }
+  dot(sx, sy, z, w, key) { const x0 = Math.round(sx - (w - 1) / 2), y0 = Math.round(sy - (w - 1) / 2);
+    for (let y = 0; y < w; y++) for (let x = 0; x < w; x++) this.px(x0 + x, y0 + y, z, key); }
+  seg(A, B, w, key, bias = 0) { const a = this.P(A), b = this.P(B), n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
+    for (let i = 0; i <= n; i++) { const k = i / n; this.dot(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k + bias, w, key); } }
+  poly(pts, z, key) {   // pixel-centre scanline fill, same rule as the old rig's poly()
+    let y0 = 1e9, y1 = -1e9; for (const q of pts) { y0 = Math.min(y0, q[1]); y1 = Math.max(y1, q[1]); }
+    for (let y = Math.floor(y0); y <= Math.ceil(y1); y++) { const xs = [], yc = y + .5;
+      for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j];
+        if ((yi > yc) !== (yj > yc)) xs.push((xj - xi) * (yc - yi) / (yj - yi) + xi); }
+      xs.sort((a, b) => a - b);
+      for (let k = 0; k + 1 < xs.length; k += 2) for (let x = Math.ceil(xs[k] - .5); x + .5 < xs[k + 1]; x++) this.px(x, y, z, key); } }
+  flush() { this.u32.set(this.c); this.g.putImageData(this.img, 0, 0); return this.canvas; }
+}
+function hull(P) {
+  const p = P.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]); if (p.length < 3) return p;
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]), lo = [], up = [];
+  for (const q of p) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); }
+  for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], q) <= 0) up.pop(); up.push(q); }
+  return lo.slice(0, -1).concat(up.slice(0, -1));
+}
+// a cross-section ring of the body in a frame: forward reach vf, back reach vb (negative), half-width b
+function ring(L, u, vf, vb, b, n = 16, jag = null) {
+  const out = []; for (let i = 0; i < n; i++) { const a = i / n * TAU, c = Math.cos(a), s = Math.sin(a);
+    out.push(L(u + (jag ? jag(i, a) : 0), c * (c >= 0 ? vf : -vb), s * b)); } return out;
+}
+const CAM = V.norm([0, KZ, 1]);
+
+// =====================================================================================
+//  The base body
+// =====================================================================================
+const SECT = [[0, 2, -2, 2.3], [4, 2.1, -2.2, 2.2], [7, 2.3, -2.4, 2.8], [8.2, 1.4, -1.6, 1.8]];
+function drawBody(S, J, st) {
+  const p = J.p, armed = st.katana;
+  // scabbard at the left hip
+  if (armed) { const tip = V.add(J.mouth, V.mul(J.sd, 12)); S.seg(J.mouth, tip, 1, 's'); const t = S.P(tip); S.dot(t[0], t[1], t[2], 1, 'S'); }
+  for (const k of ['r', 'l']) { const L = J.leg[k]; S.seg(L.hip, L.knee, 2, L.col); S.seg(L.knee, L.ank, 2, L.col); S.seg(L.ank, L.toe, 1, L.col); }
+  // torso: two hulls (hips to waist, waist to neck) so the chest can bend and twist off the hips
+  const zT = (J.pelvis[2] + J.neck[2]) / 2;
+  const sec = ([u, vf, vb, b], L) => ring(L, u, vf, vb, b, 12).map(q => S.P(q));
+  S.poly(hull([...sec(SECT[0], J.Lh), ...sec(SECT[1], J.Lh)]), zT, 'K');
+  S.poly(hull([...sec(SECT[1], J.Lc), ...sec(SECT[2], J.Lc), ...sec(SECT[3], J.Lc)]), zT, 'K');
+  // the belt line: the half of the ring that faces the camera
+  bandLine(S, J, 'h', 2.2, 2.1, -2.1, 2.4, 'D', 0.05);
+  // lapels, when the chest is open to the camera
+  if (J.Hc.F[2] > .3) for (const s of [1, -1]) S.seg(J.Lc(8.1, 2.1, s * 1.2), J.Lc(5.2, 2.2, s * .35), 1, 'D', .1);
+  for (const k of ['r', 'l']) { const A = J.arm[k]; S.seg(A.sh, A.el, 2, A.col, .1); S.seg(A.el, A.hand, 1, A.col, .1); const h = S.P(A.hand); S.dot(h[0], h[1], h[2] + .1, 2, A.col); }
+  // head: a small block, sized by how much of its side or front we see
+  const c = S.P(J.head), Hd = J.Hd, w = Math.max(3, Math.round(2 * (Math.abs(Hd.F[0]) * 1.9 + Math.abs(Hd.R[0]) * 2.3)));
+  const x0 = Math.floor(c[0] - w / 2) + 1, cy = Math.round(c[1]), hz = J.head[2] + 1.2;
+  for (let y = -1; y <= 1; y++) for (let x = 0; x < w; x++) S.px(x0 + x, cy + y, hz, 'K');
+  J.headBox = { x0, w, cy };
+  if (!st.blink) { const seen = [];
+    for (const s of [1, -1]) { const n = Hd.F[2] * .75 + Hd.R[2] * s * .66; if (n <= .12) continue;
+      const e = S.P(V.add(V.add(J.head, V.mul(Hd.F, 1.8)), V.mul(Hd.R, s * 1.05)));
+      let ex = Math.min(x0 + w - 1, Math.max(x0, Math.round(e[0]))); if (seen.includes(ex)) ex += ex > x0 ? -1 : 1; seen.push(ex);
+      S.px(ex, cy, hz + .01, 'E'); } }
+  if (st.bare) {   // the samurai's scalp and topknot
+    for (let x = 1; x < w - 1; x++) S.px(x0 + x, cy - 2, hz, 'K');
+    const kn = S.P(V.add(V.add(J.head, V.mul(Hd.F, -1.4)), [0, 3.2, 0])); S.dot(kn[0], kn[1], hz, 1, 'K');
+    const k2 = S.P(V.add(V.add(J.head, V.mul(Hd.F, -2.3)), [0, 3.4, 0])); S.dot(k2[0], k2[1], hz, 1, 'D');
+  } else if (!st.hat) {  // no hat: short tied hair at the back of the head
+    for (let x = 0; x < w; x++) S.px(x0 + x, cy - 2, hz, 'K');
+    const t = S.P(V.add(V.add(J.head, V.mul(Hd.F, -2.4)), [0, .6, 0])); S.dot(t[0], t[1], hz, 1, 'K'); S.dot(t[0] - Hd.F[0], t[1] + 1, hz, 1, 'K');
+  }
+  // the blade: in either hand, or sheathed with the hilt poking forward-up out of the scabbard
+  if (armed) {
+    // owner rule: a HELD blade is never hidden by the body, sash or mantle. It sits on the top layer,
+    // and the hand that grips it is redrawn over its hilt, whichever hand and whichever side.
+    const TOP = 50;
+    const blade = (A, d) => { const hand = A.hand; S.seg(hand, V.sub(hand, V.mul(d, 2.5)), 1, 'K', TOP);
+      S.seg(V.add(hand, d), V.add(hand, V.mul(d, 13)), 1, 'W', TOP); const h = S.P(hand), g = S.P(V.add(hand, V.mul(d, 1.2)));
+      S.dot(h[0], h[1], h[2] + TOP + 2, 2, A.col); S.dot(g[0], g[1], g[2] + TOP + 3, 1, 'S'); };
+    if (J.swordR) blade(J.arm.r, J.swordR);
+    if (J.swordL) blade(J.arm.l, J.swordL);
+    if (p.sheathing) S.seg(J.arm.r.hand, J.mouth, 1, 'W', .3);
+    else if (!J.swordR && !J.swordL) { const m = S.P(J.mouth); S.dot(m[0], m[1], m[2] + .2, 1, 'S'); S.seg(V.sub(J.mouth, J.sd), V.sub(J.mouth, V.mul(J.sd, 3.5)), 1, 'W', .2); }
+  }
+}
+// the visible half of a ring on the body, as a 1px line (belt lines, lacing, cords)
+function bandLine(S, J, f, u, vf, vb, b, key, bias, w = 1) {
+  const L = f === 'h' ? J.Lh : J.Lc, fr = f === 'h' ? J.Hh : J.Hc, n = 20, pts = ring(L, u, vf, vb, b, n);
+  for (let i = 0; i < n; i++) { const a = i / n * TAU, a2 = (i + 1) / n * TAU;
+    const vis = th => fr.F[2] * Math.cos(th) + fr.R[2] * Math.sin(th) > -.05;
+    if (vis(a) && vis(a2)) S.seg(pts[i], pts[(i + 1) % n], w, key, bias); }
+}
+
+// =====================================================================================
+//  Hats: a crown and a brim built from stacked ellipses, tilted and turned with the head
+// =====================================================================================
+function drawHat(S, J, spec) {
+  const Hd = J.Hd, t = (spec.tilt || 0) + J.p.hat * .1, ct = Math.cos(t), sn = Math.sin(t);
+  const up = V.add(V.mul(UP, ct), V.mul(Hd.F, sn)), fw = V.sub(V.mul(Hd.F, ct), V.mul(UP, sn));
+  const base = V.add(V.add(J.head, V.mul(up, spec.sit || 3)), V.mul(Hd.F, J.p.hat * .8)), hz0 = J.head[2];
+  const zBase = J.head[2] + 2.5;
+  spec.levels.forEach((Lv, li) => {
+    const c = V.add(base, V.mul(up, Lv.h)), rows = new Map();
+    for (let k = 0; k < 72; k++) { const a = k / 72 * TAU; let r = Lv.r;
+      if (spec.notch && Lv.h <= spec.notch.top) { const d = Math.abs(((a - spec.notch.at) % TAU + TAU + Math.PI) % TAU - Math.PI); if (d < spec.notch.w) r -= spec.notch.depth * (1 - d / spec.notch.w); }
+      const q = V.add(V.add(c, V.mul(fw, r * Math.cos(a))), V.mul(Hd.R, r * Math.sin(a)));
+      const x = S.ox + q[0], y = Math.round(S.oy - q[1] + hz0 * KZ + (q[2] - hz0) * KH);
+      const m = rows.get(y); if (m) { m[0] = Math.min(m[0], x); m[1] = Math.max(m[1], x); } else rows.set(y, [x, x]); }
+    for (const [y, [a, b]] of rows) { const x0 = Math.floor(a) + 1, x1 = Math.floor(b), ew = Lv.ew || 1;
+      for (let x = x0; x <= x1; x++) S.px(x, y, zBase + li * .01, x - x0 < ew || x1 - x < ew ? Lv.edge : Lv.fill); }
+  });
+  if (spec.crack) { const q = V.add(V.add(base, V.mul(fw, Math.cos(spec.crack) * 4)), V.mul(Hd.R, Math.sin(spec.crack) * 4));
+    if (V.dot(V.add(V.mul(fw, Math.cos(spec.crack)), V.mul(Hd.R, Math.sin(spec.crack))), [0, 0, 1]) > -.2) {
+      const P0 = S.P(V.add(q, V.mul(up, 1))), P1 = S.P(V.add(V.add(q, V.mul(up, 2.2)), V.mul(fw, -Math.cos(spec.crack) * 1.5)));
+      S.px(Math.round(P0[0]), Math.round(S.oy - (base[1] + up[1]) + hz0 * KZ), zBase + .2, 'B');
+      S.px(Math.round(P1[0]), Math.round(S.oy - (base[1] + 2 * up[1]) + hz0 * KZ), zBase + .2, 'B'); } }
+}
+
+// =====================================================================================
+//  Cloth: verlet grids and chains in 3D, pinned to the bones, kept out of the body and legs
+// =====================================================================================
+class Cloth { constructor(n) { this.p = new Float32Array(n * 3); this.o = new Float32Array(n * 3); this.r = new Float32Array(n * 3); this.ok = false; } }
+const frameOf = (J, f) => f === 'h' ? { L: J.Lh, fr: J.Hh, yf: J.Hy } : { L: J.Lc, fr: J.Hc, yf: J.Cy };
+function dims(part) { return part.kind === 'chain' ? [1, part.n] : [part.cols, part.rows]; }
+function restFill(out, part, J) {
+  const { L, fr, yf } = frameOf(J, part.f), [cols, rows] = dims(part);
+  const put = (k, q) => { out[k * 3] = q[0]; out[k * 3 + 1] = q[1]; out[k * 3 + 2] = q[2]; };
+  if (part.kind === 'chain') { const d = V.norm(V.add(V.add(V.mul(yf.F, part.dir[0]), V.mul(UP, part.dir[1])), V.mul(yf.R, part.dir[2]))), a = L(part.u, part.v, part.b);
+    for (let j = 0; j < rows; j++) put(j, V.add(a, V.mul(d, part.seg * j))); return; }
+  if (part.kind === 'sheet') { const d = V.norm(V.add([0, -1, 0], V.mul(yf.F, -part.back)));
+    for (let i = 0; i < cols; i++) { const a = L(part.u, part.v, part.b0 + (part.b1 - part.b0) * i / (cols - 1));
+      for (let j = 0; j < rows; j++) put(j * cols + i, V.add(a, V.mul(d, part.seg * j))); } return; }
+  // skirt: a ring around the body, hanging down (the frame's down for stiff pieces, world down for loose ones)
+  const R = part.ring, down = part.down === 'frame' ? V.mul(fr.U, -1) : [0, -1, 0];
+  for (let i = 0; i < cols; i++) {
+    const a = part.arc ? part.arc[0] + (part.arc[1] - part.arc[0]) * i / (cols - 1) : i / cols * TAU, c = Math.cos(a), s = Math.sin(a);
+    const top = L(R.u, c * (c >= 0 ? R.vf : -R.vb), s * R.b), out = V.norm(V.add(V.mul(yf.F, c), V.mul(yf.R, s)));
+    const drop = part.drop[0] * (1 + c) / 2 + part.drop[1] * (1 - c) / 2;
+    for (let j = 0; j < rows; j++) { let k = j / (rows - 1); if (j === rows - 1 && part.jag) k *= 1 - part.jag * (i % 2);
+      put(j * cols + i, V.add(V.add(top, V.mul(down, drop * k)), V.mul(out, (part.flare || 0) * k))); }
+  }
+}
+function collide(q, J) {
+  // torso: elliptic capsule from pelvis to neck
+  const a = J.pelvis, b = J.neck, ab = V.sub(b, a), t = Math.max(0, Math.min(1, V.dot(V.sub(q, a), ab) / V.dot(ab, ab)));
+  if (t > 0 && t < 1) { const c = V.add(a, V.mul(ab, t)), r = V.sub(q, c), F = t > .45 ? J.Cy.F : J.Hy.F, Rr = t > .45 ? J.Cy.R : J.Hy.R;
+    const x = V.dot(r, F), y = V.dot(r, Rr), ra = x > 0 ? 2.9 : 3.0, rb = 3.3, e = (x / ra) ** 2 + (y / rb) ** 2;
+    if (e < 1) { const k = 1 / Math.sqrt(Math.max(e, 1e-4)) - 1, push = V.add(V.mul(F, x * k), V.mul(Rr, y * k)); q[0] += push[0]; q[2] += push[2]; q[1] += push[1]; } }
+  for (const [A, B] of J.cols[0]) { const ab2 = V.sub(B, A), t2 = Math.max(0, Math.min(1, V.dot(V.sub(q, A), ab2) / V.dot(ab2, ab2))), c = V.add(A, V.mul(ab2, t2)), r = V.sub(q, c), d = V.len(r);
+    if (d < 1.6 && d > 1e-4) { const k = (1.6 - d) / d; q[0] += r[0] * k; q[1] += r[1] * k; q[2] += r[2] * k; } }
+  if (q[1] < .3) q[1] = .3;
+}
+function clothStep(C, part, J, env, dt) {
+  const [cols, rows] = dims(part), n = cols * rows, P = C.p, O = C.o, R = C.r;
+  restFill(R, part, J);
+  if (!C.ok) { P.set(R); O.set(R); C.ok = true; }
+  const damp = .965, dt2 = dt * dt, loop = part.kind === 'skirt' && !part.arc;
+  for (let k = cols; k < n; k++) { const j = (k / cols) | 0, ex = j / (rows - 1), i3 = k * 3;
+    const fl = Math.sin(env.t * 7.3 + k * 1.7) * 8 * ex;
+    for (let d = 0; d < 3; d++) { const v = (P[i3 + d] - O[i3 + d]) * damp; O[i3 + d] = P[i3 + d];
+      const acc = d === 1 ? -150 : env.wind[d] * (.35 + .65 * ex) * (part.catch ?? 1) + (d === 0 ? fl : fl * .5);
+      P[i3 + d] += v + acc * dt2; } }
+  const link = (i, j, pin) => { const a = i * 3, b = j * 3;
+    const rx = R[b] - R[a], ry = R[b + 1] - R[a + 1], rz = R[b + 2] - R[a + 2], rest = Math.hypot(rx, ry, rz);
+    const dx = P[b] - P[a], dy = P[b + 1] - P[a + 1], dz = P[b + 2] - P[a + 2], d = Math.hypot(dx, dy, dz) || 1e-6, k = (d - rest) / d;
+    if (pin) { P[b] -= dx * k; P[b + 1] -= dy * k; P[b + 2] -= dz * k; }
+    else { P[a] += dx * k / 2; P[a + 1] += dy * k / 2; P[a + 2] += dz * k / 2; P[b] -= dx * k / 2; P[b + 1] -= dy * k / 2; P[b + 2] -= dz * k / 2; } };
+  for (let it = 0; it < 6; it++) {
+    for (let i = 0; i < cols * 3; i++) P[i] = R[i];
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) { const k = j * cols + i;
+      if (j + 1 < rows) link(k, k + cols, j === 0);
+      if (i + 1 < cols) link(k, k + 1, j === 0); else if (loop) link(k, j * cols, j === 0); }
+  }
+  const st = part.stiff || 0, q = [0, 0, 0];
+  for (let k = cols; k < n; k++) { const i3 = k * 3;
+    for (let d = 0; d < 3; d++) P[i3 + d] += (R[i3 + d] - P[i3 + d]) * st;
+    q[0] = P[i3]; q[1] = P[i3 + 1]; q[2] = P[i3 + 2]; if (part.collide !== false) collide(q, J); P[i3] = q[0]; P[i3 + 1] = q[1]; P[i3 + 2] = q[2]; }
+  for (let i = 0; i < cols * 3; i++) P[i] = R[i];
+}
+function drawCloth(S, C, part, J) {
+  const [cols, rows] = dims(part), P = C.p, pt = k => [P[k * 3], P[k * 3 + 1], P[k * 3 + 2]], col = part.col, bias = part.bias || 0;
+  if (part.kind === 'chain') {
+    for (let j = 0; j + 1 < rows; j++) { const far = j >= rows * (part.split ?? .5); S.seg(pt(j), pt(j + 1), far ? part.w[1] : part.w[0], far ? col[1] : col[0], bias); }
+    if (part.tassel) { const e = S.P(pt(rows - 1)); S.dot(e[0], e[1] + 1, e[2] + bias, 1, part.tassel); }
+    return; }
+  const loop = part.kind === 'skirt' && !part.arc, { yf } = frameOf(J, part.f), axis = part.kind === 'skirt' ? J.pelvis : null;
+  for (let j = 0; j + 1 < rows; j++) for (let i = 0; i < (loop ? cols : cols - 1); i++) {
+    const i2 = (i + 1) % cols;
+    if (part.lens && (j + 1 >= part.lens[i] || j + 1 >= part.lens[i2])) continue;
+    if (part.holes && part.holes.some(([hi, hj]) => hi === i && hj === j)) continue;
+    const a = pt(j * cols + i), b = pt(j * cols + i2), c = pt((j + 1) * cols + i2), d = pt((j + 1) * cols + i);
+    const n = V.cross(V.sub(b, a), V.sub(d, a)), mid = V.mul(V.add(V.add(a, b), V.add(c, d)), .25);
+    const o = axis ? [mid[0] - axis[0], 0, mid[2] - axis[2]] : V.mul(yf.F, -1);
+    const outer = (V.dot(n, CAM) > 0) === (V.dot(n, o) > 0);
+    const last = j + 2 >= (part.lens ? Math.min(part.lens[i], part.lens[i2]) : rows);
+    const key = last && col.hem ? col.hem : outer ? (col.edge && (i === 0 || i2 === cols - 1) && !loop ? col.edge : col.out) : col.in;
+    const z = mid[2] + bias, sp = [a, b, c, d].map(q => S.P(q));
+    S.poly(sp, z, key); S.seg(a, d, 1, key, bias); S.seg(b, c, 1, key, bias);
+  }
+}
+
+// =====================================================================================
+//  Rigid clothing parts: shells around the body, lines, knots, plates, arm overlays
+// =====================================================================================
+function drawShell(S, part, J) {
+  const n = 16, rings = part.rings.map(r => ring(frameOf(J, r.f).L, r.u, r.vf, r.vb, r.b, n)), bias = part.bias || 0, ax = J.pelvis;
+  for (let k = 0; k + 1 < rings.length; k++) for (let i = 0; i < n; i++) {
+    const i2 = (i + 1) % n, a = rings[k][i], b = rings[k][i2], c = rings[k + 1][i2], d = rings[k + 1][i];
+    if (part.gap && part.gap(i)) continue;
+    const nn = V.cross(V.sub(b, a), V.sub(d, a)), mid = V.mul(V.add(V.add(a, b), V.add(c, d)), .25);
+    const outer = (V.dot(nn, CAM) > 0) === (V.dot(nn, [mid[0] - ax[0], 0, mid[2] - ax[2]]) > 0);
+    const key = outer ? part.col[k] : (part.inner || 'c0');
+    S.poly([a, b, c, d].map(q => S.P(q)), mid[2] + bias, key);
+    S.seg(a, d, 1, key, bias);
+  }
+}
+function drawPart(S, part, J, st) {
+  if (part.kind === 'shell') return drawShell(S, part, J);
+  if (part.kind === 'line') return bandLine(S, J, part.f, part.u, part.vf, part.vb, part.b, part.col, part.bias || 0, part.w || 1);
+  if (part.kind === 'lapel') { if (J.Hc.F[2] > .25) for (const s of [1, -1]) S.seg(J.Lc(8.6, 2.3, s * 1.4), J.Lc(4.4, 2.5, s * .6), 1, part.col, part.bias); return; }
+  if (part.kind === 'knot') { const q = S.P(frameOf(J, part.f).L(part.u, part.v, part.b)); S.dot(q[0], q[1], q[2] + (part.bias || 0), part.size, part.col); return; }
+  if (part.kind === 'sode') {   // a plate hung from each shoulder over the upper arm
+    for (const k of ['r', 'l']) { const A = J.arm[k], al = V.norm(V.sub(A.el, A.sh)), ac = J.Cy.F, out = V.mul(J.Cy.R, A.s);
+      const q = [V.add(V.add(A.sh, V.mul(out, 1.2)), V.add(V.mul(ac, 1.7), [0, .8, 0])), V.add(V.add(A.sh, V.mul(out, 1.2)), V.add(V.mul(ac, -1.7), [0, .8, 0])),
+        V.add(V.add(A.sh, V.mul(al, 3.4)), V.add(V.mul(out, 1.3), V.mul(ac, -1.9))), V.add(V.add(A.sh, V.mul(al, 3.4)), V.add(V.mul(out, 1.3), V.mul(ac, 1.9)))];
+      const z = (q[0][2] + q[2][2]) / 2 + part.bias; S.poly(q.map(p => S.P(p)), z, part.col); S.seg(q[2], q[3], 1, part.edge, part.bias + .05); }
+    return; }
+  if (part.kind === 'arm') {
+    for (const k of ['r', 'l']) { const A = J.arm[k], near = A.col === 'K';
+      if (part.style === 'wrap') { for (let i = 0; i <= 10; i++) { const t = .35 + .65 * i / 10, q = S.P(V.lerp(A.el, A.hand, t)); S.dot(q[0], q[1], q[2] + part.bias, 1, i % 2 ? part.col[0] : part.col[1]); }
+        const h = S.P(A.hand); S.dot(h[0], h[1], h[2] + part.bias, 2, near ? part.col[1] : part.col[0]); }
+      else { S.seg(V.lerp(A.el, A.hand, .1), V.lerp(A.el, A.hand, .85), 2, near ? part.col[0] : part.col[1], part.bias);
+        const w = S.P(V.lerp(A.el, A.hand, .85)); S.dot(w[0], w[1], w[2] + part.bias + .05, 1, part.edge);
+        const e = S.P(V.lerp(A.el, A.hand, .1)); S.dot(e[0], e[1], e[2] + part.bias + .05, 2, part.edge); }
+    }
+    return; }
+}
+
+// =====================================================================================
+//  The wardrobe: every item is data
+// =====================================================================================
+const TATTER = [11, 9, 11, 8, 10, 7];
+const ITEMS = [
+  // ---- head ----
+  { id: 'straw', slot: 'head', name: 'Wide straw hat', bones: 'head', layer: 'over the head', cloth: false,
+    flavour: 'The one he walked in with. Wide enough to keep the rain, and his eyes, out of sight.',
+    hat: { sit: 3, levels: [{ h: -1, r: 8, fill: 'B', edge: 'K' }, { h: 0, r: 9, fill: 'B', edge: 'G' }, { h: 1, r: 8, fill: 'H', edge: 'G', ew: 2 }, { h: 2, r: 5, fill: 'H', edge: 'G', ew: 2 }, { h: 3, r: 2, fill: 'G', edge: 'G' }] } },
+  { id: 'kasa', slot: 'head', name: "Pilgrim's kasa", bones: 'head', layer: 'over the head', cloth: false,
+    flavour: 'Narrow and tall. The brim sits close, so the glint of his eyes shows.',
+    hat: { sit: 2.6, levels: [{ h: -1, r: 5, fill: 'B', edge: 'K' }, { h: 0, r: 6, fill: 'B', edge: 'G' }, { h: 1, r: 5, fill: 'H', edge: 'G' }, { h: 2, r: 4, fill: 'H', edge: 'G' }, { h: 3, r: 3, fill: 'H', edge: 'G' }, { h: 4, r: 2, fill: 'H', edge: 'G' }, { h: 5, r: 1, fill: 'G', edge: 'G' }] } },
+  { id: 'broken', slot: 'head', name: 'Broken hat', bones: 'head', layer: 'over the head', cloth: false,
+    flavour: 'Split by a blade that almost found him. The notch turns with his head. He never mended it.',
+    hat: { sit: 3, tilt: .05, notch: { at: .9, w: .55, depth: 4, top: 1 }, crack: -.6,
+      levels: [{ h: -1, r: 8, fill: 'B', edge: 'K' }, { h: 0, r: 9, fill: 'B', edge: 'G' }, { h: 1, r: 8, fill: 'H', edge: 'G', ew: 2 }, { h: 2, r: 4, fill: 'H', edge: 'G', ew: 1 }, { h: 3, r: 1.5, fill: 'G', edge: 'G' }] } },
+  // ---- shoulders ----
+  { id: 'mantle', slot: 'shoulders', name: 'Ragged mantle', bones: 'upper spine', layer: '+0.5, over the chest', cloth: 'ragged hem',
+    flavour: 'Short and heavy, frayed at the hem. It settles back onto his shoulders after every cut.',
+    parts: [{ kind: 'shell', rings: [{ f: 'c', u: 8.8, vf: 1.5, vb: -1.8, b: 2.2 }, { f: 'c', u: 7.5, vf: 2.7, vb: -2.9, b: 3.6 }], col: ['c5'], bias: .5 },
+      { kind: 'skirt', f: 'c', ring: { u: 7.5, vf: 2.7, vb: -2.9, b: 3.6 }, cols: 16, rows: 2, drop: [1.9, 4.3], flare: .5, jag: .35, down: 'frame', stiff: .35, catch: .6, col: { out: 'c2', in: 'c0' }, bias: .5 }] },
+  { id: 'crow', slot: 'shoulders', name: 'Crow mantle', bones: 'upper spine', layer: '+0.5, over the chest', cloth: 'feathered layers',
+    flavour: 'Long feathered layers to the elbow. They lift like wings when he turns.',
+    parts: [{ kind: 'shell', rings: [{ f: 'c', u: 8.8, vf: 1.5, vb: -1.8, b: 2.2 }, { f: 'c', u: 7.5, vf: 2.7, vb: -2.9, b: 3.6 }], col: ['c4'], bias: .5 },
+      { kind: 'skirt', f: 'c', ring: { u: 7.5, vf: 2.7, vb: -2.9, b: 3.6 }, cols: 16, rows: 3, drop: [3.4, 5.6], flare: 1.1, jag: .45, down: 'frame', stiff: .12, catch: .8, col: { out: 'c1', in: 'c0', hem: 'c0' }, bias: .5 }] },
+  // ---- neck ----
+  { id: 'scarf', slot: 'neck', name: 'Short scarf', bones: 'neck', layer: '+0.9, over the mantle', cloth: 'one short tail',
+    flavour: 'A wrap and a stub of a tail. Just enough to flick when he stops.',
+    parts: [{ kind: 'shell', rings: [{ f: 'c', u: 8.1, vf: 1.9, vb: -2.1, b: 2.4 }, { f: 'c', u: 9.2, vf: 1.6, vb: -1.8, b: 2.0 }], col: ['c4'], bias: .9 },
+      { kind: 'chain', f: 'c', u: 8.7, v: -2.1, b: 1, n: 5, seg: 1.4, dir: [-.6, -1, .2], w: [2, 1], col: ['c4', 'c3'], stiff: .02, bias: .9 }] },
+  { id: 'longscarf', slot: 'neck', name: 'Long scarf', bones: 'neck', layer: '+0.9, over the mantle', cloth: 'two long tails',
+    flavour: 'Two long tails that stream a body-length behind him when he runs.',
+    parts: [{ kind: 'shell', rings: [{ f: 'c', u: 8.1, vf: 1.9, vb: -2.1, b: 2.4 }, { f: 'c', u: 9.2, vf: 1.6, vb: -1.8, b: 2.0 }], col: ['c3'], bias: .9 },
+      { kind: 'chain', f: 'c', u: 8.7, v: -2.1, b: .9, n: 14, seg: 1.5, dir: [-.6, -1, .2], w: [2, 1], split: .6, col: ['c3', 'c2'], catch: 1.4, bias: .9 },
+      { kind: 'chain', f: 'c', u: 8.5, v: -2.1, b: -.3, n: 9, seg: 1.4, dir: [-.6, -1, -.2], w: [1, 1], col: ['c2', 'c2'], catch: 1.2, bias: .85 }] },
+  // ---- back ----
+  { id: 'cape', slot: 'back', name: 'Short cape', bones: 'upper spine', layer: 'behind the back', cloth: 'grid 5 x 7',
+    flavour: 'Shoulder to hip. It swings wide on a turn and snaps back.',
+    parts: [{ kind: 'sheet', f: 'c', u: 8.1, v: -2.3, b0: -2.5, b1: 2.5, cols: 5, rows: 7, seg: 1.5, back: .3, stiff: .01, col: { out: 'c4', in: 'c1', hem: 'c2', edge: 'c5' }, bias: 0 }] },
+  { id: 'tattered', slot: 'back', name: 'Tattered long cape', bones: 'upper spine', layer: 'behind the back', cloth: 'grid 6 x 11, torn',
+    flavour: 'Torn to the knee, with holes you can see the floor through.',
+    parts: [{ kind: 'sheet', f: 'c', u: 8.1, v: -2.3, b0: -2.7, b1: 2.7, cols: 6, rows: 11, seg: 1.6, back: .3, stiff: .005, lens: TATTER, holes: [[1, 5], [3, 7], [4, 3]], col: { out: 'c2', in: 'c0', hem: 'c1', edge: 'c4' }, bias: 0 }] },
+  // ---- waist ----
+  { id: 'obi', slot: 'waist', name: 'Obi sash', bones: 'pelvis', layer: '+0.3, over the hips', cloth: 'two tails',
+    flavour: 'A wide sash, knotted at the back, its two tails following him.',
+    parts: [{ kind: 'shell', rings: [{ f: 'h', u: 1.4, vf: 2.3, vb: -2.3, b: 2.6 }, { f: 'h', u: 3.1, vf: 2.3, vb: -2.4, b: 2.6 }], col: ['c3'], bias: .3 },
+      { kind: 'line', f: 'h', u: 3.1, vf: 2.3, vb: -2.4, b: 2.6, col: 'c5', bias: .35 },
+      { kind: 'knot', f: 'h', u: 2.3, v: -2.7, b: -.6, size: 2, col: 'c4', bias: .4 },
+      { kind: 'chain', f: 'h', u: 2, v: -2.8, b: -.9, n: 5, seg: 1.3, dir: [-.3, -1, 0], w: [2, 1], col: ['c3', 'c2'], bias: .35 },
+      { kind: 'chain', f: 'h', u: 2, v: -2.8, b: -.2, n: 4, seg: 1.3, dir: [-.3, -1, .2], w: [1, 1], col: ['c2', 'c2'], bias: .3 }] },
+  { id: 'cord', slot: 'waist', name: "Wanderer's cord", bones: 'pelvis', layer: '+0.3, over the hips', cloth: 'one tassel',
+    flavour: 'A thin rope belt. One tasselled end swings at his left hip.',
+    parts: [{ kind: 'line', f: 'h', u: 2.3, vf: 2.25, vb: -2.3, b: 2.55, col: 'c5', bias: .3 },
+      { kind: 'knot', f: 'h', u: 2.2, v: 1.3, b: -2.2, size: 2, col: 'c5', bias: .35 },
+      { kind: 'chain', f: 'h', u: 2, v: 1.3, b: -2.4, n: 5, seg: 1.2, dir: [.1, -1, -.1], w: [1, 1], col: ['c5', 'c4'], tassel: 'c4', bias: .35 }] },
+  // ---- body ----
+  { id: 'plates', slot: 'body', name: 'Lamellar plates', bones: 'spine, upper arms, pelvis', layer: '+0.2 chest, +0.8 shoulders', cloth: 'stiff hip plates',
+    flavour: 'Light lacquered plates on the chest, shoulders and hips. Enough to turn a glancing cut.',
+    parts: [{ kind: 'shell', rings: [{ f: 'c', u: 4.2, vf: 2.4, vb: -2.6, b: 2.6 }, { f: 'c', u: 7.4, vf: 2.7, vb: -2.8, b: 3.1 }], col: ['c3'], bias: .2 },
+      { kind: 'line', f: 'c', u: 5.3, vf: 2.5, vb: -2.7, b: 2.8, col: 'c5', bias: .25 }, { kind: 'line', f: 'c', u: 6.4, vf: 2.6, vb: -2.75, b: 3.0, col: 'c5', bias: .25 },
+      { kind: 'skirt', f: 'h', ring: { u: 1, vf: 2.5, vb: -2.6, b: 2.9 }, cols: 8, rows: 2, drop: [3.6, 3.6], flare: 1, down: 'frame', stiff: .45, catch: .3, col: { out: 'c2', in: 'c0', hem: 'c4' }, bias: .2 },
+      { kind: 'sode', col: 'c3', edge: 'c5', bias: .8 }] },
+  { id: 'coat', slot: 'body', name: 'Long coat', bones: 'spine, pelvis', layer: '+0.15 over the body', cloth: 'open skirts',
+    flavour: 'Knee-length and open at the front, so the skirts part around his legs.',
+    parts: [{ kind: 'shell', rings: [{ f: 'h', u: .3, vf: 2.3, vb: -2.3, b: 2.6 }, { f: 'c', u: 4, vf: 2.3, vb: -2.4, b: 2.5 }, { f: 'c', u: 7.3, vf: 2.6, vb: -2.7, b: 3.1 }, { f: 'c', u: 8.7, vf: 1.8, vb: -2, b: 2.1 }], col: ['c1', 'c1', 'c3'], bias: .15 },
+      { kind: 'lapel', col: 'c4', bias: .3 },
+      { kind: 'skirt', f: 'h', ring: { u: .5, vf: 2.6, vb: -2.7, b: 3 }, arc: [.5, TAU - .5], cols: 12, rows: 4, drop: [5.4, 6], flare: 1.3, stiff: .05, col: { out: 'c1', in: 'c0', hem: 'c0', edge: 'c3' }, bias: .15 }] },
+  // ---- hands ----
+  { id: 'wraps', slot: 'hands', name: 'Hand wraps', bones: 'forearms, hands', layer: '+0.3 on the arm', cloth: false,
+    flavour: 'Cloth bound from knuckle to elbow, for the grip.',
+    parts: [{ kind: 'arm', style: 'wrap', col: ['c5', 'c3'], bias: .3 }] },
+  { id: 'kote', slot: 'hands', name: 'Iron kote', bones: 'forearms, hands', layer: '+0.3 on the arm', cloth: false,
+    flavour: 'Armoured sleeves, plated from the wrist to the elbow.',
+    parts: [{ kind: 'arm', style: 'kote', col: ['c3', 'c4'], edge: 'c6', bias: .3 }] },
+  // ---- weapon ----
+  { id: 'katana', slot: 'weapon', name: 'Katana', bones: 'pelvis (scabbard), either hand', layer: 'depth of the hand', cloth: false,
+    flavour: 'Worn at the left hip. Drawn with either hand, sheathed unless he is fighting.' },
+];
+const BY_ID = Object.fromEntries(ITEMS.map(i => [i.id, i]));
+const SLOTS = [['head', 'Head'], ['shoulders', 'Shoulders'], ['neck', 'Neck'], ['back', 'Back'], ['waist', 'Waist'], ['body', 'Body'], ['hands', 'Hands'], ['weapon', 'Weapon']];
+const OUTFITS = [
+  { name: 'Wanderer', items: ['straw', 'mantle', 'obi', 'wraps', 'katana'] },
+  { name: 'Ghost', items: ['broken', 'longscarf', 'tattered', 'cord', 'katana'] },
+  { name: 'Retainer', items: ['kasa', 'plates', 'cape', 'obi', 'kote', 'katana'] },
+  { name: 'Night coat', items: ['straw', 'crow', 'coat', 'scarf', 'katana'] },
+];
+
+// =====================================================================================
+//  A figure: skeleton, body, items, cloth
+// =====================================================================================
+function makeFigure(o) { return { yaw: 0, outfit: new Set(), cloth: new Map(), t: 0, vel: [0, 0], pal: PK, bare: false, ...o }; }
+function drawFigure(S, F, pose, dt) {
+  const J = solve(pose, F.yaw), wear = [...F.outfit].map(id => BY_ID[id]).filter(Boolean);
+  const st = { katana: F.outfit.has('katana') || F.bare, hat: wear.find(i => i.hat), blink: F.blink, bare: F.bare };
+  S.pal = F.pal; S.clear();
+  drawBody(S, J, st);
+  if (st.hat && !F.bare) drawHat(S, J, st.hat.hat);
+  const env = { t: F.t, wind: [Math.sin(F.t * .9) * 9 + Math.sin(F.t * 2.1) * 4 - F.vel[0] * 1.3, 0, Math.sin(F.t * .7 + 1) * 3 - F.vel[1] * 1.3] };
+  const live = new Set();
+  for (const it of wear) (it.parts || []).forEach((part, pi) => {
+    if (part.kind === 'chain' || part.kind === 'sheet' || part.kind === 'skirt') {
+      const key = it.id + ':' + pi; live.add(key);
+      let C = F.cloth.get(key); const [c, r] = dims(part); if (!C) { C = new Cloth(c * r); F.cloth.set(key, C); }
+      const steps = dt > 0 ? Math.min(3, Math.max(1, Math.round(dt * 60))) : 0;
+      for (let k = 0; k < steps; k++) clothStep(C, part, J, env, 1 / 60);
+      if (!C.ok) clothStep(C, part, J, env, 0);
+      drawCloth(S, C, part, J);
+    } else drawPart(S, part, J, st);
+  });
+  for (const k of F.cloth.keys()) if (!live.has(k)) F.cloth.delete(k);   // taken off: its cloth starts fresh next time
+  return J;
+}
+function blit(g, S, x, y) {   // the figure, its faint reflection and its contact shadow, as in the executions
+  const c = S.flush();
+  g.save(); g.globalAlpha = .17; g.translate(0, 2 * y + 1); g.scale(1, -1); g.drawImage(c, Math.round(x) - S.ox, Math.round(y) - S.oy); g.restore();
+  g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(Math.round(x) - 5, Math.round(y) + 1, 10, 1);
+  g.drawImage(c, Math.round(x) - S.ox, Math.round(y) - S.oy);
+}
+function floorTile(W, H, seed) { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); let r = seed;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  g.fillStyle = '#474c4a'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < W * H / 40; i++) { g.fillStyle = rnd() < .5 ? '#434846' : '#4b504e'; g.fillRect(rnd() * W | 0, rnd() * H | 0, 2, 1); } return c; }
+
+// =====================================================================================
+//  The old side-view rig, verbatim, for the comparison
+// =====================================================================================
+const RC1 = { K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', H: '#2a2f37', G: '#3b424c', B: '#1a1d24', E: '#6ff3e4', W: '#e9eeee', S: '#7d868e', s: '#2c3037' };
+const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
+const REST1 = { hx: 0, hy: 0, lean: .04, chest: 0, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12], sword: null, bsword: null, sheathing: false, hat: 0, flutter: 0 };
+function rigV1(g, p) {
+  const OX = 24, OY = 40, fx = 0;
+  const put = (x, y, c) => { g.fillStyle = RC1[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
+  const blob = (x, y, w, c) => { g.fillStyle = RC1[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
+  const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2)); for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
+  const poly = (pts, c) => { const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+    for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++) for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) { let inside = false;
+      for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) { const [xi, yi] = pts[i], [xj, yj] = pts[j]; if ((yi > y + .5) !== (yj > y + .5) && x + .5 < (xj - xi) * (y + .5 - yi) / (yj - yi) + xi) inside = !inside; }
+      if (inside) put(x, y, c); } };
+  const hip = [OX + p.hx, OY - 11 + p.hy], up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
+  const up2 = [Math.sin(p.lean + p.chest), -Math.cos(p.lean + p.chest)], fw2 = [Math.cos(p.lean + p.chest), Math.sin(p.lean + p.chest)];
+  const L = (u, v) => { const b = u > 4 ? p.breath * Math.min(1, (u - 4) / 3) : 0; if (u <= 4) return [hip[0] + up[0] * u + fw[0] * v, hip[1] + up[1] * u + fw[1] * v];
+    const w = [hip[0] + up[0] * 4, hip[1] + up[1] * 4]; return [w[0] + up2[0] * (u - 4) + fw2[0] * v, w[1] + up2[1] * (u - 4) + fw2[1] * v - b]; };
+  const dir = a => [Math.sin(a), Math.cos(a)], add = (a, d, k) => [a[0] + d[0] * k, a[1] + d[1] * k];
+  const leg = ([th, kn], c, off) => { const h = L(0, off), k = add(h, dir(th), 5), f = add(k, dir(th - kn), 6); seg(h, k, 2, c); seg(k, f, 2, c); seg(f, [f[0] + 2, f[1]], 1, c); };
+  const arm = ([sh, el], c) => { const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4); seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
+  const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
+  seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
+  const bh = arm(p.ba, 'D');
+  if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
+  leg(p.bl, 'D', -.5);
+  poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
+  for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');
+  leg(p.fl, 'K', .5);
+  const hc = L(10, .6);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
+  put(hc[0] + 1.5, hc[1], 'E');
+  const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
+  HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x, hy0 + y, ch); }));
+  const f = p.flutter;
+  poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M'); seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm'); if (f > .5) put(...L(2.6, -3.4), 'M');
+  const hand = arm(p.fa, 'K');
+  if (p.sword === null && !p.sheathing && p.bsword == null) { put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W'); }
+  else if (p.sword !== null) { const d = [Math.cos(p.sword), Math.sin(p.sword)]; seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S'); seg(add(hand, d, 1), add(hand, d, 13), 1, 'W'); }
+}
+const toV1 = p => ({ ...REST1, hx: p.hx, hy: p.hy, lean: p.lean, chest: p.chest, breath: p.breath, fl: p.rl.slice(0, 2), bl: p.ll.slice(0, 2), fa: p.ra.slice(0, 2), ba: p.la.slice(0, 2), sword: p.sword, bsword: p.lsword, hat: p.hat });
+const v1c = document.createElement('canvas'); v1c.width = v1c.height = 48; const v1g = v1c.getContext('2d');
+
+// =====================================================================================
+//  The page
+// =====================================================================================
+const pv = document.getElementById('pv'), pg = pv.getContext('2d'), ov = document.getElementById('ov'), og = ov.getContext('2d');
+const PW = 160, PH = 108, pfloor = floorTile(PW, PH, 41), HERO = { x: 80, y: 78 };
+const preview = new Sprite(72, 64, 36, 52), foeSprite = new Sprite(72, 64, 36, 52);
+const hero = makeFigure({ outfit: new Set(OUTFITS[0].items) });
+const foe = makeFigure({ pal: FOE_PK, bare: true });
+const ui = { yaw: 0, pose: 'idle', twist: 0, head: 0, bones: false, foe: true, spin: false, slow: false };
+const DIRS = [['NW', '↖', 225, 'up and left'], ['N', '↑', 270, 'up, away from the camera'], ['NE', '↗', 315, 'up and right'],
+  ['W', '←', 180, 'left'], null, ['E', '→', 0, 'right'], ['SW', '↙', 135, 'down and left'], ['S', '↓', 90, 'down, toward the camera'], ['SE', '↘', 45, 'down and right']];
+const compass = document.getElementById('compass'), dirBtns = [];
+DIRS.forEach(d => { if (!d) { const hub = document.createElement('div'); hub.className = 'hub'; hub.textContent = 'FACE'; compass.append(hub); return; }
+  const b = document.createElement('button'); b.type = 'button'; b.textContent = d[1]; b.setAttribute('aria-label', 'Face ' + d[3]); b.dataset.deg = d[2];
+  b.addEventListener('click', () => { ui.yaw = d[2] * Math.PI / 180; ui.spin = false; document.getElementById('spin').checked = false; syncDirs(); });
+  compass.append(b); dirBtns.push(b); });
+function syncDirs() { const deg = ((Math.round(ui.yaw * 180 / Math.PI) % 360) + 360) % 360; dirBtns.forEach(b => b.setAttribute('aria-pressed', String(!ui.spin && +b.dataset.deg === deg))); }
+const posesEl = document.getElementById('poses'), poseBtns = [];
+POSES.forEach(P => { const b = document.createElement('button'); b.type = 'button'; b.textContent = P.name;
+  b.addEventListener('click', () => { ui.pose = P.id; heroClock = 0; poseBtns.forEach(x => x.setAttribute('aria-pressed', String(x === b))); });
+  b.setAttribute('aria-pressed', String(P.id === ui.pose)); posesEl.append(b); poseBtns.push(b); });
+for (const [id, key, out] of [['twist', 'twist', 'twist-o'], ['head', 'head', 'head-o']]) { const el = document.getElementById(id), o = document.getElementById(out);
+  el.addEventListener('input', () => { ui[key] = +el.value; o.textContent = (+el.value > 0 ? '+' : '') + el.value + '°'; }); }
+document.getElementById('bones').addEventListener('change', e => { ui.bones = e.target.checked; document.getElementById('legend').hidden = !ui.bones; });
+document.getElementById('foe').addEventListener('change', e => ui.foe = e.target.checked);
+document.getElementById('spin').addEventListener('change', e => { ui.spin = e.target.checked; syncDirs(); });
+document.getElementById('slow').addEventListener('change', e => ui.slow = e.target.checked);
+syncDirs();
+
+// wardrobe
+const slotsEl = document.getElementById('slots'), itemBtns = new Map();
+for (const [slot, label] of SLOTS) {
+  const row = document.createElement('div'); row.className = 'slot'; row.setAttribute('role', 'group'); row.setAttribute('aria-labelledby', 'slot-' + slot);
+  row.innerHTML = `<h3 id="slot-${slot}">${label}</h3><div class="items"></div>`;
+  for (const it of ITEMS.filter(i => i.slot === slot)) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'item';
+    b.innerHTML = `<b>${it.name}</b><span>${it.flavour}</span><small>${it.bones} · ${it.cloth ? 'cloth: ' + it.cloth : 'rigid'}</small>`;
+    b.addEventListener('click', () => { const on = hero.outfit.has(it.id);
+      for (const o of ITEMS) if (o.slot === it.slot) hero.outfit.delete(o.id);
+      if (!on) hero.outfit.add(it.id); syncWard(); });
+    row.querySelector('.items').append(b); itemBtns.set(it.id, b); }
+  slotsEl.append(row); }
+const presetsEl = document.getElementById('presets');
+[...OUTFITS, { name: 'Bare', items: [] }].forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.textContent = o.name;
+  b.addEventListener('click', () => { hero.outfit = new Set(o.items); syncWard(); }); presetsEl.append(b); });
+function syncWard() {
+  for (const [id, b] of itemBtns) b.setAttribute('aria-pressed', String(hero.outfit.has(id)));
+  const on = ITEMS.filter(i => hero.outfit.has(i.id)).map(i => i.name.toLowerCase());
+  document.getElementById('wearing').textContent = on.length ? 'Wearing: ' + on.join(', ') + '.' : 'Nothing: the bare body, no blade.';
+}
+syncWard();
+{ const it = BY_ID.mantle, show = { id: it.id, slot: it.slot, name: it.name, bones: it.bones, parts: it.parts };
+  document.getElementById('sample').textContent = JSON.stringify(show, null, 1).replace(/\n\s+(?=[\d\-."\]}])/g, ' ').replace(/\n\s+(?="(vf|vb|b|u|cols|rows|drop|flare|jag|down|stiff|catch|col|bias|in|out)")/g, ' '); }
+
+// lineup
+const lineup = document.getElementById('lineup'), lg = lineup.getContext('2d'), lfloor = floorTile(424, 64, 77), LSprite = new Sprite(72, 64, 36, 52);
+const LDIRS = [90, 0, 270, 180];
+const lineFigs = OUTFITS.flatMap((o, i) => LDIRS.map((d, j) => ({ F: makeFigure({ yaw: d * Math.PI / 180, outfit: new Set(o.items) }), x: 16 + i * 104 + j * 24, phase: i * 1.3 + j * .4 })));
+document.getElementById('lineup-labels').innerHTML = OUTFITS.map(o => `<span>${o.name}</span>`).join('');
+
+// comparison
+const cmp = document.getElementById('cmp'), cg = cmp.getContext('2d'), cfloor = floorTile(300, 52, 13), CSprite = new Sprite(72, 64, 36, 52);
+const CPOSES = [t => POSES[0].at(t), t => runAt(t), () => GUARD, () => pz({ ...FOLLOW, lean: .56, chest: .46 }), t => POSES[4].at(t)];
+const cmpFigs = CPOSES.map(() => makeFigure({ outfit: new Set(['straw', 'mantle', 'katana']) }));
+
+// the overlay: bones drawn crisp over the zoomed preview
+let ovScale = 4;
+function sizeOverlay() { const r = pv.getBoundingClientRect(), d = devicePixelRatio || 1; ov.width = Math.round(r.width * d); ov.height = Math.round(r.height * d); ovScale = ov.width / PW; }
+new ResizeObserver(sizeOverlay).observe(pv); sizeOverlay();
+function drawBones(J, ox, oy) {
+  og.clearRect(0, 0, ov.width, ov.height); if (!J) return;
+  const s = ovScale, P = q => [(ox + q[0] + .5) * s, (oy - q[1] + q[2] * KZ + .5) * s];
+  const line = (a, b, col, w = .28) => { const A = P(a), B = P(b); og.strokeStyle = col; og.lineWidth = w * s; og.beginPath(); og.moveTo(...A); og.lineTo(...B); og.stroke(); };
+  const joint = (a, col) => { const A = P(a); og.fillStyle = col; og.fillRect(A[0] - .35 * s, A[1] - .35 * s, .7 * s, .7 * s); };
+  og.lineCap = 'round';
+  const RC = '#6ff3e4', LC = '#7d868e', SC = '#eef1f0';
+  for (const k of ['l', 'r']) { const c = k === 'r' ? RC : LC, A = J.arm[k], L = J.leg[k];
+    line(J.pelvis, L.hip, c); line(L.hip, L.knee, c); line(L.knee, L.ank, c); line(L.ank, L.toe, c);
+    line(J.chest, A.sh, c); line(A.sh, A.el, c); line(A.el, A.hand, c);
+    for (const q of [L.hip, L.knee, L.ank, A.sh, A.el, A.hand]) joint(q, c); }
+  line(J.pelvis, J.waist, SC); line(J.waist, J.chest, SC); line(J.chest, J.neck, SC); line(J.neck, J.head, SC);
+  for (const q of [J.pelvis, J.waist, J.chest, J.neck, J.head]) joint(q, SC);
+  const arrow = (o, f, col) => { const e = V.add(o, V.mul([f[0], 0, f[2]], 6)); line(o, e, col, .2); const A = P(e); og.fillStyle = col; og.beginPath(); og.arc(A[0], A[1], .45 * s, 0, TAU); og.fill(); };
+  arrow(J.pelvis, J.Hy.F, '#9aa3a1'); arrow(J.chest, J.Cy.F, RC); arrow(J.head, J.Hd.F, SC);
+}
+
+// the loop
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let last = performance.now(), clock = 0, heroClock = 0;
+const shortest = (a, b) => { let d = (b - a) % TAU; if (d > Math.PI) d -= TAU; if (d < -Math.PI) d += TAU; return d; };
+function tick(now) {
+  let dt = Math.min(.05, (now - last) / 1000); last = now; if (ui.slow) dt /= 2; if (still) dt = 0;
+  clock += dt; heroClock += dt;
+  // the preview: he turns toward the chosen direction instead of snapping, so the cloth swings
+  if (ui.spin) ui.yaw += dt * 1.1;
+  hero.yaw += shortest(hero.yaw, ui.yaw) * Math.min(1, dt * 12);
+  const P = POSES.find(p => p.id === ui.pose);
+  const pose = { ...P.at(heroClock) }; pose.twist += ui.twist * Math.PI / 180; pose.headYaw += ui.head * Math.PI / 180;
+  hero.t = clock; hero.blink = !still && clock % 3.4 < .12;
+  const sp = P.speed || 0; hero.vel = [Math.cos(hero.yaw) * sp, Math.sin(hero.yaw) * sp];
+  pg.drawImage(pfloor, 0, 0);
+  const items = [];
+  const HJ = drawFigure(preview, hero, pose, dt); const heroImg = { y: HERO.y, d: () => blit(pg, preview, HERO.x, HERO.y) };
+  items.push(heroImg);
+  if (ui.foe) { const fx = HERO.x + Math.cos(hero.yaw) * 48, fy = HERO.y + Math.sin(hero.yaw) * 24;
+    foe.yaw = hero.yaw + Math.PI; foe.t = clock;
+    drawFigure(foeSprite, foe, pz({ ...GUARD, breath: breathAt(clock + .7) }), dt);
+    const img = foeSprite; items.push({ y: fy, d: () => blit(pg, img, fx, fy) }); }
+  // blit each after drawing its sprite: sprites are reused, so flush happens inside blit in draw order
+  items.sort((a, b) => a.y - b.y).forEach(i => i.d());
+  if (ui.bones) drawBones(HJ, HERO.x - preview.ox + preview.ox, HERO.y); else og.clearRect(0, 0, ov.width, ov.height);
+
+  // the lineup
+  lg.drawImage(lfloor, 0, 0);
+  lg.fillStyle = 'rgba(111,243,228,.5)'; for (let x = 0; x < 424; x += 4) lg.fillRect(x, 50 - 26, 2, 1);
+  for (const L of lineFigs) { L.F.t = clock + L.phase; L.F.blink = !still && (clock + L.phase) % 3.4 < .12;
+    drawFigure(LSprite, L.F, POSES[0].at(clock + L.phase), dt); blit(lg, LSprite, L.x, 50); }
+
+  // old beside new
+  cg.drawImage(cfloor, 0, 0);
+  CPOSES.forEach((fn, i) => { const p = fn(clock), x0 = i * 60;
+    v1g.clearRect(0, 0, 48, 48); rigV1(v1g, toV1(p));
+    cg.save(); cg.globalAlpha = .17; cg.translate(0, 2 * 42 + 1); cg.scale(1, -1); cg.drawImage(v1c, x0 + 17 - 24, 42 - 40); cg.restore();
+    cg.fillStyle = 'rgba(18,22,22,.4)'; cg.fillRect(x0 + 12, 43, 10, 1); cg.drawImage(v1c, x0 + 17 - 24, 42 - 40);
+    const F = cmpFigs[i]; F.t = clock; drawFigure(CSprite, F, p, dt); blit(cg, CSprite, x0 + 42, 42);
+    if (i) { cg.fillStyle = '#30353a'; cg.fillRect(x0, 0, 1, 52); } });
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
