@@ -33,6 +33,16 @@ Every tile has one record both systems read:
   - `player`: the ronin's, worked by him and his companions.
 - `danger`: what walks there (the world's spawns and patrols).
 
+## Working your land (owner, 2026-09-26)
+
+For the land session to build; recorded here so both sides fit it.
+
+- **Jobs on your plots.** On a plot you own, you assign companions jobs on its tiles: plant, clear, clear a tree, and so on.
+- **Tile features that block and give.** A tree on a tile blocks other uses of that tile (you cannot plant or build there), but it gives its own harvest (pick apples, gather wood). Clearing it frees the tile and ends that harvest. Every feature decides what it blocks and what it grants, the same way terrain decides which recipes can run.
+- **Auto-manage.** You can instead set companions to run your place for you, with permissions you choose: may they **buy**, **sell**, **build**, or **only work tasks nobody else is handling**.
+- **Personality decides the rest.** Whether a companion takes up work on their own, and how well, depends on their personality (the 52 traits already on every person: a lazy one waits to be told, an eager one finds work, a proud one will not do menial jobs, a greedy one sells too cheap or skims). The same traits that change how they walk now change how they keep your land.
+- **What the world gives this:** tiles with terrain, features and resources (`src/sim/zone.js`); prices and markets to buy and sell in (the economy lane); companions and their traits (`src/party/`, `src/traits/`); the clock that keeps the work going while you are away (`src/sim/ledger.js`, real time).
+
 ## Where they touch
 
 - **Destroying a base** (world) turns its plots neutral: they become `nature`, so they are claimable (land). Nothing spawns there again.
