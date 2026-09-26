@@ -59,6 +59,11 @@ try {
   const run = async (name, fn) => { step = name; await fn(); console.log(`  ok  ${name}`); };
 
   await run('move', async () => { await kb.down('d'); await reach(/^run$/); await sleep(300); await shot('01-run'); await kb.up('d'); await reach(/^idle$/); });
+  await run('eight facings: he turns toward and away from the camera as he moves (the port system)', async () => {
+    for (const [keys, view] of [[['s'], 'S'], [['d', 's'], 'SE'], [['w'], 'N'], [['a', 'w'], 'NE'], [['d'], 'E']]) {
+      for (const k of keys) await kb.down(k); await reach(/^run$/);
+      await until(`facing ${view}`, v => window.__game.P.view === v, view); await sleep(150);
+      for (const k of keys) await kb.up(k); await reach(/^idle$/); await shot(`01a-facing-${view}`); } });
   await run('hold V: walk', async () => { await kb.down('v'); await kb.down('d'); await reach(/^walk$/); await sleep(300); await shot('01b-walk');
     await kb.up('d'); await kb.up('v'); await reach(/^idle$/); });
   await run('personality: a trait mix re-bakes how he stands and walks', async () => {

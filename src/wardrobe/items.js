@@ -1,6 +1,7 @@
 import { TAU, V } from './skeleton.js';
 import { bone } from './cloth.js';
 import { bandLine, ring } from './raster.js';
+import { drawHat3d } from '../rig/body3d.js';
 
 // ---- The wardrobe: every item is data, measured from the bones, so it fits every pose (and, with rig v2, every facing) ----
 // Items and numbers from prototypes/19-rig-v2-and-clothing.html. Frames: 'h' hips, 'c' chest; u up the spine, v forward, b to his right.
@@ -9,10 +10,12 @@ const TATTER = [11, 9, 11, 8, 10, 7];
 const MANTLE_RING = { f: 'c', u: 7.5, vf: 2.7, vb: -2.9, b: 3.6 }, NECK = [{ f: 'c', u: 8.1, vf: 1.9, vb: -2.1, b: 2.4 }, { f: 'c', u: 9.2, vf: 1.6, vb: -1.8, b: 2.0 }];
 // the straw hat, side on: wide enough to keep the rain, and his eyes, out of sight (keep its height-to-width ratio)
 const STRAW = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
+// and from every other facing: rig v2's stacked ellipses (prototypes/19)
+const STRAW_3D = { sit: 3, levels: [{ h: -1, r: 8, fill: 'B', edge: 'K' }, { h: 0, r: 9, fill: 'B', edge: 'G' }, { h: 1, r: 8, fill: 'H', edge: 'G', ew: 2 }, { h: 2, r: 5, fill: 'H', edge: 'G', ew: 2 }, { h: 3, r: 2, fill: 'G', edge: 'G' }] };
 export const ITEMS = [
   // ---- head ----
   { id: 'straw', slot: 'head', name: 'Wide straw hat', about: 'The one he walked in with. Its brim tips forward on a cut.',
-    parts: [{ kind: 'sidehat', rows: STRAW, bias: 2.6 }] },   // over his head and eye, under the mantle and the near arm
+    parts: [{ kind: 'sidehat', rows: STRAW, hat3d: STRAW_3D, bias: 2.6 }] },   // over his head and eye, under the mantle and the near arm
   // ---- shoulders ----
   { id: 'mantle', slot: 'shoulders', name: 'Flat mantle', about: 'His mantle from the start. Draped flat down the back, never a hump; its tip lifts a hair when he moves.',
     parts: [{ kind: 'drape', col: 'M', edge: 'm', bias: 2.65 }] },   // over the head and hat, under the near arm, as it always was
@@ -73,6 +76,7 @@ export const OUTFITS = [
 ];
 
 // ---- Rigid parts: shells round the body, lines, knots, plates, arm overlays, and the flat mantle ----
+const DRAPE_3D = [{ f: 'c', u: 8.8, vf: 1.5, vb: -1.8, b: 2.2 }, { f: 'c', u: 6.8, vf: 2.5, vb: -3.0, b: 3.3 }];
 function drawShell(S, part, J) {
   const n = 16, rings = part.rings.map(r => ring(bone(J, r.f).L, r.u, r.vf, r.vb, r.b, n)), bias = part.bias || 0, ax = J.pelvis, cam = V.norm([0, S.kz, 1]);
   for (let k = 0; k + 1 < rings.length; k++) for (let i = 0; i < n; i++) {
@@ -91,10 +95,12 @@ export function drawPart(S, part, J) {
   if (part.kind === 'lapel') { if (J.Hc.F[2] > .25) for (const s of [1, -1]) S.seg(J.Lc(8.6, 2.3, s * 1.4), J.Lc(4.4, 2.5, s * .6), 1, part.col, bias); return; }
   if (part.kind === 'knot') { const q = S.P(bone(J, part.f).L(part.u, part.v, part.b)); S.dot(q[0], q[1], q[2] + bias, part.size, part.col); return; }
   if (part.kind === 'sidehat') {  // a hat drawn side on, its brim resting on the head, nudged forward by the pose (p.hat)
+    if (!J.flat) return drawHat3d(S, J, part.hat3d, 0);   // any other facing: the same hat in the round
     const [hx, hy] = J.hc, w = part.rows[0].length, x0 = Math.round(hx) - (w >> 1) + 1 + J.p.hat, y0 = Math.round(hy) - 1 - part.rows.length;
     part.rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') S.px(Math.round(x0 + x), y0 + y, bias, ch); }));
     return; }
   if (part.kind === 'drape') {   // the game's first mantle, flat down the back: the side rig's polygon, its back tip lifting with the flutter
+    if (!J.flat) return drawShell(S, { rings: DRAPE_3D, col: [part.col], inner: part.edge, bias: .5 }, J);   // any other facing: a close shell over the shoulders
     const L = (u, v) => S.P(J.L(u, v, 0)), f = J.p.flutter || 0, z = bias;
     S.poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], z, part.col);
     S.seg(J.L(8.4, 2.1, 0), J.L(8.8, -1.4, 0), 1, part.edge, bias);

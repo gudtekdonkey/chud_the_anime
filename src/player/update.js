@@ -38,6 +38,8 @@ export function update(dt, inp) {
   const free = s === 'idle' || s === 'run' || s === 'walk' || s === 'idleGlitch' || s === 'sit' || s === 'sitDown';
   const canAttack = free || s === 'land' || s === 'sheathe' || s.startsWith('ready') || s === 'runArmed';
   if (inp.mx) P.face = Math.sign(inp.mx);
+  // the way he faces as he moves: side on, three-quarters or straight toward or away from the camera (the west side mirrors the east)
+  if (inp.mx || inp.my) P.view = inp.my > 0 ? (inp.mx ? 'SE' : 'S') : inp.my < 0 ? (inp.mx ? 'NE' : 'N') : 'E';
   const moving = inp.mx || inp.my;
 
   updateItems(dt, canAttack && s !== 'sit' && s !== 'sitDown');
