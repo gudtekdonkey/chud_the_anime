@@ -66,6 +66,10 @@ Decisions made in the design sessions so far, newest last.
 - In the game: a picker under the screen, and hold **V** to walk (new). The samurai can take the same traits, since they share his rig.
 - **Approved:** keep all 52 traits as they are ("they're all great"). Merged to main.
 - **Decided:** the ronin keeps the personality he has: no traits by default, so he stands, walks and runs as drawn. The picker stays for trying mixes.
+## HUD
+
+- **Skill bar, like League of Legends:** bottom centre. The Storm Chain passive on the left (the Qi fills its icon; during the storm its 8 s drain as a sweep), then I, O, P, N and U, then K (the flash) and slide as the two summoner-style slots. Each slot shows its cooldown as a dark clockwise sweep with the seconds left, whole seconds then tenths under one.
+- **Cooldowns on every active.** The flash (K) is recastable after an assassination: its cooldown drops to 0.2 s. Starting values, to tune: K 3 s, I 2 s (Thousand Cuts 8 s), O 10 s, P 12 s, N 14 s, U 8 s, slide 1 s. K keeps the old rule that with no enemy near you can spam it.
 
 ## Next
 

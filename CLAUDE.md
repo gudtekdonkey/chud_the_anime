@@ -35,6 +35,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `player/skills.js` | Charging (`chargeUp`), Thousand Cuts (`TC`), Cross Rift (`RIFT`), the dash, `release`/`charged` |
 | `player/mirror.js` | Mirror Meditation: the mirror images' timeline |
 | `player/hits.js` | Hit tests against the dummies, `burst` (the sheath-click payoff) |
+| `player/cooldowns.js` | `CD` (every active's cooldown), `startCd`, `gate` (refuses a key on cooldown), `onAssassination` (K back in 0.2 s) |
 | `player/qi.js` | The Qi meter's gains and Storm Chain (`chainFrom`) |
 | `player/body.js` | His silhouette points (sparks and bolts land on his body), `motes`, `glowK` |
 | `player/personality.js` | `setPersonality()`: bakes a trait mix into his idle, walk and run and their speeds (`P.gait`) |
@@ -54,8 +55,10 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `world/room.js` | Floor bounds, pillars, the baked background, `collide` |
 | `world/dummies.js` | The training dummies |
 | `world/sprite.js` | `spriteTo`, `solid` (a frame recoloured solid) |
-| `world/render.js` | `render()`: depth sort by feet, effects, particles, screen flash, Qi meter, HUD text |
+| `world/render.js` | `render()`: depth sort by feet, effects, particles, screen flash, Qi meter, skill bar, HUD text |
 | `ui/qi-meter.js` | The pixel-font Qi meter, bottom left |
+| `ui/skill-bar.js` | The League-style skill bar, bottom centre: passive, I O P N U, then K and slide, with cooldown sweeps and seconds |
+| `ui/pixfont.js` | The 5-row pixel font the HUD draws with (`pixText`, `textW`) |
 | `ui/moveset.js` | The moveset table under the game (from `ANIMS` "about" rows + skill rows) |
 | `ui/personality.js` | The personality picker under the game (remembered in localStorage) |
 | `ui/strip-tester.js` | "Test a sprite strip": drop a PNG strip in place of any animation |
@@ -79,6 +82,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Executions are short and brutal, show only the key frames (each leaning into the motion), and cut the enemy into real pieces.
 - Assassination markers: every enemy has an isolation bubble (empty glows cyan; overlapping ones go grey and are joined by a link line); a kill line runs to the nearest enemy he can dash to; the K prompt appears only when that enemy is in range AND outside every other enemy's bubble; lock-on brackets are reserved for big pickups.
 - Skills and keys: move WASD / arrows · hold V walk · J slash (again for the answer cut) · Shift or L slide · Space jump · K glitch teleport · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing). Storm Chain is passive: 8 s whenever the Qi meter fills.
+- Cooldowns (`player/cooldowns.js`): K 3 s (none with no enemy near; 0.2 s after an assassination) · I 2 s, Thousand Cuts 8 s · O 10 s · P 12 s · N 14 s · U 8 s · slide 1 s. J and jump have none.
 
 ## Working conventions
 
