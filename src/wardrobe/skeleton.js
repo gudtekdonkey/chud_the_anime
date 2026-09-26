@@ -16,9 +16,10 @@ export const V = {
 };
 export const UP = [0, 1, 0];
 // a frame: F forward, U up, R his right. Yaw 0 faces screen-right, 90° faces the camera. Pitch tips F and U forward.
-function frame(yaw, pitch = 0) {
+// m -1 turns his right away from the camera: his true left side, still facing screen-right, drawn mirrored after (dress.js)
+function frame(yaw, pitch = 0, m = 1) {
   const c = Math.cos(pitch), s = Math.sin(pitch), fx = Math.cos(yaw), fz = Math.sin(yaw);
-  return { F: [fx * c, -s, fz * c], U: [fx * s, c, fz * s], R: [-fz, 0, fx] };
+  return { F: [fx * c, -s, fz * c], U: [fx * s, c, fz * s], R: [-fz * m, 0, fx * m] };
 }
 const loc = (fr, o, a, u, b) => [o[0] + fr.F[0] * a + fr.U[0] * u + fr.R[0] * b, o[1] + fr.F[1] * a + fr.U[1] * u + fr.R[1] * b, o[2] + fr.F[2] * a + fr.U[2] * u + fr.R[2] * b];
 // a limb direction: th swings forward (0 = straight down), sp spreads it out to side s
@@ -42,13 +43,14 @@ function ik2(S, T, l1, l2, pole) {
 // the far arm behind his body, the near arm at the rig's own depth, over everything he wears.
 // Not flat (the port's facings, src/rig/port.js): rig v2's own skeleton, shoulders apart, hands that reach (rik / lik),
 // the head, the scabbard mouth and the blades' directions, for src/rig/body3d.js.
-export function solve(p, yaw = 0, flat = false) {
-  const yh = yaw + p.hipYaw, yc = yh + p.twist, yd = yc + p.headYaw;
-  const Hy = frame(yh), Cy = frame(yc), Hd = frame(yd), Hh = frame(yh, p.lean), Hc = frame(yc, p.lean + p.chest);
+// left (flat only): his true left side, the side rig's own pixels with his left the near side (rig.js rigR's left)
+export function solve(p, yaw = 0, flat = false, left = false) {
+  const yh = yaw + p.hipYaw, yc = yh + p.twist, yd = yc + p.headYaw, m = left ? -1 : 1;
+  const Hy = frame(yh, 0, m), Cy = frame(yc, 0, m), Hd = frame(yd, 0, m), Hh = frame(yh, p.lean, m), Hc = frame(yc, p.lean + p.chest, m);
   const pelvis = loc(Hy, [0, 0, 0], p.hx, 11 - p.hy, 0), waist = loc(Hh, pelvis, 0, 4, 0);
   const Lh = (u, v, b) => loc(Hh, pelvis, v, u, b);
   const Lc = (u, v, b) => { const q = loc(Hc, waist, v, u - 4, b); if (u > 4) q[1] += p.breath * Math.min(1, (u - 4) / 3); return q; };
-  const J = { p, yaw, flat, Hy, Cy, Hd, Hh, Hc, pelvis, waist, Lh, Lc, chest: Lc(7, 0, 0), neck: Lc(8.2, 0, 0), arm: {}, leg: {} };
+  const J = { p, yaw, flat, left, Hy, Cy, Hd, Hh, Hc, pelvis, waist, Lh, Lc, chest: Lc(7, 0, 0), neck: Lc(8.2, 0, 0), arm: {}, leg: {} };
   J.L = (u, v, b) => u <= 4 ? Lh(u, v, b) : Lc(u, v, b);     // the side rig's L(): the hips below the waist, the chest above
   J.head = V.add(Lc(10, 0, 0), V.mul(Hd.F, .6));
   if (p.bow) J.head = V.add(J.head, V.add(V.mul(Hd.F, p.bow * 1.1), [0, -p.bow * .7, 0]));   // a bowed head: forward and down (personalities)
@@ -60,7 +62,7 @@ export function solve(p, yaw = 0, flat = false) {
     if (!flat && ik && ik[3] > .001) { const T = ik[4] > .5 ? Lc(ik[1], ik[0], ik[2]) : Lh(ik[1], ik[0], ik[2]);
       const pole = V.add(V.add(V.mul(Cy.F, -1), V.mul(Cy.R, s * .9)), [0, -.4, 0]);
       const [e2, h2] = ik2(sh, T, 4, 4, pole); e = V.lerp(e, e2, ik[3]); h = V.lerp(h, h2, ik[3]); }
-    J.arm[k] = { s, sh, el: e, hand: h, dz: flat ? (s > 0 ? NEAR_ARM_Z : -SHW) : 0, col: Cy.R[2] * s < -.35 ? 'D' : 'K' };
+    J.arm[k] = { s, sh, el: e, hand: h, dz: flat ? (s * m > 0 ? NEAR_ARM_Z : -SHW) : 0, col: Cy.R[2] * s < -.35 ? 'D' : 'K' };
     const [lt, kn, lsp, toe = .3] = p[k + 'l'];
     const hip = Lh(0, 0, s * 1.2), knee = V.add(hip, V.mul(limbDir(Hy, lt, lsp, s), 5)), ank = V.add(knee, V.mul(limbDir(Hy, lt - kn, lsp, s), 6));
     const fd = V.add(V.mul(Hy.F, Math.cos(toe)), V.mul(Hy.R, s * Math.sin(toe)));

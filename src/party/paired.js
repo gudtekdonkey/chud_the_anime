@@ -68,8 +68,8 @@ function end() {
 const heroPose = () => poseOf(frames(HERO, X.anim), X.ht);
 // the hero while it runs (the state machine does not draw him in 'exec'), the ghosts, and the crossing cut's two white lines
 export function pairedDrawables() {
-  const out = ghosts.map(gh => ({ y: gh.y - .1, d: () => gh.F && place(g, white(paint(gh.F, gh.pose, 0, gh.hero ? 'hero' : 'ally')), gh.x, gh.y, gh.face, { alpha: gh.alpha * (1 - gh.t / .3) }) }));
-  if (X) out.push({ y: P.y, d: () => place(g, paint(wear, heroPose(), S.hitstop > 0 ? 0 : 1 / 60, 'hero'), P.x, P.y, P.face) });
+  const out = ghosts.map(gh => ({ y: gh.y - .1, d: () => gh.F && place(g, white(paint(gh.F, gh.pose, 0, gh.hero ? 'hero' : 'ally', 0, gh.face)), gh.x, gh.y, gh.face, { alpha: gh.alpha * (1 - gh.t / .3) }) }));
+  if (X) out.push({ y: P.y, d: () => place(g, paint(wear, heroPose(), S.hitstop > 0 ? 0 : 1 / 60, 'hero', 0, P.face), P.x, P.y, P.face) });
   return out;
 }
 export function drawPairLines() {

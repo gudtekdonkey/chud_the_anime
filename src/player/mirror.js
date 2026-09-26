@@ -6,8 +6,10 @@ import { rr, residue, spark } from '../fx/util.js';
 import { setState } from './actions.js';
 import { hitOne } from './hits.js';
 import { ease } from '../rig/pose.js';
-import { ENEMIES } from '../world/enemies.js';
+import { ENEMIES, viewTo } from '../world/enemies.js';
 import { T, powerCast } from './power.js';
+import { turner } from '../rig/turn.js';
+import { PF } from './facing.js';
 
 // ---- Mirror Meditation (N): he meditates while glitching mirror images step out of him and cut the nearest enemies ----
 const MS = .18, MD = .12, MC = .42, MF = .32; // step out, dash, cut, dissolve
@@ -22,7 +24,10 @@ export function meditate() {
 }
 export function spawnMirror(j, q) {
   const side = j % 2 ? -1 : 1;
-  mirrors.push({ j, d: q.d, di: q.i, t: 0, x: P.x, y: P.y, x0: P.x, y0: P.y, ox: P.x + side * rr(13, 18), oy: P.y + (j % 3 - 1) * 5, face: side, st: 'run', f: 0, a: 0, white: 0, glitch: .4, done: {} });
+  const ox = P.x + side * rr(13, 18), oy = P.y + (j % 3 - 1) * 5;
+  // it steps out facing the way it runs, turning from the facing he had when it left him (player/draw.js)
+  mirrors.push({ j, d: q.d, di: q.i, t: 0, x: P.x, y: P.y, x0: P.x, y0: P.y, ox, oy, face: side, view: viewTo(ox - P.x, oy - P.y), T: turner(PF.id),
+    st: 'run', f: 0, a: 0, white: 0, glitch: .4, done: {} });
   residue(P.x, P.y, 3); spark(P.x, P.y - 14, 0, -8, .15, '#ffffff', false, 0);
 }
 export function updateMirrors(dt) {

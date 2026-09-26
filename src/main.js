@@ -13,6 +13,7 @@ import { initWardrobe } from './ui/wardrobe.js';
 import { KIT } from './ui/kit-screen.js';
 import { ROSTER, party } from './party/kit.js';
 import { allies } from './party/companions.js';
+import { PF } from './player/facing.js';
 import { PAIRS, pairCandidate } from './party/paired.js';
 
 let last = performance.now(), acc = 0;
@@ -32,4 +33,4 @@ initWeaponPicker();
 initWardrobe();
 
 // a read-only debug hook for `npm run check`: in dev, or in any build opened with ?test
-if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) window.__game = { P, E: ENEMIES, wear, INV, S, ROSTER, party, allies, KIT, PAIRS, pairReady: () => !!pairCandidate() };
+if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) window.__game = { P, PF, E: ENEMIES, wear, INV, S, ROSTER, party, allies, KIT, PAIRS, pairReady: () => !!pairCandidate() };
