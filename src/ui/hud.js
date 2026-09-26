@@ -33,7 +33,7 @@ function currency() {
 }
 function bottomBar() {
   const y = 240, x0 = 138; panel(x0 - 5, y - 5, 214, 33);
-  slot(x0, y, 22, 'weapon', WEAPON_ICON[INV.weapon], { flash: INV.fx.weapon > 0 ? 1 : 0 });
+  slot(x0, y, 22, 'weapon', WEAPON_ICON[P.weapon] || ICON.katana, { flash: INV.fx.weapon > 0 ? 1 : 0 });
   const using = Object.values(USE_STATE).includes(P.state) ? P.useSlot : -1;
   INV.quick.forEach((q, i) => { const x = x0 + 28 + i * 22;
     // a use shades its slot, draining upward as it plays; the others dim until it is done

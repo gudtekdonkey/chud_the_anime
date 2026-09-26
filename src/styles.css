@@ -23,6 +23,8 @@ p { margin: 0; color: var(--muted); }
 .keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 18px; color: var(--muted); font-size: 14px; }
 kbd { font: 500 13px/1 "Pixelify Sans", monospace; background: var(--panel); border: 1px solid var(--rule); padding: 3px 6px; color: var(--ink); }
 .clear { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; cursor: pointer; }
+.clear + .clear { margin-left: 16px; }
+.clear select { font: inherit; background: var(--panel, #1b1e21); color: inherit; border: 1px solid #30353a; }
 .clear input { accent-color: var(--cyan); width: 16px; height: 16px; }
 .pad { display: flex; flex-wrap: wrap; gap: 8px; }
 .pad button { font: 500 15px/1 "Pixelify Sans", monospace; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); min-width: 48px; height: 44px; padding-inline: 12px; touch-action: none; user-select: none; }
@@ -46,3 +48,20 @@ td:first-child { font-family: "Pixelify Sans", monospace; color: var(--ink); whi
 .form .k { display: flex; gap: 8px; align-items: center; }
 .form input[type=range] { accent-color: var(--cyan); width: 110px; height: auto; padding: 0; border: 0; background: none; }
 .drop a { color: var(--cyan); }
+/* the wardrobe: a row of slots, one item per slot */
+.ward-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; align-items: end; }
+.ward-title { display: grid; gap: 6px; }
+#wearing { color: var(--ink); }
+.presets { display: flex; flex-wrap: wrap; gap: 6px; }
+.slots { display: grid; }
+.slot { display: grid; grid-template-columns: 110px 1fr; gap: 12px; padding-block: 10px; border-top: 1px solid var(--rule); align-items: start; }
+@media (max-width: 620px) { .slot { grid-template-columns: 1fr; } }
+.slot h3 { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; padding-top: 10px; }
+.items { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+.presets button, .item { font: 500 13px/1.2 "Pixelify Sans", monospace; letter-spacing: .04em; color: var(--muted); background: transparent; border: 1px solid var(--rule); padding: 8px 10px; cursor: pointer; }
+.item { text-align: left; display: grid; gap: 4px; padding: 10px 12px; }
+.item b { font-weight: 700; color: var(--ink); font-size: 14px; }
+.item span { font: 13px/1.4 Figtree, system-ui, sans-serif; letter-spacing: 0; }
+.presets button:hover, .item:hover { color: var(--ink); border-color: #4a5157; }
+.presets button[aria-pressed="true"], .item[aria-pressed="true"] { color: var(--ink); border-color: var(--cyan); background: #182423; }
+.presets button:focus-visible, .item:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }

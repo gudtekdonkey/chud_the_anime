@@ -9,7 +9,7 @@ import { REMAINS } from './item-sprites.js';
 import { addExp, has } from './inventory.js';
 import { arc } from './item-fx.js';
 import { putOut } from './quick.js';
-import { living, onKill as whenKilled } from '../world/enemies.js';
+import { living, onKill as onEnemyKill } from '../world/enemies.js';
 
 // ---- Harvest (hold E near the fallen): their remains stream into him as EXP ----
 // every kill leaves a body to harvest (e: the enemy, who draws himself); a body without one draws the placeholder remains
@@ -30,13 +30,13 @@ export function fallenDrawables() { return FALLEN.filter(f => !f.e && f.left > 0
 // ---- Hooks for the enemies and assassination work, and the relics that ride on them ----
 // a kill: its body becomes harvestable, and the next sheath click can carry the Sageo Knot's shock
 export function onKill(e) { addFallen(e.x, e.y, 60, e); P.killClick = 1.5; }
-whenKilled(onKill);
+onEnemyKill((e, o) => { onKill(e); if (o.execution) onExecution(); });   // every real death leaves a body to harvest
 // an execution: the Temple Bell rings for +25% Qi
 export function onExecution() { if (has('bell')) qiAdd(.25); }
 // the sheath click: Sageo Knot shocks enemies close by if he just killed
 export function sheathClick() {
   if (!(P.killClick > 0) || !has('knot')) return; P.killClick = 0;
-  for (const d of living()) if (Math.hypot(d.x - P.x, (d.y - P.y) * 1.4) < 56) { zap(P.x + P.face * 3, P.y - 10, d.x, d.y - 14, .18, 2.5, COL.fx2, { every: 1 }); chainHit(d, P.x); }
+  for (const d of living()) if (Math.hypot(d.x - P.x, (d.y - P.y) * 1.4) < 56) { zap(P.x + P.face * 3, P.y - 10, d.x, d.y - 14, .18, 2.5, COL.fx2, { every: 1 }); chainHit(d); }
 }
 // damage to him (n in 0..1): a hit puts the incense out; the Paper Crane saves one killing blow per area, glitching him out at 1 health
 export function hurt(n) {

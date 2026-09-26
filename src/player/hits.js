@@ -2,18 +2,19 @@ import { COL } from '../config.js';
 import { P, S, INV, cuts } from '../state.js';
 import { rr, residue, spark } from '../fx/util.js';
 import { QI_GAIN, qiAdd, chainFrom } from './qi.js';
-import { reach, weight } from './weapon.js';
-import { has } from '../items/inventory.js';
 import { pw } from './power.js';
 import { ENEMIES, DMG, damage } from '../world/enemies.js';
+import { weapon } from '../weapons/weapons.js';
+import { has } from '../items/inventory.js';
 
 // ---- Hits: each enemy once per kind per move; P.struck remembers them for the sheath-click burst ----
 export function hitOne(e, i, kind, fx = P.x, fy = P.y) {
   if (!e.alive || e.held) return;   // the fallen are not cut again, nor one an execution holds
   P.hitDone[kind + i] = true; P.struck.add(e);
-  // short on purpose: a 3-frame white flash (damage() sets it), a 3-frame freeze, ONE shaken frame; a heavier blade lands a beat heavier
-  const wt = weight();
-  S.hitstop = Math.max(S.hitstop, .05 * wt); S.shake = Math.max(S.shake, wt / 60);
+  // short on purpose: a 3-frame white flash (damage() sets it), a 3-frame freeze, ONE shaken frame
+  // a heavier weapon holds the freeze and the shake longer (weight: 1 for the katana)
+  const wt = weapon().weight;
+  S.hitstop = Math.max(S.hitstop, .05 * wt.stop); S.shake = Math.max(S.shake, wt.shake / 60);
   if (kind === 'sw') e.zap = .25;
   const base = kind.match(/^[a-zA-Z]+/)[0];
   // 6-12 short streaks, mostly thrown away from whoever cut it
@@ -26,9 +27,7 @@ export function hitOne(e, i, kind, fx = P.x, fy = P.y) {
 // Split Tsuba: +25%; a whetstone edge: twice as fast; power: up to +30%
 const qiMul = () => (has('tsuba') ? 1.25 : 1) * (INV.edge > 0 ? 2 : 1) * pw('qi');
 // the blade's own cuts (J, and I's two) reach further with a longer weapon
-const BLADE_CUT = /^(slash|d\d)/;
 export function hit(kind, cx, cy, r) {
-  if (BLADE_CUT.test(kind)) { const k = reach(); cx = P.x + (cx - P.x) * k; r *= k; }
   ENEMIES.forEach((d, i) => { if (d.alive && !P.hitDone[kind + i] && Math.hypot(d.x - cx, (d.y - 10 - cy) * 1.4) <= r) hitOne(d, i, kind); });
 }
 // distance from a point to a segment in the same squashed floor space as hit(), and how far along it the point sits

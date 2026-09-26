@@ -52,7 +52,7 @@ export const USE = {
   },
   // draw and hone: sparks run along the blade, then the edge turns cyan for 20 s
   whet(T, dt, moving) {
-    const bl = INV.weapon === 'nodachi' ? 19 : 13, bx = k => P.x + P.face * (7 + k * bl), by = P.y - 16;
+    const bl = { nodachi: 19, yari: 17, tanto: 8 }[P.weapon] || 13, bx = k => P.x + P.face * (7 + k * bl), by = P.y - 16;
     if (T >= .12 && T < .5 && (P.sp = (P.sp || 0) + dt) > .03) { P.sp = 0; const k = ((T - .12) % .26) / .26; spark(bx(k), by, P.face * rr(10, 60), rr(-50, -10), rr(.08, .16), Math.random() < .5 ? WH : CY2, true); }
     if (once('lit', T >= .5)) { INV.edge = EDGE_T; S.hitstop = .05; for (let k = 0; k < 1; k += .1) if (Math.random() < .5) spark(bx(k), by, rr(-20, 20), rr(-40, -5), rr(.12, .25), Math.random() < .5 ? CY : CY2, false); }
     if (T >= .8) { P.armed = true; P.still = 0; setState(afterAttack(moving)); return true; }

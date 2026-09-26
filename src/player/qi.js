@@ -5,9 +5,9 @@ import { zap } from '../fx/bolts.js';
 import { rr, ring, after, spark } from '../fx/util.js';
 import { frameOf } from './actions.js';
 import { silPts, bodyPt } from './body.js';
+import { DMG, living, damage } from '../world/enemies.js';
 import { has } from '../items/inventory.js';
 import { T, pw, powerCast } from './power.js';
-import { DMG, living, damage } from '../world/enemies.js';
 
 // ---- Qi and the Storm Chain passive: hits fill it, a full meter wakes the storm for 8 s ----
 // the Qi each kind of hit feeds: bigger moves feed more (chain hits feed none, or the storm would never end)
@@ -44,5 +44,5 @@ export function chainFrom(d0) {
     a = b;
   }
 }
-export function chainHit(d, fx) { if (!d.alive) return; d.zap = .35; P.struck.add(d); damage(d, DMG.chain * pw('dmg'), fx, d.y);
+export function chainHit(d, fx = P.x) { if (!d.alive) return; d.zap = .35; P.struck.add(d); damage(d, DMG.chain * pw('dmg'), fx, d.y);
   for (let i = 0; i < 9; i++) { const a = rr(0, 6.28); spark(d.x, d.y - 16, Math.cos(a) * rr(60, 130), Math.sin(a) * rr(40, 90), rr(.08, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); } }

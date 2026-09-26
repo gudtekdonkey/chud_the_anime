@@ -1,7 +1,7 @@
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
-import { ITEM_POSES } from './item-poses.js';
 import { gaitFrames } from '../traits/bake.js';
 import { BASE } from '../traits/knobs.js';
+import { ITEM_POSES } from './item-poses.js';
 
 // ---- Poses, one per frame ----
 const run8 = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);

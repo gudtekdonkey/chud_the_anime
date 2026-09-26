@@ -3,7 +3,6 @@ import { P, S } from '../state.js';
 import { rr } from '../fx/util.js';
 import { setState } from '../player/actions.js';
 import { onAssassination } from '../player/cooldowns.js';
-import { onExecution } from '../items/harvest.js';
 import { collide } from '../world/room.js';
 import { EG, SET } from './enemy-poses.js';
 import { EXECS } from './executions.js';
@@ -63,7 +62,7 @@ function free(St) {
   St.freed = true; const R = St.R;
   [P.x, P.y] = collide(St.ox + St.m * (R.x - St.ox), R.y); P.face = St.m * R.face;
   P.inv = false; P.exec = null; P.armed = false; setState('idle');
-  onAssassination(); onExecution();
+  onAssassination();
 }
 // effects and pieces move through hit pauses, like the world's own
 export function updateStages(dt) {

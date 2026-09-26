@@ -7,13 +7,14 @@ import { drawFloorFx, drawFx } from '../fx/fx.js';
 import { sgn } from '../fx/util.js';
 import { frameOf } from '../player/actions.js';
 import { drawPlayer, drawMirror } from '../player/draw.js';
-import { drawHud } from '../ui/hud.js';
-import { itemDrawables, drawItemsOver, drawSmoke } from '../items/items.js';
 import { drawBloodFloor, drawDrops } from '../fx/blood.js';
 import { ENEMIES, blades } from './enemies.js';
 import { drawEnemy, drawBlade } from './enemy-draw.js';
 import { stageItems, drawStagesFloor, drawStagesTop } from '../assassin/assassinate.js';
 import { drawMarkers, drawPrompt } from '../assassin/markers.js';
+import { weapon } from '../weapons/weapons.js';
+import { drawHud } from '../ui/hud.js';
+import { itemDrawables, drawItemsOver, drawSmoke } from '../items/items.js';
 import { PILLARS, bg, drawPillar } from './room.js';
 
 export function render() {
@@ -45,8 +46,8 @@ export function render() {
   drawHud();
   const chg = P.charge != null && !P.cv ? ` · charge <b>${Math.round(P.charge * 100)}%</b>` : P.cv ? ` · ${P.cv.name} at <b>${Math.round(P.pow * 100)}%</b>` : '';
   const qi = P.storm > 0 ? ` · <b>STORM CHAIN ${P.storm.toFixed(1)} s</b>` : ` · qi <b>${Math.round(P.qi * 100)}%</b>`;
-  const inv = ` · hp <b>${Math.round(INV.hp * 100)}%</b> · ${INV.weapon} · mon ${INV.mon} · shards ${INV.shards} · LV ${INV.lv} (${Math.round(INV.exp)} exp) · power ${INV.power}`;
-  hud.innerHTML = `animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}${chg}${qi}${inv}`;
+  const inv = ` · hp <b>${Math.round(INV.hp * 100)}%</b> · mon ${INV.mon} · shards ${INV.shards} · LV ${INV.lv} (${Math.round(INV.exp)} exp) · power ${INV.power}`;
+  hud.innerHTML = `${weapon().name} · animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}${chg}${qi}${inv}`;
 }
 
 // an execution's killing blow: two frames of the scene in two tones, black then white (the deaths pass)
