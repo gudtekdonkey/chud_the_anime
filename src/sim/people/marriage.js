@@ -140,11 +140,15 @@ export function propose(L, suitorId, brideId) {
   wed(L, s, b, 0);
   return { ...j, wed: true };
 }
-// the brides he could court near where he stands: unmarried grown women in his zone and the zones around it
-export function brides(L, suitorId, radius = 1) {
+// the brides he could court near where he stands: unmarried grown women (maidens and widows) in the settlements within `radius` zones,
+// nearest first
+export function brides(L, suitorId, radius = 6) {
   const s = alive(L, suitorId), at = s && (s.at || s.home); if (!at) return [];
-  const out = [];
-  for (let dy = -radius; dy <= radius; dy++) for (let dx = -radius; dx <= radius; dx++)
-    for (const b of residents(L, (at[0] + dx) + ',' + (at[1] + dy))) if (b.sex !== s.sex && b.spouse == null && age(L, b) >= AGE.ADULT && age(L, b) < 40 && b.cls !== 'monk') out.push(b);
-  return out;
+  const P = L.sys.people, out = [];
+  for (const k in P.settle) {
+    const i = k.indexOf(','), x = +k.slice(0, i), y = +k.slice(i + 1), d = Math.max(Math.abs(x - at[0]), Math.abs(y - at[1]));
+    if (d > radius || !SETTLED.has(P.settle[k].kind)) continue;
+    for (const b of residents(L, k)) if (b.sex !== s.sex && b.spouse == null && b.id !== s.id && age(L, b) >= AGE.ADULT && age(L, b) < 45 && b.cls !== 'monk') out.push([d, b]);
+  }
+  return out.sort((a, b) => a[0] - b[0] || (a[1].id < b[1].id ? -1 : 1)).map(([, b]) => b);
 }
