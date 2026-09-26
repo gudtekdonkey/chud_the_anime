@@ -44,6 +44,16 @@
   .num { font-size: 13px; color: var(--dim); font-variant-numeric: tabular-nums; margin-right: auto; }
   .tag { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--rule); padding: 2px 6px; }
   .tag.cloth { color: var(--cyan); border-color: #2b5a55; }
+  #specials { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  table.pairs { min-width: 900px; }
+  .pairs th, .pairs td { padding: 4px 6px; text-align: center; }
+  .pairs th[scope="row"] { text-align: left; white-space: nowrap; }
+  .pairs thead th { font-size: 11px; }
+  .cell { font: 500 14px/1 "Pixelify Sans", ui-monospace, monospace; width: 34px; height: 28px; border: 1px solid var(--rule); background: transparent; cursor: pointer; }
+  .cell.ok { color: var(--cyan); } .cell.blocked { color: #6f7876; } .cell.special { color: #e8b86a; border-color: #5a4a2b; background: #241f16; }
+  .cell:hover { border-color: #4a5157; } .cell:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 14px; }
+  .legend .cell { display: inline-grid; place-items: center; cursor: default; }
   .tag.warn { color: #e8b86a; border-color: #5a4a2b; }
   .note { color: #e8b86a; font-size: 14px; }
   .check { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; cursor: pointer; }
@@ -119,9 +129,16 @@
   </section>
 
   <section aria-labelledby="masks-h">
-    <div class="intro"><h2 id="masks-h">Masks</h2><p>Ten masks in the face slot. Unlike the clothes they come in any colour, so they are the one place his silhouette can carry a colour of its own. Each is drawn on the side of his face under the hat brim, and his cyan eye shows through all but the visor. Eight fit under a hat. The oni's horns and the kitsune's ears don't, so putting one on takes the hat off, and putting a hat on takes that mask off. Shuffle for random colours, or wear one in the fitting room.</p></div>
+    <div class="intro"><h2 id="masks-h">Masks</h2><p>Ten masks in the face slot. Unlike the clothes they come in any colour, so they are the one place his silhouette can carry a colour of its own. Each is drawn on the side of his face under the hat brim, and his cyan eye shows through all but the visor. Most fit under a hat. The oni's horns and the kitsune's ears don't, except in their special pairs below, and each hat has its own rule. Shuffle for random colours, or wear one in the fitting room.</p></div>
     <div class="chips" role="group" aria-label="Mask colours"><button type="button" class="chip" id="shuffle">Shuffle colours</button><button type="button" class="chip" id="original">Their own colours</button></div>
     <div id="masks"></div>
+  </section>
+
+  <section aria-labelledby="pairs-h">
+    <div class="intro"><h2 id="pairs-h">Hats and masks together</h2><p>Each hat says which masks fit under it. Most take any mask that has no horns or ears. The tengai basket covers his whole face, so it takes none. The kabuto takes only the menpo. Four pairs do something of their own. Click any cell to try that pair in the fitting room.</p></div>
+    <div id="specials"></div>
+    <div class="tbl"><table id="pairs" class="pairs"></table></div>
+    <p class="legend"><span class="cell ok">✓</span> fits <span class="cell blocked">✕</span> won't go together: whichever went on last stays <span class="cell special">★</span> a special pair</p>
   </section>
 
   <section aria-labelledby="layer-h">
@@ -150,7 +167,7 @@
       <div><h3>What slots give the game</h3><p>Drops and loot can name a slot ("a new waist piece"). Each slot can carry one kind of bonus later, such as armour on the body or speed on the legs, and the wardrobe screen is just eight rows.</p></div>
       <div><h3>Not recommended</h3><p>Free stacking with no slots looks messy at 20 px tall and needs a rule for every pair. Fewer slots, such as merging waist and ties, would stop the Pilgrim wearing a sash and a tasuki together.</p></div>
     </div>
-    <p>One cross-slot rule: a mask with horns or ears and a hat can't be worn together. Whichever went on last stays.</p>
+    <p>One cross-slot rule: each hat decides which masks it takes (see Hats and masks together). When the two don't go together, whichever went on last stays.</p>
   </section>
 
   <div class="ask">
@@ -159,6 +176,7 @@
       <li><b>Which pieces stay?</b> Keep, cut or change any of the twenty.</li>
       <li><b>His default outfit.</b> In the game today he starts in the straw hat and the flat mantle. Should he start bareheaded?</li>
       <li><b>Slots.</b> Keep the eleven, one piece in each?</li>
+      <li><b>Hats and masks.</b> Are the four special pairs the kind of thing you want? Should a special pair also do something in play, like a bonus?</li>
       <li><b>Hair.</b> Which styles stay? Should hair colour be natural shades only, or any dye?</li>
       <li><b>Masks.</b> Which of the ten stay, and should their colours be random per drop, dyed by the player, or fixed?</li>
       <li><b>The layer order.</b> For example, should the sash go over the coat (as now) or under it?</li>
@@ -3324,8 +3342,90 @@
 				"GGBBBBBBBBBBBBBBBBGG"
 			],
 			about: "A flat iron war hat, low and wide."
+		},
+		{
+			id: "tengai",
+			name: "Tengai basket",
+			drop: 4,
+			rows: [
+				"...GGGG...",
+				"..GHHHHG..",
+				".GHBHBHBG.",
+				".GBHBHBHG.",
+				".GHBHBHBG.",
+				".GBHBHBHG.",
+				".GHBHBHBG.",
+				"..GBBBBG.."
+			],
+			about: "The wandering monk's woven basket, down over the whole head. No mask fits, and no face shows."
+		},
+		{
+			id: "kabuto",
+			name: "Kabuto",
+			drop: 3,
+			rows: [
+				"..G.........G...",
+				"...G.......G....",
+				"....GGGGGGG.....",
+				"...GHHHHHHHG....",
+				"..GHHHHHHHHHG...",
+				".GBBBBBBBBBBBG..",
+				"...BBBB.........",
+				"...BBB..........",
+				"....B..........."
+			],
+			about: "A war helmet with a crest and a neck guard. Only the menpo fits under it; the two lace together."
 		}
 	];
+	const HAT_ALLOWS = {
+		straw: "all",
+		kasa: "all",
+		broken: "all",
+		jingasa: "all",
+		tengai: "none",
+		kabuto: ["menpo"]
+	};
+	const SPECIAL = {
+		"broken+oni": {
+			name: "Horns through the split",
+			note: "The oni's horns push up through the split in the broken hat's brim, so this is the one hat the oni can wear."
+		},
+		"straw+kitsune": {
+			name: "Worn festival style",
+			note: "Under the straw hat the fox mask is pushed round to the side of his head, the way it is worn at a festival, and his face shows."
+		},
+		"kabuto+menpo": {
+			name: "Laced together",
+			note: "The menpo's cords tie to the helmet: a full armoured face, and the only mask the kabuto takes."
+		},
+		"jingasa+visor": {
+			name: "Lit brim",
+			note: "The visor's light catches the iron brim above it, and its front edge glows cyan."
+		}
+	};
+	function pair(hat, mask) {
+		const sp = SPECIAL[hat + "+" + mask];
+		if (sp) return {
+			state: "special",
+			...sp
+		};
+		const a = HAT_ALLOWS[hat], m = MASK_BY[mask];
+		if (a === "none") return {
+			state: "blocked",
+			note: "The basket covers his whole face."
+		};
+		if (Array.isArray(a) && !a.includes(mask)) return {
+			state: "blocked",
+			note: "The helmet has its own face guard."
+		};
+		if (m.hat === false) return {
+			state: "blocked",
+			note: mask === "oni" ? "The horns do not fit under the brim." : "The ears do not fit under the brim."
+		};
+		return { state: "ok" };
+	}
+	const hatOf = (F) => [...F.outfit].find((id) => BY_ID[id] && BY_ID[id].slot === "head");
+	const maskOf = (F) => [...F.outfit].find((id) => id.startsWith("mask-"));
 	const SLOT_OF = {
 		straw: "head",
 		mantle: "shoulders",
@@ -3388,8 +3488,9 @@
 			name: h.name,
 			about: h.about,
 			parts: [{
-				kind: "sidehat",
+				kind: h.drop ? "deephat" : "sidehat",
 				rows: h.rows,
+				drop: h.drop,
 				bias: 2.6
 			}]
 		}))
@@ -3445,11 +3546,33 @@
 		}
 		if (part.kind === "mask") {
 			const m = MASK_BY[part.mask], p = J.p, hc = J.hc;
-			const x0 = Math.round(hc[0] - 1.5), y0 = Math.round(hc[1]) - 3, tint = S.tint;
+			const x0 = Math.round(hc[0] - 1.5), y0 = Math.round(hc[1]) - 3, tint = S.tint, key = S.hat + "+" + m.id;
+			const col = (ch) => ch === "A" ? tint ? "mX" : m.A : ch === "a" ? tint ? "mx" : m.a : m.fix[ch];
+			const hx0 = Math.round(Math.round(hc[0]) - 9 + p.hat), hy0 = Math.round(hc[1]) - 6;
+			if (key === "straw+kitsune") {
+				[
+					".A.",
+					"AAA",
+					"ARA"
+				].forEach((r, y) => [...r].forEach((ch, x) => {
+					if (ch !== ".") S.px(x0 - 2 + x, y0 + 2 + y, 2.56, col(ch));
+				}));
+				return true;
+			}
+			if (key === "broken+oni") for (let y = -1; y < 5; y++) S.px(hx0 + 12, hy0 + y, 2.61, y < 1 ? col("A") : col("a"));
+			if (key === "jingasa+visor") for (let x = Math.round(hc[0]) + 1; x < hx0 + 20; x++) S.px(x, Math.round(hc[1]) - 2, 2.61, x % 2 ? "mC" : "mM");
+			if (key === "kabuto+menpo") for (let y = -1; y <= 1; y++) S.px(x0 - 1, Math.round(hc[1]) + y, 2.61, "c6");
 			m.rows.forEach((r, y) => [...r].forEach((ch, x) => {
 				if (ch === ".") return;
 				const key = ch === "E" ? p.dim ? "e" : "E" : ch === "A" ? tint ? "mX" : m.A : ch === "a" ? tint ? "mx" : m.a : m.fix[ch];
 				S.px(x0 + x, y0 + y, ch === "E" ? 2.57 : 2.56, key);
+			}));
+			return true;
+		}
+		if (part.kind === "deephat") {
+			const [hx, hy] = J.hc, w = part.rows[0].length, x0 = Math.round(hx) - (w >> 1) + 1 + J.p.hat, y0 = Math.round(hy) - 1 - part.rows.length + part.drop;
+			part.rows.forEach((r, y) => [...r].forEach((ch, x) => {
+				if (ch !== ".") S.px(Math.round(x0 + x), y0 + y, part.bias, ch);
 			}));
 			return true;
 		}
@@ -3533,6 +3656,7 @@
 	function dress(R, F, p, dt, only) {
 		R.clear();
 		const { hc } = rig(R, p);
+		R.hat = hatOf(F);
 		R.tint = F.tint;
 		Object.assign(R.pk, packPal({
 			hX: F.hair[0],
@@ -3769,9 +3893,15 @@
 		note = "";
 		if (!on) {
 			hero.outfit.add(it.id);
-			const off = ITEMS.filter((o) => hero.outfit.has(o.id) && (it.noHat && o.slot === "head" || it.slot === "head" && o.noHat));
-			for (const o of off) hero.outfit.delete(o.id);
-			if (off.length) note = it.noHat ? `The ${it.name} mask doesn't fit under a hat, so the ${off[0].name.toLowerCase()} came off.` : `The ${off[0].name} mask doesn't fit under a hat, so it came off.`;
+			const h = hatOf(hero), mk = maskOf(hero);
+			if (h && mk) {
+				const r = pair(h, mk.slice(5));
+				if (r.state === "blocked") {
+					const gone = it.slot === "head" ? mk : h;
+					hero.outfit.delete(gone);
+					note = `${r.note} The ${BY_ID[gone].name.toLowerCase()} came off.`;
+				} else if (r.state === "special") note = r.name + ": " + r.note;
+			}
 		}
 		syncRoom();
 	});
@@ -3829,6 +3959,45 @@
 	});
 	$("underhat").addEventListener("change", (e) => {
 		for (const c of headCards) if (c.it.slot === "hair") c.F.outfit = new Set(e.target.checked ? [c.it.id, "straw"] : [c.it.id]);
+	});
+	const hatIds = [null, ...ITEMS.filter((i) => i.slot === "head").map((i) => i.id)];
+	$("pairs").innerHTML = `<thead><tr><th scope="col">Hat / mask</th>${MASKS.map((m) => `<th scope="col">${m.name}</th>`).join("")}</tr></thead><tbody>` + hatIds.map((h) => `<tr><th scope="row">${h ? BY_ID[h].name : "No hat"}</th>${MASKS.map((m) => {
+		const r = h ? pair(h, m.id) : { state: "ok" };
+		const lab = {
+			ok: "fits",
+			blocked: "no",
+			special: "special"
+		}[r.state];
+		return `<td><button type="button" class="cell ${r.state}" data-h="${h || ""}" data-m="${m.id}" title="${r.note || "Fits"}" aria-label="${h ? BY_ID[h].name : "No hat"} with ${m.name}: ${lab}">${r.state === "ok" ? "✓" : r.state === "blocked" ? "✕" : "★"}</button></td>`;
+	}).join("")}</tr>`).join("") + "</tbody>";
+	$("pairs").addEventListener("click", (e) => {
+		const b = e.target.closest(".cell");
+		if (!b) return;
+		for (const o of ITEMS) if (o.slot === "head" || o.slot === "face") hero.outfit.delete(o.id);
+		hero.outfit.add("mask-" + b.dataset.m);
+		const r = b.dataset.h ? pair(b.dataset.h, b.dataset.m) : { state: "ok" };
+		if (b.dataset.h && r.state !== "blocked") hero.outfit.add(b.dataset.h);
+		note = r.state === "blocked" ? `${r.note} He wears the ${MASK_BY[b.dataset.m].name.toLowerCase()} bareheaded.` : r.state === "special" ? r.name + ": " + r.note : "";
+		syncRoom();
+		$("room-h").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+	});
+	const specialCards = Object.entries(SPECIAL).map(([k, sp], i) => {
+		const [h, m] = k.split("+");
+		return {
+			sp,
+			h,
+			m,
+			F: makeFigure([
+				h,
+				"mask-" + m,
+				"hair-crop"
+			]),
+			phase: i * .6
+		};
+	});
+	$("specials").innerHTML = specialCards.map((c) => `<article class="card mask"><canvas width="30" height="26" aria-label="${BY_ID[c.h].name} with the ${MASK_BY[c.m].name}"></canvas><div class="meta"><span class="num">${BY_ID[c.h].name} + ${MASK_BY[c.m].name}</span></div><h3>${c.sp.name}</h3><p>${c.sp.note}</p></article>`).join("");
+	document.querySelectorAll("#specials canvas").forEach((cv, i) => {
+		specialCards[i].g = cv.getContext("2d");
 	});
 	$("shuffle").addEventListener("click", () => {
 		for (const c of maskCards) c.F.tint = randomTint();
@@ -3922,6 +4091,14 @@
 			c.g.fillStyle = "#474c4a";
 			c.g.fillRect(0, 0, 30, 26);
 			c.g.drawImage(cv, 10, 6, 30, 26, 0, 0, 30, 26);
+		}
+		for (const c of specialCards) {
+			if (!c.g) continue;
+			c.F.t = clock + c.phase;
+			const cv = dress(R, c.F, poseAt("idle", clock + c.phase), dt);
+			c.g.fillStyle = "#474c4a";
+			c.g.fillRect(0, 0, 30, 26);
+			c.g.drawImage(cv, 10, 4, 30, 26, 0, 0, 30, 26);
 		}
 		for (const c of headCards) {
 			if (!c.g) continue;
