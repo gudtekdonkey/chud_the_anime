@@ -59,7 +59,7 @@ Decisions made in the design sessions so far, newest last.
   - The whetstone use is shortened to 0.8 s (the study's was 1.7 s) so every use stays under a second; he keeps the honed blade out, in guard.
   - He starts at 60% health so healing shows; nothing damages him yet. Low health (below 35%) blinks the health bar red, as there is no HP label.
   - Two placeholder remains lie in the room so Harvest can be tried before real kills exist; EXP needs 100 × the level.
-- **Open:** where the power tier (`INV.power`, I / II / III) comes from: level, relics or upgrades.
+- **Power tier (owner): from relics and upgrades.** Built: I, plus one per upgrade, plus one per power relic worn, at most III; a POWER banner shows each step. Upgrades (proposed): a shrine he has already prayed at takes an OFFER of 3 glitch shards for one upgrade, two at most. Which relics raise power is still open (`POWER_RELICS` starts empty).
 
 ## Next
 

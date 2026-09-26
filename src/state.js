@@ -9,8 +9,8 @@ export const parts = [];
 export const S = { shake: 0, hitstop: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false, banner: null };
 
 // ---- The inventory: the HUD reads only this, and every system writes to it. Qi stays on P.qi (0..1) ----
-// hp 0..1; power 1..3 is the I / II / III tier (its source is still the owner's call); edge: seconds of whetstone left
-export const INV = { hp: .6, mon: 0, shards: 0, exp: 0, lv: 1, power: 1, edge: 0, edgeSlot: 2,
+// hp 0..1; power 1..3 is the I / II / III tier, from shrine upgrades and power relics (items/inventory.js powerTier); edge: seconds of whetstone left
+export const INV = { hp: .6, mon: 0, shards: 0, exp: 0, lv: 1, power: 1, upgrades: 0, edge: 0, edgeSlot: 2,
   weapon: 'katana',                                                                   // 'katana' | 'nodachi'
   quick: [{ id: 'bomb', n: 3 }, { id: 'talisman', n: 2 }, { id: 'whetstone', n: 2 }, { id: 'incense', n: 3 }],   // null = empty
   charms: ['bead', 'mirror', 'knot', null],

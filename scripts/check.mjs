@@ -92,6 +92,10 @@ try {
   await run('E at the shrine: brackets, pray, health full', async () => {
     await walkTo(78, 98); await sleep(250); await shot('10-lock-on'); await kb.press('e'); await reach(/^pray$/); await sleep(700); await shot('11-pray'); await reach(FREE);
     const v = await inv(); if (v.hp !== 1) fail(`health is ${v.hp} after praying`); });
+  await run('E at the prayed shrine: offer 3 shards for an upgrade, power II', async () => {
+    if ((await inv()).shards < 3) fail('not enough shards picked up on the way');
+    await kb.press('e'); await reach(/^pray$/); await reach(FREE);
+    const v = await inv(); if (v.upgrades !== 1 || v.power !== 2) fail(`upgrades ${v.upgrades}, power ${v.power}`); await shot('11b-power'); });
   await run('E at the grave: take the Grave Nodachi, then cut with it', async () => {
     await walkTo(203, 100); await kb.press('e'); await reach(/^take$/); await sleep(300); await shot('12-new-weapon'); await reach(FREE);
     if ((await inv()).weapon !== 'nodachi') fail('the weapon slot did not swap');

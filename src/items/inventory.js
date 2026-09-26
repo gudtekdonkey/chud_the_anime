@@ -19,7 +19,14 @@ export function showBanner(small, big, dur = 1.7) { S.banner = { small, big, t: 
 // EXP from Harvest: 100 per level times the level, a banner on each level-up
 export const expNeed = lv => 100 * lv;
 export function addExp(n) { INV.exp += n; while (INV.exp >= expNeed(INV.lv)) { INV.exp -= expNeed(INV.lv); INV.lv++; showBanner('LEVEL UP', 'LV ' + INV.lv); } }
+// the power tier (owner: from relics and upgrades): I, plus one per shrine upgrade, plus one per power relic worn, at most III
+// which relics raise it is still the owner's pick, so the set starts empty
+export const POWER_RELICS = new Set(), OFFER_COST = 3, MAX_UPGRADES = 2;
+export const powerTier = () => Math.min(3, 1 + INV.upgrades + INV.charms.filter(id => POWER_RELICS.has(id)).length);
+export const canOffer = () => INV.shards >= OFFER_COST && INV.upgrades < MAX_UPGRADES;
+export function offer() { if (!canOffer()) return false; INV.shards -= OFFER_COST; INV.fx.shards = .08; INV.upgrades++; return true; }
 export function tickInv(dt) {
+  const p = powerTier(); if (p > INV.power) showBanner('POWER', ['I', 'II', 'III'][p - 1]); INV.power = p;
   const f = INV.fx; for (const k of ['qi', 'mon', 'shards', 'weapon', 'hp']) f[k] = Math.max(0, f[k] - dt);
   for (const L of [f.quick, f.charms]) for (let i = 0; i < L.length; i++) L[i] = Math.max(0, L[i] - dt);
   INV.edge = Math.max(0, INV.edge - dt);
