@@ -2,6 +2,9 @@ import { OX, OY, RC } from '../config.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
+// the blade length in px (the katana's 13); a longer weapon re-bakes the sheets with a longer blade and scabbard
+let bladeLen = 13;
+export const setBladeLen = n => { bladeLen = n; };
 export function rig(g, fx, p) {
   const put = (x, y, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
   const blob = (x, y, w, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
@@ -37,7 +40,7 @@ export function rig(g, fx, p) {
   const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
 
   // far side first: scabbard, far arm, far leg
-  seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
+  seg(mouth, add(mouth, sd, bladeLen - 1), 1, 's'); put(...add(mouth, sd, bladeLen - 1), 'S');
   // the back hand can carry the blade too, for the counter stances
   const bh = arm(p.ba, 'D');
   leg(p.bl, 'D', -.5);
@@ -58,7 +61,7 @@ export function rig(g, fx, p) {
   seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
   if (f > .5) put(...L(2.6, -3.4), 'M');
   // the back hand's blade is drawn over the body and the sash, so it is never lost behind them
-  if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; blob(bh[0], bh[1], 2, 'D'); seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
+  if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; blob(bh[0], bh[1], 2, 'D'); seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, bladeLen), 1, 'W'); }
   // near arm and the sword
   const hand = arm(p.fa, 'K');
   if (p.sword === null && !p.sheathing && p.bsword == null) {                    // sheathed: hilt pokes forward-up out of the scabbard
@@ -68,6 +71,6 @@ export function rig(g, fx, p) {
   } else if (p.sword !== null) {
     const d = [Math.cos(p.sword), Math.sin(p.sword)];
     seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S');
-    seg(add(hand, d, 1), add(hand, d, 13), 1, 'W');
+    seg(add(hand, d, 1), add(hand, d, bladeLen), 1, 'W');
   }
 }

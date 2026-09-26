@@ -1,6 +1,6 @@
 import { COL } from '../config.js';
 import { g } from '../screen.js';
-import { P } from '../state.js';
+import { P, INV } from '../state.js';
 import { GLITCHY } from '../anims/anims.js';
 import { SHEETS } from '../anims/sheets.js';
 import { frameOf } from './actions.js';
@@ -15,8 +15,22 @@ function rim(sheet, f, x, y, face, k) {
   for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) spriteTo(g, sh, 0, x + ox, y + oy, face, (.14 + .5 * k) * fl);
   if (k > .6) { const s2 = solid(sheet, f, COL.fx2); for (const [ox, oy] of [[2, 0], [-2, 0], [0, -2], [1, -1], [-1, -1]]) spriteTo(g, s2, 0, x + ox, y + oy, face, (k - .6) * .4 * fl); }
 }
+// the whetstone's cyan edge: the current frame with the blade's white swapped for cyan, cached per frame
+const EDGE = new WeakMap(), BLADE_RGB = [233, 238, 238], EDGE_RGB = [111, 243, 228];
+function edged(sheet, f) {
+  let m = EDGE.get(sheet); if (!m) EDGE.set(sheet, m = new Map());
+  let c = m.get(f);
+  if (!c) { c = document.createElement('canvas'); c.width = sheet.fw; c.height = sheet.fh; const cg = c.getContext('2d', { willReadFrequently: true });
+    cg.drawImage(sheet.img, f * sheet.fw, 0, sheet.fw, sheet.fh, 0, 0, sheet.fw, sheet.fh);
+    const d = cg.getImageData(0, 0, sheet.fw, sheet.fh);
+    for (let i = 0; i < d.data.length; i += 4) if (d.data[i] === BLADE_RGB[0] && d.data[i + 1] === BLADE_RGB[1] && d.data[i + 2] === BLADE_RGB[2]) [d.data[i], d.data[i + 1], d.data[i + 2]] = EDGE_RGB;
+    cg.putImageData(d, 0, 0); m.set(f, c); }
+  return { img: c, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy };
+}
 export function drawPlayer() {
-  const sheet = SHEETS[P.state], f = frameOf();
+  if (P.hidden) return;   // inside the static bomb's burst
+  let sheet = SHEETS[P.state], f = frameOf();
+  if (INV.edge > 0 && !sheet.custom) { sheet = edged(sheet, f); f = 0; }
   const glitchy = (GLITCHY.has(P.state) && sheet.custom) || P.glitchNow > 0;
   // shadow and reflection
   g.fillStyle = 'rgba(20,24,24,.35)';

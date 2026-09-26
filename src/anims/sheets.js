@@ -42,4 +42,6 @@ function placeholderSheet(name) {
 for (const k in POSES) if (ANIMS[k]) ANIMS[k].n = POSES[k].length;   // keyframed moves decide their own length
 export const SHEETS = {};
 for (const k in ANIMS) SHEETS[k] = placeholderSheet(k);
+// a new weapon re-bakes every placeholder with its blade; a dropped-in strip is kept as it is
+export function rebake() { for (const k in ANIMS) if (!SHEETS[k].custom) SHEETS[k] = placeholderSheet(k); }
 export const dur = k => ANIMS[k].n / ANIMS[k].fps;

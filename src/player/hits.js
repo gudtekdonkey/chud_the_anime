@@ -1,22 +1,30 @@
 import { COL } from '../config.js';
-import { P, S, cuts } from '../state.js';
+import { P, S, INV, cuts } from '../state.js';
 import { rr, residue, spark } from '../fx/util.js';
 import { QI_GAIN, qiAdd, chainFrom } from './qi.js';
+import { reach, weight } from './weapon.js';
+import { has } from '../items/inventory.js';
 import { DUMMIES } from '../world/dummies.js';
 
 // ---- Hits: each dummy once per kind per move; P.struck remembers them for the sheath-click burst ----
 export function hitOne(dummy, i, kind, fx = P.x, fy = P.y) {
   P.hitDone[kind + i] = true; P.struck.add(dummy);
-  // short on purpose: a 3-frame white dummy, a 3-frame freeze, ONE shaken frame
-  dummy.flash = .05; dummy.wob = .25; S.hitstop = Math.max(S.hitstop, .05); S.shake = Math.max(S.shake, 1 / 60);
+  // short on purpose: a 3-frame white dummy, a 3-frame freeze, ONE shaken frame; a heavier blade lands a beat heavier
+  const wt = weight();
+  dummy.flash = .05; dummy.wob = .25; S.hitstop = Math.max(S.hitstop, .05 * wt); S.shake = Math.max(S.shake, wt / 60);
   if (kind === 'sw') dummy.zap = .25;
   // 6-12 short streaks, mostly thrown away from whoever cut it
   const away = Math.atan2(dummy.y - fy, dummy.x - fx), n = 6 + (Math.random() * 7 | 0);
   for (let i = 0; i < n; i++) { const a = i < n * .7 ? away + rr(-1.1, 1.1) : rr(0, Math.PI * 2), v = rr(110, 170);
     spark(dummy.x + rr(-2, 2), dummy.y - 16 + rr(-4, 4), Math.cos(a) * v, Math.sin(a) * v * .7, rr(.09, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
-  if (P.storm > 0) chainFrom(dummy); else qiAdd(QI_GAIN[kind.match(/^[a-zA-Z]+/)[0]] || 0);
+  if (P.storm > 0) chainFrom(dummy); else qiAdd((QI_GAIN[kind.match(/^[a-zA-Z]+/)[0]] || 0) * qiMul());
 }
+// Split Tsuba: +25%; a whetstone edge: twice as fast
+const qiMul = () => (has('tsuba') ? 1.25 : 1) * (INV.edge > 0 ? 2 : 1);
+// the blade's own cuts (J, and I's two) reach further with a longer weapon
+const BLADE_CUT = /^(slash|d\d)/;
 export function hit(kind, cx, cy, r) {
+  if (BLADE_CUT.test(kind)) { const k = reach(); cx = P.x + (cx - P.x) * k; r *= k; }
   DUMMIES.forEach((d, i) => { if (!P.hitDone[kind + i] && Math.hypot(d.x - cx, (d.y - 10 - cy) * 1.4) <= r) hitOne(d, i, kind); });
 }
 // distance from a point to a segment in the same squashed floor space as hit(), and how far along it the point sits

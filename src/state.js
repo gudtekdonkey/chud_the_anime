@@ -6,7 +6,17 @@ export const P = { x: 200, y: 180, z: 0, vz: 0, vx: 0, vy: 0, face: 1, state: 'i
 export const parts = [];
 // reassigned from many modules, so they live on one object: screen shake, hit pause, the pale screen flash,
 // and roomClear (page checkbox: treat the training dummies as props, not enemies)
-export const S = { shake: 0, hitstop: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false };
+export const S = { shake: 0, hitstop: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false, banner: null };
+
+// ---- The inventory: the HUD reads only this, and every system writes to it. Qi stays on P.qi (0..1) ----
+// hp 0..1; power 1..3 is the I / II / III tier (its source is still the owner's call); edge: seconds of whetstone left
+export const INV = { hp: .6, mon: 0, shards: 0, exp: 0, lv: 1, power: 1, edge: 0, edgeSlot: 2,
+  weapon: 'katana',                                                                   // 'katana' | 'nodachi'
+  quick: [{ id: 'bomb', n: 3 }, { id: 'talisman', n: 2 }, { id: 'whetstone', n: 2 }, { id: 'incense', n: 3 }],   // null = empty
+  charms: ['bead', 'mirror', 'knot', null],
+  fx: { qi: 0, mon: 0, shards: 0, weapon: 0, hp: 0, quick: [0, 0, 0, 0], charms: [0, 0, 0, 0] } };   // flash timers the HUD counts down
+// rising +1 text and plus marks, and the glints on a caught coin (world space, drawn over everything)
+export const pops = [], glints = [];
 
 // ---- Engine effects: drawn in world space, never in the sheets, so they survive real art replacing the placeholder ----
 export const frags = [], slashes = [], cuts = [], zaps = [], rings = [], timers = [], moons = [], voids = [], mirrors = [];
