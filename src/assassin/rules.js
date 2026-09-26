@@ -37,6 +37,15 @@ export const RULES = {
   'Walk By': { ...std, ending: true, ...C },                 // no hurry, because there is nobody left
   'Rewind': { ...std, foes: ['elite', 'boss'], ...R },       // too much for a minion
   'Fault Line': { ...std, ...L },
+  // batch 4 (prototypes/28): one strange idea each, so none of them is common
+  'Shadow Cut': { weapons: ANY, ...U },                     // his shadow draws, not him
+  'Echo Line': { ...std, ...R },
+  'Static Cage': { weapons: ANY, ...R },
+  'Sky Split': { ...std, ...L },
+  'The Thread': { weapons: ANY, ...U },                     // a thread from his sleeve; no blade
+  'Floor Flip': { ...std, ...R },
+  'Resonance': { ...std, ...U },                            // the scabbard's click: needs one
+  'Derez': { ...std, ...R },
 };
 const need = name => ({ weapons: SHEATHED, hat: null, ending: false, opening: false, foes: ['minion', 'elite', 'boss'], rarity: 'common', level: 1, ...RULES[name] });
 export const RARITY = { common: { w: 10, power: 1 }, uncommon: { w: 5, power: 1 }, rare: { w: 2, power: 2 }, legendary: { w: .6, power: 3 } };
