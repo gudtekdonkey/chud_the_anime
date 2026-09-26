@@ -18,7 +18,7 @@ export const LOAD = [
 ];
 export const MAX_CARRY_KG = 20;            // he cannot pick up coin past this
 // The town money-changer (ryōgae): holds coin for a fee, changes coin for a fee. Fees go to the town's merchant guild.
-export const BANK = { deposit: .01, perSeason: .005, exchange: .02 };
+export const BANK = { deposit: .01, perSeason: .005, exchange: .02, note: .03 };   // note: a changer's note, to draw the money in another town
 // NPC purses change copper up to gold past this many mon, so fortunes weigh what they should
 export const CHANGE_UP = 3000;
 
@@ -78,7 +78,7 @@ export const GUILD_FLOAT = 30;                 // mon a head the guild keeps in 
 export const GUILD_START = 150;                // mon per person in the region when the world begins
 export const TEMPLE_SHARE = .06;               // a day, monks draw this share of the temple's offerings
 export const TEMPLE_SINK = .002;              // a day, this share of offerings leaves the world: gold leaf, bronze, incense (a money sink)
-export const ALMS = .3;                        // a step, a temple spends up to this share of its offerings buying rice for the hungry of its region
+export const ALMS = .05;                       // a step, a temple spends up to this share of its offerings buying rice for the hungry of its region
 
 // Spending above need: a household spends SPEND of its wealth above its reserve a day, split by its class's taste.
 export const SPEND = .04;
@@ -104,11 +104,11 @@ export const MINT = 2;
 
 // Land (owner: land yields koku per season by terrain and work; paddy best). Koku a year per tile of each ground.
 // A plot is 16 × 16 tiles. Settlement zones ring their centre with field, or paddy in wet land (src/sim/zone.js).
-export const KOKU_TILE = { paddy: .05, field: .03, grass: .002 };
+export const KOKU_TILE = { paddy: .033, field: .019, grass: .002 };   // tuned so about 40% go short of rice (owner: hard times)
 export const PLOTS_PER_FARMER = 2;             // one adult farmer works this many plots
-export const TAX = { plot: .4, zone: .3 };     // the plot holder pays the zone lord 40% (four to the lord, six to the people); a zone lord pays his region lord 30%
-// the plot tax where a culture of this kind rules (free valleys and merchant leagues tax lightly; outlaws take, they do not tax)
-export const TAX_KIND = { rebels: .2, merchants: .3, monastic: .3, bandits: 0 };
+export const TAX = { plot: .5, zone: .3 };     // the plot holder pays the zone lord half (five to the lord, five to the people: hard times, owner 2026-09-26); a zone lord pays his region lord 30%
+// the plot tax where a culture of this kind rules (free valleys, leagues and temples tax lighter; outlaws take, they do not tax)
+export const TAX_KIND = { rebels: .3, merchants: .4, monastic: .4, bandits: 0 };
 export const TENANT_SHARE = .5;                // tenants working a plot they do not hold keep half
 export const KEEP_DAYS = 1.15;                 // a farming household keeps rice for the days to the next harvest × this, and sells the rest
 export const RICE_HOLD = 1.5;                  // the guild buys rice only while its stock is under this × its target (held rice rots)

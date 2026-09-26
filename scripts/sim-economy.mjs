@@ -13,7 +13,7 @@ console.log('\nmean price over the regions, mon, at the end of each season');
 console.log('year  season  ' + GOODS.map(g => pad(g, 8)).join('') + '  famine  hungry');
 console.log('      base    ' + GOODS.map(g => pad(GOOD[g].base, 8)).join(''));
 // conservation: day by day, the change in all the money must equal what was minted and looted less what the temples and hoards took
-let unexplained = 0, total = 0, last = m0.total, fl = { ...E.flow }, msYear = [];
+let hungerSum = 0, hungerN = 0, unexplained = 0, total = 0, last = m0.total, fl = { ...E.flow }, msYear = [];
 const flowNet = () => { const f = E.flow, d = (f.mint - fl.mint) + (f.loot - fl.loot) + (f.other - fl.other) - (f.temple - fl.temple) - (f.buried - fl.buried); fl = { ...f }; return d; };
 for (let y = 1; y <= years; y++) {
   let ms = 0;
@@ -22,6 +22,7 @@ for (let y = 1; y <= years; y++) {
       t0 = performance.now(); advance(L, TIME.HOURS_PER_DAY); ms += performance.now() - t0;
       if (fl.mint > E.flow.mint) fl = { mint: 0, loot: 0, other: 0, temple: 0, buried: 0, fees: 0 };   // the year's books were closed
       const now = moneySupply(L).total; unexplained += now - last - flowNet(); last = now;
+      if (y > 1) { hungerSum += sum(R => R.hungry) / sum(R => R.pop); hungerN++; }
     }
     const c = calendar(L.hour - 1);
     console.log(`${pad(c.year, 4)}  ${c.season.padEnd(6)}  ${GOODS.map((g, i) => pad(Math.round(avg(R => R.price[i])), 8)).join('')}  ${pad(E.regions.filter(R => R.famine).length, 6)}  ${pad(Math.round(sum(R => R.hungry)), 6)}`);
@@ -33,6 +34,7 @@ for (let y = 1; y <= years; y++) {
 }
 const people = economyIndex(L).pop.reduce((a, b) => a + b, 0), m = moneySupply(L);
 console.log(`\nmoney now ${Math.round(m.total).toLocaleString()} mon (${((m.total / m0.total - 1) * 100).toFixed(1)}% over ${years} years): purses ${Math.round(m.purses).toLocaleString()}, guilds ${Math.round(m.guild).toLocaleString()}, temples ${Math.round(m.temple).toLocaleString()}, pools ${Math.round(m.pools).toLocaleString()}; buried in the ground ${Math.round(m.buried).toLocaleString()}`);
+console.log(`short of rice: ${(hungerSum / Math.max(1, hungerN) * 100).toFixed(0)}% of people on an average day after the first year`);
 console.log(`people ${people}; hungry now ${Math.round(sum(R => R.hungry))}; rice stolen by outlaws ${Math.round(sum(R => R.stolen || 0))} koku; alms ${Math.round(sum(R => R.alms || 0)).toLocaleString()} mon`);
 console.log('\nwealth by household (head\'s class, mon):  households     mean   median   under 20');
 { const by = {}; for (const h of economyIndex(L).hh) { let v = 0; for (const a of h.m) if (a.alive) v += worth(a.money); (by[h.head.cls] = by[h.head.cls] || []).push(v); }

@@ -2,7 +2,7 @@
 
 The economy lane of the simulation core (`docs/sim-core.md`): money with weight, land that yields koku, taxes up the ladder, a market in every region, caravans on the roads, and every person's purse earning and spending by job and class. It is one system, `system({ id: 'economy', order: 40 })`, with all its state in `L.sys.economy`, and it runs only in `onDay`, `onSeason` and `onYear`, so a long absence is lived exactly as if he had stayed (checked: see *Testing*).
 
-Owner decisions it follows (2026-09-26): the historical names (mon, silver by the monme, gold ryō at 1 ryō = 1,000 mon, koku); carried money has weight (move it, store it in a kura, or bank it with a money-changer for a fee); real time while away; colour is rank, so coloured cloth is rare and dear. Glitch shards are otherworldly and never traded: the economy never touches them.
+Owner decisions it follows (2026-09-26): hard times, about 40% of people short of rice (below); the historical names (mon, silver by the monme, gold ryō at 1 ryō = 1,000 mon, koku); carried money has weight (move it, store it in a kura, or bank it with a money-changer for a fee); real time while away; colour is rank, so coloured cloth is rare and dear. Glitch shards are otherworldly and never traded: the economy never touches them.
 
 - `node scripts/sim-economy.mjs [seed] [years]` lives a world for years (10 by default) and prints prices each season, the books each year (money in, money out, unexplained), wealth by class, the top lords, the events and the speed; it also checks determinism, and exits non-zero if money appears or vanishes unaccounted.
 - `prototypes/37-economy.html` (sources in `prototypes-src/37-economy/`) shows it living: prices over time, a region's market, its lord's koku and taxes, caravans on the map, the ronin's purse and its weight.
@@ -33,7 +33,7 @@ A fortune has three places to be: carried; in a **kura** on a plot he holds (fre
 Each plot has a yield in koku a year (`plotKoku`): estimated from its zone's biome and the settlement ring of field or paddy (the same ground `zone.js` makes, without making the tiles), ±15% by plot. Paddy is best. The land lane can set a plot's yield in `L.sys.economy.plotKoku[plotId]` (cleared, irrigated, ruined).
 
 The harvest comes once a year, at the start of autumn. Each region rolls its weather (`HARVEST`: usually 0.85 to 1.15; a drought 6% of years, `econ.drought`; a bumper year 6%). Each town and village is worked by its adult farmers, two plots each, best land first, households' own plots before the lord's:
-- a household's own plot: it pays the zone lord the plot tax (40%, lighter in free valleys and merchant leagues, none under outlaws: `TAX_KIND`); what its own farmers worked is its own; the rest was worked by the village's farmers as tenants, who keep half of it;
+- a household's own plot: it pays the zone lord the plot tax (half the crop, lighter in free valleys and merchant leagues, none under outlaws: `TAX_KIND`); what its own farmers worked is its own; the rest was worked by the village's farmers as tenants, who keep half of it;
 - the lord's plots (and absent holders', the ronin's included): worked by tenants, who keep half; the holder gets the rest (less tax if he is not the zone lord);
 - the tenants' share goes to the households whose farmers did the work.
 
@@ -102,6 +102,7 @@ Nothing is added to actors. The economy works by region and settles each region 
 | `econ.caravan.robbed` | `caravan, zone, region, from, to, good, qty, value, by, owner` | outlaws (or `robCaravan`) took a caravan |
 | `econ.kura.raided` | `plot, owner, by, value` | `raidKura` emptied a storehouse |
 | `econ.deposit` / `econ.withdraw` | `actor, zone, value` | the money-changer |
+| `econ.note` | `actor, from, to, value` | a changer's note sent money to another town |
 | `econ.transfer` | `from, to, value, why` | a transfer of a ryō or more |
 | `econ.year` | `year, total, mint, sinks` | the year's books closed |
 
@@ -110,7 +111,7 @@ Nothing is added to actors. The economy works by region and settles each region 
 - Money: `worth(purse)`, `weightOf(purse)` (kg), `burden(purse)` → `{ kg, name, speed, dodge, theft }`, `pay(purse, mon)`, `coins(mon)`, `fmt(mon)`.
 - Markets: `priceOf(L, region, good)`, `regionMarket(L, region)`, `buy(L, id, region, good, qty)`, `sell(L, id, region, good, qty)`, `garmentPrice(L, region, 'kimono' | 'haori' | 'obi')`.
 - People: `give(L, id, coins, 'loot')` (coin from outside the ledger), `transfer(L, from, to, mon, why)`, `offer(L, id, region, mon)`.
-- The changer: `isChanger(L, x, y)`, `deposit`, `withdraw`, `exchange(L, id, x, y, from, n, to)`, `accounts(L, id)`.
+- The changer: `isChanger(L, x, y)`, `deposit`, `withdraw`, `exchange(L, id, x, y, from, n, to)`, `sendNote(L, id, [x, y], [x2, y2], coins)` (draw it in another town, 3%), `accounts(L, id)`.
 - The kura: `stash(L, id, plotId, coins)`, `unstash`, `raidKura(L, plotId, by)`.
 - Caravans: `caravanZone(L, caravan)`, `robCaravan(L, id, caravanId)`, `escortCaravan(L, id, caravanId)`.
 - Land: `plotKoku(L, zx, zy, n)`, `zoneLord(L, zone)`, `lordOf(L, id)`, `daysToHarvest(cal)`.
@@ -125,7 +126,7 @@ The game's HUD `INV.mon` is a separate counter today; wiring it to the ronin's `
 |---|---|---|
 | `COIN` worth, grams | 1 / 16 / 1,000 mon; 3.75 / 3.75 / 18 g | the coins; ryō fixed by the owner |
 | `LOAD`, `MAX_CARRY_KG` | 2 / 6 / 12 kg; 20 kg | how soon coin slows him |
-| `BANK` | 1% deposit, ½% a season, 2% exchange | the price of safety |
+| `BANK` | 1% deposit, ½% a season, 2% exchange, 3% a note to another town | the price of safety |
 | `CHANGE_UP` | 3,000 mon | when NPCs change copper into gold |
 | `GOOD[g].base` | rice 1,000 a koku, fish 40, salt 300, sake 120, timber 100, iron 50, cloth 250, silk 8,000, weapons 2,500, horses 4,000, tools 60 | the price level of each good |
 | `GOOD[g].days`, `eps`, `rot`, `cap` | per good | how much stock a market wants, how hard price answers, spoilage, the glut cap |
@@ -137,32 +138,30 @@ The game's HUD `INV.mon` is a separate counter today; wiring it to the ronin's `
 | `NEED`, `CHILD` | rice 1/112 koku, fish .02, salt .0012, cloth .004, timber .01, tools .012, iron .004 a day; a child half | the cost of living |
 | `JOBS` make / use / wage / take | per job | what each trade makes, stipends, robbers' take |
 | `SPEND`, `RESERVE`, `TASTE` | 4% a day above the reserve; reserves by class; tastes by class | how fast money circulates, and where it goes |
-| `TEMPLE_SHARE`, `TEMPLE_SINK`, `ALMS` | 6% a day, 0.2% a day, 30% a step | monks' pay, the gods' sink, charity |
+| `TEMPLE_SHARE`, `TEMPLE_SINK`, `ALMS` | 6% a day, 0.2% a day, 5% a step | monks' pay, the gods' sink, charity |
 | `HOARD`, `HOARD_OVER` | ½% a season past 4× reserve | the buried-coin sink |
 | `MINT` | 2 mon a miner a day | the money source; with the sinks, sets the money supply |
-| `KOKU_TILE`, `PLOTS_PER_FARMER` | paddy .05, field .03, grass .002 koku a tile a year; 2 plots | the crop (now about 1.2 koku a person a year) |
-| `TAX`, `TAX_KIND`, `TENANT_SHARE`, `KEEP_DAYS` | 40% (free valleys 20%, leagues and temples 30%, outlaws none); zone 30%; tenants half; 1.15 | who gets the rice |
+| `KOKU_TILE`, `PLOTS_PER_FARMER` | paddy .033, field .019, grass .002 koku a tile a year; 2 plots | the crop (now about 0.9 koku a person a year): the main lever on hunger |
+| `TAX`, `TAX_KIND`, `TENANT_SHARE`, `KEEP_DAYS` | half (free valleys 30%, leagues and temples 40%, outlaws none); zone 30%; tenants half; 1.15 | who gets the rice |
 | `HARVEST` | weather 0.85–1.15; drought 6% (0.3–0.6); bumper 6% (1.25–1.4) | how often famines come |
 | `FAMINE_DAYS`, `FAMINE_END_DAYS` | 5, 20 | when a famine is declared and ends |
 | `WAR_RICE`, `WAR_ARMS` | ×1.25 rice; .004 blades and .0015 horses a fighter a day | how hard war bites |
 | `CARAVAN` | a road weighed weekly; 30,000 mon a load; 15% least gain; 1.2% a zone; 4 zones a day; 3 out at once; 6% robbed a day near a camp, a third of that guarded | trade and banditry |
 | `HISTORY` | 8 seasons | price history kept |
 
-## Where it stands (seed 12345, 10 years; seeds 777 and 4242 alike)
+## Where it stands (seeds 12345, 777 and 4242, 10 years each)
 
-- **Money**: 3.82 million mon at the start, 3.70 to 3.96 million after 10 years on the three seeds (+1.9% over 20). A year mints about 40,000; temples take about 25,000, buried coin about 17,000. Unaccounted: a few mon a year (rounding).
-- **Prices** (mean over regions, ×base, year 10): rice 0.8–1.2 by season (dearest before the harvest), fish 2.5–2.8, salt 1.4–1.8, sake 2.2–2.6, timber 1–2, iron 2–2.4, cloth 2, silk 1.8, weapons 1, horses 0.8–0.9, tools 3.5. Inland fish and anything far from its makers stays dear; famines come in a few regions a year after droughts.
-- **Pay** (mon a day, an adult): fishers, smiths, weavers, brewers 15–30; woodcutters 10–20; miners about 10; innkeepers, carpenters, couriers 30–40; stipends about 85% of wage (lords run short); monks 60–100; merchants under 10.
-- **Wealth by household** (mean): nobles about 10–19 ryō, commoners about 1 ryō, retainers and monks under 1 ryō; a quarter to a half of ashigaru, rebel and ronin households under 20 mon.
-- **Hunger**: 5% of people short of rice after the harvest, 10–17% by late winter and spring, mostly the poorest households in villages whose own plots are small. Outlaws take what they cannot buy.
-- **Speed**: under 1 ms a day on average (about 1.8 ms in the first year while the code warms up, about 0.85 after). The economy adds about 200 KB to a save.
+- **Hard times** (owner, 2026-09-26: "40 percent short of rice … it's hard times"): about 41% of people are short of rice on an average day on all three seeds. The crop is about 0.9 koku a person a year against 1 eaten, and lords take half. Rice runs near its base price after the harvest and 3.5–4× by late winter, when a third of the regions are in famine. Outlaws take rice they cannot pay for; temples give a little alms.
+- **Money**: 3.6 to 3.9 million mon, moving under 2.5% over 10 years. A year mints about 40,000; temples take about 25,000, buried coin about 15,000. Unaccounted: a few mon a year (rounding).
+- **Speed**: under 1 ms a day on average (about 2 ms in the first year while the code warms up, about 0.8 after). The economy adds about 200 KB to a save.
+- Other prices stay near where they were: fish 2–3× base inland, salt 1–2×, sake 2–2.5×, tools 2–3.5×, weapons and horses 1–1.5× (war pushes them up).
 
-## Open questions for the owner
+## Decided (owner, 2026-09-26: "you think of all this stuff")
 
-1. **Hunger**: 5–17% of people are short of rice through the year, worst before the harvest. Keep it (lean years, a reason for quests and banditry) or aim lower (lower tax, more land a farmer, more alms)?
-2. **How much a man earns**: a labourer makes 15–40 mon a day and a koku of rice costs about 1,000 mon, so food takes most of a poor family's pay. The game's pickups give mon from kills: how much should a fight pay him against those wages?
-3. **Weight**: 2 kg (about 530 mon of copper) before he slows, 12 kg before he cannot slide or jump. Right, or should copper bite sooner?
-4. **Lords of a few hundred koku**: ranks come from this small world's land (about 100 to 500 koku a region). Show them as they are, or scale the displayed number (×100: "a lord of 30,000 koku")?
-5. **The money-changer**: only in region seat towns, and coin is taken back only where it was left. Should a changer's note (a bill of exchange) let him draw it in another town, for a fee?
-6. **Wages when he is a lord**: stipends are set by job today. When he holds land, should he set his own men's pay and tax rate?
-7. **Coloured silk**: a coloured kimono costs about 14 ryō in most markets and only royalty buy it. Should selling one draw suspicion (the crime lane), and should wearing one change how people treat him?
+1. **Hunger**: about 40% short of rice. Hard times. The knobs are `KOKU_TILE`, `TAX` and `ALMS`.
+2. **Loot**: a samurai killed in a zone should carry a day or two of a labourer's pay, 20–60 mon; a lord's retainer a few hundred; a chest or a boss a ryō or more. Given through `give(L, id, coins)`, counted as loot.
+3. **Weight**: stays as built: light to 2 kg (about 530 mon of copper), laden to 6 kg, no slide or jump past 12 kg, nothing more past 20 kg.
+4. **Rank**: lords' koku shown as they are (about 100 to 500 koku a region lord); a kingdom of merged domains will count in thousands.
+5. **Changer's notes**: built (`sendNote`): money left in one seat town can be sent to another's book for 3%.
+6. **When he is a lord**: he sets his own tax rate and his men's pay (the land lane's screen; the economy reads a holder's rate once that exists).
+7. **Coloured silk**: selling it is a hook for the crime lane (a fence, suspicion); wearing it changes how people treat him (the people lane). The economy only prices it: a coloured kimono is about 14 ryō.

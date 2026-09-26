@@ -55,6 +55,14 @@ export function exchange(L, id, x, y, from, n, to) {
   a.money[to] = (a.money[to] || 0) + out; a.money.mon += back;
   const E = E_(L); E.regions[regionOfZone(L, x, y)].guild += fee; E.flow.fees += fee; return out;
 }
+// a changer's note: move money held in one town's book to another's, for BANK.note (the fee to the sending town's guild)
+export function sendNote(L, id, from, to, c) {
+  const E = E_(L), [fx, fy] = from, [tx, ty] = to; if (!isChanger(L, tx, ty)) return false;
+  const src = E.banks[townKey(fx, fy)] && E.banks[townKey(fx, fy)][id]; if (!src || !takeCoins(src, c)) return false;
+  const book = E.banks[townKey(tx, ty)] || (E.banks[townKey(tx, ty)] = {}), acct = book[id] || (book[id] = purse());
+  addTo(acct, c); const fee = pay(acct, worth(c) * BANK.note); E.regions[regionOfZone(L, fx, fy)].guild += fee; E.flow.fees += fee;
+  emit(L, 'econ.note', { actor: id, from, to, value: Math.round(worth(c)) }); return worth(acct);
+}
 export const accounts = (L, id) => Object.entries(E_(L).banks).filter(([, b]) => b[id]).map(([t, b]) => ({ town: t.split(',').map(Number), money: b[id], worth: worth(b[id]) }));
 
 // ---- a storehouse (kura) on a plot he holds: free and safe, until the plot is raided ----

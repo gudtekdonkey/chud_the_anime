@@ -175,3 +175,8 @@ The owner said the deaths still don't feel like someone dying, and the execution
 - Open: more paired executions, what else sets a companion up, the bleed-out time.
 - **In the game** (`src/party/`, 2026-09-26): all of the above runs in the room on main's systems. His kit is the game's own state (`P.weapon`, `wear.outfit`, `INV.charms`), so the kit screen and the pickers stay in step. Companions wear main's wardrobe (7 slots; the prototype's masks and hair are not on main yet). The camp board is at the west wall, the wanderer walks in on the west edge, the captive kneels among the samurai (guarded while one is within 50 px) and a new one comes with every other squad. Enemies do not attack yet, so `hurtAlly` waits for them; H cuts the nearest companion down for testing. Iron Oath takes a blow meant for him through `hurt()`. Thunder Bead counts on anyone in the party. He keeps INV's level; companions keep their own stats.
 - Owner idea (2026-09-26): press K during an execution to queue the next and chain straight into it. Built by the K assassinations work; the paired cut should chain the same way once it lands.
+
+## Economy (2026-09-26)
+
+- **Hard times** (owner): about 40% of people short of rice on an average day; lords take half the crop; famine spreads before the harvest. Built in `src/sim/economy/` (`docs/sim-economy.md`).
+- The owner left the other economy choices to Claude: loot of 20–60 mon a samurai, coin weight tiers as built, koku ranks shown as they are, changer's notes between towns for 3%, a lord sets his own tax and pay, coloured silk a crime-lane hook. Recorded in `docs/sim-economy.md`, *Decided*.
