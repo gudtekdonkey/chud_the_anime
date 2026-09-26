@@ -2,6 +2,18 @@
 
 Decisions that everything else builds on. Owner answers are marked with the date; the rest are Claude's proposals, open until the owner confirms them. Every session reads this before building anything about the world, land, ownership, companions or NPCs.
 
+## Owner decisions (2026-09-26)
+
+- **Single-player** for now ("we're just alpha"). Built so a server could run it later (see the engineering decisions).
+- **Time runs in real time while you are away.** The ledger catches up on your return from the clock: crops grow, plans run, NPCs live, wars move.
+- **Death costs everything, unless you have an heir.** With family, the game continues as your heir; your body is laid to rest where you died, and stays in the world there (a grave the world remembers). Without one, it is over.
+- **NPCs age, marry and pass their land to their heirs**, and so can he: family is how a run survives death, and the world changes over years of play.
+- **An economy, with the historical names:** mon, silver (monme), gold ryō, koku.
+- **Carried money has weight**: a fortune has to be moved, stored or banked.
+- **Story: 90% from the world.** Only the structure is written by hand; everything else comes out of the ledger (quests, rivals, events).
+- **Glitch storms are in**, and there is **no true story behind the glitch powers**: they are a fact of this world, not a mystery to solve.
+- **World events, and random events while travelling**: ambushes on the road, merchants and pilgrims met on the way, a wounded man asking for help, weather that turns, a glitch storm crossing the road.
+
 ## The world (owner, 2026-09-26)
 
 "There is a world. This world is made up of a 100 × 100 grid. Each grid area is a zone. This zone has many individual tiles; they can make a plot. The player plays within the zone. That's where his POV is. He walks around and fights in the zone."
@@ -50,10 +62,9 @@ Plot holder → zone lord (all of one zone) → domain (merged zones) → kingdo
 
 ### Still open
 - Karma: hidden, shaping consequences only, or shown and steered toward good or evil?
-- Single-player, or an online world with other players owning land?
-- Does game time run while you are away (real-time clock), or only on return?
-- What death costs (items, land, companions), and whether land can be lost in raids.
+- Can land be lost in raids?
 - Platforms: browser, desktop (Steam), phone, gamepad.
+- Answered above: single-player, real time while away, death and heirs.
 
 ## Wealth (proposed, for the owner to confirm)
 
@@ -88,10 +99,8 @@ The measure of power in this world is land and what it grows, the way feudal Jap
 - A **storehouse** (*kura*) on his own land keeps wealth safe unless the land is raided; a **money-changer** in a town holds it for a fee.
 - Colour is rank (owner, 2026-09-26): coloured clothing is rare and worth a fortune; a royal's red kimono is loot worth killing for, and wearing it has consequences.
 
-### Open, for the owner
-- Keep the historical names (mon, ryō, koku) or plain ones (copper, gold, rice)?
-- Should carried money have weight, so a fortune has to be moved, stored or banked?
-- What is lost on death: carried coin only, or more?
+### Answered (owner, 2026-09-26)
+- Historical names: mon, ryō, koku. Carried money has weight. Death costs everything unless an heir carries on.
 
 ## People, work, quests and world events (proposed, for the owner to confirm)
 
@@ -125,10 +134,8 @@ Events are the ledger's big moves, felt in every zone they reach:
 - **The otherworld:** glitch storms, where reality tears (the ronin's own glitch powers are part of this world's secret); a shrine goes dark; the dead walk for a night.
 - Events are announced in the world (a messenger, a notice board, smoke on the horizon, a bell) and on the world map, and they change prices, danger, standing and who owns what.
 
-### Open, for the owner
-- How much story is written by hand, and how much comes from the world?
-- Does the otherworld (glitch storms, the ronin's powers) have a story behind it?
-- Should NPCs age, marry and have heirs, so land passes down the generations and the world changes over years of play?
+### Answered (owner, 2026-09-26)
+- 90% of the story comes from the world; only the structure is written. Glitch storms are in, with no story behind the powers. NPCs age, marry and pass land to heirs.
 
 ## Engineering decisions (Claude's, unless the owner objects)
 - **One actor for everyone**: the ronin, enemies, companions, villagers, lords and animals are the same entity: body (rig, clothes, weapon), personality, inventory, a brain (player, AI or orders), a faction, karma and standing.
