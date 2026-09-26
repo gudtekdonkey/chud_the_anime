@@ -11,10 +11,14 @@ export const CUTS = {
   slash1:  { n: 1, sk: .16, lunge: 85, rot: .15, flip: 1 },
   slash1r: { n: 1, sk: .16, lunge: 85, rot: .15, flip: 1 },
   slash2:  { n: 2, sk: .14, lunge: 60, rot: -.35, flip: -1 },
-  slash3:  { n: 3, sk: .12, lunge: 70, rot: .55, flip: 1 },
-  slash4:  { n: 4, sk: .13, lunge: 55, rot: -.6, flip: -1 },
-  slash5:  { n: 5, sk: .13, lunge: 120, rot: 0, flip: 1 },
-  slash6:  { n: 6, sk: .2, lunge: 90, rot: .35, flip: 1, big: true, hop: [.06, .2] },
+  // spin: he is turned round for this window (the whirl), and the sweep hits all round him
+  slash3:  { n: 3, sk: .12, lunge: 50, rot: .05, flip: -1, spin: [.05, .1], around: true },
+  // kick: no blade, no crescent: the foot lands with a shove of dust and a small ring
+  slash4:  { n: 4, sk: .12, lunge: 70, kick: true },
+  // launch: off the floor with a cut that rises straight up
+  slash5:  { n: 5, sk: .15, lunge: 40, rot: -1.2, flip: -1, hop: [.06, .3], height: 14 },
+  // flash step: gone at .1 and 46 px past, the cut line drawn through everything he passed, the finisher's big crescent where he lands
+  slash6:  { n: 6, sk: .14, lunge: 0, rot: .1, flip: 1, big: true, step: [.09, 46] },
 };
 export const GO = .3;
 export const nextCut = s => { const n = CUTS[s].n; return n < comboMax() ? 'slash' + (n + 1) : null; };

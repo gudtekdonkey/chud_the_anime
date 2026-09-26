@@ -101,7 +101,7 @@ The owner said the deaths still don't feel like someone dying, and the execution
 ## J combo ladder and Flow (`prototypes/34-combo-ladder.html`, 2026-09-26)
 - Owner: the greater his basic skill, the longer the J combo chains; a passive lets him cast a skill after chaining six basic attacks.
 - Owner (the items thread): skills upgrade by usage. So basic skill is landed basic cuts (`INV.basic`), not levels: 2 cuts to start, 3 at 40, 4 at 120, 5 at 250, 6 at 450 (Claude's numbers, open to tuning).
-- Each weapon has its own six cuts on the katana's beats (cut n+1 starts from cut n's pose at the 0.3 s chain beat); the sixth is the finisher (a leap, a big crescent, a kneel).
+- Owner: every cut in the combo must be a different attack, not the same swing again. J3 spin cut (whirls round, cuts all round him), J4 front kick (no crescent), J5 rising launch (off the floor), J6 flash step (slices, 46 px past, a cut line through all he passed, on one knee). Each weapon does them with its own arms and blade (`anims/combo-poses.js`), on the katana's beats.
 - Flow (Claude's defaults, the owner can change them): six landed basic cuts in a row, each within 1.6 s, no skill between, earn Flow for 8 s; the next skill still cooling down casts anyway and restarts its cooldown. Not the slide; never an ultimate (Time Slice and the full-Qi skills).
 
 ## Elements (approved 2026-09-26, artifact "Ronin Elements")
