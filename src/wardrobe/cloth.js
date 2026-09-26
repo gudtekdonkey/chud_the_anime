@@ -1,4 +1,6 @@
 import { TAU, UP, V } from './skeleton.js';
+import { DARK, LIGHT, lit } from './raster.js';
+import { HD } from '../rig/rig.js';
 
 // ---- Cloth: verlet grids and chains in 3D, pinned to the bones, kept out of his body and legs (from prototypes/19) ----
 export class Cloth { constructor(n) { this.p = new Float32Array(n * 3); this.o = new Float32Array(n * 3); this.r = new Float32Array(n * 3); this.ok = false; } }
@@ -65,8 +67,13 @@ export function clothStep(C, part, J, env, dt) {
 export function drawCloth(S, C, part, J) {
   const [cols, rows] = dims(part), P = C.p, pt = k => [P[k * 3], P[k * 3 + 1], P[k * 3 + 2]], col = part.col, bias = part.bias || 0;
   if (part.kind === 'chain') {
-    for (let j = 0; j + 1 < rows; j++) { const far = j >= rows * (part.split ?? .5); S.seg(pt(j), pt(j + 1), far ? part.w[1] : part.w[0], far ? col[1] : col[0], bias); }
-    if (part.tassel) { const e = S.P(pt(rows - 1)); S.dot(e[0], e[1] + 1, e[2] + bias, 1, part.tassel); }
+    for (let j = 0; j + 1 < rows; j++) { const far = j >= rows * (part.split ?? .5), w = far ? part.w[1] : part.w[0], c = far ? col[1] : col[0];
+      S.seg(pt(j), pt(j + 1), w, c, bias);
+      // HD: a wide tail gets a lit top edge and a crease down it; a thin one frays to a pixel at its tip
+      if (HD && w >= 2) { S.seg(V.add(pt(j), [0, .45, 0]), V.add(pt(j + 1), [0, .45, 0]), .5, LIGHT[c] || c, bias + .01); if (j % 2) S.seg(pt(j), pt(j + 1), .5, DARK[c] || c, bias + .02); }
+      else if (HD && j === rows - 2) S.seg(pt(j + 1), V.add(pt(j + 1), V.mul(V.sub(pt(j + 1), pt(j)), .4)), .5, c, bias); }
+    if (part.tassel) { const e = S.P(pt(rows - 1)); S.dot(e[0], e[1] + S.s, e[2] + bias, 1, part.tassel);
+      if (HD) for (const dx of [-1, 0, 1]) S.px(Math.round(e[0]) + dx, Math.round(e[1]) + 3 * S.s, e[2] + bias, part.tassel); }   // the tassel's threads
     return; }
   const cam = V.norm([0, S.kz, 1]), loop = part.kind === 'skirt' && !part.arc, { yf } = bone(J, part.f), axis = part.kind === 'skirt' ? J.pelvis : null;
   for (let j = 0; j + 1 < rows; j++) for (let i = 0; i < (loop ? cols : cols - 1); i++) {
@@ -78,8 +85,12 @@ export function drawCloth(S, C, part, J) {
     const o = axis ? [mid[0] - axis[0], 0, mid[2] - axis[2]] : V.mul(yf.F, -1);
     const outer = (V.dot(n, cam) > 0) === (V.dot(n, o) > 0);
     const last = j + 2 >= (part.lens ? Math.min(part.lens[i], part.lens[i2]) : rows);
-    const key = last && col.hem ? col.hem : outer ? (col.edge && (i === 0 || i2 === cols - 1) && !loop ? col.edge : col.out) : col.in;
-    const z = mid[2] + bias, sp = [a, b, c, d].map(q => S.P(q));
-    S.poly(sp, z, key); S.seg(a, d, 1, key, bias); S.seg(b, c, 1, key, bias);
+    let key = last && col.hem ? col.hem : outer ? (col.edge && (i === 0 || i2 === cols - 1) && !loop ? col.edge : col.out) : col.in;
+    // HD: the cloth turned from the light a shade down, so its folds read; fold lines down alternate seams; the hem a lit edge
+    if (HD && outer && !last && lit(V.dot(n, o) > 0 ? n : V.mul(n, -1)) < -.1) key = DARK[key] || key;
+    const z = mid[2] + bias, sp = [a, b, c, d].map(q => S.P(q)), lw = HD ? .5 : 1;
+    S.poly(sp, z, key); S.seg(a, d, lw, key, bias); S.seg(b, c, lw, key, bias);
+    if (HD && outer && i % 2 === 1 && !last) S.seg(a, d, .5, DARK[col.out] || key, bias + .01);
+    if (HD && last) S.seg(d, c, .5, LIGHT[key] || key, bias + .01);
   }
 }

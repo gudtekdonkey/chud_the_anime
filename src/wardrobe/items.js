@@ -1,6 +1,6 @@
 import { TAU, V } from './skeleton.js';
 import { bone } from './cloth.js';
-import { bandLine, ring } from './raster.js';
+import { bandLine, ring, DARK, LIGHT, lit } from './raster.js';
 import { drawHat3d } from '../rig/body3d.js';
 import { HD, strawHD, mantleHD } from '../rig/rig.js';
 
@@ -83,18 +83,26 @@ function drawShell(S, part, J) {
   for (let k = 0; k + 1 < rings.length; k++) for (let i = 0; i < n; i++) {
     const i2 = (i + 1) % n, a = rings[k][i], b = rings[k][i2], c = rings[k + 1][i2], d = rings[k + 1][i];
     const nn = V.cross(V.sub(b, a), V.sub(d, a)), mid = V.mul(V.add(V.add(a, b), V.add(c, d)), .25);
-    const outer = (V.dot(nn, cam) > 0) === (V.dot(nn, [mid[0] - ax[0], 0, mid[2] - ax[2]]) > 0);
-    const key = outer ? part.col[k] : (part.inner || 'c0');
+    const rad = [mid[0] - ax[0], 0, mid[2] - ax[2]], outer = (V.dot(nn, cam) > 0) === (V.dot(nn, rad) > 0);
+    let key = outer ? part.col[k] : (part.inner || 'c0');
+    // HD: faces turned from the light a shade down, and a seam where one band of the shell meets the next
+    if (HD && outer && lit(V.dot(nn, rad) > 0 ? nn : V.mul(nn, -1)) < -.05) key = DARK[key] || key;
     S.poly([a, b, c, d].map(q => S.P(q)), mid[2] + bias, key);
-    S.seg(a, d, 1, key, bias);
+    S.seg(a, d, HD ? .5 : 1, key, bias);
+    if (HD && outer && k > 0) S.seg(a, b, .5, DARK[part.col[k]] || key, bias + .01);
   }
 }
 export function drawPart(S, part, J) {
   const bias = part.bias || 0;
   if (part.kind === 'shell') return drawShell(S, part, J);
-  if (part.kind === 'line') return bandLine(S, J, part.f, part.u, part.vf, part.vb, part.b, part.col, bias, part.w || 1);
-  if (part.kind === 'lapel') { if (J.Hc.F[2] > .25) for (const s of [1, -1]) S.seg(J.Lc(8.6, 2.3, s * 1.4), J.Lc(4.4, 2.5, s * .6), 1, part.col, bias); return; }
-  if (part.kind === 'knot') { const q = S.P(bone(J, part.f).L(part.u, part.v, part.b)); S.dot(q[0], q[1], q[2] + bias, part.size, part.col); return; }
+  if (part.kind === 'line') { if (HD) bandLine(S, J, part.f, part.u - .45, part.vf, part.vb, part.b, DARK[part.col] || part.col, bias - .01, .5);
+    return bandLine(S, J, part.f, part.u, part.vf, part.vb, part.b, part.col, bias, HD ? .5 : part.w || 1); }
+  if (part.kind === 'lapel') { if (J.Hc.F[2] > .25) for (const s of [1, -1]) { S.seg(J.Lc(8.6, 2.3, s * 1.4), J.Lc(4.4, 2.5, s * .6), HD ? .5 : 1, part.col, bias);
+      if (HD) S.seg(J.Lc(8.5, 2.35, s * 1.75), J.Lc(4.6, 2.55, s * .95), .5, DARK[part.col] || part.col, bias - .01); } return; }
+  if (part.kind === 'knot') { const L = bone(J, part.f).L, q = S.P(L(part.u, part.v, part.b)); S.dot(q[0], q[1], q[2] + bias, part.size, part.col);
+    if (HD) { const l = S.P(L(part.u + .4, part.v, part.b - .5)); S.dot(l[0], l[1], l[2] + bias + .01, .5, LIGHT[part.col] || part.col);   // the knot's lit bulge
+      for (const s of [-1, 1]) { const e = S.P(L(part.u + .2, part.v - .2, part.b + s * 1.2)); S.dot(e[0], e[1], e[2] + bias - .01, .5, DARK[part.col] || part.col); } }   // its two loops
+    return; }
   if (part.kind === 'sidehat') {  // a hat drawn side on, its brim resting on the head, nudged forward by the pose (p.hat)
     if (!J.flat) return drawHat3d(S, J, part.hat3d, 0);   // any other facing: the same hat in the round
     if (HD && part.hd) return part.hd((x, y, c) => S.px(x, y, bias, c), J.hcR, J.p.hat);   // 2x: the hat's own detailed drawing
@@ -113,15 +121,23 @@ export function drawPart(S, part, J) {
     for (const k of ['r', 'l']) { const A = J.arm[k], al = V.norm(V.sub(A.el, A.sh)), ac = J.Cy.F, out = V.mul(J.Cy.R, A.s);
       const q = [V.add(V.add(A.sh, V.mul(out, 1.2)), V.add(V.mul(ac, 1.7), [0, .8, 0])), V.add(V.add(A.sh, V.mul(out, 1.2)), V.add(V.mul(ac, -1.7), [0, .8, 0])),
         V.add(V.add(A.sh, V.mul(al, 3.4)), V.add(V.mul(out, 1.3), V.mul(ac, -1.9))), V.add(V.add(A.sh, V.mul(al, 3.4)), V.add(V.mul(out, 1.3), V.mul(ac, 1.9)))];
-      const z = (q[0][2] + q[2][2]) / 2 + bias + A.dz; S.poly(q.map(p => S.P(p)), z, part.col); S.seg(q[2], q[3], 1, part.edge, bias + A.dz + .05); }
+      const z = (q[0][2] + q[2][2]) / 2 + bias + A.dz; S.poly(q.map(p => S.P(p)), z, part.col); S.seg(q[2], q[3], HD ? .5 : 1, part.edge, bias + A.dz + .05);
+      if (HD) for (const t of [.33, .66]) { const a = V.lerp(q[1], q[2], t), b = V.lerp(q[0], q[3], t);   // lamellar rows, laced at each end
+        S.seg(a, b, .5, DARK[part.col] || part.col, bias + A.dz + .04); for (const e of [a, b]) { const s = S.P(e); S.dot(s[0], s[1], s[2] + bias + A.dz + .06, .5, part.edge); } } }
     return; }
   if (part.kind === 'arm') {
     for (const k of ['r', 'l']) { const A = J.arm[k], near = A.col === 'K', b = bias + A.dz;
-      if (part.style === 'wrap') { for (let i = 0; i <= 10; i++) { const t = .35 + .65 * i / 10, q = S.P(V.lerp(A.el, A.hand, t)); S.dot(q[0], q[1], q[2] + b, 1, i % 2 ? part.col[0] : part.col[1]); }
+      if (part.style === 'wrap' && HD) {   // bands wound on the bias from the knuckles to the elbow, the loose end hanging at the wrist
+        for (let i = 0; i <= 16; i++) { const t = .3 + .7 * i / 16, q = S.P(V.lerp(A.el, A.hand, t)); S.dot(q[0], q[1], q[2] + b, 1, part.col[1]);
+          if (i % 3 === 0) S.seg(V.add(V.lerp(A.el, A.hand, t), [0, .45, 0]), V.add(V.lerp(A.el, A.hand, t + .06), [0, -.45, 0]), .5, part.col[0], b + .02); }
+        const h = S.P(A.hand); S.dot(h[0], h[1], h[2] + b, 2, near ? part.col[1] : part.col[0]);
+        const w = V.lerp(A.el, A.hand, .9); S.seg(w, V.add(w, [-.4, -1.4, 0]), .5, part.col[0], b + .03); }
+      else if (part.style === 'wrap') { for (let i = 0; i <= 10; i++) { const t = .35 + .65 * i / 10, q = S.P(V.lerp(A.el, A.hand, t)); S.dot(q[0], q[1], q[2] + b, 1, i % 2 ? part.col[0] : part.col[1]); }
         const h = S.P(A.hand); S.dot(h[0], h[1], h[2] + b, 2, near ? part.col[1] : part.col[0]); }
       else { S.seg(V.lerp(A.el, A.hand, .1), V.lerp(A.el, A.hand, .85), 2, near ? part.col[0] : part.col[1], b);
         const w = S.P(V.lerp(A.el, A.hand, .85)); S.dot(w[0], w[1], w[2] + b + .05, 1, part.edge);
-        const e = S.P(V.lerp(A.el, A.hand, .1)); S.dot(e[0], e[1], e[2] + b + .05, 2, part.edge); }
+        const e = S.P(V.lerp(A.el, A.hand, .1)); S.dot(e[0], e[1], e[2] + b + .05, 2, part.edge);
+        if (HD) for (const t of [.3, .5, .7]) { const a = V.lerp(A.el, A.hand, t); S.seg(V.add(a, [0, .5, 0]), V.add(a, [0, -.5, 0]), .5, part.edge, b + .06); } }   // the splints' edges
     }
   }
 }

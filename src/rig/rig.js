@@ -1,6 +1,6 @@
 import { FW, FH, OX, OY, RC, PX } from '../config.js';
 import { KATANA_ART } from '../weapons/katana.js';
-import { Raster, packPal } from '../wardrobe/raster.js';
+import { Raster, packPal, TWO, twoTone } from '../wardrobe/raster.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
 // Two outputs share one drawing:
@@ -42,7 +42,8 @@ function draw(out, p, clothed) {
   const blob = (x, y, w, c) => blobS(OX + (x - RX) * PX, OY + (y - RY) * PX, W(w), c);
   const segT = (a, b, w0, w1, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2 * PX));
     for (let i = 0; i <= n; i++) { const k = i / n; blob(a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, w0 + (w1 - w0) * k, c); } };
-  const seg = (a, b, w, c) => segT(a, b, w, w, c);
+  let weap = false;   // drawing the weapon: at 2x its one-unit lines are two-tone (lit top row, shaded bottom row)
+  const seg = (a, b, w, c) => HD && weap && w === 1 && TWO[c] ? twoTone(toPx(...a), toPx(...b), c, (x, y, k) => out(x, y, z, k)) : segT(a, b, w, w, c);
   const poly = (pts, c) => {
     const P = pts.map(q => toPx(q[0], q[1])), xs = P.map(q => q[0]), ys = P.map(q => q[1]);
     for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++)
@@ -90,12 +91,14 @@ function draw(out, p, clothed) {
   }
   // the weapon's art draws itself through these hooks (src/weapons/); a pose carries it as p.wp, the katana if none.
   // Widths are in rig pixels; hd says the art may draw its finer detail (a width of .5 is one screen pixel)
-  const wp = p.wp || KATANA_ART, kit = { put, seg, segT, blob, poly, add, L, p, hd: HD };
+  // at 2x a weapon's put is a whole rig pixel (PX square) and px one screen pixel, for its fine detail
+  const wp = p.wp || KATANA_ART, kit = { put: HD ? (x, y, c) => blob(x, y, 1, c) : put, px: put, seg, segT, blob, poly, add, L, p, hd: HD };
+  const W8 = (f, ...a) => { weap = true; f(kit, ...a); weap = false; };
   // far side first: scabbard, far arm, far leg
-  z = Z.scab; wp.far(kit, p, mouth, sd);
+  z = Z.scab; W8(wp.far, p, mouth, sd);
   // the back hand can carry the blade too, for the counter stances
   z = Z.farArm; const bh = arm(p.ba, 'D'); kit.bh = bh;   // a two-handed weapon runs its shaft through both hands
-  z = Z.offHand; if (wp.offHand) wp.offHand(kit, p, bh);                  // a second weapon in the back hand (twin blades)
+  z = Z.offHand; if (wp.offHand) W8(wp.offHand, p, bh);                  // a second weapon in the back hand (twin blades)
   z = Z.farLeg; leg(p.bl, 'D', -.5);
   // torso, near leg
   z = Z.body; poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
@@ -139,13 +142,13 @@ function draw(out, p, clothed) {
     if (HD) mantleHD(L, f, seg, 'M', 'B');
     if (f > .5) put(...L(2.6, -3.4), 'M'); }
   // the back hand's blade is drawn over the body and the sash, so it is never lost behind them
-  z = Z.bblade; if (p.bsword != null) wp.backHeld(kit, bh, p.bsword);
+  z = Z.bblade; if (p.bsword != null) W8(wp.backHeld, bh, p.bsword);
   // near arm and the weapon: stowed, sliding home, or in the hand
   z = Z.nearArm; const hand = arm(p.fa, 'K');
   z = Z.blade;
-  if (p.sword === null && !p.sheathing && p.bsword == null && !p.empty) wp.stowed(kit, p, mouth, sd);
-  else if (p.sheathing) wp.sheathing(kit, hand, mouth);
-  else if (p.sword !== null) wp.held(kit, hand, p.sword);
+  if (p.sword === null && !p.sheathing && p.bsword == null && !p.empty) W8(wp.stowed, p, mouth, sd);
+  else if (p.sheathing) W8(wp.sheathing, hand, mouth);
+  else if (p.sword !== null) W8(wp.held, hand, p.sword);
   return { hc: p.noHead ? null : toPx(...hc), hcR: p.noHead ? null : hc };
 }
 
