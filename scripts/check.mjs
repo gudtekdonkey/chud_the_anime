@@ -48,12 +48,19 @@ try {
   const shot = name => page.locator('#game').screenshot({ path: `${OUT}/${name}.png` });
   // walk him somewhere with the arrow keys: the vertical leg first, then the horizontal, so the route is predictable round the pillars
   const walkTo = async (x, y, timeout = 10000) => {
-    const t0 = Date.now();
-    for (const [axis, goal, neg, pos] of [['y', y, 'ArrowUp', 'ArrowDown'], ['x', x, 'ArrowLeft', 'ArrowRight']]) {
-      for (;;) { const v = await page.evaluate(a => window.__game.P[a], axis), d = goal - v;
-        if (Math.abs(d) <= 2) break;
-        if (Date.now() - t0 > timeout) fail(`could not walk to ${x},${y} (${axis} ${v.toFixed(1)})`);
-        const k = d < 0 ? neg : pos; await kb.down(k); await sleep(Math.min(120, Math.abs(d) / 78 * 1000)); await kb.up(k); } }
+    const t0 = Date.now(), Y = ['y', y, 'ArrowUp', 'ArrowDown'], X = ['x', x, 'ArrowLeft', 'ArrowRight'];
+    // y first, then x; a pillar in the way (a step that gets him nowhere) and he tries the other axis first
+    for (let order = [Y, X], turns = 0; ; order = order.slice().reverse(), turns++) {
+      let blocked = false;
+      for (const [axis, goal, neg, pos] of order) {
+        for (let stuck = 0; ;) { const v = await page.evaluate(a => window.__game.P[a], axis), d = goal - v;
+          if (Math.abs(d) <= 2) break;
+          if (Date.now() - t0 > timeout) fail(`could not walk to ${x},${y} (${axis} ${v.toFixed(1)})`);
+          const k = d < 0 ? neg : pos; await kb.down(k); await sleep(Math.min(120, Math.abs(d) / 78 * 1000)); await kb.up(k);
+          const v2 = await page.evaluate(a => window.__game.P[a], axis);
+          if (Math.abs(v2 - v) < .5 && ++stuck > 8) { blocked = true; break; } }
+        if (blocked) break; }
+      if (!blocked) break; if (turns > 6) fail(`could not walk to ${x},${y}: blocked both ways`); }
     await reach(FREE); };
   const inv = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__game.INV)));
   const run = async (name, fn) => { step = name; await fn(); console.log(`  ok  ${name}`); };
@@ -163,22 +170,22 @@ try {
     await until('K lined up during the execution', () => window.__st.queued, undefined, 1000);
     await until('the first execution to let him go', () => window.__st.freed, undefined, 4000);
     const c = await page.evaluate(() => { const X = window.__game.P.exec; return { next: !!window.__st.next, s: window.__game.P.state, same: X === window.__st, name: window.__st.ex.name,
-      from: !!(X && X.from), blade: X && X.set && X.set.sword != null }; });
+      from: !!(X && X.from), blade: X && X.set && X.set.sword != null, bare: !!window.__st.ex.bare }; });
     if (c.next && (c.s !== 'exec' || c.same)) fail(`a lone samurai was in reach after "${c.name}" but K did not chain into him (${JSON.stringify(c)})`);
-    // no snap between them: the next set eases in from the last cut, blade still out
-    if (c.next && !(c.from && c.blade)) fail(`the chained execution snapped in from "${c.name}" (${JSON.stringify(c)})`);
+    // no snap between them: the next set eases in from the last cut, blade still out (a bare-handed execution never drew it)
+    if (c.next && !(c.from && (c.blade || c.bare))) fail(`the chained execution snapped in from "${c.name}" (${JSON.stringify(c)})`);
     console.log(`  (after "${c.name}": ${c.next ? 'chained into the next execution' : 'nobody lone in reach, so no chain'})`);
     await reach(/^(idle|ready\d)$/, 8000); });
   await run('Shift: ground slide', async () => { await kb.press('Shift'); await reach(/^slide$/); await reach(FREE); });
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
-  await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
+  await run('K: glitch teleport spends his one blink charge (power I), so a second press is refused', async () => {
     // out of every samurai's reach first (the top-left corner), so K is the plain teleport, not an assassination
     // walked to by position, not for a fixed time: on a slow machine the game runs slower and a timed walk falls short
     await walkTo(24, 60, 15000); await reach(FREE);
     await kb.press('k'); await reach(/^tele$/); await reach(FREE);
-    await until('K on cooldown', () => window.__game.P.cd.tele > 0);
+    await until('no charge left, the refill counting down', () => window.__game.P.blinks === 0 && window.__game.P.cd.tele > 55);
     await kb.press('k'); await until('the refused press', () => window.__game.P.cdDeny.tele > 0);
-    if (await state() === 'tele') fail('K teleported again while cooling down'); });
+    if (await state() === 'tele') fail('K teleported again with no charge left'); });
   await run('tap I: glitch double slash', async () => { await kb.press('i'); await reach(/^double$/); await reach(FREE); });
   await run('hold I: Thousand Cuts', async () => {
     await until('the I cooldown to end', () => !(window.__game.P.cd.double > 0), undefined, 4000);
@@ -190,10 +197,10 @@ try {
   await run('P: Cross Rift', async () => { await kb.press('p'); await cv('Cross Rift'); await sleep(200); await shot('05-rift'); await reach(FREE); });
   await run('N: Mirror Meditation', async () => { await kb.press('n'); await reach(/^meditate$/); await sleep(500); await shot('06-mirrors'); await reach(FREE); });
   await run('U: storm slam', async () => { await kb.press('u'); await reach(/^sweep$/); await reach(FREE, 8000); });
-  await run('skill bar: the skills just used are cooling down, K has recovered', async () => {
-    const cd = await page.evaluate(() => ({ ...window.__game.P.cd }));
+  await run('skill bar: the skills just used are cooling down, K still waits out its minute', async () => {
+    const cd = await page.evaluate(() => ({ ...window.__game.P.cd, blinks: window.__game.P.blinks }));
     for (const k of ['moon', 'rift', 'mirror', 'sweep']) if (!(cd[k] > 0)) fail(`${k} is not cooling down (${JSON.stringify(cd)})`);
-    if (cd.tele !== 0) fail(`K is still cooling down (${cd.tele})`);
+    if (!(cd.blinks === 0 && cd.tele > 0)) fail(`K's charge came back before a minute without blinking (${JSON.stringify(cd)})`);
     await shot('08-skill-bar'); });
   await run('walk into coins: they fly to him and mon goes up', async () => {
     // the three coins, wherever he picked them up (a dash through them on the way counts too)
@@ -220,6 +227,8 @@ try {
     await shot('14-harvest'); await kb.up('e'); await reach(FREE); });
   await run('power III (the test picker): the Crescent Moon comes with its twin and the slam with its pillars', async () => {
     await page.selectOption('#power', '3'); await until('power III', () => window.__game.INV.power === 3);
+    // K holds three blink charges at III; a tier gained brings its charge at once, even mid-refill
+    await until('three blink charges', () => window.__game.P.blinkCap === 3 && window.__game.P.blinks >= 2);
     await until('O ready', () => !(window.__game.P.cd.moon > 0), null, 12000);
     await kb.down('o'); await reach(/^moonHold$/); await until('the O charge', () => window.__game.P.charge > .9);
     await kb.up('o'); await reach(/^moon$/); await sleep(200); await shot('15-power-III-moon'); await reach(FREE);
