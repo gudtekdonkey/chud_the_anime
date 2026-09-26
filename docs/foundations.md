@@ -64,7 +64,7 @@ Plot holder → zone lord (all of one zone) → domain (merged zones) → kingdo
 - NPCs commit crimes too, and have their own karma and bounties.
 
 ### Still open
-- How a legal title passes (sale, grant, inheritance, a court, forgery?): the mechanic behind possession vs title.
+- ~~How a legal title passes~~ **Answered (owner, 2026-09-26):** sale, blood money, a lord's grant, inheritance, a court case, time with no claimant left, and a forged deed (a crime that may come out, less likely each year). See `docs/sim-crime.md`.
 - Answered above: single-player, real time while away, death and heirs.
 
 ## Wealth (proposed, for the owner to confirm)
