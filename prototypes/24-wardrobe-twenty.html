@@ -77,6 +77,14 @@
   #dyerow-labels { display: grid; grid-template-columns: repeat(7, 176px); background: var(--panel); border-top: 1px solid var(--rule); }
   #dyerow-labels span { font-size: 13px; text-align: center; padding: 8px 6px; color: var(--muted); }
   #dyerow-labels b { font-family: "Pixelify Sans", ui-monospace, monospace; font-weight: 500; color: var(--ink); }
+  #robeRow { display: block; width: calc(11 * 176px); max-width: none; height: 208px; image-rendering: pixelated; }
+  #robe-labels { display: grid; grid-template-columns: repeat(11, 176px); background: var(--panel); border-top: 1px solid var(--rule); }
+  #robe-labels > span { font-size: 13px; text-align: center; padding: 8px 6px; color: var(--muted); }
+  #robe-labels b { font-family: "Pixelify Sans", ui-monospace, monospace; font-weight: 500; color: var(--ink); }
+  .tier { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; padding: 1px 6px; border: 1px solid currentColor; border-radius: 3px; white-space: nowrap; }
+  #robes .tier { align-self: center; margin-right: 2px; }
+  .tier.t0 { color: #8f969e; } .tier.t1 { color: #d9dbdd; } .tier.t2 { color: #d2b98c; } .tier.t3 { color: var(--cyan); }
+  .odds { list-style: none; padding: 0; margin: 0 0 14px; display: grid; gap: 6px; color: var(--muted); font-size: 14px; }
   #bu-labels { display: grid; grid-template-columns: repeat(var(--n), 176px); background: var(--panel); border-top: 1px solid var(--rule); }
   #bu-labels span { font-size: 13px; line-height: 1.35; text-align: center; padding: 8px 6px; color: var(--muted); }
   #bu-labels b { font-family: "Pixelify Sans", ui-monospace, monospace; font-weight: 500; color: var(--ink); }
@@ -116,6 +124,8 @@
       </div>
       <div class="ctl">
         <div><div class="lbl">Wearing</div><p id="wearing" aria-live="polite"></p><p id="note" class="note" aria-live="polite"></p></div>
+        <div><div class="lbl">Cloth colour (by rarity)</div><div class="chips" role="group" aria-label="Cloth colour" id="robes"></div>
+          <div class="chips"><button type="button" class="chip" id="roll">Roll a drop</button></div><p id="drop" class="note" aria-live="polite"></p></div>
         <div><div class="lbl">Armour dye (plate and mail only)</div><div class="chips" role="group" aria-label="Armour dye" id="dyes"></div></div>
         <div><div class="lbl">Bandana (rare)</div><div class="chips"><button type="button" class="chip" id="bandcol">Tie on a bandana in a random colour</button></div></div>
         <div><div class="lbl">Hair colour</div><div class="chips" role="group" aria-label="Hair colour" id="haircols"></div></div>
@@ -128,6 +138,12 @@
   <section aria-labelledby="twenty-h">
     <div class="intro"><h2 id="twenty-h">The forty</h2><p>Each figure wears one piece alone and loops through a breath, a run, a cut and the counter stance, grouped by slot. The first twenty are the earlier set; the twenty marked <span class="tag new">new</span> fill out every slot: torn hakama, tight trousers, shin guards, short kimono, jinbaori, chain shirt, monk's robe, split cape, sashimono banner, travel bundle, sake gourd, belt and pouches, tassets, shoulder strap, prayer beads, fur mantle, kataginu, neckerchief, iron gorget and hand guards.</p></div>
     <div id="twenty"></div>
+  </section>
+
+  <section aria-labelledby="robes-h">
+    <div class="intro"><h2 id="robes-h">Cloth colours and rarity</h2><p>Robes and other cloth come in colours, and the colour is what makes a drop rare. Most drops are black or dark grey. Grey and bone white are rare, beige is rarer, and a real colour is very rare. Armour takes the dark dyes below instead, and hats, hair and masks keep their own colours. Roll a drop in the fitting room to see the odds at work.</p></div>
+    <ul class="odds" id="tier-odds"></ul>
+    <div class="bu"><canvas id="robeRow" width="484" height="52" role="img" aria-label="The same robes in each cloth colour, from common to very rare"></canvas><div id="robe-labels"></div></div>
   </section>
 
   <section aria-labelledby="dyes-h">
@@ -191,6 +207,7 @@
       <li><b>Slots.</b> Keep the eleven, one piece in each?</li>
       <li><b>Hats and masks.</b> Are the four special pairs the kind of thing you want? Should a special pair also do something in play, like a bonus?</li>
       <li><b>Hair.</b> Which of the 22 styles stay, and is the bandana list right? Should hair colour be natural shades only, or any dye?</li>
+      <li><b>Cloth rarity.</b> Are the odds right (78, 15, 6 and 1 in 100)? Should a very rare colour be one of a set list, or any hue?</li>
       <li><b>Armour dyes.</b> Are these seven the right kind of dark? Should a dye be found, bought, or picked freely?</li>
       <li><b>Masks.</b> Which of the ten stay, and should their colours be random per drop, dyed by the player, or fixed?</li>
       <li><b>The layer order.</b> For example, should the sash go over the coat (as now) or under it?</li>
@@ -4760,6 +4777,135 @@
 		D.px = (x, y, z, k) => R.px(x, y, z, DYE_MAP[k] || k);
 		return D;
 	};
+	const TIERS = [
+		{
+			id: "common",
+			name: "Common",
+			odds: 78
+		},
+		{
+			id: "rare",
+			name: "Rare",
+			odds: 15
+		},
+		{
+			id: "rarer",
+			name: "Rarer",
+			odds: 6
+		},
+		{
+			id: "vrare",
+			name: "Very rare",
+			odds: 1
+		}
+	];
+	const CLOTHS = [
+		[
+			"Black",
+			null,
+			0
+		],
+		[
+			"Charcoal",
+			"#3a3d44",
+			0
+		],
+		[
+			"Ash grey",
+			"#7a7e86",
+			1
+		],
+		[
+			"Bone white",
+			"#c4c1b8",
+			1
+		],
+		[
+			"Beige",
+			"#a8916c",
+			2
+		],
+		[
+			"Sand",
+			"#c2ae88",
+			2
+		],
+		[
+			"Crimson",
+			"#8a2424",
+			3
+		],
+		[
+			"Indigo",
+			"#2c3a8a",
+			3
+		],
+		[
+			"Pine",
+			"#2f6a3a",
+			3
+		],
+		[
+			"Saffron",
+			"#b8862a",
+			3
+		],
+		[
+			"Violet",
+			"#6a3a8a",
+			3
+		]
+	];
+	const RAMP = [
+		.5,
+		.64,
+		.8,
+		1,
+		1.12,
+		1.24,
+		1.42
+	];
+	const clothPal = (hex) => Object.fromEntries(RAMP.map((f, k) => ["k" + k, hex_(...rgb(hex).map((v) => Math.min(255, v * f)))]));
+	const CLOTH_MAP = {
+		c0: "k0",
+		c1: "k1",
+		c2: "k2",
+		c3: "k3",
+		c4: "k4",
+		c5: "k5",
+		c6: "k6",
+		M: "k2",
+		m: "k4"
+	};
+	const clothed = (R) => {
+		const D = Object.create(R);
+		D.px = (x, y, z, k) => R.px(x, y, z, CLOTH_MAP[k] || k);
+		return D;
+	};
+	const NOT_CLOTH = /* @__PURE__ */ new Set([
+		"hair",
+		"face",
+		"head"
+	]);
+	function rollCloth() {
+		let r = Math.random() * 100, t = 0;
+		for (; t < 3 && r >= TIERS[t].odds; t++) r -= TIERS[t].odds;
+		const pool = CLOTHS.filter((c) => c[2] === t);
+		if (t === 3 && Math.random() < .5) {
+			const [a] = randomTint();
+			return {
+				name: "Any colour",
+				hex: a,
+				tier: 3
+			};
+		}
+		const c = pool[Math.floor(Math.random() * pool.length)];
+		return {
+			name: c[0],
+			hex: c[1],
+			tier: t
+		};
+	}
 	const makeFigure = (items) => ({
 		outfit: new Set(items),
 		cloth: /* @__PURE__ */ new Map(),
@@ -4768,7 +4914,8 @@
 		tint: null,
 		hair: HAIR_COLS[0][1],
 		dye: 0,
-		band: ["#c8322b", "#7e1c17"]
+		band: ["#c8322b", "#7e1c17"],
+		robe: null
 	});
 	const hex = (r, g, b) => "#" + [
 		r,
@@ -4825,9 +4972,10 @@
 				mX: F.tint[0],
 				mx: F.tint[1]
 			} : {},
-			...F.dye ? dyePal(DYES[F.dye][1]) : {}
+			...F.dye ? dyePal(DYES[F.dye][1]) : {},
+			...F.robe ? clothPal(F.robe) : {}
 		}));
-		const RD = F.dye ? dyed(R) : R;
+		const RD = F.dye ? dyed(R) : R, RC_ = F.robe ? clothed(R) : R;
 		const J = solve(fromSide(p), 0, true);
 		J.hc = hc;
 		const env = {
@@ -4841,7 +4989,7 @@
 		const steps = dt > 0 ? Math.min(3, Math.max(1, Math.round(dt * 60))) : 0;
 		for (const it of ITEMS) {
 			if (!F.outfit.has(it.id) || only && !only.has(it.slot)) continue;
-			const S = ARMOUR.has(it.id) ? RD : R;
+			const S = ARMOUR.has(it.id) ? RD : NOT_CLOTH.has(it.slot) ? R : RC_;
 			it.parts.forEach((part, pi) => {
 				if (!isCloth(part)) {
 					if (!drawExtra(S, part, J) && !drawMore(S, part, J)) drawPart(S, part, J);
@@ -5134,6 +5282,22 @@
 		syncRoom();
 	});
 	$("haircols").innerHTML = HAIR_COLS.map(([n], i) => `<button type="button" class="chip" data-hc="${i}">${n}</button>`).join("") + "<button type=\"button\" class=\"chip\" id=\"hairdye\">Random dye</button>";
+	$("robes").innerHTML = TIERS.map((t, ti) => `<span class="tier t${ti}">${t.name}</span>` + CLOTHS.map((c, i) => c[2] !== ti ? "" : `<button type="button" class="chip" data-robe="${i}"><i class="dot" style="background:${c[1] || "#14171c"}"></i>${c[0]}</button>`).join("")).join("");
+	const syncRobes = () => document.querySelectorAll("[data-robe]").forEach((b) => b.setAttribute("aria-pressed", String((CLOTHS[b.dataset.robe][1] || null) === hero.robe)));
+	$("robes").addEventListener("click", (e) => {
+		const b = e.target.closest("[data-robe]");
+		if (!b) return;
+		hero.robe = CLOTHS[b.dataset.robe][1];
+		$("drop").textContent = "";
+		syncRobes();
+	});
+	$("roll").addEventListener("click", () => {
+		const d = rollCloth();
+		hero.robe = d.hex;
+		syncRobes();
+		$("drop").textContent = `Dropped: ${d.name}, ${TIERS[d.tier].name.toLowerCase()} (${TIERS[d.tier].odds}% of drops).`;
+	});
+	syncRobes();
 	$("dyes").innerHTML = DYES.map(([n, h], i) => `<button type="button" class="chip" data-dye="${i}">${h ? `<i class="dot" style="background:${h}"></i>` : ""}${n}</button>`).join("");
 	$("dyes").addEventListener("click", (e) => {
 		const b = e.target.closest("[data-dye]");
@@ -5279,6 +5443,21 @@
 	document.querySelectorAll("#twenty canvas").forEach((cv, i) => {
 		cards[i].g = cv.getContext("2d");
 	});
+	const robeFigs = CLOTHS.map((c) => {
+		const F = makeFigure([
+			"hair-topknot",
+			"hakama",
+			"haori",
+			"obi",
+			"longscarf"
+		]);
+		F.robe = c[1];
+		return F;
+	});
+	$("robe-labels").innerHTML = CLOTHS.map((c) => `<span><b>${c[0]}</b><br><span class="tier t${c[2]}">${TIERS[c[2]].name}</span></span>`).join("");
+	$("tier-odds").innerHTML = TIERS.map((t, i) => `<li><span class="tier t${i}">${t.name}</span> ${t.odds}% of drops: ${CLOTHS.filter((c) => c[2] === i).map((c) => c[0].toLowerCase()).join(", ")}${i === 3 ? ", or any hue at all" : ""}</li>`).join("");
+	const rw = $("robeRow");
+	const rwg = rw.getContext("2d");
 	const dyeFigs = DYES.map((d, i) => {
 		const F = makeFigure([
 			"kabuto",
@@ -5382,6 +5561,17 @@
 			c.g.fillRect(0, 0, 30, 26);
 			c.g.drawImage(cv, 10, 6, 30, 26, 0, 0, 30, 26);
 		}
+		rwg.fillStyle = "#474c4a";
+		rwg.fillRect(0, 0, rw.width, 52);
+		robeFigs.forEach((F, i) => {
+			F.t = clock + i * .3;
+			F.vel = [0, 0];
+			const cv = dress(R, F, poseAt("idle", clock + i * .2), dt);
+			const x = i * 44 + 22;
+			rwg.fillStyle = "rgba(18,22,22,.4)";
+			rwg.fillRect(x - 5, 45, 10, 1);
+			rwg.drawImage(cv, x - 24, 4);
+		});
 		dg.fillStyle = "#474c4a";
 		dg.fillRect(0, 0, dr.width, 52);
 		dyeFigs.forEach((F, i) => {

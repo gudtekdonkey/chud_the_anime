@@ -61,6 +61,7 @@ Decisions made in the design sessions so far, newest last.
    - **All fifteen items stay**, and **the slots are good as they are**. More items to come.
    - **Lamellar and samurai armour may be coloured, but only faintly** (muted, low-saturation tints over the blacks). Cloth stays shades of black, never bright red.
    - **Armour takes dark dyes** (owner, 2026-09-26: "armor armors, not robes"): plate, mail, shin guards, tassets, gorget, sleeves, hand guards and the iron hats can be dyed a dark colour (study: oxblood, indigo, moss, plum, bronze, teal), each black tinted to the hue at the same lightness. Robes and other cloth stay black.
+   - **Cloth colour is rarity** (owner, 2026-09-26): black and dark grey are the most common; grey and whitish are rare; beige is rarer; real colours are very rare. Study odds: 78 / 15 / 6 / 1 in 100, and a very rare drop may be any hue.
    - **Bandana** (owner): a rare head item in ANY colour, and only certain hairstyles fit under it (study: those with nothing on the crown). **Hair: 14 more styles**, 22 in all ().
    - Still open: the default outfit; his true left side or a mirror when facing left; whether the hat brim shows more of its top when he faces the camera.
    - Earlier: the mantle was flattened because it read as a hump.
