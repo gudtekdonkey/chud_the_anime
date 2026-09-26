@@ -9,7 +9,9 @@ import { tear } from '../fx/void.js';
 import { setState, once, moveBy, blink, ghost, frameOf, inputDir } from './actions.js';
 import { silPts, bodyPt, motes } from './body.js';
 import { hit, hitSeg, burst } from './hits.js';
+import { CD, startCd } from './cooldowns.js';
 import { collide } from '../world/room.js';
+import { EL } from '../fx/element.js';
 
 // ---- Charging (hold I, O or P): sparks and bolts converge onto his body while it glows ----
 export const TAP = .14, CHARGE_T = .9;
@@ -17,14 +19,19 @@ export function chargeUp(dt, inp) {
   const was = P.charge || 0, c = P.charge = Math.min(1, was + dt / CHARGE_T + 1e-6);
   if (inp.mx || inp.my) P.blinkDir = inputDir(inp); // aim while holding
   const sil = silPts(SHEETS[P.state], frameOf());
-  if (sil.length) {
+  const kit = EL.cur.kit;
+  if (sil.length && kit) { // the element gathers ONTO his outline: globs stick, drops bead, embers sink in, air wraps round him
+    for (let i = 0; i < 2; i++) if (Math.random() < .25 + c * .55) { const [tx, ty] = bodyPt(sil), a = rr(0, 6.28), R = rr(20, 36), v = 70 + c * 150;
+      kit.gather(tx, ty, tx + Math.cos(a) * R, ty + Math.sin(a) * R * .7, R / v); }
+    if (Math.random() < .15 + c * .6) kit.aura(...bodyPt(sil), c);
+  } else if (sil.length) {
     // each spark starts out in the air and dies exactly as it reaches a point on his outline
     for (let i = 0; i < 3; i++) if (Math.random() < .25 + c * .55) { const [tx, ty] = bodyPt(sil), a = rr(0, 6.28), R = rr(20, 36), v = 70 + c * 150;
       spark(tx + Math.cos(a) * R, ty + Math.sin(a) * R * .7, -Math.cos(a) * v, -Math.sin(a) * v * .7, R / v, [COL.fx, COL.fx2, '#ffffff'][i], true, 0); }
     if (Math.random() < .1 + c * .45) { const [tx, ty] = bodyPt(sil), a = rr(0, 6.28), R = rr(10, 20);
       zap(tx + Math.cos(a) * R, ty + Math.sin(a) * R * .8, tx, ty, rr(.04, .07), 1.5, Math.random() < .6 ? COL.fx : '#ffffff'); }
   }
-  motes(.15 + c * .5);
+  if (!kit) motes(.15 + c * .5);
   P.trem = c >= 1 && Math.random() < .5 ? sgn() : 0; // a 1px tremble at full charge
   if (was < 1 && c >= 1) { P.flash = .05; ring(P.x, P.y - 13, 10, 7, .14, 1.4, COL.fx2); } // full: one flash
 }
@@ -82,6 +89,7 @@ export function release(v, min = 0) {
   const c = Math.max(min, P.charge || 0); P.cv = v; P.pow = c; P.ct = -.05; P.trem = 0; P.charge = null; // -.05: the glitch frame 3 plays before he vanishes
   P.k = .35 + .65 * c; // size scale: a short hold is still a charged move, a full one is the full thing
   P.dist = 44 + (v.dist - 44) * c;
+  startCd(v === RIFT ? 'rift' : 'double', v === RIFT ? CD.rift : CD.tc);   // cools down from the release
 }
 export function charged(dt) {
   const v = P.cv, t = (P.ct += dt), V = v.V, F = V + .16 + v.hold;

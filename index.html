@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Ronin Engine</title>
+<title>Ronin Elements</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
 <link rel="stylesheet" href="/src/styles.css">
 </head>
@@ -11,18 +11,20 @@
 <div class="wrap">
   <header>
     <h1>Ronin engine, <span>skills build</span></h1>
-    <p>The game engine at 480×270, top-down, with our own rigged ronin: every move is a real pose (wind-up, lean, lunge, follow-through). He keeps the katana sheathed until he attacks, waits in guard after, and resheathes when calm. Now with charged skills: tap <kbd>I</kbd> for the glitch double slash or hold it for Thousand Cuts, hold <kbd>O</kbd> for the Crescent Moon, <kbd>P</kbd> for the Cross Rift, <kbd>N</kbd> for Mirror Meditation. Every hit feeds his Qi (bottom left); when it fills, Storm Chain wakes for 8 s and every hit chains lightning through the training dummies.</p>
+    <p>The game engine at 480×270, top-down, with our own rigged ronin: every move is a real pose (wind-up, lean, lunge, follow-through). He keeps the katana sheathed until he attacks, waits in guard after, and resheathes when calm. Now with charged skills: tap <kbd>I</kbd> for the glitch double slash or hold it for Thousand Cuts, hold <kbd>O</kbd> for the Crescent Moon, <kbd>P</kbd> for the Cross Rift, <kbd>N</kbd> for Mirror Meditation. Every hit feeds his Qi (bottom left); when it fills, Storm Chain wakes for 8 s and every hit chains lightning through the training dummies. The HUD is the one from the items study: health and Qi top left with each skill's cooldown under them, mon and shards top right, and the weapon, quick and charm slots at the bottom. Walk up to a big item and tap <kbd>E</kbd>; pickups fly to you.</p>
   </header>
 
   <section>
+    <div class="elements" id="elements" role="group" aria-label="Element"></div>
     <canvas id="game" width="480" height="270" tabindex="0" aria-label="Game screen. Click, then use the keys listed below."></canvas>
     <div class="hud" id="hud"></div>
     <div class="keys">
       <span><kbd>WASD</kbd> / <kbd>←↑↓→</kbd> move</span>
+      <span>Hold <kbd>V</kbd> to walk</span>
       <span><kbd>J</kbd> slash (press twice to combo)</span>
       <span><kbd>Space</kbd> jump</span>
       <span><kbd>Shift</kbd> / <kbd>L</kbd> ground slide</span>
-      <span><kbd>K</kbd> glitch teleport</span>
+      <span><kbd>K</kbd> glitch teleport; on a lone enemy, execute</span>
       <span><kbd>I</kbd> tap: glitch double slash</span>
       <span>Hold <kbd>I</kbd>: Thousand Cuts</span>
       <span>Hold <kbd>O</kbd>, release: Crescent Moon</span>
@@ -30,17 +32,75 @@
       <span><kbd>N</kbd> Mirror Meditation</span>
       <span><kbd>U</kbd> storm slam</span>
       <span><kbd>C</kbd> sit and rest</span>
+      <span><kbd>E</kbd> tap: pray, take, cut, read</span>
+      <span>Hold <kbd>E</kbd> by the fallen: Harvest</span>
+      <span><kbd>1</kbd>–<kbd>4</kbd> quick slots</span>
       <span><kbd>X</kbd> die (to test)</span>
+      <span><kbd>[</kbd> / <kbd>]</kbd> switch element (or the buttons above the game)</span>
     </div>
-    <label class="clear" for="clear"><input type="checkbox" id="clear"> Room is clear: the dummies don't count as enemies, so after an attack he sheathes at once</label>
+    <label class="clear" for="weapon">Weapon (for testing; in the game you pick them up) <select id="weapon"></select></label>
+    <label class="clear" for="clear"><input type="checkbox" id="clear"> Room is clear: the samurai don't count as a threat, so after an attack he sheathes at once</label>
     <div class="pad" aria-label="Touch controls">
       <button data-k="left" aria-label="Move left">←</button><button data-k="up" aria-label="Move up">↑</button>
       <button data-k="down" aria-label="Move down">↓</button><button data-k="right" aria-label="Move right">→</button>
-      <button data-k="slash" class="act">Slash</button><button data-k="jump" class="act">Jump</button>
+      <button data-k="walk" class="act">Walk (hold)</button><button data-k="slash" class="act">Slash</button><button data-k="jump" class="act">Jump</button>
       <button data-k="slide" class="act">Slide</button><button data-k="tele" class="act">Glitch</button>
       <button data-k="double" class="act">Double (hold)</button><button data-k="sweep" class="act">Sweep</button>
       <button data-k="moon" class="act">Moon (hold)</button><button data-k="rift" class="act">Rift (hold)</button>
-      <button data-k="mirror" class="act">Mirror</button>
+      <button data-k="mirror" class="act">Mirror</button><button data-k="act" class="act">E (hold)</button>
+      <button data-k="q1" class="act">1</button><button data-k="q2" class="act">2</button><button data-k="q3" class="act">3</button><button data-k="q4" class="act">4</button>
+    </div>
+  </section>
+
+  <section class="notes">
+    <h2>How an element works</h2>
+    <p>Every move makes the same few calls: throw a bolt, throw sparks, leave a trail, leave residue where he was, travel (the teleport), and leave footsteps. Storm answers them with lightning and glitch slices. Every other element answers them with its own kit of matter, so it looks and moves differently on every skill while the timing and hits stay the same.</p>
+    <div class="cols">
+      <div><h3>Fire</h3><p>Bolts become lines of flame, sparks become embers and falling cinders that scorch and keep burning on the floor. The teleport bursts into fire and leaves a burning trail.</p></div>
+      <div><h3>Slime</h3><p>Bolts become sagging strands that drip and break into goo. Everything splats into puddles. The teleport melts him into a puddle that stretches to the new spot and stands back up.</p></div>
+      <div><h3>Water</h3><p>Thick water whips and spray. Drops fall, ripple and pool. The teleport splashes down and erupts out of a geyser.</p></div>
+      <div><h3>Wind</h3><p>Gusts that curl, leaves that tumble, little whirlwinds where he was. The teleport scatters him into streaks along the path.</p></div>
+      <div><h3>Psychic</h3><p>No lines at all: ripples where things land and floating motes. The teleport leaves a string of his own silhouettes folding into the new spot.</p></div>
+      <div><h3>A new style</h3><p>One palette row plus one kit of small functions (around 20 lines). Psychic was added this way as the test.</p></div>
+    </div>
+    <h2>Every move, every element</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Move</th><th>What the element does there</th></tr></thead>
+      <tbody>
+        <tr><td>Charging (hold I, O, P)</td><td>The element gathers onto his outline. Slime globs fly in and stick, then drip off. Water beads run down him. Fire licks up off his body. Wind wraps round him. Psychic motes drift in.</td></tr>
+        <tr><td>Slash, double slash, Thousand Cuts</td><td>Matter comes off the blade's edge as it cuts: flames, flung goo, spray, gusts, motes. The slivers each cut sheds turn into the element too.</td></tr>
+        <tr><td>Crescent Moon</td><td>Same crescent in the element's colours; the motes streaming off it become flames, goo, drops, gusts or motes.</td></tr>
+        <tr><td>Cross Rift</td><td>The tear bleeds the element from its lips while it is open (a burning seam, a dripping membrane, spray, a rush of air).</td></tr>
+        <tr><td>Glitch teleport (K)</td><td>Each element travels its own way: burst of fire, the slime melt and stretch, a geyser, scattering streaks, a string of silhouettes.</td></tr>
+        <tr><td>Storm slam</td><td>The cyclone and the slam's spokes are made of the element; the cracks glow in its colour.</td></tr>
+        <tr><td>Mirror Meditation, Storm Chain</td><td>The aura sits on his body; chain links are the element's bolt. Nothing lands on the floor (Qi rule).</td></tr>
+        <tr><td>Run, slide, landing</td><td>Footsteps, the slide and the landing leave the element behind: embers, goo smears, ripples, dust and leaves.</td></tr>
+        <tr><td>Idle (after 4 s)</td><td>Storm and Energy glitch. The others do their own thing: a flare, goo oozing out, shaking off water, a gust, motes.</td></tr>
+        <tr><td>Death</td><td>His death motion is untouched; the element bursts off him on top.</td></tr>
+        <tr><td>Executions</td><td>The body motion and the deaths pass stay as they are; the sparks, bolts and slivers off the kill become the element's matter, and the glitch slices only play for Storm and Energy.</td></tr>
+      </tbody>
+    </table></div>
+    <p>Qi skills (Mirror Meditation, the Storm Chain waking and chaining) leave nothing on the floor, per your rule. Their matter still flies but never lands as a puddle, scorch or ripple. Attacks and the teleport do leave marks. This page is a preview built from a copy; the game in the repo is unchanged.</p>
+  <section aria-labelledby="ward-h">
+    <div class="ward-head">
+      <div class="ward-title"><h2 id="ward-h">Wardrobe</h2><p id="wearing" aria-live="polite"></p></div>
+      <div class="presets" role="group" aria-label="Outfits" id="presets"></div>
+    </div>
+    <p>Every piece hangs from his bones, so it follows every pose, and the loose cloth moves with him. All of it is shades of black.</p>
+    <div class="slots" id="slots"></div>
+  </section>
+
+  <section>
+    <h2>Personality</h2>
+    <div class="drop">
+      <p>How he stands, walks and runs comes from up to three personality traits, each with a strength (0.5 is half as much). There are 52 to pick from; <a href="prototypes/26-personalities.html">prototype 26</a> shows them all side by side. Your mix is remembered in this browser.</p>
+      <div class="form">
+        <label for="pz-preset">Character<select id="pz-preset"></select></label>
+        <label for="pz-t0">Trait 1<select id="pz-t0"></select><span class="k"><input type="range" id="pz-k0" min="0" max="1.5" step=".1" value="1" aria-label="Trait 1 strength"><output id="pz-v0">1.0</output></span></label>
+        <label for="pz-t1">Trait 2<select id="pz-t1"></select><span class="k"><input type="range" id="pz-k1" min="0" max="1.5" step=".1" value="1" aria-label="Trait 2 strength"><output id="pz-v1">1.0</output></span></label>
+        <label for="pz-t2">Trait 3<select id="pz-t2"></select><span class="k"><input type="range" id="pz-k2" min="0" max="1.5" step=".1" value="1" aria-label="Trait 3 strength"><output id="pz-v2">1.0</output></span></label>
+      </div>
+      <p class="loaded" id="pz-about"></p>
     </div>
   </section>
 

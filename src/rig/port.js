@@ -19,7 +19,9 @@ const near = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) < .12;
 export function port(p, over = {}) {
   if (!p) return null;
   const onHilt = p.sword == null && !p.sheathing && near(p.fa, HILT1);
-  const open = kn => .07 + .14 * Math.max(0, kn - 1.2);   // a deep bend opens the knee outward instead of folding it through the body
+  // the feet a little apart (rig v2 rests at .07, which from the front puts a stride's two legs on one line),
+  // and a deep bend opens the knee outward instead of folding it through the body
+  const open = kn => .15 + .14 * Math.max(0, kn - 1.2);
   const q = pz({
     hx: p.hx, hy: p.hy, lean: p.lean, chest: p.chest, breath: p.breath, hat: p.hat || 0,
     rl: [p.fl[0], p.fl[1], open(p.fl[1]), .3], ll: [p.bl[0], p.bl[1], open(p.bl[1]), .3],
