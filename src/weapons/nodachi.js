@@ -48,7 +48,24 @@ export const NODACHI = { id: 'nodachi', name: 'Nodachi', about: 'A greatsword wo
     ...Object.fromEntries(STANCES.map((q, k) => ['ready' + k, BREATH.map((b, i) => pz({ ...q, breath: b, flutter: i === 5 || i === 13 ? 1 : 0 }))])),
     ready: BREATH.map((b, i) => pz({ ...GUARD, breath: b, sword: GUARD.sword - b * .03, flutter: i === 5 || i === 13 ? 1 : 0 })),
     // J: the draw over the shoulder is the wind-up; the blade comes down through the front and nearly into the floor
-    slash1: keyed([[0, pz({ fa: [-2.7, .5], ba: [-.1, .6] })], [.09, WIND], ...TAIL], 30),
+    // shoulder angles past pi keep the arm going over the top between keys, and a blade angle below -pi keeps it turning
+    //   over his back (not down through the front)
+    // J from the back: the hand over the shoulder on the hilt, the blade drawn up out of the saya (point still down behind him),
+    //   then turned over his back into the wind-up
+    slash1: keyed([[0, pz({ fa: [3.6, .4], ba: [-.1, .6] })],
+      [.045, pz({ hy: 1, lean: -.06, chest: -.1, fa: [3.3, .25], ba: [-.1, .6], sword: -4.38, flutter: 1 })],
+      [.09, WIND], ...TAIL], 30),
+    // the stow, on the katana's beats: a flick down at his side, a beat, the blade raised overhead, slid down into the saya
+    //   behind his neck, the click with his hand on the hilt, then the hand drops away
+    sheathe: keyed([[0, GUARD],
+      [.12, pz({ hy: 3, lean: .12, chest: .05, fl: [.55, .9], bl: [-.6, .4], fa: [.9, .3], ba: [-.4, .3], sword: 1.25 }), lin],
+      [.3, pz({ hy: 3, lean: .12, chest: .05, fl: [.55, .9], bl: [-.6, .4], fa: [.92, .3], ba: [-.4, .3], sword: 1.28 })],
+      [.38, pz({ hy: 2, lean: .04, fl: [.4, .6], bl: [-.45, .3], fa: [2.9, .2], ba: [-.3, .3], sword: -1.5 })],
+      [.45, pz({ hy: 1, lean: .02, fl: [.3, .4], bl: [-.3, .2], fa: [3.2, .2], ba: [-.2, .3], sheathing: true })],
+      [.75, pz({ hy: 1, lean: .02, fl: [.25, .35], bl: [-.25, .2], fa: [3.6, .7], ba: [-.2, .3], sheathing: true })],
+      [.82, pz({ hy: 1, lean: .04, fl: [.2, .3], bl: [-.25, .15], fa: [3.6, .5], ba: [-.15, .3] })],
+      [1.0, pz({ hy: 1, lean: .04, fl: [.2, .3], bl: [-.25, .15], fa: [5.88, .8], ba: [-.1, .3] })],
+      [1.2, pz({ fa: [6.48, .3] })]], 15),
     slash1r: keyed([[0, GUARD], [.09, WIND], ...TAIL], 30),
     slash2: keyed([[0, FOLLOW],
       [.08, pz({ hx: 1, hy: 6, lean: .55, chest: .3, fl: [.85, 1.4], bl: [-.85, .4], fa: [.4, .3], ba: [.2, .5], sword: 2.5 })],
