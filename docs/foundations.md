@@ -118,6 +118,7 @@ All four run on the same ledger as ownership and wealth: the world keeps going w
 
 ### People remember (owner, 2026-09-26)
 - Everything he does is remembered by the people who saw it or heard of it: kindness, cruelty, a village saved or burned, a promise kept or broken, how he ruled. Memory lives on the people (the people lane's per-person memory), spreads by word of mouth through their relationships and culture, and outlives him: his heirs inherit his name's reputation, and a tyrant's grandson is met with old hatred.
+- **Battles are remembered where there were witnesses** (owner, 2026-09-26): a fight people saw becomes a story they tell (the duel at the bridge, the night he held the village gate alone), and grows as it travels; a fight nobody saw is known only to him. Witnesses come from the enemy plan's senses (sight, hearing), the same as for crimes.
 - This sits under karma and standing: karma is the sum of who he is, standing what a culture thinks now, memory the particular things particular people will not forget.
 
 ### Companions grow through what you live through together (owner, 2026-09-26)
