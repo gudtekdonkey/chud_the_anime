@@ -139,9 +139,13 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Facing (`P.view`, the port system): idle, walk, run and runArmed face the way he last moved: E, SE, S, NE or N; the west side mirrors the east with `P.face`. Harvest faces N. Every attack, skill and stance is still side on. The samurai turn the same way toward the ronin (`e.view`, a beat late) while they guard, flinch and stagger; the dead stay side on. Guard: the check's "eight facings" step.
 - Cooldowns (`player/cooldowns.js`): K 3 s (none with no enemy near; 0.2 s after an assassination) · I 2 s, Thousand Cuts 8 s · O 10 s · P 12 s · N 14 s · U 8 s · slide 1 s. J and jump have none.
 
+## The simulation core (`src/sim/`, `docs/sim-core.md`)
+
+The living world as plain data (the ledger): the 100 × 100 zone grid, regions, cultures, people, plots, the clock. No drawing. Every world system registers with `system()` and keeps its state in the ledger. Read `docs/foundations.md` and `docs/sim-core.md` before touching it. `node scripts/sim-smoke.mjs [seed] [years]` makes and lives a world in Node; `node scripts/proto-bundle.mjs` turns a prototype built on it into one standalone page.
+
 ## Working conventions
 
-- Iterate on design as standalone pages in `prototypes/`, numbered in order (`34-…html` next). Never edit an old prototype; make a new one.
+- Iterate on design as standalone pages in `prototypes/`, numbered in order (`42-…html` next; 35 to 41 are reserved by the parallel lanes in `docs/sim-core.md`). Never edit an old prototype; make a new one.
 - Record every decision the owner makes in `docs/design-notes.md`.
 - Every culture moves through the trait system: a character from a culture gets `setPersonality`/`bake(personOf(culture, seed))`, never hand-made idle or walk poses. A culture's mannerisms go in `CULTURES` (a new mannerism is a new trait or fidget).
 - Personality traits (`src/traits/`) never import player, enemy or clothing code, so any rig character can take them. A new trait is a new entry in `TRAITS`; a new knob goes in `BASE` with the plain ronin's value, so no-trait output never changes.
