@@ -13,7 +13,7 @@ import { motes } from './body.js';
 import { hit, hitSeg, burst } from './hits.js';
 import { meditate, spawnMirror, updateMirrors } from './mirror.js';
 import { TAP, chargeUp, TC, RIFT, release, charged } from './skills.js';
-import { gate, startCd, updateCds } from './cooldowns.js';
+import { gate, startCd, updateCds, canBlink, spendBlink } from './cooldowns.js';
 import { CUTS, GO, nextCut, updateFlow } from './combo.js';
 import { updateEnemies } from '../world/enemies.js';
 import { assassinate, tickStages, updateStages } from '../assassin/assassinate.js';
@@ -77,7 +77,8 @@ export function update(dt, inp) {
     if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); startCd('slide'); return; }
     if (inp.tele) { const c = pairCandidate(); if (c) return startPair(c); }   // a companion close by and set up for it: they cut him down together
     if (inp.tele && K.pick) return assassinate(K.pick);   // an isolated enemy in reach: K flashes to him and executes
-    if (inp.tele) { setState('tele'); P.blinkDir = inputDir(inp); startCd('tele'); return; }
+    if (inp.tele && canBlink()) { setState('tele'); P.blinkDir = inputDir(inp); spendBlink(); return; }
+    if (inp.tele) P.cdDeny.tele = .2;   // no blink charge left: refused, the slot blinks
     if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'double'; startCd('double'); return; }
     if (inp.rift) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'rift'; return; }   // O and P cool down from the release
     if (inp.moon) { setState('moonHold'); P.charge = 0; return; }
@@ -247,7 +248,7 @@ export function update(dt, inp) {
     }
     case 'standUp': {
       if (T >= D) { const q = P.pending || {}; P.pending = null; setState('idle');
-        if (q.slash) setState('slash1'); else if (q.tele) { setState('tele'); P.blinkDir = q.dir; startCd('tele'); }
+        if (q.slash) setState('slash1'); else if (q.tele && canBlink()) { setState('tele'); P.blinkDir = q.dir; spendBlink(); }
         else if (q.double) { setState('double'); P.blinkDir = q.dir; P.hk = 'double'; startCd('double'); } else if (q.sweep) { setState('sweep'); startCd('sweep'); }
         else if (q.rift) { setState('double'); P.blinkDir = q.dir; P.hk = 'rift'; } else if (q.moon) { setState('moonHold'); P.charge = 0; }
         else if (q.mirror) { meditate(); startCd('mirror'); }
