@@ -63,6 +63,16 @@ try {
     await until('slash 1 follow-through', () => window.__game.P.t > .18);
     await kb.press('j'); await reach(/^slash2$/); await shot('02-slash2');
     await reach(/^ready\d$/); });
+  await run('J on a samurai: flinch, stagger, death', async () => {
+    // walk up to the nearest samurai, then cut until he falls; every state he passes through is logged
+    await page.evaluate(() => { window.__eLog = []; const e = window.__game.E[0];
+      const tick = () => { if (window.__eLog[window.__eLog.length - 1] !== e.state) window.__eLog.push(e.state); requestAnimationFrame(tick); }; tick(); });
+    await kb.down('d'); await until('walking up to him', () => window.__game.P.x > 236); await kb.up('d'); await reach(FREE);
+    for (let i = 0; i < 10 && await page.evaluate(() => window.__game.E[0].alive); i++) { await kb.press('j'); await reach(/^slash/); await reach(FREE); }
+    const e = await page.evaluate(() => ({ alive: window.__game.E[0].alive, hp: window.__game.E[0].hp, log: window.__eLog }));
+    if (e.alive) fail(`the samurai is still standing after 10 cuts (hp ${e.hp}, states ${e.log.join(' > ')})`);
+    for (const st of ['flinch', 'stagger', 'dead']) if (!e.log.includes(st)) fail(`the samurai never went through ${st} (states ${e.log.join(' > ')})`);
+    await until('him hitting the floor', () => window.__game.E[0].body.thudT != null); await sleep(600); await shot('08-samurai-down'); });
   await run('Shift: ground slide', async () => { await kb.press('Shift'); await reach(/^slide$/); await reach(FREE); });
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
   await run('K: glitch teleport', async () => { await kb.press('k'); await reach(/^tele$/); await reach(FREE); });
