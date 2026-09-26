@@ -55,5 +55,6 @@ Decisions made in the design sessions so far, newest last.
    - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, in a darker red-grey.
    - Executions are short and brutal, show only the key frames (each one leaning into the motion), and cut the enemy into real pieces.
 3. **Clothing redesign.** The mantle was flattened because it read as a hump; the rest still needs a pass.
-4. **Front, back and diagonal views** for every move. Everything uses the side view today. The 8-direction rig (`prototypes/19-rig-v2-and-clothing.html`) is the path: port each move's key poses onto it, starting with walk, idle and the stances. Harvest facing north waits on this.
+   - **In the game** (from `prototypes/19-rig-v2-and-clothing.html`): the study's items hang from a skeleton read off his side pose, with live cloth, picked from a wardrobe under the game. He starts in the flat mantle, so his look is unchanged. The hat stays part of the rig for now. Still the owner's call: which items stay, and his default outfit.
+4. **Front, back and diagonal views** for every move. The owner is building a port system for the front and back views; the clothing waits on it for other facings (it only swaps the skeleton). Everything uses the side view today. The 8-direction rig (`prototypes/19-rig-v2-and-clothing.html`) is the path: port each move's key poses onto it, starting with walk, idle and the stances. Harvest facing north waits on this.
 5. **Real enemies** with health, needed by K.

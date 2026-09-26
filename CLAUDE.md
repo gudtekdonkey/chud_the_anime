@@ -13,7 +13,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
-- The check reads the player through `window.__game = { P }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
+- The check reads the player through `window.__game = { P, wear }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
 
 ## Module map (`src/`)
 
@@ -21,15 +21,15 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 |---|---|
 | `main.js` | Boot, the fixed 60 Hz update loop under `requestAnimationFrame`, the debug hook |
 | `config.js` | `W`/`H`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY`, `SQ` (floor squash) |
-| `state.js` | ALL shared mutable state: the player `P`, `S` (`shake`, `hitstop`, `scr` screen flash, `roomClear`), `parts` and every effect list |
+| `state.js` | ALL shared mutable state: the player `P`, what he wears (`wear`), `S` (`shake`, `hitstop`, `scr` screen flash, `roomClear`), `parts` and every effect list |
 | `screen.js` | The `#game` canvas, its 2D context `g`, the `#hud` line |
 | `input.js` | Keyboard map, touch pad, `held`/`taps`, `readInput()`, the room-clear checkbox |
 | `rig/pose.js` | `pz()` (pose from REST), `HILT`, `lerpP`, `ease`/`lin`, `keyed()` (eased keyframes to frames) |
-| `rig/rig.js` | `rig()`: draws one side-view pose pixel by pixel from joint angles; the hat |
+| `rig/rig.js` | `rig()`: draws one side-view pose pixel by pixel from joint angles into a depth raster, each part at its own depth (`Z`); the hat |
 | `anims/anims.js` | `ANIMS` (frame count, fps, loop, the moveset "about" text), `GLITCHY` |
 | `anims/poses.js` | `POSES` for every rig animation, the guard and counter stances, `GLF` (baked glitch frames) |
 | `anims/hand-drawn.js` | Hand-drawn rows the rig can't pose: the two open stances (front view) and sit / sit down / stand up (back view) |
-| `anims/sheets.js` | Bakes every animation to a sheet at load (`SHEETS`), `dur()` |
+| `anims/sheets.js` | Bakes every animation to a sheet at load (`SHEETS`, in the default outfit, keeping each frame's pose and glitch), `sliceGlitch`, `dur()` |
 | `player/update.js` | The state machine: one `update(dt, inp)` step |
 | `player/actions.js` | `setState`, `once`, stance picking, the two-screen threat check, movement, `ghost`, `frameOf`, `inputDir` |
 | `player/skills.js` | Charging (`chargeUp`), Thousand Cuts (`TC`), Cross Rift (`RIFT`), the dash, `release`/`charged` |
@@ -37,7 +37,12 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `player/hits.js` | Hit tests against the dummies, `burst` (the sheath-click payoff) |
 | `player/qi.js` | The Qi meter's gains and Storm Chain (`chainFrom`) |
 | `player/body.js` | His silhouette points (sparks and bolts land on his body), `motes`, `glowK` |
-| `player/draw.js` | Drawing him (shadow, reflection, afterimages, charge rim, white flash, glitch slice) and the mirror images |
+| `player/draw.js` | Drawing him live in what he wears (`dressed`), with shadow, reflection, afterimages, charge rim, white flash, glitch slice; and the mirror images |
+| `wardrobe/skeleton.js` | The 3D skeleton clothing hangs from (from rig v2); `fromSide` + `solve(p, 0, true)` read it off a side pose. The port system for other views swaps in here |
+| `wardrobe/raster.js` | `Raster`: a figure's pixels with depth, nearer wins; `ring`, `bandLine` |
+| `wardrobe/cloth.js` | Verlet cloth (chains, sheets, skirts) pinned to the bones, kept out of his body |
+| `wardrobe/items.js` | `ITEMS` (data: slot, parts measured from the bones), `SLOTS`, `OUTFITS`, `drawPart` for rigid parts |
+| `wardrobe/dress.js` | `makeFigure`, `dress()` (rig + clothes into one raster, cloth stepped), `turnCloth` |
 | `fx/fx.js` | `updateFx`, `drawFloorFx`, `drawFx`: the effect systems' per-frame update and draw |
 | `fx/util.js` | `rr`, `sgn`, `residue`, `ring`, `after`, `spark`, `dust`, `scrFlash` |
 | `fx/slash.js` | Crescents, cut lines, `strike` |
@@ -52,6 +57,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `ui/qi-meter.js` | The pixel-font Qi meter, bottom left |
 | `ui/moveset.js` | The moveset table under the game (from `ANIMS` "about" rows + skill rows) |
 | `ui/strip-tester.js` | "Test a sprite strip": drop a PNG strip in place of any animation |
+| `ui/wardrobe.js` | The wardrobe under the game: one item per slot, outfit presets |
 | `styles.css` / `index.html` | The page; `index.html` holds markup only |
 
 - Shared state lives in `state.js` and is imported, never copied. A value other modules reassign goes on `S`, because an imported `let` cannot be reassigned.
@@ -67,7 +73,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - The katana is sheathed at his hip when idle. He draws it only to attack, waits in a blade-out stance after, and after about 2 s of calm resheathes slowly: a flick, a beat, slid home, the click, stillness.
 - The blade-out stance is one of six, picked at random and never the same twice running: four side-on counter stances (blade in the back hand, point to the ground) and two opened to the camera.
 - No enemy within two screens (960 px) when an attack or execution ends: skip the stance and sheathe at once, unbothered.
-- Clothing (mantle, scarf, cape, obi sash) is equippable and always shades of black, never bright red.
+- Clothing (mantle, scarf, cape, obi sash) is equippable and always shades of black (`RC` c0–c6), never bright red. An item is data measured from the bones, never pixels in a sheet; a new item is a new `ITEMS` row.
 - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, a darker red-grey.
 - Executions are short and brutal, show only the key frames (each leaning into the motion), and cut the enemy into real pieces.
 - Assassination markers: every enemy has an isolation bubble (empty glows cyan; overlapping ones go grey and are joined by a link line); a kill line runs to the nearest enemy he can dash to; the K prompt appears only when that enemy is in range AND outside every other enemy's bubble; lock-on brackets are reserved for big pickups.

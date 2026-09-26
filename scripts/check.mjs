@@ -70,6 +70,17 @@ try {
   await run('C: sit, then a key to stand', async () => {
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });
+  await run('wardrobe: dress him, run with the cloth, dress him back', async () => {
+    const has = id => page.evaluate(i => window.__game.wear.outfit.has(i), id);
+    if (!await has('mantle')) fail('he should start in the flat mantle');
+    await page.locator('[data-outfit="Ghost"]').click();
+    if (!await has('longscarf') || await has('mantle')) fail('the Ghost outfit did not go on');
+    await page.locator('[data-item="coat"]').click();
+    if (!await has('coat')) fail('the long coat did not go on');
+    await kb.down('d'); await reach(/^run$/); await sleep(400); await kb.up('d'); await kb.down('a'); await sleep(300); await shot('08-wardrobe');
+    await kb.up('a'); await reach(/^idle$/);
+    await page.locator('[data-outfit="Default"]').click();
+    if (!await has('mantle') || await has('coat')) fail('the default outfit did not come back'); });
   await run('X: die and come back', async () => { await kb.press('x'); await reach(/^death$/); await reach(/^idleGlitch$/, 5000); });
   step = '';
 

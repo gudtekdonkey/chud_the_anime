@@ -2,10 +2,12 @@ import { COL, FW, FH, OX, OY } from '../config.js';
 import { ANIMS } from './anims.js';
 import { OPEN_FRONT, INVITE_FRONT, frontFrame, sitFrame } from './hand-drawn.js';
 import { POSES, GLF } from './poses.js';
-import { rig } from '../rig/rig.js';
+import { Raster } from '../wardrobe/raster.js';
+import { dress, makeFigure } from '../wardrobe/dress.js';
 
 // ---- Sheets: every animation is baked to a strip at load, so a dropped-in PNG strip can replace any one of them ----
-function sliceGlitch(g, fx, s, seed) {
+// also run live on his dressed frame (player/draw.js), with the same seed, so it slices exactly as the baked frame does
+export function sliceGlitch(g, fx, s, seed) {
   let r = seed * 9301 + 49297;
   const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
   const d = g.getImageData(fx, 0, FW, FH);
@@ -24,20 +26,26 @@ function sliceGlitch(g, fx, s, seed) {
   for (let k = 0; k < 3 * s; k++) g.fillRect(fx + 14 + (rnd() * 20 | 0), 14 + (rnd() * 24 | 0), 3 + (rnd() * 8 | 0), 1);
 }
 
+// each rig frame keeps its pose and glitch, so the player can be redrawn live in whatever he wears;
+// the sheet itself is baked in his default outfit (mirror images and afterimages use it)
+const R = new Raster(FW, FH, OX, OY);
 function placeholderSheet(name) {
   const { n } = ANIMS[name];
   const c = document.createElement('canvas'); c.width = FW * n; c.height = FH;
-  const g = c.getContext('2d');
+  const g = c.getContext('2d'), poses = [], glf = [];
   for (let i = 0; i < n; i++) {
-    if (name === 'sit' || name === 'sitDown' || name === 'standUp') { sitFrame(g, i * FW, name, i); continue; }
-    if (name === 'ready4' || name === 'ready5') { frontFrame(g, i * FW, name === 'ready4' ? OPEN_FRONT : INVITE_FRONT, i); continue; }
-    const p = POSES[name][i % POSES[name].length];
-    if (p) rig(g, i * FW, p);
+    let p = null;
+    if (name === 'sit' || name === 'sitDown' || name === 'standUp') p = sitFrame(g, i * FW, name, i) || null;
+    else if (name === 'ready4' || name === 'ready5') frontFrame(g, i * FW, name === 'ready4' ? OPEN_FRONT : INVITE_FRONT, i);
+    else p = POSES[name][i % POSES[name].length] || null;
+    if (p) g.drawImage(dress(R, makeFigure(), p), i * FW, 0);
     const gl = GLF[name] && GLF[name][i];
-    if (gl) sliceGlitch(g, i * FW, gl, i + name.length * 7);
+    if (gl) sliceGlitch(g, i * FW, gl, glitchSeed(name, i));
+    poses.push(p); glf.push(gl || 0);
   }
-  return { img: c, fw: FW, fh: FH, n, ox: OX, oy: OY, custom: false };
+  return { img: c, fw: FW, fh: FH, n, ox: OX, oy: OY, custom: false, poses, glf, name };
 }
+export const glitchSeed = (name, i) => i + name.length * 7;
 
 for (const k in POSES) if (ANIMS[k]) ANIMS[k].n = POSES[k].length;   // keyframed moves decide their own length
 export const SHEETS = {};

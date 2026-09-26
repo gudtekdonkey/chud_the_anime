@@ -1,6 +1,5 @@
 import { OX, OY, RC } from '../config.js';
 import { pz } from '../rig/pose.js';
-import { rig } from '../rig/rig.js';
 
 // ---- Hand-drawn frames: the views the side-on rig cannot pose (opened to the camera, sitting with his back to it) ----
 // opened to the camera: hand-drawn front view, 28 wide, mantle thrown back, blade hanging point-down from one hand
@@ -21,7 +20,7 @@ export function frontFrame(g, fx, list, i) {
     g.fillStyle = RC[ch]; g.fillRect(fx + OX - 14 + xx, top + y + (y < 14 ? b : 0), 1, 1); }));
 }
 
-// Sitting, back to the camera, cross-legged like a monk. Hand-drawn rows, 20 wide.
+// Sitting, back to the camera, cross-legged like a monk. Hand-drawn rows, 20 wide. A frame that returns a pose is left to the rig.
 const SIT_UP = [
   '.......GGGGGG.......', '....GGHHHHHHHHGG....', '.GGHHHHHHHHHHHHHHGG.', 'GBBBBBBBBBBBBBBBBBBG', '.KBBBBBBBBBBBBBBBBK.',
   '......KKKKKKKK......', '......KKKKKKKK......', '.......KKKKKK.......',
@@ -46,7 +45,7 @@ export function sitFrame(g, fx, name, i) {
     if (i === 0) return rows(g, fx, [...SIT_UP, ...SIT_LEGS], OY - 1, SWORD_DOWN);
     if (i === 1) return rows(g, fx, [...STAND_BACK.slice(0, 16), '......KKKKKKKK......', '.....KKK....KKK.....', '....KKK......KKK....', '...KKKK......KKKK...'], OY);
     if (i === 2) return rows(g, fx, STAND_BACK, OY);
-    return rig(g, fx, pz({ fa: [.3, .5] }));
+    return pz({ fa: [.3, .5] });                     // back on the rig: the sheet poses (and dresses) this one
   }
   if (name === 'sitDown') {
     if (i === 0) return rows(g, fx, STAND_BACK, OY);
