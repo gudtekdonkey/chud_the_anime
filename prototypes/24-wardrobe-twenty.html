@@ -72,6 +72,11 @@
   tr:last-child td { border-bottom: 0; }
   .bu { overflow-x: auto; border: 1px solid var(--rule); background: #474c4a; }
   #buildup { height: 208px; width: auto; max-width: none; }
+  .chip .dot { display: inline-block; width: 9px; height: 9px; margin-right: 6px; vertical-align: -1px; }
+  #dyerow { display: block; width: calc(7 * 176px); max-width: none; height: 208px; image-rendering: pixelated; }
+  #dyerow-labels { display: grid; grid-template-columns: repeat(7, 176px); background: var(--panel); border-top: 1px solid var(--rule); }
+  #dyerow-labels span { font-size: 13px; text-align: center; padding: 8px 6px; color: var(--muted); }
+  #dyerow-labels b { font-family: "Pixelify Sans", ui-monospace, monospace; font-weight: 500; color: var(--ink); }
   #bu-labels { display: grid; grid-template-columns: repeat(var(--n), 176px); background: var(--panel); border-top: 1px solid var(--rule); }
   #bu-labels span { font-size: 13px; line-height: 1.35; text-align: center; padding: 8px 6px; color: var(--muted); }
   #bu-labels b { font-family: "Pixelify Sans", ui-monospace, monospace; font-weight: 500; color: var(--ink); }
@@ -111,6 +116,8 @@
       </div>
       <div class="ctl">
         <div><div class="lbl">Wearing</div><p id="wearing" aria-live="polite"></p><p id="note" class="note" aria-live="polite"></p></div>
+        <div><div class="lbl">Armour dye (plate and mail only)</div><div class="chips" role="group" aria-label="Armour dye" id="dyes"></div></div>
+        <div><div class="lbl">Bandana (rare)</div><div class="chips"><button type="button" class="chip" id="bandcol">Tie on a bandana in a random colour</button></div></div>
         <div><div class="lbl">Hair colour</div><div class="chips" role="group" aria-label="Hair colour" id="haircols"></div></div>
         <div class="chips" role="group" aria-label="Outfits" id="presets"></div>
         <div id="slots"></div>
@@ -123,9 +130,14 @@
     <div id="twenty"></div>
   </section>
 
+  <section aria-labelledby="dyes-h">
+    <div class="intro"><h2 id="dyes-h">Armour dyes</h2><p>Armour can take a dark colour: plates, mail, shin guards, tassets, the gorget, sleeves and hand guards, and the iron hats. Robes and other cloth stay black. A dye tints each black to its hue at the same lightness, so the armour stays dark and still reads as part of his silhouette. Here is the same armour in each dye; try them on in the fitting room.</p></div>
+    <div class="bu"><canvas id="dyerow" width="308" height="52" role="img" aria-label="The same armour in seven dark dyes"></canvas><div id="dyerow-labels"></div></div>
+  </section>
+
   <section aria-labelledby="heads-h">
-    <div class="intro"><h2 id="heads-h">Hats and hair</h2><p>The hat is an item now, not part of him, so he can go bareheaded. Hair sits on his scalp, and long styles have cloth tails that swing. Under a hat, whatever is above the brim hides, and the sides and tails still show. Tick the box to see every style under the straw hat.</p></div>
-    <label class="check" for="underhat"><input type="checkbox" id="underhat"> Hair under the straw hat</label>
+    <div class="intro"><h2 id="heads-h">Hats and hair</h2><p>The hat is an item now, not part of him, so he can go bareheaded. Hair sits on his scalp, and long styles have cloth tails that swing. Under a hat, whatever is above the brim hides, and the sides and tails still show. Twenty-two styles. The rare bandana is the one headwear in any colour, and it only fits styles with nothing on the crown: knots, buns, crests and volume don't go under it. Tick a box to see every style under the straw hat or the bandana.</p></div>
+    <div class="chips"><label class="check" for="underhat"><input type="checkbox" id="underhat"> Hair under the straw hat</label> <label class="check" for="underband"><input type="checkbox" id="underband"> Hair under the bandana</label></div>
     <div id="heads"></div>
   </section>
 
@@ -178,7 +190,8 @@
       <li><b>His default outfit.</b> Since the hat isn't on by default, the game will start him bareheaded in the flat mantle. Say if you want something else.</li>
       <li><b>Slots.</b> Keep the eleven, one piece in each?</li>
       <li><b>Hats and masks.</b> Are the four special pairs the kind of thing you want? Should a special pair also do something in play, like a bonus?</li>
-      <li><b>Hair.</b> Which styles stay? Should hair colour be natural shades only, or any dye?</li>
+      <li><b>Hair.</b> Which of the 22 styles stay, and is the bandana list right? Should hair colour be natural shades only, or any dye?</li>
+      <li><b>Armour dyes.</b> Are these seven the right kind of dark? Should a dye be found, bought, or picked freely?</li>
       <li><b>Masks.</b> Which of the ten stay, and should their colours be random per drop, dyed by the player, or fixed?</li>
       <li><b>The layer order.</b> For example, should the sash go over the coat (as now) or under it?</li>
     </ol>
@@ -3994,10 +4007,10 @@
 		}
 	];
 	const MASK_BY = Object.fromEntries(MASKS.map((m) => [m.id, m]));
-	const tail = (b, n, w, dz = 0) => ({
+	const tail = (b, n, w, dz = 0, u = 10.2) => ({
 		kind: "chain",
 		f: "c",
-		u: 10.2,
+		u,
 		v: -1.9,
 		b,
 		n,
@@ -4110,8 +4123,220 @@
 				"...A......"
 			],
 			about: "The crown shaved bare, a small knot on top. The enemy samurai wear it."
+		},
+		{
+			id: "buzz",
+			name: "Buzzed",
+			rows: [
+				"",
+				"",
+				"...aaaa...",
+				"..a......."
+			],
+			about: "Shaved to a shadow. The head shape shows through."
+		},
+		{
+			id: "mohawk",
+			name: "Crest",
+			rows: [
+				"..AAAA....",
+				"..AAAAA...",
+				"...aaaa...",
+				"..a......."
+			],
+			about: "A tall ridge from brow to nape, the sides shaved."
+		},
+		{
+			id: "twintails",
+			name: "Twin tails",
+			rows: [
+				"",
+				"",
+				"...AAAA...",
+				"..AA......"
+			],
+			tails: [tail(-.7, 6, [1, 1], -.3), tail(.7, 6, [1, 1], .3)],
+			about: "Two tails tied low behind the ears. They swing apart on a turn."
+		},
+		{
+			id: "mullet",
+			name: "Mullet",
+			rows: [
+				"",
+				"",
+				"...AAAA...",
+				"..AA......",
+				"..A......."
+			],
+			tails: [{
+				...tail(0, 4, [2, 1]),
+				split: .7
+			}],
+			about: "Short on top, long at the back. It flaps on his collar."
+		},
+		{
+			id: "fringe",
+			name: "Swept fringe",
+			rows: [
+				"",
+				"...AAA....",
+				"..AAAAAA..",
+				"..A....A.."
+			],
+			about: "A fringe swept down over the brow, stopping just above the eye."
+		},
+		{
+			id: "dreads",
+			name: "Locks",
+			rows: [
+				"",
+				"",
+				"...AaAa...",
+				"..aA......"
+			],
+			tails: [
+				{
+					...tail(-.6, 6, [1, 1], -.2),
+					split: .9
+				},
+				{
+					...tail(0, 7, [1, 1]),
+					split: .9
+				},
+				{
+					...tail(.6, 5, [1, 1], .2),
+					split: .9
+				}
+			],
+			about: "Thick rope locks that fall heavy and swing in a bunch."
+		},
+		{
+			id: "halfup",
+			name: "Half up",
+			rows: [
+				"...aA.....",
+				"...AA.....",
+				"...AAAA...",
+				"..AA......"
+			],
+			tails: [tail(0, 5, [1, 1])],
+			about: "The top tied in a small knot, the rest left down."
+		},
+		{
+			id: "hime",
+			name: "Blunt cut",
+			rows: [
+				"",
+				"",
+				"..AAAAAA..",
+				"..A....AA.",
+				"..A.......",
+				"..A......."
+			],
+			tails: [{
+				...tail(0, 8, [2, 2]),
+				stiff: .05
+			}],
+			about: "Straight and long, cut square at the brow, the cheeks and the back."
+		},
+		{
+			id: "spikes",
+			name: "Swept spikes",
+			rows: [
+				"A.A.......",
+				".AAAA.....",
+				"..AAAAA...",
+				"..AA......"
+			],
+			about: "Combed back hard into points, like he walked out of a storm."
+		},
+		{
+			id: "highbun",
+			name: "High bun",
+			rows: [
+				"...aa.....",
+				"..aAAa....",
+				"...AAAA...",
+				"..a......."
+			],
+			about: "Wound on the crown and pinned. Nothing hangs."
+		},
+		{
+			id: "twinbraids",
+			name: "Twin braids",
+			rows: [
+				"",
+				"",
+				"...AAAA...",
+				"..aA......"
+			],
+			tails: [{
+				...tail(-.7, 8, [1, 1], -.25),
+				split: .15,
+				stiff: .06
+			}, {
+				...tail(.7, 8, [1, 1], .25),
+				split: .15,
+				stiff: .06
+			}],
+			about: "Two plaits, one each side, heavy enough to swing slow."
+		},
+		{
+			id: "undercut",
+			name: "Undercut",
+			rows: [
+				"..AAAAA...",
+				".AAAAAAA..",
+				"...aaaa...",
+				"..a......."
+			],
+			about: "Long on top and swept back, the sides shaved to the skin."
+		},
+		{
+			id: "curly",
+			name: "Curls",
+			rows: [
+				"..AaAaA...",
+				".aAAAAAa..",
+				".AAAAAAA..",
+				".aA.......",
+				".A........"
+			],
+			about: "A full, round mass of curls. No hat sits flat on it."
+		},
+		{
+			id: "highpony",
+			name: "High ponytail",
+			rows: [
+				"",
+				"...AA.....",
+				"...AAAA...",
+				"..a......."
+			],
+			tails: [{
+				...tail(0, 7, [1, 1], 0, 11.6),
+				dir: [
+					-.8,
+					-.6,
+					0
+				]
+			}],
+			about: "Tied high on the crown. The tail whips when he spins."
 		}
 	];
+	const BANDANA_HAIR = /* @__PURE__ */ new Set([
+		"crop",
+		"ponytail",
+		"long",
+		"braid",
+		"buzz",
+		"twintails",
+		"mullet",
+		"fringe",
+		"dreads",
+		"hime",
+		"twinbraids"
+	]);
 	const HAIR_COLS = [
 		["Ink", ["#1a1c22", "#2f333c"]],
 		["Ash", ["#5c6068", "#3a3d44"]],
@@ -4171,6 +4396,13 @@
 			about: "The wandering monk's woven basket, down over the whole head. No mask fits, and no face shows."
 		},
 		{
+			id: "bandana",
+			name: "Bandana",
+			rare: true,
+			band: true,
+			about: "Rare. A cloth tied round the head, knotted at the back, the ends trailing. Any colour at all, picked when it drops. Only fits hair with nothing on the crown."
+		},
+		{
 			id: "kabuto",
 			name: "Kabuto",
 			drop: 3,
@@ -4189,6 +4421,7 @@
 		}
 	];
 	const HAT_ALLOWS = {
+		bandana: "all",
 		straw: "all",
 		kasa: "all",
 		broken: "all",
@@ -4253,6 +4486,55 @@
 		wraps: "hands",
 		kote: "hands"
 	};
+	const BANDANA = [
+		{
+			kind: "bandana",
+			rows: [
+				"",
+				"",
+				"...AAAA...",
+				".aaAAAAA.."
+			]
+		},
+		{
+			kind: "chain",
+			f: "c",
+			u: 10.6,
+			v: -2.4,
+			b: .3,
+			n: 4,
+			seg: 1.2,
+			dir: [
+				-.7,
+				-1,
+				.2
+			],
+			w: [1, 1],
+			col: ["nA", "na"],
+			stiff: .03,
+			catch: 1,
+			bias: 2.7
+		},
+		{
+			kind: "chain",
+			f: "c",
+			u: 10.6,
+			v: -2.4,
+			b: -.3,
+			n: 3,
+			seg: 1.2,
+			dir: [
+				-.5,
+				-1,
+				-.2
+			],
+			w: [1, 1],
+			col: ["na", "na"],
+			stiff: .03,
+			catch: 1,
+			bias: 2.69
+		}
+	];
 	const ITEMS = [
 		...ITEMS$1.map((it) => {
 			const lo = Math.min(...it.parts.map((p) => p.bias || 0));
@@ -4298,7 +4580,8 @@
 			slot: "head",
 			name: h.name,
 			about: h.about,
-			parts: [{
+			rare: h.rare,
+			parts: h.band ? BANDANA : [{
 				kind: h.drop ? "deephat" : "sidehat",
 				rows: h.rows,
 				drop: h.drop,
@@ -4387,6 +4670,13 @@
 			}));
 			return true;
 		}
+		if (part.kind === "bandana") {
+			const x0 = Math.round(J.hc[0] - 1.5) - 3, y0 = Math.round(J.hc[1]) - 4;
+			part.rows.forEach((r, y) => [...r].forEach((ch, x) => {
+				if (ch !== ".") S.px(x0 + x, y0 + y, 2.6, ch === "A" ? "nA" : "na");
+			}));
+			return true;
+		}
 		if (part.kind === "hair") {
 			const x0 = Math.round(J.hc[0] - 1.5) - 3, y0 = Math.round(J.hc[1]) - 4;
 			part.rows.forEach((r, y) => [...r].forEach((ch, x) => {
@@ -4415,13 +4705,70 @@
 		}
 		return false;
 	}
+	const ARMOUR = /* @__PURE__ */ new Set([
+		"plates",
+		"kote",
+		"kusari",
+		"suneate",
+		"kusazuri",
+		"gorget",
+		"tekko",
+		"kabuto",
+		"jingasa"
+	]);
+	const DYES = [
+		["Black", null],
+		["Oxblood", "#7a2020"],
+		["Indigo", "#27306e"],
+		["Moss", "#3e5a2a"],
+		["Plum", "#5a2860"],
+		["Bronze", "#6b4a22"],
+		["Teal", "#1f5a5a"]
+	];
+	const rgb = (h) => [
+		1,
+		3,
+		5
+	].map((i) => parseInt(h.slice(i, i + 2), 16));
+	const lum = (c) => .3 * c[0] + .59 * c[1] + .11 * c[2];
+	function dyePal(hex) {
+		const d = rgb(hex), L = lum(d), out = {};
+		for (let k = 1; k <= 6; k++) {
+			const g = rgb(RC["c" + k]), l = lum(g);
+			out["d" + k] = hex_(...g.map((v, i) => .3 * v + .7 * Math.min(255, d[i] * l / L * 1.15)));
+		}
+		return out;
+	}
+	const hex_ = (r, g, b) => "#" + [
+		r,
+		g,
+		b
+	].map((v) => Math.round(v).toString(16).padStart(2, "0")).join("");
+	const DYE_MAP = {
+		c1: "d1",
+		c2: "d2",
+		c3: "d3",
+		c4: "d4",
+		c5: "d5",
+		c6: "d6",
+		B: "d2",
+		H: "d3",
+		G: "d5"
+	};
+	const dyed = (R) => {
+		const D = Object.create(R);
+		D.px = (x, y, z, k) => R.px(x, y, z, DYE_MAP[k] || k);
+		return D;
+	};
 	const makeFigure = (items) => ({
 		outfit: new Set(items),
 		cloth: /* @__PURE__ */ new Map(),
 		t: Math.random() * 9,
 		vel: [0, 0],
 		tint: null,
-		hair: HAIR_COLS[0][1]
+		hair: HAIR_COLS[0][1],
+		dye: 0,
+		band: ["#c8322b", "#7e1c17"]
 	});
 	const hex = (r, g, b) => "#" + [
 		r,
@@ -4472,11 +4819,15 @@
 		Object.assign(R.pk, packPal({
 			hX: F.hair[0],
 			hx: F.hair[1],
+			nA: F.band[0],
+			na: F.band[1],
 			...F.tint ? {
 				mX: F.tint[0],
 				mx: F.tint[1]
-			} : {}
+			} : {},
+			...F.dye ? dyePal(DYES[F.dye][1]) : {}
 		}));
+		const RD = F.dye ? dyed(R) : R;
 		const J = solve(fromSide(p), 0, true);
 		J.hc = hc;
 		const env = {
@@ -4490,9 +4841,10 @@
 		const steps = dt > 0 ? Math.min(3, Math.max(1, Math.round(dt * 60))) : 0;
 		for (const it of ITEMS) {
 			if (!F.outfit.has(it.id) || only && !only.has(it.slot)) continue;
+			const S = ARMOUR.has(it.id) ? RD : R;
 			it.parts.forEach((part, pi) => {
 				if (!isCloth(part)) {
-					if (!drawExtra(R, part, J) && !drawMore(R, part, J)) drawPart(R, part, J);
+					if (!drawExtra(S, part, J) && !drawMore(S, part, J)) drawPart(S, part, J);
 					return;
 				}
 				const key = it.id + ":" + pi;
@@ -4504,7 +4856,7 @@
 				}
 				for (let k = 0; k < steps; k++) clothStep(C, part, J, env, 1 / 60);
 				if (!C.ok) clothStep(C, part, J, env, 0);
-				drawCloth(R, C, part, J);
+				drawCloth(S, C, part, J);
 			});
 		}
 		return R.flush();
@@ -4710,6 +5062,18 @@
 			]
 		},
 		{
+			name: "Bandit",
+			items: [
+				"bandana",
+				"hair-dreads",
+				"momohiki",
+				"kusari",
+				"pouches",
+				"kerchief",
+				"tekko"
+			]
+		},
+		{
 			name: "Bare",
 			items: []
 		}
@@ -4750,6 +5114,13 @@
 					note = `${r.note} The ${BY_ID[gone].name.toLowerCase()} came off.`;
 				} else if (r.state === "special") note = r.name + ": " + r.note;
 			}
+			const hr = [...hero.outfit].find((id) => id.startsWith("hair-"));
+			if (hero.outfit.has("bandana") && hr && !BANDANA_HAIR.has(hr.slice(5))) {
+				const gone = it.id === "bandana" ? hr : "bandana";
+				hero.outfit.delete(gone);
+				note = `The bandana only fits hair with nothing on the crown. The ${BY_ID[gone].name.toLowerCase()} came off.`;
+			}
+			if (it.id === "bandana") hero.band = randomTint();
 		}
 		syncRoom();
 	});
@@ -4763,6 +5134,28 @@
 		syncRoom();
 	});
 	$("haircols").innerHTML = HAIR_COLS.map(([n], i) => `<button type="button" class="chip" data-hc="${i}">${n}</button>`).join("") + "<button type=\"button\" class=\"chip\" id=\"hairdye\">Random dye</button>";
+	$("dyes").innerHTML = DYES.map(([n, h], i) => `<button type="button" class="chip" data-dye="${i}">${h ? `<i class="dot" style="background:${h}"></i>` : ""}${n}</button>`).join("");
+	$("dyes").addEventListener("click", (e) => {
+		const b = e.target.closest("[data-dye]");
+		if (!b) return;
+		hero.dye = +b.dataset.dye;
+		syncDyes();
+	});
+	const syncDyes = () => document.querySelectorAll("[data-dye]").forEach((b) => b.setAttribute("aria-pressed", String(+b.dataset.dye === hero.dye)));
+	syncDyes();
+	$("bandcol").addEventListener("click", () => {
+		hero.band = randomTint();
+		if (!hero.outfit.has("bandana")) {
+			hero.outfit.delete(hatOf(hero));
+			hero.outfit.add("bandana");
+			const hr = [...hero.outfit].find((id) => id.startsWith("hair-"));
+			if (hr && !BANDANA_HAIR.has(hr.slice(5))) {
+				hero.outfit.delete(hr);
+				note = `The bandana only fits hair with nothing on the crown. The ${BY_ID[hr].name.toLowerCase()} came off.`;
+			}
+			syncRoom();
+		}
+	});
 	$("haircols").addEventListener("click", (e) => {
 		const b = e.target.closest("button");
 		if (!b) return;
@@ -4801,12 +5194,28 @@
 		F: makeFigure([it.id]),
 		phase: i * .4
 	}));
-	$("heads").innerHTML = headCards.map((c) => `<article class="card mask"><canvas width="30" height="26" aria-label="The ronin with the ${c.it.name}"></canvas><div class="meta"><span class="num">${c.it.slot === "head" ? "hat" : "hair"}</span></div><h3>${c.it.name}</h3><p>${c.it.about}</p></article>`).join("");
+	$("heads").innerHTML = headCards.map((c) => `<article class="card mask"><canvas width="30" height="26" aria-label="The ronin with the ${c.it.name}"></canvas><div class="meta"><span class="num">${c.it.slot === "head" ? "hat" : "hair"}</span>${c.it.rare ? "<span class=\"tag new\">rare</span>" : ""}${c.it.slot === "hair" ? `<span class="tag ${BANDANA_HAIR.has(c.it.id.slice(5)) ? "" : "warn"}">${BANDANA_HAIR.has(c.it.id.slice(5)) ? "bandana fits" : "no bandana"}</span>` : ""}</div><h3>${c.it.name}</h3><p>${c.it.about}</p></article>`).join("");
 	document.querySelectorAll("#heads canvas").forEach((cv, i) => {
 		headCards[i].g = cv.getContext("2d");
 	});
-	$("underhat").addEventListener("change", (e) => {
-		for (const c of headCards) if (c.it.slot === "hair") c.F.outfit = new Set(e.target.checked ? [c.it.id, "straw"] : [c.it.id]);
+	for (const c of headCards) if (c.it.id === "bandana") c.F.band = randomTint();
+	const underHead = () => {
+		const h = $("underhat").checked ? "straw" : $("underband").checked ? "bandana" : null;
+		for (const c of headCards) if (c.it.slot === "hair") {
+			c.F.outfit = new Set(h && (h !== "bandana" || BANDANA_HAIR.has(c.it.id.slice(5))) ? [c.it.id, h] : [c.it.id]);
+			if (!c.F.bandSet) {
+				c.F.band = randomTint();
+				c.F.bandSet = 1;
+			}
+		}
+	};
+	$("underhat").addEventListener("change", () => {
+		if ($("underhat").checked) $("underband").checked = false;
+		underHead();
+	});
+	$("underband").addEventListener("change", () => {
+		if ($("underband").checked) $("underhat").checked = false;
+		underHead();
 	});
 	const hatIds = [null, ...ITEMS.filter((i) => i.slot === "head").map((i) => i.id)];
 	$("pairs").innerHTML = `<thead><tr><th scope="col">Hat / mask</th>${MASKS.map((m) => `<th scope="col">${m.name}</th>`).join("")}</tr></thead><tbody>` + hatIds.map((h) => `<tr><th scope="row">${h ? BY_ID[h].name : "No hat"}</th>${MASKS.map((m) => {
@@ -4863,13 +5272,30 @@
 		return cards.filter((c) => c.it.slot === l.id).map((c) => {
 			const n = cards.indexOf(c) + 1, cl = c.it.parts.some(isCloth), fresh = MORE_IDS.has(c.it.id);
 			return `<article class="card"><canvas width="56" height="50" aria-label="The ronin wearing only the ${c.it.name}, breathing, running, cutting"></canvas>
-    <div class="meta"><span class="num">${String(n).padStart(2, "0")}</span><span class="tag">${l.name}</span><span class="tag ${cl ? "cloth" : ""}">${cl ? "cloth" : "rigid"}</span>${fresh ? "<span class=\"tag new\">new</span>" : ""}</div>
+    <div class="meta"><span class="num">${String(n).padStart(2, "0")}</span><span class="tag">${l.name}</span><span class="tag ${cl ? "cloth" : ""}">${cl ? "cloth" : "rigid"}</span>${ARMOUR.has(c.it.id) ? "<span class=\"tag\">dye</span>" : ""}${fresh ? "<span class=\"tag new\">new</span>" : ""}</div>
     <h3>${c.it.name}</h3><p>${c.it.about}</p></article>`;
 		}).join("");
 	}).join("");
 	document.querySelectorAll("#twenty canvas").forEach((cv, i) => {
 		cards[i].g = cv.getContext("2d");
 	});
+	const dyeFigs = DYES.map((d, i) => {
+		const F = makeFigure([
+			"kabuto",
+			"hair-topknot",
+			"suneate",
+			"kusari",
+			"plates",
+			"kusazuri",
+			"kote",
+			"mask-menpo"
+		]);
+		F.dye = i;
+		return F;
+	});
+	$("dyerow-labels").innerHTML = DYES.map(([n]) => `<span><b>${n}</b></span>`).join("");
+	const dr = $("dyerow");
+	const dg = dr.getContext("2d");
 	const bu = $("buildup");
 	const bg = bu.getContext("2d");
 	const buFigs = [];
@@ -4956,6 +5382,16 @@
 			c.g.fillRect(0, 0, 30, 26);
 			c.g.drawImage(cv, 10, 6, 30, 26, 0, 0, 30, 26);
 		}
+		dg.fillStyle = "#474c4a";
+		dg.fillRect(0, 0, dr.width, 52);
+		dyeFigs.forEach((F, i) => {
+			F.t = clock + i * .3;
+			const cv = dress(R, F, poseAt("stance", clock), dt);
+			const x = i * 44 + 22;
+			dg.fillStyle = "rgba(18,22,22,.4)";
+			dg.fillRect(x - 5, 45, 10, 1);
+			dg.drawImage(cv, x - 24, 4);
+		});
 		const bp = poseAt(ui.pose, ui.clock);
 		buFigs.forEach((s, i) => {
 			s.F.t = clock;
