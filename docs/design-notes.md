@@ -185,3 +185,8 @@ The owner said the deaths still don't feel like someone dying, and the execution
 
 - **Hard times** (owner): about 40% of people short of rice on an average day; lords take half the crop; famine spreads before the harvest. Built in `src/sim/economy/` (`docs/sim-economy.md`).
 - The owner left the other economy choices to Claude: loot of 20–60 mon a samurai, coin weight tiers as built, koku ranks shown as they are, changer's notes between towns for 3%, a lord sets his own tax and pay, coloured silk a crime-lane hook. Recorded in `docs/sim-economy.md`, *Decided*.
+
+## Story: quests and world events (`docs/sim-story.md`, prototype 40)
+
+- The story lane builds quests and world events on the simulation core (`src/sim/story/`); 90% from the world, only the frame (his arc, rivals, each region's tale) by hand (owner).
+- Owner (2026-09-26): a long occupation passes the title after 1 game year (owner chose 1 over the proposed 5); rivals race him for quests he has taken; sworn service with orders, and breaking the oath makes that lord want him forever after a few warnings (built: three); robbing a royal procession raises a manhunt across the kingdom; the notices' plain voice is right. Where there is war, about 30% of the people die of it a year (built as 8.5% a season in every front region). Karma steps per quest (-6..+3) approved; an oathbreaker's manhunt outlives the lord, his heir keeps it.
