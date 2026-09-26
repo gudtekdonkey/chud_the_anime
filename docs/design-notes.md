@@ -72,3 +72,14 @@ Decisions made in the design sessions so far, newest last.
    - Earlier: the mantle was flattened because it read as a hump.
 4. **Front, back and diagonal views** for every move: **the port system is built** (`src/rig/port.js`, `prototypes/27-port-system.html`, `docs/port-system.md`). It turns every existing side-view animation, and every personality bake, into all eight directions on rig v2 automatically. Wiring it into the game waits on the clothing branch, which brings rig v2's skeleton into `src/wardrobe/`. Harvest facing north waits on that too.
 5. **Real enemies** with health, needed by K.
+
+## Companions (proposed, `prototypes/28-companions.html`)
+
+- Owner: "a companion system, and you can equip items to your companions and yourself." Nothing below is approved yet.
+- Companions are samurai on his rig, near-black like him, told apart by eyes: the ronin cyan, companions white, enemies red. Three to start: **Kuro** (yari, Grim + Soldier), **Suzume** (twin tanto, Nimble + Restless), **Tetsu** (nodachi, Heavy + Lumbering). Party of three: him plus two; the rest wait at camp.
+- **One kit for everyone:** a weapon, one piece per wardrobe layer (the 11 layers of the Clothing branch) and charms (the ronin 4, a companion 2). Mon, shards, EXP and quick slots stay shared on `INV`; `INV.weapon` / `INV.charms` become the hero's kit.
+- Every piece is one object: giving it to someone takes it off whoever had it; weapons always trade. Hat × mask fit rules apply per person.
+- **The weapon sets a companion's role:** katana duelist, yari holds the line, tanto flanks, nodachi breaks. Poses and weights come from the weapon system.
+- **Charms by scope:** anyone (Thunder Bead, Split Tsuba, Paper Crane, Sageo Knot), ronin only (Cracked Mirror, Temple Bell), companion only (new: Bond Cord, Iron Oath). Companion hits build the shared Qi at half rate.
+- Keys: **Tab** kit screen, **G** hold here / with me.
+- Open: party size, downed companions (proposed: kneel, hold E to lift), paired executions, where companions come from.
