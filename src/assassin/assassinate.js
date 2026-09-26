@@ -1,6 +1,9 @@
 import { g } from '../screen.js';
 import { P, S } from '../state.js';
 import { rr } from '../fx/util.js';
+import { pz, lerpP, ease } from '../rig/pose.js';
+import { SHEETS } from '../anims/sheets.js';
+import { frameOf } from '../player/actions.js';
 import { POSES } from '../anims/poses.js';
 import { setState, pickStance, threatNear } from '../player/actions.js';
 import { sheathClick } from '../items/harvest.js';
@@ -20,7 +23,8 @@ import { ISOLATION, targets, hold, faceOf, roomFade } from './targets.js';
 // and fades with them when the room is cleared.
 export const stages = [];
 const PRE = .2;       // the set and the vanish before he lands (the prototype's 0.75 s lock-on beat, cut down for play)
-const INTO_GUARD = .15;   // blade kept out: from the last cut into his stance, then the player has him
+const INTO_GUARD = .15;
+const BLEND = .12;    // the set eases in from the pose he was in (a stance, or the last execution's last cut), never snaps   // blade kept out: from the last cut into his stance, then the player has him
 let lastExec = -1;
 // where the player gets him back after execution ex on e, in the world (the stage is mirrored when e faces right)
 export function landing(ex, e) {
@@ -41,7 +45,8 @@ function pickExec(e) {
   const pool = fresh(open.length ? open : all);
   return { k: pool[Math.random() * pool.length | 0], open };
 }
-export function assassinate(e) {
+export function assassinate(e, from) {
+  const sh = SHEETS[P.state]; from = from || (sh && sh.poses && sh.poses[frameOf()]) || null;
   const { k, open } = pickExec(e); lastExec = k;
   const ox = Math.round(e.x), m = -faceOf(e);
   const St = { ex: EXECS[k], target: e, ox, m, clock: -PRE, stop: 0, shake: 0, fx: FX(), pieces: [], ev: new Set(), flashUntil: 0,
@@ -53,6 +58,8 @@ export function assassinate(e) {
   St.armed = !St.ex.bare && threatNear();
   if (St.armed) { St.stance = pickStance(); const ps = POSES[St.stance]; St.guard = (ps && ps[0]) || POSES.ready[0]; }
   St.tail = (t0, from) => { St.t0 = t0; return St.armed ? [[t0 + INTO_GUARD, St.guard]] : quickSheathe(t0, from).slice(1); };
+  // blade out he crouches into the dash as he is, arms and blade kept; sheathed, it is the hand on the hilt
+  St.from = from; St.set = P.armed && from ? pz({ ...from, hy: SET.hy, lean: SET.lean, fl: SET.fl, bl: SET.bl }) : SET;
   setState('exec'); P.inv = true; P.exec = St;
 }
 // runs after the hit pause, so a hit's freeze stops the performance too
@@ -64,6 +71,7 @@ export function tickStages(dt) {
     const R = St.R = { x: St.start.x, y: St.start.y, face: 1, pose: SET };
     if (c < 0) {   // the set: weight forward, hand on the hilt, breaking into slices, gone
       const u = c + PRE; R.glitch = u / PRE * 1.6;
+      R.pose = St.from ? lerpP(St.from, St.set, ease(Math.min(1, u / BLEND))) : St.set;
       St.once('out', u >= PRE - .05, () => F.slivers(St, R.x, R.y, 10));
       R.hidden = u >= PRE - .05;
     } else {
@@ -92,7 +100,7 @@ function free(St) {
   [P.x, P.y] = St.landed = collide(St.ox + St.m * (R.x - St.ox), R.y); P.face = St.m * R.face;
   P.inv = false; P.exec = null;
   // a queued K chains straight into the next lone enemy in reach, from where this one left him
-  if (St.queued) { updateMarkers(); St.next = K.pick; if (K.pick) { P.armed = true; onAssassination(); return assassinate(K.pick); } }
+  if (St.queued) { updateMarkers(); St.next = K.pick; if (K.pick) { P.armed = true; onAssassination(); return assassinate(K.pick, R.pose); } }
   if (St.armed) { setState(St.stance); P.armed = true; P.still = 0; }   // blade out; ~2 s of calm and he sheathes as after any attack
   else { P.armed = false; setState('idle'); if (!St.ex.bare) sheathClick(); }
   onAssassination();

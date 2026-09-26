@@ -60,7 +60,7 @@ Decisions made in the design sessions so far, newest last.
 - **Nothing left to fight:** if no enemy is within two screens (960 px) when an attack or execution ends, he skips the blade-out stance and sheathes at once, unbothered.
 - **Chaining K** (owner 2026-09-26): he does not sheathe between executions. With an enemy still near, an execution ends with the blade out in a counter stance, ready for the next K; he sheathes only when nobody is left (the rule above), or after the usual ~2 s of calm.
 - **K keeps the chain open** (owner 2026-09-26): executions land him in different spots (back where he was, behind the enemy, in between). K foresees each one's landing spot and picks one that leaves another lone enemy in reach (within 120 px, outside every other bubble). Only when none does is the pick random. It is never the same execution twice running, unless that one is the only one that keeps the chain going.
-- **K lines up the next one** (owner 2026-09-26): pressing K during an execution queues the next. On the last cut he goes straight into the next execution on the nearest lone enemy in reach, with no stance between. If nobody lone is in reach when he is let go, the press is dropped and he ends as usual.
+- **K lines up the next one** (owner 2026-09-26): pressing K during an execution queues the next. On the last cut he goes straight into the next execution on the nearest lone enemy in reach, with no stance between. If nobody lone is in reach when he is let go, the press is dropped and he ends as usual. The next set never snaps: it eases in from the pose he was in (the last cut, or his stance), blade still out (owner bug report 2026-09-26).
 
 ## Personality traits (`prototypes/26-personalities.html`, approved)
 

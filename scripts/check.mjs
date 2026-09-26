@@ -121,8 +121,11 @@ try {
     await sleep(250); await kb.press('k');
     await until('K lined up during the execution', () => window.__st.queued, undefined, 1000);
     await until('the first execution to let him go', () => window.__st.freed, undefined, 4000);
-    const c = await page.evaluate(() => ({ next: !!window.__st.next, s: window.__game.P.state, same: window.__game.P.exec === window.__st, name: window.__st.ex.name }));
+    const c = await page.evaluate(() => { const X = window.__game.P.exec; return { next: !!window.__st.next, s: window.__game.P.state, same: X === window.__st, name: window.__st.ex.name,
+      from: !!(X && X.from), blade: X && X.set && X.set.sword != null }; });
     if (c.next && (c.s !== 'exec' || c.same)) fail(`a lone samurai was in reach after "${c.name}" but K did not chain into him (${JSON.stringify(c)})`);
+    // no snap between them: the next set eases in from the last cut, blade still out
+    if (c.next && !(c.from && c.blade)) fail(`the chained execution snapped in from "${c.name}" (${JSON.stringify(c)})`);
     console.log(`  (after "${c.name}": ${c.next ? 'chained into the next execution' : 'nobody lone in reach, so no chain'})`);
     await reach(/^(idle|ready\d)$/, 8000); });
   await run('Shift: ground slide', async () => { await kb.press('Shift'); await reach(/^slide$/); await reach(FREE); });
