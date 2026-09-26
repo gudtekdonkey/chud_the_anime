@@ -140,14 +140,14 @@ try {
     await reach(/^(idle|ready\d)$/, 8000); });
   await run('Shift: ground slide', async () => { await kb.press('Shift'); await reach(/^slide$/); await reach(FREE); });
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
-  await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
+  await run('K: glitch teleport spends his one blink charge (power I), so a second press is refused', async () => {
     // out of every samurai's reach first (the top-left corner), so K is the plain teleport, not an assassination
     // walked to by position, not for a fixed time: on a slow machine the game runs slower and a timed walk falls short
     await walkTo(24, 60, 15000); await reach(FREE);
     await kb.press('k'); await reach(/^tele$/); await reach(FREE);
-    await until('K on cooldown', () => window.__game.P.cd.tele > 0);
+    await until('no charge left, the refill counting down', () => window.__game.P.blinks === 0 && window.__game.P.cd.tele > 55);
     await kb.press('k'); await until('the refused press', () => window.__game.P.cdDeny.tele > 0);
-    if (await state() === 'tele') fail('K teleported again while cooling down'); });
+    if (await state() === 'tele') fail('K teleported again with no charge left'); });
   await run('tap I: glitch double slash', async () => { await kb.press('i'); await reach(/^double$/); await reach(FREE); });
   await run('hold I: Thousand Cuts', async () => {
     await until('the I cooldown to end', () => !(window.__game.P.cd.double > 0), undefined, 4000);
@@ -159,10 +159,10 @@ try {
   await run('P: Cross Rift', async () => { await kb.press('p'); await cv('Cross Rift'); await sleep(200); await shot('05-rift'); await reach(FREE); });
   await run('N: Mirror Meditation', async () => { await kb.press('n'); await reach(/^meditate$/); await sleep(500); await shot('06-mirrors'); await reach(FREE); });
   await run('U: storm slam', async () => { await kb.press('u'); await reach(/^sweep$/); await reach(FREE, 8000); });
-  await run('skill bar: the skills just used are cooling down, K has recovered', async () => {
-    const cd = await page.evaluate(() => ({ ...window.__game.P.cd }));
+  await run('skill bar: the skills just used are cooling down, K still waits out its minute', async () => {
+    const cd = await page.evaluate(() => ({ ...window.__game.P.cd, blinks: window.__game.P.blinks }));
     for (const k of ['moon', 'rift', 'mirror', 'sweep']) if (!(cd[k] > 0)) fail(`${k} is not cooling down (${JSON.stringify(cd)})`);
-    if (cd.tele !== 0) fail(`K is still cooling down (${cd.tele})`);
+    if (!(cd.blinks === 0 && cd.tele > 0)) fail(`K's charge came back before a minute without blinking (${JSON.stringify(cd)})`);
     await shot('08-skill-bar'); });
   await run('walk into coins: they fly to him and mon goes up', async () => {
     // the three coins, wherever he picked them up (a dash through them on the way counts too)
@@ -189,6 +189,8 @@ try {
     await shot('14-harvest'); await kb.up('e'); await reach(FREE); });
   await run('power III (the test picker): the Crescent Moon comes with its twin and the slam with its pillars', async () => {
     await page.selectOption('#power', '3'); await until('power III', () => window.__game.INV.power === 3);
+    // K holds three blink charges at III; a tier gained brings its charge at once, even mid-refill
+    await until('three blink charges', () => window.__game.P.blinkCap === 3 && window.__game.P.blinks >= 2);
     await until('O ready', () => !(window.__game.P.cd.moon > 0), null, 12000);
     await kb.down('o'); await reach(/^moonHold$/); await until('the O charge', () => window.__game.P.charge > .9);
     await kb.up('o'); await reach(/^moon$/); await sleep(200); await shot('15-power-III-moon'); await reach(FREE);

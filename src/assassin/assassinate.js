@@ -1,5 +1,5 @@
 import { g } from '../screen.js';
-import { P, S } from '../state.js';
+import { P, S, INV } from '../state.js';
 import { rr } from '../fx/util.js';
 import { pz, lerpP, ease } from '../rig/pose.js';
 import { SHEETS } from '../anims/sheets.js';
@@ -16,6 +16,8 @@ import { SETTLE, stageBody, stepStageBody, updateStagePieces } from './stage-bod
 import { F, FX, updateStageFx, drawStageFloor, drawStageTop } from './stage-fx.js';
 import { K, K_RANGE, updateMarkers } from './markers.js';
 import { ISOLATION, targets, hold, faceOf, roomFade } from './targets.js';
+import { pick } from './rules.js';
+import { ENEMIES } from '../world/enemies.js';
 
 // ---- K on an isolated enemy: he flashes to him and plays an execution ----
 // Each execution plays on its own stage: the two bodies, the pieces and the effects, in a frame where the enemy faces left.
@@ -37,13 +39,21 @@ export function opensK(x, y, e) {
   const alone = o => S.smoke > 0 || !rest.some(q => q !== o && Math.hypot(q.x - o.x, q.y - o.y) <= ISOLATION);
   return rest.some(o => Math.hypot(o.x - x, o.y - y) < K_RANGE && alone(o));
 }
-// chaining K: he picks an execution that lands him in reach of the next lone enemy; if none does, any of them.
-// Never the same one twice running, unless it is the only one that keeps the chain going
+// which executions may play (assassin/rules.js): rare from power II, legendary from III, unless Storm Chain (the Qi boost) runs.
+// A weapon with no executions of its own yet borrows the katana's
+function allowed(e) {
+  const others = targets().filter(o => o !== e && Math.abs(o.x - P.x) < 240 && Math.abs(o.y - P.y) < 135).length;
+  const ctx = { weapon: P.weapon, hat: null, others, foe: e.tier || 'minion', first: ENEMIES.every(o => o.alive || o === e), power: INV.power, level: INV.lv, boost: P.storm > 0 };
+  const ok = c => EXECS.map((_, k) => k).filter(k => pick([EXECS[k].name], c) != null);
+  const ks = ok(ctx); return ks.length ? { ks, ctx } : { ks: ok({ ...ctx, weapon: 'katana' }), ctx: { ...ctx, weapon: 'katana' } };
+}
+// chaining K: he picks an execution that lands him in reach of the next lone enemy; if none does, any allowed one.
+// Weighted by rarity, never the same one twice running unless it is the only one that keeps the chain going
 function pickExec(e) {
-  const all = EXECS.map((_, k) => k), open = all.filter(k => opensK(...landing(EXECS[k], e), e));
-  const fresh = ks => ks.length > 1 ? ks.filter(k => k !== lastExec) : ks;
-  const pool = fresh(open.length ? open : all);
-  return { k: pool[Math.random() * pool.length | 0], open };
+  const { ks, ctx } = allowed(e), all = ks.length ? ks : EXECS.map((_, k) => k), open = all.filter(k => opensK(...landing(EXECS[k], e), e));
+  const pool = open.length ? open : all, last = EXECS[lastExec] && EXECS[lastExec].name;
+  const name = pick(pool.map(k => EXECS[k].name), ks.length ? ctx : { ...ctx, boost: true, power: 3 }, last);
+  return { k: pool.find(k => EXECS[k].name === name) ?? pool[0], open };
 }
 export function assassinate(e, from) {
   const sh = SHEETS[P.state]; from = from || (sh && sh.poses && sh.poses[frameOf()]) || null;
