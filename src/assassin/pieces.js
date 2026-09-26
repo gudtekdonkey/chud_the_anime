@@ -14,10 +14,13 @@ const off = document.createElement('canvas'); off.width = FW; off.height = FH; c
 const tint = document.createElement('canvas'); tint.width = FW; tint.height = FH; const tg = tint.getContext('2d');
 // the ronin carries his equipped weapon through the executions (katana poses, run through the weapon's adapt); enemies keep the katana
 function armed(pose) { const w = weapon(); if (w.id === 'katana') return pose; return { ...(w.adapt ? w.adapt(pose) : pose), wp: w.art }; }
-function paint(pose, enemy, dark) { og.clearRect(0, 0, FW, FH); rig(og, 0, enemy ? { ...pose, bare: true } : armed(pose), enemy ? dark ? ERC_OUT : ERC : RC); return off; }
+// left: the body will face left on the screen, so it is drawn from its true left (near and far swapped), never just mirrored
+function paint(pose, enemy, dark, left = false) { og.clearRect(0, 0, FW, FH); rig(og, 0, enemy ? { ...pose, bare: true } : armed(pose), enemy ? dark ? ERC_OUT : ERC : RC, left); return off; }
+// the stage being drawn: m -1 when it is drawn mirrored (assassinate.js), so a body knows which way it faces on the screen
+export const STAGE = { m: 1 };
 // R: { x, y, z, face, pose, enemy, dark (his eye out), col (solid tint), glitch (0..2: rows jump sideways) }
 export function figure(g, R, alpha = 1) {
-  let img = paint(R.pose, R.enemy, R.dark);
+  let img = paint(R.pose, R.enemy, R.dark, R.face * STAGE.m < 0);
   if (R.col) { tg.clearRect(0, 0, FW, FH); tg.drawImage(img, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = ec(R.col); tg.fillRect(0, 0, FW, FH); tg.globalCompositeOperation = 'source-over'; img = tint; }
   g.save(); g.globalAlpha *= alpha; g.translate(snap(R.x), snap(R.y - (R.z || 0))); if (R.face < 0) g.scale(-1, 1); g.scale(1 / PX, 1 / PX);
   if (R.glitch && EL.cur.glitch) { for (let y = 0; y < FH;) { const h = (1 + (Math.random() * 3 | 0)) * PX, o = (Math.random() < R.glitch ? Math.round(rr(-5, 5) * R.glitch) : 0) * PX; g.drawImage(img, 0, y, FW, h, -OX + o, y - OY, FW, h); y += h; } }
@@ -35,7 +38,7 @@ export function withShadow(g, R, alpha = 1) {
 // cut from the body as it is seen (the stage enemy's springs), not from where it is headed; part: a pose of its own, as authored
 export function pixelsOf(E) {
   const b = !E.part && E.body, pose = b ? { ...b.out, noHead: E.pose.noHead, noUpper: E.pose.noUpper, empty: E.pose.empty } : E.pose;
-  paint(pose, true, E.dark); const d = og.getImageData(0, 0, FW, FH).data, out = [];
+  paint(pose, true, E.dark, E.face * (E.m || 1) < 0); const d = og.getImageData(0, 0, FW, FH).data, out = [];   // his pieces as he was drawn
   for (let y = 0; y < FH; y++) for (let x = 0; x < FW; x++) { const i = (y * FW + x) * 4; if (d[i + 3] < 10) continue;
     out.push([E.x + E.face * (x - OX) / PX + (E.face < 0 ? -1 / PX : 0), E.y - (E.z || 0) + (y - OY) / PX, `rgb(${d[i]},${d[i + 1]},${d[i + 2]})`]); }
   return out;

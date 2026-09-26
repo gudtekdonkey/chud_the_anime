@@ -525,22 +525,29 @@ const SEIZA = pz({ hy: 8, lean: .02, chest: .04, fl: [1.5, 3.0], bl: [1.42, 3.0]
 
 const EXECS = [
   // ---------------- 56 ----------------
-  { name: 'Tap', note: 'He lands behind the enemy without a sound, draws, and lays the blade out level at the height of the man\'s neck, a hand\'s width from it. Then he dips the point and taps him on the shoulder with it. The enemy turns round to see who it is, and turns straight into the edge. His head goes on turning without him. The body stands facing the ronin a beat, hands rising to a neck that is not there, and on the click it drops.',
-    side: 1, gap: 23, dur: 1.75,
+  { name: 'Tap', note: 'He lands behind the enemy without a sound, draws, and lays the blade out level beside the man\'s neck. He lifts the point, and brings it down on the man\'s shoulder: tap, tap. The enemy flinches at each touch, looks back over his shoulder to see who it is, and turns round into the edge. His head goes on turning without him. The body stands facing the ronin a beat, hands rising to a neck that is not there, and on the click it drops.',
+    side: 1, gap: 23, dur: 2.25,
     run(S, t, R, E) {
       const set = pz({ hy: 2, lean: .15, chest: .05, fl: [.6, .8], bl: [-.6, .35], fa: [1.55, .05], sword: 0, ba: [.4, .6] });
-      const tap = pz({ ...set, fa: [1.5, .2], sword: .3 });
-      const DRAW = .08, TAP = .3, TURN = .46, SH = .9, CLICK = SH + .34;
-      R.face = -1;
-      R.pose = at([[0, pz({ hy: 2, lean: .2, fa: HILT, ba: [.3, .6] })], [DRAW, pz({ hy: 2, lean: .15, fa: [1.3, .4], sword: -.3, ba: [.3, .6] })], [.2, set], [TAP - .04, set], [TAP, tap], [TAP + .1, set], [TURN + .1, set],
+      R.face = -1; R.x = EPOS.x + 23;
+      // the shoulder he taps: the back of the enemy's near shoulder; the angle that puts the point on it
+      const arm = pz({ ...set, hy: 1, chest: -.05, fa: [2.2, -.1] });   // hand lifted above the shoulder, so the point comes DOWN on it
+      const [hx, hy] = handOf(R, arm), sx = E.x + 3, sy = E.y - 19, down = Math.atan2(sy - hy, hx - sx);
+      const up = pz({ ...arm, sword: down - .75 }), tapP = pz({ ...arm, sword: down });
+      const DRAW = .08, SET = .22, UP = .42, T1 = .56, T2 = .74, BACK = .86, LOOK = .98, TURN = 1.18, SH = 1.55, CLICK = SH + .34;
+      R.pose = at([[0, pz({ hy: 2, lean: .2, fa: HILT, ba: [.3, .6] })], [DRAW, pz({ hy: 2, lean: .15, fa: [1.3, .4], sword: -.3, ba: [.3, .6] })], [SET, set],
+        [UP - .1, set], [UP, up], [T1 - .06, up], [T1, tapP, eIn], [T1 + .08, up], [T2 - .04, up], [T2, tapP, eIn], [T2 + .06, pz({ ...set, sword: -.1 })], [BACK, set], [TURN + .1, set],
         [SH, pz({ ...set, fa: [1.3, .2], sword: .3 })], ...quickSheathe(SH, pz({ ...set, fa: [1.3, .2], sword: .3 })).slice(1)], t);
-      R.x = EPOS.x + 23;
       E.face = t < TURN ? -1 : 1;
+      const dip = pz({ ...EG, hy: 2, chest: .35, lean: .1, fa: [1.1, .7] });
       const turned = pz({ hy: 2, lean: .05, chest: -.1, fl: [.4, .5], bl: [-.45, .3], fa: [1.4, .6], ba: [1.1, .7], sword: -.3 });
-      const pose = at([[0, EG], [TAP, EG], [TAP + .05, pz({ ...RX.jolt, sword: .3 })], [TURN - .04, RX.turning], [TURN, turned], [TURN + .2, pz({ ...turned, sword: null, fa: [2.3, 2.2], ba: [2.1, 2.3] })],
+      const pose = at([[0, EG], [T1, EG], [T1 + .03, dip], [T1 + .1, EG], [T2, EG], [T2 + .03, dip], [T2 + .1, pz({ ...RX.jolt, sword: .3 })],
+        [LOOK, RX.turning], [TURN - .04, RX.turning], [TURN, turned], [TURN + .2, pz({ ...turned, sword: null, fa: [2.3, 2.2], ba: [2.1, 2.3] })],
         [CLICK - .05, pz({ ...turned, sword: null, hy: 4, fa: [2.0, 2.0], ba: [1.9, 2.2], fl: [.7, 1.0] })], [CLICK + .2, RX.handsDown], [CLICK + .45, RX.prone]], t);
       E.pose = pose;
-      S.once('tap', t >= TAP, () => { F.spark(S, E.x + 5, E.y - 20, 0, -10, .1, WH); F.ring(S, E.x + 4, E.y - 20, 1, 1, .12, 3); });
+      const tip = () => [sx, sy];
+      const tapFx = () => { const [x, y] = tip(); S.stop = Math.max(S.stop, .05); F.ring(S, x, y, 1, 1, .16, 4); for (let k = 0; k < 4; k++) F.spark(S, x, y, rr(-30, 30), rr(-50, -20), .12, WH, true); };
+      S.once('t1', t >= T1, tapFx); S.once('t2', t >= T2, tapFx);
       S.once('head', t >= TURN, () => { F.hit(S, E, .12, .1); S.my.neck = behead(S, E, 22, 30, 9); F.cut(S, E.x - 6, S.my.neck[1], E.x + 10, S.my.neck[1], .14); dropSword(S, E, turned, 1); });
       if (t >= TURN) pose.noHead = true;
       if (S.my.neck && t > TURN) { const b = beat(t - TURN, 4, 1.4); if (b > .5) squirt(S, E.x + rr(-1, 1), S.my.neck[1] + 1, E.y, rr(-15, 15), 70 * b, 2); }

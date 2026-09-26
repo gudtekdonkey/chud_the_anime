@@ -6,6 +6,7 @@ export const P = { x: 200, y: 180, z: 0, vz: 0, vx: 0, vy: 0, face: 1, view: 'E'
   qi: 0, qiIdle: 0, storm: 0, aura: 0,
   gait: { walk: 40, run: 78 },   // px/s, set by his personality
   cd: {}, cdMax: {}, cdPop: {}, cdDeny: {},   // cooldowns: seconds left, the full length, the ready glint, the refused-press blink
+  blinks: 1, blinkT: 0, kLock: 0,   // K's blink charges, seconds until they all come back, the flash reset after an execution
   weapon: 'katana',
   // the combo ladder and Flow (player/combo.js): the chain's count and its window, Flow's seconds left, HUD glints, the longest combo announced
   flowN: 0, flowGap: 0, flow: 0, flowPop: 0, flowPip: 0, flowUsed: 0, comboSeen: 2, comboUp: 0 };

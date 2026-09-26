@@ -1,5 +1,5 @@
 import { g } from '../screen.js';
-import { P, S } from '../state.js';
+import { P, S, INV } from '../state.js';
 import { rr } from '../fx/util.js';
 import { pz, lerpP, ease } from '../rig/pose.js';
 import { SHEETS } from '../anims/sheets.js';
@@ -11,11 +11,13 @@ import { onAssassination } from '../player/cooldowns.js';
 import { collide } from '../world/room.js';
 import { EG, SET, quickSheathe } from './enemy-poses.js';
 import { EXECS } from './executions.js';
-import { withShadow, drawPieces } from './pieces.js';
+import { withShadow, drawPieces, STAGE } from './pieces.js';
 import { SETTLE, stageBody, stepStageBody, updateStagePieces } from './stage-body.js';
 import { F, FX, updateStageFx, drawStageFloor, drawStageTop } from './stage-fx.js';
 import { K, K_RANGE, updateMarkers } from './markers.js';
 import { ISOLATION, targets, hold, faceOf, roomFade } from './targets.js';
+import { pick } from './rules.js';
+import { ENEMIES } from '../world/enemies.js';
 
 // ---- K on an isolated enemy: he flashes to him and plays an execution ----
 // Each execution plays on its own stage: the two bodies, the pieces and the effects, in a frame where the enemy faces left.
@@ -37,20 +39,28 @@ export function opensK(x, y, e) {
   const alone = o => S.smoke > 0 || !rest.some(q => q !== o && Math.hypot(q.x - o.x, q.y - o.y) <= ISOLATION);
   return rest.some(o => Math.hypot(o.x - x, o.y - y) < K_RANGE && alone(o));
 }
-// chaining K: he picks an execution that lands him in reach of the next lone enemy; if none does, any of them.
-// Never the same one twice running, unless it is the only one that keeps the chain going
+// which executions may play (assassin/rules.js): rare from power II, legendary from III, unless Storm Chain (the Qi boost) runs.
+// A weapon with no executions of its own yet borrows the katana's
+function allowed(e) {
+  const others = targets().filter(o => o !== e && Math.abs(o.x - P.x) < 240 && Math.abs(o.y - P.y) < 135).length;
+  const ctx = { weapon: P.weapon, hat: null, others, foe: e.tier || 'minion', first: ENEMIES.every(o => o.alive || o === e), power: INV.power, level: INV.lv, boost: P.storm > 0 };
+  const ok = c => EXECS.map((_, k) => k).filter(k => pick([EXECS[k].name], c) != null);
+  const ks = ok(ctx); return ks.length ? { ks, ctx } : { ks: ok({ ...ctx, weapon: 'katana' }), ctx: { ...ctx, weapon: 'katana' } };
+}
+// chaining K: he picks an execution that lands him in reach of the next lone enemy; if none does, any allowed one.
+// Weighted by rarity, never the same one twice running unless it is the only one that keeps the chain going
 function pickExec(e) {
-  const all = EXECS.map((_, k) => k), open = all.filter(k => opensK(...landing(EXECS[k], e), e));
-  const fresh = ks => ks.length > 1 ? ks.filter(k => k !== lastExec) : ks;
-  const pool = fresh(open.length ? open : all);
-  return { k: pool[Math.random() * pool.length | 0], open };
+  const { ks, ctx } = allowed(e), all = ks.length ? ks : EXECS.map((_, k) => k), open = all.filter(k => opensK(...landing(EXECS[k], e), e));
+  const pool = open.length ? open : all, last = EXECS[lastExec] && EXECS[lastExec].name;
+  const name = pick(pool.map(k => EXECS[k].name), ks.length ? ctx : { ...ctx, boost: true, power: 3 }, last);
+  return { k: pool.find(k => EXECS[k].name === name) ?? pool[0], open };
 }
 export function assassinate(e, from) {
   const sh = SHEETS[P.state]; from = from || (sh && sh.poses && sh.poses[frameOf()]) || null;
   const { k, open } = pickExec(e); lastExec = k;
   const ox = Math.round(e.x), m = -faceOf(e);
   const St = { ex: EXECS[k], target: e, ox, m, clock: -PRE, stop: 0, shake: 0, fx: FX(), pieces: [], ev: new Set(), flashUntil: 0,
-    k, open, land: landing(EXECS[k], e), start: { x: ox + m * (P.x - ox), y: P.y }, E: { x: ox, y: e.y, face: -1, pose: EG, enemy: true, z: 0 }, R: null, freed: false };
+    k, open, land: landing(EXECS[k], e), start: { x: ox + m * (P.x - ox), y: P.y }, E: { x: ox, y: e.y, face: -1, m, pose: EG, enemy: true, z: 0 }, R: null, freed: false };   // E.m: the stage's mirror, so his pieces are cut as he is drawn
   St.once = (key, cond, fn) => { if (cond && !St.ev.has(key)) { St.ev.add(key); fn(); } };
   stageBody(St.E); hold(e); stages.push(St);
   // chaining K: with anyone else near he keeps the blade out and ends in a counter stance, ready for the next one;
@@ -113,7 +123,7 @@ export function updateStages(dt) {
     if (St.cleared && f > 0) stages.splice(i, 1); }   // a new squad: the old bodies are gone
 }
 // drawn in world space, flipped round the enemy's x when he faced right
-const mirrored = (St, fn) => () => { g.save(); if (St.m < 0) { g.translate(St.ox * 2, 0); g.scale(-1, 1); } fn(); g.restore(); };
+const mirrored = (St, fn) => () => { g.save(); if (St.m < 0) { g.translate(St.ox * 2, 0); g.scale(-1, 1); } STAGE.m = St.m; fn(); STAGE.m = 1; g.restore(); };
 export function stageItems() {
   const out = [];
   const fade = roomFade();

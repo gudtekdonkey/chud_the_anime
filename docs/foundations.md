@@ -102,6 +102,7 @@ The measure of power in this world is land and what it grows, the way feudal Jap
 
 ### Answered (owner, 2026-09-26)
 - Historical names: mon, ryō, koku. Carried money has weight. Death costs everything unless an heir carries on.
+- **Hard times** (owner, 2026-09-26): about 40% of people are short of rice; lords take half the crop. The rest of the economy's open points were left to Claude ("you think of all this stuff"): see `docs/sim-economy.md`, *Decided*.
 
 ## People, work, quests and world events (proposed, for the owner to confirm)
 

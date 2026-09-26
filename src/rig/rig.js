@@ -1,6 +1,7 @@
 import { FW, FH, OX, OY, RC, PX } from '../config.js';
 import { KATANA_ART } from '../weapons/katana.js';
 import { Raster, packPal, TWO, twoTone } from '../wardrobe/raster.js';
+import { HILT } from './pose.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
 // Two outputs share one drawing:
@@ -14,24 +15,31 @@ export const RX = 24, RY = 40;
 export const HD = PX >= 2;
 const Z = { scab: -3.5, farArm: -3, offHand: -2.9, farLeg: -2.5, body: 0, obi: .01, nearLeg: 1.2, head: 2.5, eye: 2.51, hat: 3, mantle: 3.5, bblade: 40, nearArm: 45, blade: 50 };
 export const NEAR_ARM_Z = Z.nearArm;
+// from his left, the sword hand on the hilt: its forearm comes round the front of the belly, over the body (the skeleton's sleeves follow)
+export const onHilt = p => p.sword == null && Math.abs(p.fa[0] - HILT[0]) + Math.abs(p.fa[1] - HILT[1]) < .12, HILT_FORE_Z = Z.nearLeg + .2;
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
 // rig coords to screen pixels in the frame (unrounded)
 export const toPx = (x, y) => [OX + (x - RX) * PX, OY + (y - RY) * PX];
-// pal swaps the colours (the samurai's red-grey); p.bare drops the hat and mantle for a bare head and topknot
+// pal swaps the colours (the samurai's red-grey); p.bare drops the hat and mantle for a bare head and topknot.
+// left: his true left side, near and far swapped, for a figure that will be drawn facing left (the caller still mirrors it);
+// the raster's depths decide what shows, so the swapped paint order needs nothing more
 const PALS = new WeakMap(), CR = new Map();
-export function rig(g, fx, p, pal = RC) {
+export function rig(g, fx, p, pal = RC, left = false) {
   // drawn into a raster first, so the HD pass can light its edges; pixels past the frame's edge are dropped,
   // so a long weapon never bleeds into the next frame of the sheet
   let pk = PALS.get(pal); if (!pk) PALS.set(pal, pk = packPal({ ...RC, ...pal }));
   let R = CR.get(pk); if (!R) CR.set(pk, R = new Raster(FW, FH, OX, OY, .3, pk));
-  R.clear(); draw((x, y, z, c) => R.px(x, y, z, c), p, true);
+  R.clear(); const J = draw((x, y, z, c) => R.px(x, y, z, c), p, true, left);
   if (HD) R.rim();
   g.drawImage(R.flush(), fx, 0);
+  return J;
 }
-// returns the head's centre in frame pixels, so the hat, hair and masks sit on exactly the pixels the head does
-export const rigR = (R, p) => draw((x, y, z, c) => R.px(x, y, z, c), p, false);
+// returns the head's centre in frame pixels, so the hat, hair and masks sit on exactly the pixels the head does.
+// left: his true left side, still facing right (dress.js mirrors it after): the same pixels with his left arm and leg the
+// near ones, the scabbard at the near hip, the sword arm behind him. Only the raster keeps it right (depths, not paint order).
+export const rigR = (R, p, left = false) => draw((x, y, z, c) => R.px(x, y, z, c), p, false, left);
 
-function draw(out, p, clothed) {
+function draw(out, p, clothed, left = false) {
   let z = 0;
   const W = w => Math.max(1, Math.round(w * PX));    // a width in rig pixels, in screen pixels
   const px = (X, Y, c) => out(Math.round(X), Math.round(Y), z, c);
@@ -76,13 +84,13 @@ function draw(out, p, clothed) {
     seg([f[0] - .4, f[1] + .6], [f[0] + 2.3, f[1] + .6], .5, near ? 'D' : 'q');
     seg(add(h, dir(th), 1.2), add(h, dir(th), 4.2), .5, near ? 'r' : 'G');   // a pleat down the thigh
   };
-  const arm = ([sh, el], c) => { const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
-    if (!HD) { seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; }
+  const arm = ([sh, el], c, zf = z) => { const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
+    if (!HD) { seg(s, e, 2, c); z = zf; seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; }
     // the kimono sleeve hangs off the upper arm, its lower edge pulled down; a bare forearm and a closed fist
     segT(s, e, 2.6, 2.2, c);
     const e2 = add(e, dir(sh + el), .8);
     poly([add(s, [0, 1], .6), e2, [e2[0], e2[1] + 1.3], [s[0], s[1] + 1.6]], c);
-    segT(e, h, 1.5, 1.2, c); blob(h[0], h[1], 1.8, c); return h;
+    z = zf; segT(e, h, 1.5, 1.2, c); blob(h[0], h[1], 1.8, c); return h;
   };
   const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
 
@@ -94,19 +102,21 @@ function draw(out, p, clothed) {
   // at 2x a weapon's put is a whole rig pixel (PX square) and px one screen pixel, for its fine detail
   const wp = p.wp || KATANA_ART, kit = { put: HD ? (x, y, c) => blob(x, y, 1, c) : put, px: put, seg, segT, blob, poly, add, L, p, hd: HD };
   const W8 = (f, ...a) => { weap = true; f(kit, ...a); weap = false; };
+  // his left side (true left): what hangs at the hip comes round to the near side; a sling across the back stays behind him
+  const near = left ? 'D' : 'K', far = left ? 'K' : 'D';
   // far side first: scabbard, far arm, far leg
-  z = Z.scab; W8(wp.far, p, mouth, sd);
+  z = left && !(wp.d3 && wp.d3.back) ? Z.nearLeg + .1 : Z.scab; W8(wp.far, p, mouth, sd);
   // the back hand can carry the blade too, for the counter stances
-  z = Z.farArm; const bh = arm(p.ba, 'D'); kit.bh = bh;   // a two-handed weapon runs its shaft through both hands
-  z = Z.offHand; if (wp.offHand) W8(wp.offHand, p, bh);                  // a second weapon in the back hand (twin blades)
-  z = Z.farLeg; leg(p.bl, 'D', -.5);
+  z = left ? Z.nearArm - 1 : Z.farArm; const bh = arm(p.ba, far); kit.bh = bh;   // a two-handed weapon runs its shaft through both hands
+  z = left ? Z.nearArm - .5 : Z.offHand; if (wp.offHand) W8(wp.offHand, p, bh);   // a second weapon in the back hand (twin blades)
+  z = left ? Z.nearLeg : Z.farLeg; leg(p.bl, far, -.5);
   // torso, near leg
   z = Z.body; poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
   if (!HD) { z = Z.obi; for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D'); }   // obi line
   else {   // a real obi band with a lit top edge and the knot's end at the back; the kimono's crossed collar
     z = Z.obi; poly([L(1.6, -2.3), L(1.6, 2.3), L(2.9, 2.35), L(2.9, -2.35)], 'D'); seg(L(2.9, -2.2), L(2.9, 2.2), .5, 'G'); put(...L(2.2, -2.6), 'G');
     z = Z.body + .02; seg(L(7.9, 1.3), L(4.2, .2), .5, 'r'); seg(L(7.9, .4), L(5.4, -.4), .5, 'r'); }
-  z = Z.nearLeg; leg(p.fl, 'K', .5);
+  z = left ? Z.farLeg : Z.nearLeg; leg(p.fl, near, .5);
   // head and hat
   // neck: the head lags and lolls on it (+ forward), carried by the chest
   const nk = p.neck || 0, hc = L(10 - p.bow * .7 - Math.abs(nk) * 1.2, .6 + p.bow * 1.1 + nk * 2.2);
@@ -144,7 +154,8 @@ function draw(out, p, clothed) {
   // the back hand's blade is drawn over the body and the sash, so it is never lost behind them
   z = Z.bblade; if (p.bsword != null) W8(wp.backHeld, bh, p.bsword);
   // near arm and the weapon: stowed, sliding home, or in the hand
-  z = Z.nearArm; const hand = arm(p.fa, 'K');
+  // from his left the sword arm is the far one; on the hilt, its forearm comes round the front of the belly to the near hip
+  z = left ? Z.farArm : Z.nearArm; const hand = arm(p.fa, near, left && onHilt(p) ? HILT_FORE_Z : z);
   z = Z.blade;
   if (p.sword === null && !p.sheathing && p.bsword == null && !p.empty) W8(wp.stowed, p, mouth, sd);
   else if (p.sheathing) W8(wp.sheathing, hand, mouth);

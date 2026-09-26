@@ -48,7 +48,11 @@ export class Raster {
   rim() { const { w, c, k, pk } = this;
     const up = []; for (let i = w; i < c.length; i++) if (c[i] && !c[i - w] && RIM[k[i]] && pk[RIM[k[i]]]) up.push(i);
     for (const i of up) c[i] = pk[RIM[k[i]]]; }
-  flush() { this.u32.set(this.c); this.g.putImageData(this.img, 0, 0); return this.cv; }
+  // mirror: flipped about the feet the way a sprite drawn facing left is (column x to 2 ox - 1 - x), for his left side from the side rig
+  flush(mirror = false) {
+    if (!mirror) this.u32.set(this.c);
+    else { const { w, h, ox } = this; this.u32.fill(0); for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const x2 = 2 * ox - 1 - x; if (x2 >= 0 && x2 < w) this.u32[y * w + x2] = this.c[y * w + x]; } }
+    this.g.putImageData(this.img, 0, 0); return this.cv; }
 }
 // a cross-section ring of the body in a frame: forward reach vf, back reach vb (negative), half-width b
 export function ring(L, u, vf, vb, b, n = 16) {

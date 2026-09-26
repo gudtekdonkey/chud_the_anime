@@ -125,7 +125,7 @@ export function drawPart(S, part, J) {
         S.seg(a, b, .5, DARK[part.col] || part.col, bias + A.dz + .04); } }
     return; }
   if (part.kind === 'arm') {
-    for (const k of ['r', 'l']) { const A = J.arm[k], near = A.col === 'K', b = bias + A.dz;
+    for (const k of ['r', 'l']) { const A = J.arm[k], near = A.col === 'K', b = bias + A.fdz;   // sleeves and wraps sit on the forearm
       if (part.style === 'wrap' && HD) {   // bands wound on the bias from the knuckles to the elbow, the loose end hanging at the wrist
         for (let i = 0; i <= 16; i++) { const t = .3 + .7 * i / 16, q = S.P(V.lerp(A.el, A.hand, t)); S.dot(q[0], q[1], q[2] + b, 1, part.col[1]);
           if (i % 3 === 0) S.seg(V.add(V.lerp(A.el, A.hand, t), [0, .45, 0]), V.add(V.lerp(A.el, A.hand, t + .06), [0, -.45, 0]), .5, part.col[0], b + .02); }
