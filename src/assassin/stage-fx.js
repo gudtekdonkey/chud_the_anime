@@ -1,10 +1,14 @@
 import { COL } from '../config.js';
 import { rr, sgn } from '../fx/util.js';
+import { bleed } from '../fx/blood.js';
+import { kick } from '../world/enemy-body.js';
 import { figure } from './pieces.js';
 
 // ---- An execution's own effects. They live on its stage, not the world lists, because the stage is drawn mirrored
 // round the enemy so every execution can play facing either way ----
 const CY = COL.eye, CY2 = COL.fx2, WH = '#ffffff';
+// the stage's x in the world: the stage is drawn mirrored round the enemy when he faced right
+export const wx = (S, x) => S.ox + S.m * (x - S.ox);
 export const FX = () => ({ sparks: [], frags: [], zaps: [], cuts: [], rings: [], cres: [], ghosts: [], cracks: [] });
 function line(out, x0, y0, x1, y1) { x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
   const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy;
@@ -25,7 +29,16 @@ export const F = {
     for (let k = 0; k < 3; k++) { const nx = px + Math.cos(a) * rr(4, 7), ny = py + Math.sin(a) * rr(2, 3); line(out, px, py, nx, ny); px = nx; py = ny; } S.fx.cracks.push({ pts: out, life: 1, max: 1 }); } },
   dust(S, x, y, n) { for (let i = 0; i < n; i++) F.spark(S, x + rr(-5, 5), y, rr(-60, 60), -rr(4, 16), rr(.3, .5), '#8f9692'); },
   // dramatic yet controlled: a white body for a few frames, a short pause, a small shake
-  hit(S, E, stop = .06, shake = 1 / 60) { E.flashT = .05; S.stop = Math.max(S.stop, stop); S.shake = Math.max(S.shake, shake); },
+  // the deaths pass: the blow knocks him away from the blade, he shakes through the pause, light and blood leave out the far side,
+  // and a killing blow (a long pause) gets two impact frames, black then white
+  hit(S, E, stop = .06, shake = 1 / 60) { E.flashT = .05; S.stop = Math.max(S.stop, stop); S.shake = Math.max(S.shake, shake);
+    const R = S.R, dir = R && Math.abs(E.x - R.x) > .5 ? Math.sign(E.x - R.x) : -E.face, mag = Math.min(1.4, Math.max(.4, stop / .1));
+    const z = (E.z || 0) + 13, cy = E.y - z; E.hitAt = S.clock;
+    for (let i = 0; i < 4 + 8 * mag; i++) { const a = (dir > 0 ? 0 : Math.PI) + rr(-.5, .5), v = rr(110, 230) * mag;
+      F.spark(S, E.x + dir * 2, cy + rr(-5, 5), Math.cos(a) * v, Math.sin(a) * v * .6, rr(.07, .15), i % 2 ? WH : CY2, true); }
+    bleed(wx(S, E.x), E.y, z, dir * S.m, mag);
+    if (E.body) kick(E.body, dir * E.face, mag);
+    if (stop >= .09) S.impact = 2; },
 };
 export function updateStageFx(S, dt) {
   const L = S.fx;

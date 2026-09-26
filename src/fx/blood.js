@@ -10,6 +10,8 @@ export function bleed(x, y, z, dir, mag) {
   for (let i = 0; i < 5 + 12 * mag; i++) drops.push({ x: x + dir * rr(0, 3), y: y + rr(-2, 2), z: z + rr(-5, 5),
     vx: dir * rr(15, 65) * mag, vy: rr(-8, 8), vz: rr(5, 45), c: BLOOD[i % 3], big: Math.random() < .3 });
 }
+// one drop off a flying piece: a trail across the floor
+export const drip = (x, y, z) => drops.push({ x: x + rr(-2, 2), y: y + rr(-1, 1), z, vx: rr(-15, 15), vy: 0, vz: rr(-10, 10), c: BLOOD[Math.random() * 3 | 0] });
 export const pool = (x, y, max) => pools.push({ x, y, r: 0, max, t: -.35 });
 export function clearBlood() { drops.length = stains.length = pools.length = 0; }
 export function updateBlood(dt) {

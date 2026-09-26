@@ -39,8 +39,16 @@ export function render() {
   g.globalAlpha = 1;
   g.restore();
   if (S.scr.t > 0) { g.globalAlpha = S.scr.a * S.scr.t / S.scr.max; g.fillStyle = '#e4fffb'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+  if (S.impact > 0) impactFrame(S.impact === 1);
   drawQi(); drawSkillBar();
   const chg = P.charge != null && !P.cv ? ` · charge <b>${Math.round(P.charge * 100)}%</b>` : P.cv ? ` · ${P.cv.name} at <b>${Math.round(P.pow * 100)}%</b>` : '';
   const qi = P.storm > 0 ? ` · <b>STORM CHAIN ${P.storm.toFixed(1)} s</b>` : ` · qi <b>${Math.round(P.qi * 100)}%</b>`;
   hud.innerHTML = `animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}${chg}${qi}`;
+}
+
+// an execution's killing blow: two frames of the scene in two tones, black then white (the deaths pass)
+function impactFrame(second) {
+  const im = g.getImageData(0, 0, W, H), d = im.data, bg = second ? 235 : 10, fg = second ? 12 : 245;
+  for (let i = 0; i < d.length; i += 4) { const l = .3 * d[i] + .59 * d[i + 1] + .11 * d[i + 2]; d[i] = d[i + 1] = d[i + 2] = l < 58 || l > 165 ? fg : bg; }
+  g.putImageData(im, 0, 0);
 }

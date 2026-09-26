@@ -6,12 +6,14 @@ import { rr } from '../fx/util.js';
 // ---- Execution bodies: the rig drawn live from a pose (ronin or enemy), and the enemy cut into real pieces of his own pixels ----
 // the enemy samurai: his body, no hat or mantle, in a darker red-grey (from prototypes/14-executions-batch-1.html)
 export const ERC = { ...RC, K: '#3a2e31', D: '#5a4a4e', E: '#ff5a4a', W: '#cfd4d6', S: '#7d868e', s: '#3a3033' };
+const ERC_OUT = { ...ERC, E: '#2b2023' };   // his eye gone out
+export const EYE_ON = 'rgb(255,90,74)', EYE_OFF = 'rgb(43,32,35)';
 const off = document.createElement('canvas'); off.width = FW; off.height = FH; const og = off.getContext('2d', { willReadFrequently: true });
 const tint = document.createElement('canvas'); tint.width = FW; tint.height = FH; const tg = tint.getContext('2d');
-function paint(pose, enemy) { og.clearRect(0, 0, FW, FH); rig(og, 0, enemy ? { ...pose, bare: true } : pose, enemy ? ERC : RC); return off; }
-// R: { x, y, z, face, pose, enemy, col (solid tint), glitch (0..2: rows jump sideways) }
+function paint(pose, enemy, dark) { og.clearRect(0, 0, FW, FH); rig(og, 0, enemy ? { ...pose, bare: true } : pose, enemy ? dark ? ERC_OUT : ERC : RC); return off; }
+// R: { x, y, z, face, pose, enemy, dark (his eye out), col (solid tint), glitch (0..2: rows jump sideways) }
 export function figure(g, R, alpha = 1) {
-  let img = paint(R.pose, R.enemy);
+  let img = paint(R.pose, R.enemy, R.dark);
   if (R.col) { tg.clearRect(0, 0, FW, FH); tg.drawImage(img, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = R.col; tg.fillRect(0, 0, FW, FH); tg.globalCompositeOperation = 'source-over'; img = tint; }
   g.save(); g.globalAlpha *= alpha; g.translate(Math.round(R.x), Math.round(R.y - (R.z || 0))); if (R.face < 0) g.scale(-1, 1);
   if (R.glitch) { for (let y = 0; y < FH;) { const h = 1 + (Math.random() * 3 | 0), o = Math.random() < R.glitch ? Math.round(rr(-5, 5) * R.glitch) : 0; g.drawImage(img, 0, y, FW, h, -OX + o, y - OY, FW, h); y += h; } }
@@ -26,8 +28,10 @@ export function withShadow(g, R, alpha = 1) {
 }
 
 // ---- pieces: the enemy cut apart along lines, each chunk tumbling and falling ----
+// cut from the body as it is seen (the stage enemy's springs), not from where it is headed; part: a pose of its own, as authored
 export function pixelsOf(E) {
-  paint(E.pose, true); const d = og.getImageData(0, 0, FW, FH).data, out = [];
+  const b = !E.part && E.body, pose = b ? { ...b.out, noHead: E.pose.noHead, noUpper: E.pose.noUpper, empty: E.pose.empty } : E.pose;
+  paint(pose, true, E.dark); const d = og.getImageData(0, 0, FW, FH).data, out = [];
   for (let y = 0; y < FH; y++) for (let x = 0; x < FW; x++) { const i = (y * FW + x) * 4; if (d[i + 3] < 10) continue;
     out.push([E.x + E.face * (x - OX) + (E.face < 0 ? -1 : 0), E.y - (E.z || 0) + (y - OY), `rgb(${d[i]},${d[i + 1]},${d[i + 2]})`]); }
   return out;
@@ -48,7 +52,7 @@ export function splitPiece(S, P, L, kick) {   // cut an airborne chunk in two al
   const i = S.pieces.indexOf(P); if (i >= 0) S.pieces.splice(i, 1);
   toPieces(pts, [L], P.fy, (Q, cx, cy) => { const s = side(L, cx, cy) ? 1 : -1; Q.vx = P.vx + s * kick * .6 + rr(-10, 10); Q.vz = P.vz + rr(-20, 30); Q.va = P.va + s * rr(4, 9); S.pieces.push(Q); });
 }
-const lowest = P => Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
+export const lowest = P => Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
 export function updatePieces(S, dt) {
   for (const P of S.pieces) {
     if (P.script) { P.st = (P.st || 0) + dt; const o = P.script(P.st); P.x = P.x0 + o.dx; P.a = o.a;
@@ -87,8 +91,8 @@ export function sever(S, E, L, push) {
 }
 // what one pose has that another lacks (the head, the sword), as its own piece
 export function partOf(E, pose, without) {
-  const rest = new Set(pixelsOf({ ...E, pose: pz({ ...pose, ...without }) }).map(q => q[0] + ',' + q[1]));
-  return pixelsOf({ ...E, pose }).filter(q => !rest.has(q[0] + ',' + q[1]));
+  const rest = new Set(pixelsOf({ ...E, part: true, pose: pz({ ...pose, ...without }) }).map(q => q[0] + ',' + q[1]));
+  return pixelsOf({ ...E, part: true, pose }).filter(q => !rest.has(q[0] + ',' + q[1]));
 }
 // his sword leaves his hand as its own piece, cut from his pixels, and clatters down
 export function dropSword(S, E, pose, dir = -1) {
