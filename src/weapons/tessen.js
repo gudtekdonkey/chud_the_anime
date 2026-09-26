@@ -1,5 +1,6 @@
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
 import { breathe } from './grip.js';
+import { blade3d } from './art3d.js';
 
 // ---- The tessen: an iron war fan in one hand. Closed it is a short iron baton that snaps into strikes; opened it is a shield
 //   at his face and a blade for a wide slicing sweep. A pose's `spread` opens it ----
@@ -15,6 +16,7 @@ function fan(k, hand, a, spread) { const d = along(a), piv = k.add(hand, d, -1);
   k.put(...piv, 'S'); }
 const drawn = p => p.sword !== null && !p.sheathing;
 const ART = {
+  d3: blade3d(7, 0, 'S'),   // the other facings show the fan shut (art3d.js)
   far() {},
   // closed and tucked in the obi, the pivot end up
   stowed(k, p, mouth, sd) { k.put(...mouth, 'S'); k.seg(k.add(mouth, sd, 1), k.add(mouth, sd, 4), 1, 'G'); k.seg(k.add(mouth, sd, -1), k.add(mouth, sd, -2.5), 1, 'S'); },
