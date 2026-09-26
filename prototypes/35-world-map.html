@@ -1,0 +1,1648 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The World Map</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 15px/1.5 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 22px; }
+  header { display: grid; gap: 8px; max-width: 76ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 18px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  h3 { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  b { color: var(--ink); font-weight: 600; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  .bar label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 14px; cursor: pointer; }
+  .bar input[type=radio], .bar input[type=checkbox] { accent-color: var(--cyan); }
+  .bar input[type=number] { width: 7em; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); padding: 4px 6px; font: inherit; }
+  button { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .06em; color: var(--ink); background: transparent; border: 1px solid var(--rule); padding: 7px 10px; cursor: pointer; }
+  button:hover { border-color: #4a5157; } button:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .main { display: grid; grid-template-columns: minmax(0, 620px) minmax(0, 1fr); gap: 22px; align-items: start; }
+  @media (max-width: 980px) { .main { grid-template-columns: 1fr; } }
+  .mapbox { position: relative; background: var(--panel); border: 1px solid var(--rule); }
+  canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+  #map { cursor: crosshair; }
+  .tip { position: absolute; pointer-events: none; background: #0d0f10ee; border: 1px solid var(--rule); padding: 6px 8px; font-size: 13px; color: var(--ink); max-width: 260px; }
+  .side { display: grid; gap: 16px; }
+  .panel { background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 10px; }
+  .zonebox { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 14px; align-items: start; }
+  @media (max-width: 560px) { .zonebox { grid-template-columns: 1fr; } }
+  #zone { cursor: pointer; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: 14px; }
+  dt { color: var(--muted); } dd { margin: 0; }
+  .list { display: grid; gap: 4px; font-size: 14px; max-height: 260px; overflow: auto; }
+  .row { display: flex; gap: 8px; align-items: baseline; }
+  .sw { width: 10px; height: 10px; flex: none; display: inline-block; border: 1px solid #0006; }
+  .rel { font-variant-numeric: tabular-nums; margin-left: auto; }
+  .neg { color: #e0737a; } .pos { color: #8fd6a0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); }
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">World · prototype 35</div>
+    <h1>The world map</h1>
+    <p>The whole world from one seed, on the simulation core every system now builds on: a 100 × 100 grid of zones, each a large area he walks and fights in. <b>Hover</b> a zone to read it; <b>click</b> it to open its 64 × 64 tiles, cut into 16 plots, each with its <b>title</b> (who owns it on paper) and <b>holder</b> (who has it now). The cyan mark is where the ronin starts.</p>
+    <div class="bar">
+      <span>Show</span>
+      <label for="v-land"><input type="radio" name="view" id="v-land" value="land" checked> Land</label>
+      <label for="v-cult"><input type="radio" name="view" id="v-cult" value="culture"> Cultures</label>
+      <label for="v-reg"><input type="radio" name="view" id="v-reg" value="region"> Regions</label>
+      <label for="v-own"><input type="radio" name="view" id="v-own" value="owner"> Who holds it</label>
+      <label for="roads"><input type="checkbox" id="roads" checked> Roads</label>
+      <label for="places"><input type="checkbox" id="places" checked> Places</label>
+      <label for="seed">Seed <input type="number" id="seed" value="12345"></label>
+      <button type="button" id="gen">Make this world</button>
+      <button type="button" id="rand">Another world</button>
+    </div>
+    <div class="legend" id="legend"></div>
+  </header>
+  <div class="main">
+    <div class="mapbox"><canvas id="map" width="600" height="600" role="img" aria-label="The world map"></canvas><div class="tip" id="tip" hidden></div></div>
+    <div class="side">
+      <div class="panel" id="summary"></div>
+      <div class="panel" id="zonepanel"><h2 id="zname">Pick a zone</h2><p id="zsub">Click anywhere on the land.</p>
+        <div class="zonebox"><canvas id="zone" width="320" height="320" role="img" aria-label="The zone's tiles and plots"></canvas><div id="plot"></div></div></div>
+      <div class="panel" id="culturepanel"></div>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+	//#region src/sim/rng.js
+	function hash(...parts) {
+		let h = 2166136261;
+		for (const p of parts) {
+			const s = String(p);
+			for (let i = 0; i < s.length; i++) {
+				h ^= s.charCodeAt(i);
+				h = Math.imul(h, 16777619) >>> 0;
+			}
+			h ^= 40503;
+			h = Math.imul(h, 16777619) >>> 0;
+		}
+		return h >>> 0;
+	}
+	function rng(seed) {
+		let a = seed >>> 0;
+		const next = () => {
+			a = a + 1831565813 >>> 0;
+			let t = a;
+			t = Math.imul(t ^ t >>> 15, t | 1);
+			t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+			return ((t ^ t >>> 14) >>> 0) / 4294967296;
+		};
+		return {
+			next,
+			range: (lo, hi) => lo + next() * (hi - lo),
+			int: (lo, hi) => lo + Math.floor(next() * (hi - lo + 1)),
+			chance: (p) => next() < p,
+			pick: (arr) => arr[Math.floor(next() * arr.length)],
+			weighted: (pairs) => {
+				let t = 0;
+				for (const [, w] of pairs) t += w;
+				let x = next() * t;
+				for (const [v, w] of pairs) if ((x -= w) < 0) return v;
+				return pairs[pairs.length - 1][0];
+			},
+			shuffle: (arr) => {
+				for (let i = arr.length - 1; i > 0; i--) {
+					const j = Math.floor(next() * (i + 1));
+					[arr[i], arr[j]] = [arr[j], arr[i]];
+				}
+				return arr;
+			}
+		};
+	}
+	const rngFor = (seed, ...keys) => rng(hash(seed, ...keys));
+	//#endregion
+	//#region src/sim/time.js
+	const TIME = {
+		REAL_MS_PER_HOUR: 1e5,
+		HOURS_PER_DAY: 24,
+		DAYS_PER_SEASON: 28,
+		SEASONS: [
+			"spring",
+			"summer",
+			"autumn",
+			"winter"
+		],
+		DAWN: 5,
+		DUSK: 19
+	};
+	const HOURS_PER_SEASON = TIME.HOURS_PER_DAY * TIME.DAYS_PER_SEASON;
+	const HOURS_PER_YEAR = HOURS_PER_SEASON * TIME.SEASONS.length;
+	function calendar(h) {
+		const day = Math.floor(h / TIME.HOURS_PER_DAY), hour = h % TIME.HOURS_PER_DAY, si = Math.floor(h / HOURS_PER_SEASON) % 4;
+		return {
+			h,
+			hour,
+			day,
+			dayOfSeason: day % TIME.DAYS_PER_SEASON + 1,
+			seasonIndex: si,
+			season: TIME.SEASONS[si],
+			year: Math.floor(h / HOURS_PER_YEAR) + 1,
+			night: hour >= TIME.DUSK || hour < TIME.DAWN
+		};
+	}
+	const SYSTEMS = [];
+	function createLedger(seed, realNow = Date.now()) {
+		return {
+			v: 1,
+			seed: seed >>> 0,
+			hour: 0,
+			realAt: realNow,
+			size: {
+				w: 100,
+				h: 100
+			},
+			zones: [],
+			regions: [],
+			cultures: [],
+			plots: {},
+			actors: {},
+			player: null,
+			log: [],
+			ids: {},
+			sys: {}
+		};
+	}
+	function initSystems(L) {
+		for (const s of SYSTEMS) if (s.init && !L.sys[s.id]) {
+			L.sys[s.id] = {};
+			s.init(L);
+		}
+	}
+	function newId(L, kind) {
+		const n = (L.ids[kind] || 0) + 1;
+		L.ids[kind] = n;
+		return kind + n;
+	}
+	const zoneAt = (L, x, y) => x < 0 || y < 0 || x >= L.size.w || y >= L.size.h ? null : L.zones[y * L.size.w + x];
+	//#endregion
+	//#region src/sim/cultures.js
+	const CLASSES = {
+		royal: {
+			rank: 6,
+			dress: "royal",
+			weapons: [
+				["katana", 3],
+				["daisho", 2],
+				["tessen", 1]
+			],
+			jobs: ["lord"]
+		},
+		noble: {
+			rank: 5,
+			dress: "dark",
+			weapons: [
+				["katana", 3],
+				["daisho", 2],
+				["tessen", 1]
+			],
+			jobs: [
+				"lord",
+				"magistrate",
+				"steward"
+			]
+		},
+		retainer: {
+			rank: 4,
+			dress: "dark",
+			weapons: [
+				["katana", 5],
+				["daisho", 2],
+				["nodachi", 1]
+			],
+			jobs: [
+				"retainer",
+				"guard",
+				"magistrate",
+				"tax collector"
+			]
+		},
+		ronin: {
+			rank: 3,
+			dress: "black",
+			weapons: [
+				["katana", 5],
+				["nodachi", 2],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"ronin",
+				"bounty hunter",
+				"guard"
+			]
+		},
+		ashigaru: {
+			rank: 2,
+			dress: "earth",
+			weapons: [
+				["yari", 5],
+				["katana", 1],
+				["tetsubo", 1]
+			],
+			jobs: [
+				"ashigaru",
+				"guard",
+				"courier"
+			]
+		},
+		monk: {
+			rank: 3,
+			dress: "black",
+			weapons: [["naginata", 3], ["bo", 3]],
+			jobs: [
+				"monk",
+				"abbot",
+				"healer"
+			]
+		},
+		commoner: {
+			rank: 1,
+			dress: "earth",
+			weapons: [
+				["kama", 3],
+				["bo", 1],
+				["tanto", 1],
+				["nunchaku", 1]
+			],
+			jobs: [
+				"farmer",
+				"farmer",
+				"farmer",
+				"fisher",
+				"woodcutter",
+				"miner",
+				"smith",
+				"merchant",
+				"innkeeper",
+				"carpenter",
+				"weaver",
+				"brewer",
+				"courier"
+			]
+		},
+		rebel: {
+			rank: 1,
+			dress: "earth",
+			weapons: [
+				["naginata", 3],
+				["yari", 3],
+				["kama", 3],
+				["nunchaku", 1],
+				["katana", 1]
+			],
+			jobs: ["farmer", "rebel"]
+		},
+		outlaw: {
+			rank: 0,
+			dress: "earth",
+			weapons: [
+				["katana", 2],
+				["tanto", 2],
+				["kanabo", 2],
+				["tetsubo", 1],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"bandit",
+				"smuggler",
+				"thief"
+			]
+		},
+		shinobi: {
+			rank: 2,
+			dress: "black",
+			weapons: [
+				["tanto", 3],
+				["kusarigama", 3],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"shinobi",
+				"spy",
+				"courier"
+			]
+		}
+	};
+	const KINDS = {
+		clan: {
+			count: 7,
+			size: 7,
+			label: "clan",
+			classes: [
+				["noble", 1],
+				["retainer", 6],
+				["ashigaru", 8],
+				["commoner", 30],
+				["monk", 1]
+			],
+			traits: [
+				"soldier",
+				"stoic",
+				"proud",
+				"veteran",
+				"calm"
+			],
+			despise: [
+				"drunk",
+				"lazy",
+				"slouch"
+			],
+			royalty: true
+		},
+		court: {
+			count: 1,
+			size: 2,
+			label: "court",
+			classes: [
+				["royal", 2],
+				["noble", 5],
+				["retainer", 6],
+				["commoner", 20]
+			],
+			traits: [
+				"regal",
+				"vain",
+				"serene",
+				"scholar"
+			],
+			despise: [
+				"drunk",
+				"scratcher",
+				"brawler"
+			],
+			royalty: true
+		},
+		rebels: {
+			count: 3,
+			size: 5,
+			label: "free valleys",
+			classes: [
+				["rebel", 12],
+				["commoner", 20],
+				["monk", 2],
+				["ronin", 1]
+			],
+			traits: [
+				"restless",
+				"grim",
+				"weary",
+				"eager"
+			],
+			despise: [
+				"regal",
+				"vain",
+				"cocky"
+			]
+		},
+		monastic: {
+			count: 2,
+			size: 3,
+			label: "temple lands",
+			classes: [["monk", 8], ["commoner", 14]],
+			traits: [
+				"serene",
+				"monk",
+				"humble",
+				"calm"
+			],
+			despise: [
+				"menacing",
+				"vain",
+				"drunk"
+			]
+		},
+		bandits: {
+			count: 2,
+			size: 4,
+			label: "outlaw coast",
+			classes: [
+				["outlaw", 14],
+				["ronin", 3],
+				["commoner", 6]
+			],
+			traits: [
+				"menacing",
+				"cocky",
+				"brawler",
+				"drunk",
+				"twitchy"
+			],
+			despise: [
+				"soldier",
+				"regal",
+				"monk"
+			]
+		},
+		shinobi: {
+			count: 1,
+			size: 2,
+			label: "hidden villages",
+			classes: [["shinobi", 8], ["commoner", 10]],
+			traits: [
+				"shinobi",
+				"wary",
+				"nimble",
+				"shadow"
+			],
+			despise: [
+				"cocky",
+				"hummer",
+				"vain"
+			]
+		},
+		merchants: {
+			count: 2,
+			size: 4,
+			label: "merchant league",
+			classes: [
+				["commoner", 24],
+				["ronin", 3],
+				["ashigaru", 3]
+			],
+			traits: [
+				"cheerful",
+				"glancer",
+				"eager",
+				"vain"
+			],
+			despise: ["menacing", "brawler"]
+		},
+		fishers: {
+			count: 1,
+			size: 4,
+			label: "fishing folk",
+			classes: [["commoner", 24], ["ronin", 1]],
+			traits: [
+				"weary",
+				"cheerful",
+				"calm",
+				"hummer"
+			],
+			despise: ["regal", "cocky"]
+		},
+		miners: {
+			count: 1,
+			size: 4,
+			label: "mountain folk",
+			classes: [
+				["commoner", 22],
+				["ashigaru", 2],
+				["outlaw", 1]
+			],
+			traits: [
+				"heavy",
+				"lumbering",
+				"grim",
+				"stoic"
+			],
+			despise: ["vain", "nimble"]
+		}
+	};
+	const REL = {
+		"clan|clan": -.3,
+		"clan|court": .4,
+		"clan|rebels": -.8,
+		"clan|monastic": .2,
+		"clan|bandits": -.9,
+		"clan|shinobi": -.3,
+		"clan|merchants": .3,
+		"clan|fishers": .1,
+		"clan|miners": .1,
+		"court|rebels": -1,
+		"court|monastic": .3,
+		"court|bandits": -.9,
+		"court|shinobi": -.5,
+		"court|merchants": .4,
+		"court|fishers": .1,
+		"court|miners": .1,
+		"rebels|monastic": .3,
+		"rebels|bandits": -.4,
+		"rebels|shinobi": .1,
+		"rebels|merchants": -.2,
+		"rebels|fishers": .4,
+		"rebels|miners": .4,
+		"monastic|bandits": -.6,
+		"monastic|shinobi": -.2,
+		"monastic|merchants": .1,
+		"monastic|fishers": .3,
+		"monastic|miners": .2,
+		"bandits|shinobi": -.2,
+		"bandits|merchants": -.9,
+		"bandits|fishers": -.5,
+		"bandits|miners": -.3,
+		"shinobi|merchants": 0,
+		"shinobi|fishers": 0,
+		"shinobi|miners": 0,
+		"merchants|fishers": .3,
+		"merchants|miners": .3,
+		"fishers|miners": .2,
+		"court|court": .5,
+		"rebels|rebels": .4,
+		"monastic|monastic": .5,
+		"bandits|bandits": -.2,
+		"merchants|merchants": -.1,
+		"shinobi|shinobi": .3,
+		"fishers|fishers": .5,
+		"miners|miners": .5
+	};
+	const kindRelation = (a, b) => REL[a + "|" + b] ?? REL[b + "|" + a] ?? 0;
+	const ON = [
+		"ka",
+		"ta",
+		"na",
+		"ma",
+		"sa",
+		"ha",
+		"ya",
+		"ra",
+		"wa",
+		"ki",
+		"shi",
+		"chi",
+		"ni",
+		"mi",
+		"ri",
+		"ku",
+		"tsu",
+		"nu",
+		"mu",
+		"yu",
+		"ru",
+		"ko",
+		"to",
+		"no",
+		"mo",
+		"yo",
+		"ro",
+		"se",
+		"te",
+		"ne",
+		"me",
+		"re",
+		"ga",
+		"ji",
+		"zu",
+		"do",
+		"bo",
+		"go",
+		"hi",
+		"fu",
+		"ho",
+		"o",
+		"a",
+		"i",
+		"u",
+		"e"
+	];
+	const PLACE_END = [
+		"mura",
+		"hara",
+		"yama",
+		"kawa",
+		"zawa",
+		"saka",
+		"no",
+		"ta",
+		"shima",
+		"oka",
+		"tani",
+		"hama",
+		"mori",
+		"ishi",
+		"se"
+	];
+	const GIVEN_M = [
+		"rō",
+		"ta",
+		"suke",
+		"maru",
+		"zō",
+		"nobu",
+		"mune",
+		"hide",
+		"kichi",
+		"emon",
+		"bei",
+		"shirō",
+		"jirō"
+	];
+	const GIVEN_F = [
+		"ko",
+		"e",
+		"yo",
+		"no",
+		"mi",
+		"ne",
+		"ha",
+		"ka",
+		"ri",
+		"sa"
+	];
+	const cap$1 = (s) => s[0].toUpperCase() + s.slice(1);
+	const placeName = (r) => cap$1(r.pick(ON) + r.pick(ON) + r.pick(PLACE_END));
+	const familyName = (r) => cap$1(r.pick(ON) + r.pick(ON) + r.pick([
+		"moto",
+		"da",
+		"yama",
+		"kawa",
+		"no",
+		"mura",
+		"saki",
+		"ta",
+		"hara",
+		"gawa"
+	]));
+	const givenName = (r, sex) => cap$1(r.pick(ON) + (sex === "f" ? r.pick(GIVEN_F) : r.pick(ON) + r.pick(GIVEN_M)));
+	//#endregion
+	//#region src/sim/actors.js
+	const ageOf = (L, a) => (L.hour - a.born) / HOURS_PER_YEAR;
+	const nameOf = (a) => `${a.given} ${a.family}`;
+	function makeActor(L, r, o) {
+		const cls = CLASSES[o.cls], sex = o.sex || (r.chance(.5) ? "m" : "f");
+		const a = {
+			id: newId(L, "a"),
+			given: givenName(r, sex),
+			family: o.family || familyName(r),
+			sex,
+			born: L.hour - Math.round((o.age ?? 30) * HOURS_PER_YEAR) - r.int(0, HOURS_PER_YEAR - 1),
+			alive: true,
+			culture: o.culture,
+			cls: o.cls,
+			job: o.job || r.pick(cls.jobs),
+			rank: cls.rank,
+			home: o.home || null,
+			spouse: null,
+			parents: [],
+			children: [],
+			household: o.household || null,
+			weapon: r.weighted(cls.weapons),
+			traits: [],
+			karma: 0,
+			standing: {},
+			money: purse(r, o.cls),
+			holds: []
+		};
+		const kind = o.culture != null && L.cultures[o.culture] ? KINDS[L.cultures[o.culture].kind] : null;
+		if (kind) a.traits.push([r.pick(kind.traits), +r.range(.5, 1).toFixed(2)]);
+		if (r.chance(.4)) a.traits.push([r.pick([
+			"calm",
+			"nervous",
+			"cheerful",
+			"grim",
+			"lazy",
+			"eager",
+			"wary",
+			"proud",
+			"humble",
+			"weary"
+		]), +r.range(.3, .8).toFixed(2)]);
+		L.actors[a.id] = a;
+		return a;
+	}
+	function purse(r, cls) {
+		const m = {
+			royal: [
+				0,
+				0,
+				[20, 60]
+			],
+			noble: [
+				[500, 2e3],
+				[5, 30],
+				[2, 10]
+			],
+			retainer: [
+				[200, 900],
+				[0, 5],
+				0
+			],
+			ronin: [
+				[20, 400],
+				0,
+				0
+			],
+			ashigaru: [
+				[30, 200],
+				0,
+				0
+			],
+			monk: [
+				[0, 60],
+				0,
+				0
+			],
+			commoner: [
+				[30, 300],
+				0,
+				0
+			],
+			rebel: [
+				[10, 120],
+				0,
+				0
+			],
+			outlaw: [
+				[20, 500],
+				[0, 3],
+				0
+			],
+			shinobi: [
+				[100, 600],
+				[0, 4],
+				0
+			]
+		}[cls] || [
+			[0, 50],
+			0,
+			0
+		];
+		const v = (x) => Array.isArray(x) ? r.int(x[0], x[1]) : x;
+		return {
+			mon: v(m[0]),
+			silver: v(m[1]),
+			ryo: v(m[2])
+		};
+	}
+	function marry(a, b) {
+		a.spouse = b.id;
+		b.spouse = a.id;
+		b.family = a.sex === "m" ? a.family : b.family;
+		if (b.sex === "m") a.family = b.family;
+	}
+	function bear(L, r, mother, father, o = {}) {
+		const c = makeActor(L, r, {
+			cls: o.cls || father.cls,
+			culture: father.culture,
+			family: father.family,
+			home: father.home,
+			household: father.household,
+			age: o.age ?? 0,
+			job: o.job
+		});
+		c.parents = [father.id, mother.id];
+		father.children.push(c.id);
+		mother.children.push(c.id);
+		return c;
+	}
+	const HOUSES = {
+		town: 8,
+		village: 4
+	};
+	function populate(L) {
+		for (const z of L.zones) {
+			if (z.kind === "sea" || z.kind === "wild") continue;
+			const reg = L.regions[z.region], cult = L.cultures[reg.culture], kind = KINDS[cult.kind], r = rngFor(L.seed, "people", z.x, z.y), home = [z.x, z.y];
+			const commonCls = kind.classes.filter(([c]) => CLASSES[c].rank <= 3 && c !== "monk");
+			if (z.kind === "town" || z.kind === "village") {
+				if (z.kind === "town") {
+					const lordCls = cult.kind === "court" ? "royal" : cult.kind === "clan" ? "noble" : cult.kind === "monastic" ? "monk" : "commoner";
+					const lord = household(L, r, cult.id, lordCls, home, {
+						age: r.int(34, 60),
+						job: "lord",
+						kids: r.int(1, 4)
+					});
+					lord.lord = reg.id;
+					reg.lord = lord.id;
+				}
+				for (let i = 0; i < HOUSES[z.kind]; i++) household(L, r, cult.id, r.weighted(commonCls), home, { plot: `${z.x},${z.y}:${i + 1}` });
+			} else if (z.kind === "camp") {
+				const chief = makeActor(L, r, {
+					cls: "outlaw",
+					culture: cult.id,
+					home,
+					age: r.int(28, 50),
+					job: "bandit"
+				});
+				chief.chief = true;
+				z.holder = chief.id;
+				for (let i = 0; i < r.int(4, 7); i++) makeActor(L, r, {
+					cls: r.chance(.8) ? "outlaw" : "ronin",
+					culture: cult.id,
+					home,
+					age: r.int(17, 45),
+					household: chief.id
+				});
+			} else if (z.kind === "fort") for (let i = 0; i < r.int(5, 8); i++) makeActor(L, r, {
+				cls: r.chance(.4) ? "retainer" : "ashigaru",
+				culture: cult.id,
+				home,
+				age: r.int(18, 45),
+				sex: "m"
+			});
+			else if (z.kind === "shrine") for (let i = 0; i < r.int(1, 3); i++) makeActor(L, r, {
+				cls: "monk",
+				culture: cult.id,
+				home,
+				age: r.int(20, 70)
+			});
+		}
+		const r = rngFor(L.seed, "player");
+		const start = L.zones.filter((z) => z.kind === "village").sort((a, b) => Math.hypot(a.x - 50, a.y - 50) - Math.hypot(b.x - 50, b.y - 50))[0];
+		const p = makeActor(L, r, {
+			cls: "ronin",
+			culture: null,
+			home: null,
+			age: 28,
+			sex: "m",
+			job: "ronin"
+		});
+		p.weapon = "katana";
+		p.traits = [];
+		p.money = {
+			mon: 120,
+			silver: 0,
+			ryo: 0
+		};
+		p.at = [start.x, start.y];
+		L.player = p.id;
+	}
+	function household(L, r, culture, cls, home, o = {}) {
+		const sex = r.chance(.85) ? "m" : "f", head = makeActor(L, r, {
+			cls,
+			culture,
+			home,
+			sex,
+			age: o.age ?? r.int(22, 55),
+			job: o.job
+		});
+		head.household = head.id;
+		let spouse = null;
+		if (r.chance(.8)) {
+			spouse = makeActor(L, r, {
+				cls,
+				culture,
+				home,
+				sex: sex === "m" ? "f" : "m",
+				age: Math.max(18, ageish(L, head) + r.int(-6, 4)),
+				household: head.id
+			});
+			marry(head, spouse);
+		}
+		const kids = o.kids ?? r.int(0, 4);
+		for (let i = 0; i < kids && spouse; i++) {
+			const age = Math.max(0, ageish(L, head) - r.int(18, 35));
+			if (age <= 0 && i > 0) break;
+			bear(L, r, head.sex === "f" ? head : spouse, head.sex === "m" ? head : spouse, {
+				age,
+				cls
+			});
+		}
+		if (r.chance(.2)) {
+			const elder = makeActor(L, r, {
+				cls,
+				culture,
+				home,
+				family: head.family,
+				age: ageish(L, head) + r.int(20, 30),
+				household: head.id
+			});
+			head.parents.push(elder.id);
+			elder.children.push(head.id);
+		}
+		if (o.plot) {
+			L.plots[o.plot] = {
+				title: head.id,
+				holder: head.id
+			};
+			head.holds.push(o.plot);
+		}
+		return head;
+	}
+	const ageish = (L, a) => Math.floor((L.hour - a.born) / HOURS_PER_YEAR);
+	//#endregion
+	//#region src/sim/worldgen.js
+	function noise(seed, scale, octaves = 4) {
+		const cache = /* @__PURE__ */ new Map(), cell = (ix, iy) => {
+			const k = ix + "," + iy;
+			let v = cache.get(k);
+			if (v == null) {
+				v = hash(seed, ix, iy) % 1e5 / 1e5;
+				cache.set(k, v);
+			}
+			return v;
+		};
+		const sm = (t) => t * t * (3 - 2 * t);
+		const one = (x, y) => {
+			const ix = Math.floor(x), iy = Math.floor(y), fx = sm(x - ix), fy = sm(y - iy);
+			const a = cell(ix, iy), b = cell(ix + 1, iy), c = cell(ix, iy + 1), d = cell(ix + 1, iy + 1);
+			return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+		};
+		return (x, y) => {
+			let v = 0, amp = 1, tot = 0, f = 1 / scale;
+			for (let o = 0; o < octaves; o++) {
+				v += one(x * f, y * f) * amp;
+				tot += amp;
+				amp *= .5;
+				f *= 2;
+			}
+			return v / tot;
+		};
+	}
+	function generateWorld(seed, realNow = Date.now()) {
+		const L = createLedger(seed, realNow), { w, h } = L.size;
+		const elevN = noise(hash(seed, "elev"), 22), moistN = noise(hash(seed, "moist"), 18), warpN = noise(hash(seed, "warp"), 14, 2);
+		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+			const dx = (x - w / 2) / (w / 2), dy = (y - h / 2) / (h / 2), edge = Math.max(0, Math.max(Math.abs(dx), Math.abs(dy * 1.05)) - .78);
+			const elev = Math.max(0, Math.min(1, elevN(x, y) * 1.3 + .02 - edge * 2.2)), moist = moistN(x + 400, y + 400);
+			let biome = "plains";
+			if (elev < .26) biome = "sea";
+			else if (elev < .3) biome = "coast";
+			else if (elev > .74) biome = "mountains";
+			else if (elev > .6) biome = "hills";
+			else if (moist > .64) biome = elev < .42 ? "marsh" : "forest";
+			else if (moist > .5) biome = elev < .46 ? "paddy" : moist > .58 ? "bamboo" : "forest";
+			L.zones.push({
+				x,
+				y,
+				biome,
+				region: -1,
+				kind: biome === "sea" ? "sea" : "wild",
+				road: false
+			});
+		}
+		const land = L.zones.filter((z) => z.biome !== "sea");
+		const r = rngFor(seed, "regions"), seeds = [];
+		for (let minD = 9; seeds.length < 100 && minD > 2; minD -= .5) for (let tries = 0; tries < 4e3 && seeds.length < 100; tries++) {
+			const z = r.pick(land);
+			if (seeds.every((s) => Math.hypot(s.x - z.x, s.y - z.y) >= minD)) seeds.push(z);
+		}
+		for (const z of land) {
+			let best = 0, bd = 1e9;
+			const wx = z.x + (warpN(z.x, z.y) - .5) * 8, wy = z.y + (warpN(z.x + 99, z.y + 99) - .5) * 8;
+			seeds.forEach((s, i) => {
+				const d = Math.hypot(s.x - wx, s.y - wy);
+				if (d < bd) {
+					bd = d;
+					best = i;
+				}
+			});
+			z.region = best;
+		}
+		L.regions = seeds.map((s, i) => ({
+			id: i,
+			name: placeName(rngFor(seed, "rname", i)),
+			culture: -1,
+			seat: null,
+			zones: 0,
+			center: [s.x, s.y]
+		}));
+		for (const z of land) L.regions[z.region].zones++;
+		const adj = L.regions.map(() => /* @__PURE__ */ new Set());
+		for (const z of land) for (const [dx, dy] of [[1, 0], [0, 1]]) {
+			const n = zoneAt(L, z.x + dx, z.y + dy);
+			if (n && n.region >= 0 && n.region !== z.region) {
+				adj[z.region].add(n.region);
+				adj[n.region].add(z.region);
+			}
+		}
+		const cr = rngFor(seed, "cultures"), kinds = [];
+		for (const [kind, k] of Object.entries(KINDS)) for (let i = 0; i < k.count; i++) kinds.push(kind);
+		cr.shuffle(kinds);
+		const starts = [cr.int(0, 99)];
+		while (starts.length < kinds.length) {
+			let best = -1, bd = -1;
+			for (const g of L.regions) {
+				if (starts.includes(g.id)) continue;
+				const d = Math.min(...starts.map((s) => Math.hypot(L.regions[s].center[0] - g.center[0], L.regions[s].center[1] - g.center[1])));
+				if (d > bd) {
+					bd = d;
+					best = g.id;
+				}
+			}
+			starts.push(best);
+		}
+		L.cultures = kinds.map((kind, i) => {
+			return {
+				id: i,
+				kind,
+				name: cultureName(rngFor(seed, "cname", i), kind),
+				regions: [starts[i]],
+				relations: {},
+				hue: Math.round(i * 137.5) % 360
+			};
+		});
+		starts.forEach((g, i) => L.regions[g].culture = i);
+		for (let guard = 0; guard < 1e3 && L.regions.some((g) => g.culture < 0); guard++) {
+			const order = L.cultures.slice().sort((a, b) => a.regions.length / KINDS[a.kind].size - b.regions.length / KINDS[b.kind].size);
+			let grew = false;
+			for (const c of order) {
+				const free = [...new Set(c.regions.flatMap((g) => [...adj[g]]))].filter((g) => L.regions[g].culture < 0);
+				if (free.length) {
+					const g = cr.pick(free);
+					L.regions[g].culture = c.id;
+					c.regions.push(g);
+					grew = true;
+					break;
+				}
+			}
+			if (!grew) {
+				const g = L.regions.find((q) => q.culture < 0), n = [...adj[g.id]].find((q) => L.regions[q].culture >= 0);
+				const c = L.cultures[n != null ? L.regions[n].culture : 0];
+				g.culture = c.id;
+				c.regions.push(g.id);
+			}
+		}
+		const border = /* @__PURE__ */ new Set();
+		for (const g of L.regions) for (const n of adj[g.id]) if (L.regions[n].culture !== g.culture) border.add([g.culture, L.regions[n].culture].sort().join("|"));
+		for (const a of L.cultures) for (const b of L.cultures) if (a.id < b.id) {
+			const hr = rngFor(seed, "rel", a.id, b.id), v = Math.max(-1, Math.min(1, kindRelation(a.kind, b.kind) + (border.has(a.id + "|" + b.id) ? -.2 : 0) + hr.range(-.25, .25)));
+			a.relations[b.id] = b.relations[a.id] = +v.toFixed(2);
+		}
+		const pr = rngFor(seed, "places");
+		const placed = [];
+		const fit = {
+			town: {
+				paddy: 3,
+				plains: 3,
+				coast: 2,
+				forest: 1,
+				bamboo: 1,
+				hills: 1
+			},
+			village: {
+				paddy: 4,
+				plains: 3,
+				coast: 3,
+				forest: 2,
+				bamboo: 2,
+				hills: 1,
+				marsh: 1
+			},
+			camp: {
+				forest: 3,
+				hills: 3,
+				bamboo: 2,
+				marsh: 2,
+				mountains: 1
+			},
+			fort: {
+				hills: 4,
+				plains: 2,
+				mountains: 2
+			},
+			shrine: {
+				hills: 3,
+				mountains: 3,
+				forest: 2,
+				bamboo: 2
+			}
+		};
+		for (const g of L.regions) {
+			const zs = land.filter((z) => z.region === g.id), kind = L.cultures[g.culture].kind;
+			const place = (what, minGap = 4) => {
+				const cands = zs.filter((z) => z.kind === "wild" && fit[what][z.biome] && placed.every((o) => Math.abs(o.x - z.x) + Math.abs(o.y - z.y) >= minGap));
+				if (!cands.length) return null;
+				const z = pr.weighted(cands.map((c) => [c, fit[what][c.biome]]));
+				z.kind = what;
+				placed.push(z);
+				return z;
+			};
+			const seat = place(kind === "bandits" ? "camp" : "town", 5) || zs[0];
+			if (!placed.includes(seat)) placed.push(seat);
+			seat.kind = kind === "bandits" ? "camp" : "town";
+			seat.name = placeName(rngFor(seed, "seat", g.id));
+			g.seat = [seat.x, seat.y];
+			const nv = kind === "bandits" ? pr.int(0, 1) : pr.int(2, Math.min(4, 1 + Math.floor(zs.length / 25)));
+			for (let i = 0; i < nv; i++) {
+				const z = place("village");
+				if (z) z.name = placeName(rngFor(seed, "village", z.x, z.y));
+			}
+			const ncamp = kind === "bandits" ? pr.int(2, 3) : pr.int(0, 2);
+			for (let i = 0; i < ncamp; i++) {
+				const z = place("camp", 3);
+				if (z) z.name = placeName(rngFor(seed, "camp", z.x, z.y)) + " camp";
+			}
+			if (kind === "clan" || kind === "court") {
+				const z = place("fort", 4);
+				if (z) z.name = placeName(rngFor(seed, "fort", z.x, z.y)) + " fort";
+			}
+			if (pr.chance(kind === "monastic" ? 1 : .6)) {
+				const z = place("shrine", 3);
+				if (z) z.name = placeName(rngFor(seed, "shrine", z.x, z.y)) + " shrine";
+			}
+		}
+		const seats = L.regions.map((g) => zoneAt(L, ...g.seat));
+		const linked = [seats[0]], rest = seats.slice(1);
+		while (rest.length) {
+			let bi = 0, bj = 0, bd = 1e9;
+			for (let i = 0; i < linked.length; i++) for (let j = 0; j < rest.length; j++) {
+				const d = Math.hypot(linked[i].x - rest[j].x, linked[i].y - rest[j].y);
+				if (d < bd) {
+					bd = d;
+					bi = i;
+					bj = j;
+				}
+			}
+			road(L, linked[bi], rest[bj]);
+			linked.push(rest.splice(bj, 1)[0]);
+		}
+		for (const z of land) if (z.kind === "village" || z.kind === "fort" || z.kind === "shrine") road(L, z, zoneAt(L, ...L.regions[z.region].seat));
+		populate(L);
+		initSystems(L);
+		return L;
+	}
+	const COST = {
+		sea: 1e9,
+		coast: 1.5,
+		plains: 1,
+		paddy: 1.3,
+		forest: 2,
+		bamboo: 2.2,
+		marsh: 3.5,
+		hills: 2.5,
+		mountains: 6
+	};
+	function road(L, a, b) {
+		if (!a || !b || a === b) return;
+		const { w } = L.size, start = a.y * w + a.x, goal = b.y * w + b.x, g = /* @__PURE__ */ new Map([[start, 0]]), from = /* @__PURE__ */ new Map(), open = [[0, start]];
+		const push = (f, i) => {
+			open.push([f, i]);
+			let k = open.length - 1;
+			while (k > 0) {
+				const p = k - 1 >> 1;
+				if (open[p][0] <= open[k][0]) break;
+				[open[p], open[k]] = [open[k], open[p]];
+				k = p;
+			}
+		};
+		const pop = () => {
+			const top = open[0], last = open.pop();
+			if (open.length) {
+				open[0] = last;
+				let k = 0;
+				for (;;) {
+					const l = 2 * k + 1, r = l + 1;
+					let m = k;
+					if (l < open.length && open[l][0] < open[m][0]) m = l;
+					if (r < open.length && open[r][0] < open[m][0]) m = r;
+					if (m === k) break;
+					[open[m], open[k]] = [open[k], open[m]];
+					k = m;
+				}
+			}
+			return top;
+		};
+		while (open.length) {
+			const [, i] = pop();
+			if (i === goal) break;
+			const x = i % w, y = (i - x) / w;
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			]) {
+				const n = zoneAt(L, x + dx, y + dy);
+				if (!n) continue;
+				const j = n.y * w + n.x;
+				const c = g.get(i) + (n.road ? .35 : COST[n.biome]);
+				if (c < (g.get(j) ?? 0xe8d4a51000)) {
+					g.set(j, c);
+					from.set(j, i);
+					push(c + Math.abs(n.x - b.x) + Math.abs(n.y - b.y), j);
+				}
+			}
+		}
+		for (let i = goal; i != null && i !== start; i = from.get(i)) L.zones[i].road = true;
+		L.zones[start].road = true;
+	}
+	function cultureName(r, kind) {
+		const n = familyName(r);
+		return {
+			clan: `the ${n} clan`,
+			court: `the Court of ${placeName(r)}`,
+			rebels: `the free valleys of ${placeName(r)}`,
+			monastic: `the temples of ${placeName(r)}`,
+			bandits: `the ${r.pick([
+				"Red",
+				"Black",
+				"Salt",
+				"Crow",
+				"Iron"
+			])} ${r.pick([
+				"Tide",
+				"Coast",
+				"Knives",
+				"Wake"
+			])}`,
+			shinobi: `the hidden ${n}`,
+			merchants: `the ${n} league`,
+			fishers: `the ${placeName(r)} fisherfolk`,
+			miners: `the ${placeName(r)} mountain folk`
+		}[kind];
+	}
+	const TERRAIN = [
+		"grass",
+		"field",
+		"paddy",
+		"forest",
+		"bamboo",
+		"water",
+		"rock",
+		"sand",
+		"road",
+		"building",
+		"marsh",
+		"shrine",
+		"palisade",
+		"wall"
+	];
+	const T = Object.fromEntries(TERRAIN.map((t, i) => [t, i]));
+	const GROUND = {
+		coast: [
+			["sand", 4],
+			["grass", 3],
+			["water", 2],
+			["rock", 1]
+		],
+		plains: [
+			["grass", 6],
+			["field", 3],
+			["forest", 1]
+		],
+		paddy: [
+			["paddy", 6],
+			["grass", 2],
+			["water", 1]
+		],
+		forest: [
+			["forest", 7],
+			["grass", 2],
+			["rock", 1]
+		],
+		bamboo: [
+			["bamboo", 7],
+			["grass", 2],
+			["forest", 1]
+		],
+		marsh: [
+			["marsh", 6],
+			["water", 3],
+			["grass", 1]
+		],
+		hills: [
+			["grass", 4],
+			["rock", 3],
+			["forest", 3]
+		],
+		mountains: [
+			["rock", 7],
+			["forest", 2],
+			["grass", 1]
+		],
+		sea: [["water", 1]]
+	};
+	const cache = /* @__PURE__ */ new Map();
+	function tilesOf(L, zx, zy) {
+		const key = L.seed + ":" + zx + "," + zy;
+		if (cache.has(key)) return cache.get(key);
+		const z = zoneAt(L, zx, zy), r = rngFor(L.seed, "tiles", zx, zy), t = /* @__PURE__ */ new Uint8Array(4096);
+		const g = GROUND[z.biome], cell = [];
+		for (let i = 0; i < 64; i++) cell.push(T[r.weighted(g)]);
+		for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+			const jx = Math.min(7, Math.max(0, x + hash(L.seed, zx, zy, x, y, "j") % 5 - 2 >> 3)), jy = Math.min(7, Math.max(0, y + hash(L.seed, zx, zy, y, x, "k") % 5 - 2 >> 3));
+			t[y * 64 + x] = cell[jy * 8 + jx];
+		}
+		if (z.road) for (const [dx, dy] of [
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1]
+		]) {
+			const n = zoneAt(L, zx + dx, zy + dy);
+			if (!n || !n.road) continue;
+			for (let k = 0; k <= 32; k++) {
+				const x = 32 + dx * k, y = 32 + dy * k;
+				for (const o of [0, 1]) {
+					const xx = Math.min(63, x + (dy ? o : 0)), yy = Math.min(63, y + (dx ? o : 0));
+					t[yy * 64 + xx] = T.road;
+				}
+			}
+		}
+		const mid = 32, ring = (rad, what, gap) => {
+			for (let a = 0; a < 6.283; a += .02) {
+				const x = Math.round(mid + Math.cos(a) * rad), y = Math.round(mid + Math.sin(a) * rad);
+				if (!(gap && Math.abs(Math.sin(a)) < .12 && Math.cos(a) > 0)) t[y * 64 + x] = T[what];
+			}
+		};
+		if (z.kind === "town" || z.kind === "village") {
+			const n = z.kind === "town" ? 26 : 12;
+			for (let i = 0; i < n; i++) {
+				const bx = mid + r.int(-14, 12), by = mid + r.int(-14, 12), bw = r.int(3, 5), bh = r.int(2, 4);
+				for (let y = by; y < by + bh; y++) for (let x = bx; x < bx + bw; x++) if (t[y * 64 + x] !== T.road) t[y * 64 + x] = T.building;
+			}
+			for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+				const i = y * 64 + x;
+				if ((t[i] === T.grass || t[i] === T.forest) && Math.hypot(x - mid, y - mid) > 16 && Math.hypot(x - mid, y - mid) < 28) t[i] = z.biome === "paddy" || z.biome === "marsh" ? T.paddy : T.field;
+			}
+		}
+		if (z.kind === "camp") {
+			ring(9, "palisade", true);
+			for (let i = 0; i < 5; i++) {
+				const x = mid + r.int(-5, 4), y = mid + r.int(-5, 4);
+				t[y * 64 + x] = T.building;
+			}
+		}
+		if (z.kind === "fort") {
+			ring(12, "wall", true);
+			for (let y = 28; y < 36; y++) for (let x = 27; x < 37; x++) t[y * 64 + x] = T.building;
+		}
+		if (z.kind === "shrine") for (let y = 29; y < 35; y++) for (let x = 29; x < 35; x++) t[y * 64 + x] = T.shrine;
+		const out = {
+			w: 64,
+			h: 64,
+			t
+		};
+		cache.set(key, out);
+		if (cache.size > 64) cache.delete(cache.keys().next().value);
+		return out;
+	}
+	const plotId = (zx, zy, n) => `${zx},${zy}:${n}`;
+	function ownerOf(L, pid) {
+		if (L.plots[pid]) return L.plots[pid];
+		const [zx, zy] = pid.split(":")[0].split(",").map(Number), z = zoneAt(L, zx, zy), reg = L.regions[z.region];
+		if (z.kind === "town" || z.kind === "village" || z.kind === "fort") return {
+			title: reg ? reg.lord ?? null : null,
+			holder: reg ? reg.lord ?? null : null
+		};
+		if (z.kind === "camp") return {
+			title: null,
+			holder: z.holder ?? null
+		};
+		return {
+			title: null,
+			holder: null
+		};
+	}
+	//#endregion
+	//#region prototypes-src/35-world-map/main.js
+	const Z = 6;
+	const BIOME = {
+		sea: "#1d2a33",
+		coast: "#8d8466",
+		plains: "#6f7a58",
+		paddy: "#5f7f55",
+		forest: "#3c5440",
+		bamboo: "#5c6e3c",
+		marsh: "#4f5a44",
+		hills: "#666350",
+		mountains: "#7e7c73"
+	};
+	const TILE = {
+		grass: "#6f7a58",
+		field: "#9a8a5a",
+		paddy: "#5f8a6a",
+		forest: "#34503a",
+		bamboo: "#5c6e3c",
+		water: "#27404c",
+		rock: "#77756c",
+		sand: "#a89a74",
+		road: "#b9a57a",
+		building: "#2a2624",
+		marsh: "#4f5a44",
+		shrine: "#b5484e",
+		palisade: "#5a3b2c",
+		wall: "#8a8a86"
+	};
+	const PLACE = {
+		town: ["#f1ede2", 4],
+		village: ["#d9c9a0", 3],
+		camp: ["#d8525a", 3],
+		fort: ["#a7aba8", 4],
+		shrine: ["#c34a50", 2]
+	};
+	const $ = (id) => document.getElementById(id);
+	const map = $("map");
+	const mg = map.getContext("2d");
+	const zc = $("zone");
+	const zg = zc.getContext("2d");
+	const tip = $("tip");
+	let L = null;
+	let view = "land";
+	let sel = null;
+	let selPlot = null;
+	function make(seed) {
+		L = generateWorld(seed, 0);
+		sel = null;
+		selPlot = null;
+		draw();
+		summary();
+		cultures(null);
+		zonePanel();
+		const p = L.actors[L.player];
+		openZone(p.at[0], p.at[1]);
+	}
+	const hsl = (h, s, l) => `hsl(${h} ${s}% ${l}%)`;
+	const cultOf = (z) => z.region >= 0 ? L.cultures[L.regions[z.region].culture] : null;
+	function zoneColor(z) {
+		if (z.biome === "sea") return BIOME.sea;
+		if (view === "land") return BIOME[z.biome];
+		if (view === "culture") {
+			const c = cultOf(z);
+			return hsl(c.hue, 28, 30 + (z.biome === "mountains" ? 10 : z.biome === "hills" ? 5 : 0));
+		}
+		if (view === "region") {
+			const h = z.region * 97 % 360;
+			return hsl(h, 22, 32);
+		}
+		if (z.kind === "camp") return "#7a3035";
+		if (z.kind === "town" || z.kind === "village" || z.kind === "fort") return hsl(cultOf(z).hue, 40, 46);
+		return z.kind === "shrine" ? "#5a4a52" : "#2c3230";
+	}
+	function draw() {
+		const { w, h } = L.size;
+		mg.fillStyle = BIOME.sea;
+		mg.fillRect(0, 0, map.width, map.height);
+		for (const z of L.zones) {
+			mg.fillStyle = zoneColor(z);
+			mg.fillRect(z.x * Z, z.y * Z, Z, Z);
+		}
+		for (const z of L.zones) {
+			if (z.region < 0) continue;
+			for (const [dx, dy] of [[1, 0], [0, 1]]) {
+				const n = zoneAt(L, z.x + dx, z.y + dy);
+				if (!n || n.region < 0 || n.region === z.region) continue;
+				const cross = L.regions[n.region].culture !== L.regions[z.region].culture;
+				mg.fillStyle = cross ? "#0b0d0ecc" : "#0b0d0e55";
+				if (dx) mg.fillRect(z.x * Z + Z - (cross ? 1 : 0), z.y * Z, cross ? 2 : 1, Z);
+				else mg.fillRect(z.x * Z, z.y * Z + Z - (cross ? 1 : 0), Z, cross ? 2 : 1);
+			}
+		}
+		if ($("roads").checked) {
+			mg.fillStyle = "#d7c496";
+			for (const z of L.zones) {
+				if (!z.road) continue;
+				const cx = z.x * Z + Z / 2 - 1, cy = z.y * Z + Z / 2 - 1;
+				mg.fillRect(cx, cy, 2, 2);
+				for (const [dx, dy] of [[1, 0], [0, 1]]) {
+					const n = zoneAt(L, z.x + dx, z.y + dy);
+					if (n && n.road) mg.fillRect(cx, cy, dx ? 8 : 2, dy ? 8 : 2);
+				}
+			}
+		}
+		if ($("places").checked) for (const z of L.zones) {
+			const pl = PLACE[z.kind];
+			if (!pl) continue;
+			const [c, s] = pl, x = z.x * Z + (Z - s) / 2, y = z.y * Z + (Z - s) / 2;
+			mg.fillStyle = "#0b0d0e";
+			mg.fillRect(x - 1, y - 1, s + 2, s + 2);
+			mg.fillStyle = c;
+			mg.fillRect(x, y, s, s);
+		}
+		const p = L.actors[L.player];
+		mg.strokeStyle = "#6ff3e4";
+		mg.lineWidth = 2;
+		mg.strokeRect(p.at[0] * Z - 3, p.at[1] * Z - 3, 12, 12);
+		if (sel) {
+			mg.strokeStyle = "#ffffff";
+			mg.lineWidth = 1;
+			mg.strokeRect(sel.x * Z - .5, sel.y * Z - .5, 7, 7);
+		}
+		legend();
+	}
+	function legend() {
+		const items = view === "land" ? Object.entries(BIOME).map(([k, c]) => [c, k]) : view === "owner" ? [
+			[hsl(200, 40, 46), "a lord's land (the culture's colour)"],
+			["#7a3035", "held by outlaws, owned by nobody"],
+			["#2c3230", "nature: nobody, claimable"],
+			["#5a4a52", "shrine ground"]
+		] : view === "culture" ? [["#888", "each culture its own colour; the bright lines are where cultures meet"]] : [["#888", "each of the 100 regions its own colour"]];
+		$("legend").innerHTML = [
+			...items,
+			...Object.entries(PLACE).map(([k, [c]]) => [c, k]),
+			["#6ff3e4", "the ronin"]
+		].map(([c, t]) => `<span class="row"><span class="sw" style="background:${c}"></span>${t}</span>`).join("");
+	}
+	function describe(z) {
+		if (z.biome === "sea") return "Sea";
+		const reg = L.regions[z.region], c = L.cultures[reg.culture];
+		return `<b>${z.name || cap(z.kind === "wild" ? z.biome : z.kind)}</b> · ${z.x}, ${z.y}<br>${cap(z.biome)}${z.road ? ", on a road" : ""}<br>Region: ${reg.name}<br>${cap(c.name)} (${KINDS[c.kind].label})`;
+	}
+	const cap = (s) => s[0].toUpperCase() + s.slice(1);
+	function summary() {
+		const land = L.zones.filter((z) => z.biome !== "sea").length, people = Object.values(L.actors).filter((a) => a.alive).length, count = (k) => L.zones.filter((z) => z.kind === k).length;
+		const cal = calendar(L.hour), p = L.actors[L.player], start = zoneAt(L, ...p.at);
+		$("summary").innerHTML = `<h3>This world · seed ${L.seed}</h3><dl>
+    <dt>Zones</dt><dd>10,000 (${land.toLocaleString()} land, ${(1e4 - land).toLocaleString()} sea)</dd>
+    <dt>Regions</dt><dd>100, in ${L.cultures.length} cultures</dd>
+    <dt>Settlements</dt><dd>${count("town")} towns, ${count("village")} villages, ${count("fort")} forts, ${count("shrine")} shrines</dd>
+    <dt>Outlaw camps</dt><dd>${count("camp")}</dd>
+    <dt>Roads</dt><dd>${L.zones.filter((z) => z.road).length} zones</dd>
+    <dt>People</dt><dd>${people.toLocaleString()}</dd>
+    <dt>The ronin</dt><dd>${nameOf(p)}, ${Math.floor(ageOf(L, p))}, near ${start.name || "the road"}, ${p.money.mon} mon</dd>
+    <dt>Date</dt><dd>Day ${cal.dayOfSeason} of ${cal.season}, year ${cal.year}</dd></dl>`;
+	}
+	function cultures(focus) {
+		const rows = L.cultures.map((c) => `<div class="row"><span class="sw" style="background:${hsl(c.hue, 28, 38)}"></span><span>${cap(c.name)}</span><span class="rel" style="color:var(--muted)">${KINDS[c.kind].label}, ${c.regions.length}</span></div>`).join("");
+		let rel = "";
+		if (focus) {
+			const others = L.cultures.filter((o) => o.id !== focus.id).map((o) => [o, focus.relations[o.id]]).sort((a, b) => a[1] - b[1]);
+			const fmt = ([o, v]) => `<div class="row"><span class="sw" style="background:${hsl(o.hue, 28, 38)}"></span><span>${cap(o.name)}</span><span class="rel ${v < 0 ? "neg" : "pos"}">${v > 0 ? "+" : ""}${v.toFixed(2)}</span></div>`;
+			rel = `<h3>${cap(focus.name)}: hate most</h3><div class="list">${others.slice(0, 5).map(fmt).join("")}</div><h3>Friendliest with</h3><div class="list">${others.slice(-4).reverse().map(fmt).join("")}</div>
+      <p>${cap(KINDS[focus.kind].label)}: ${KINDS[focus.kind].classes.map(([c]) => c).join(", ")}. Common among them: ${KINDS[focus.kind].traits.join(", ")}. They cannot stand: ${KINDS[focus.kind].despise.join(", ")}.</p>`;
+		}
+		$("culturepanel").innerHTML = `${rel}<h3>The ${L.cultures.length} cultures</h3><div class="list">${rows}</div>`;
+	}
+	const TZ = 5;
+	function openZone(x, y) {
+		const z = zoneAt(L, x, y);
+		if (!z || z.biome === "sea") return;
+		sel = z;
+		selPlot = null;
+		draw();
+		drawZone();
+		zonePanel();
+		cultures(cultOf(z));
+	}
+	function drawZone() {
+		const z = sel, T = tilesOf(L, z.x, z.y);
+		for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+			zg.fillStyle = TILE[TERRAIN[T.t[y * 64 + x]]];
+			zg.fillRect(x * TZ, y * TZ, TZ, TZ);
+		}
+		for (let n = 0; n < 16; n++) {
+			const px = n % 4 * 16 * TZ, py = Math.floor(n / 4) * 16 * TZ, o = ownerOf(L, plotId(z.x, z.y, n));
+			zg.strokeStyle = n === selPlot ? "#ffffff" : "#0b0d0e99";
+			zg.lineWidth = n === selPlot ? 2 : 1;
+			zg.strokeRect(px + .5, py + .5, 79, 79);
+			if (o.title || o.holder) {
+				zg.fillStyle = o.title ? "#e2c26b" : "#d8525a";
+				zg.fillRect(px + 3, py + 3, 4, 4);
+			}
+		}
+	}
+	function who(id) {
+		if (!id) return null;
+		const a = L.actors[id];
+		if (!a) return id;
+		return `${nameOf(a)}, ${Math.floor(ageOf(L, a))}, ${a.cls}${a.job && a.job !== a.cls ? ` (${a.job})` : ""}${a.lord != null ? `, lord of ${L.regions[a.lord].name}` : ""}${a.chief ? ", chief of the camp" : ""}`;
+	}
+	function zonePanel() {
+		if (!sel) {
+			$("zname").textContent = "Pick a zone";
+			$("zsub").textContent = "Click anywhere on the land.";
+			$("plot").innerHTML = "";
+			return;
+		}
+		const z = sel, reg = L.regions[z.region], c = L.cultures[reg.culture], people = Object.values(L.actors).filter((a) => a.alive && a.home && a.home[0] === z.x && a.home[1] === z.y);
+		$("zname").textContent = z.name || cap(z.kind === "wild" ? z.biome : z.kind);
+		$("zsub").innerHTML = `${cap(z.biome)} ${z.kind === "wild" ? "wilds" : z.kind} at ${z.x}, ${z.y}, in ${reg.name}, land of ${c.name}. ${people.length ? `${people.length} people live here.` : "Nobody lives here."} <b>Click a plot</b> to see who holds it.`;
+		if (selPlot == null) {
+			$("plot").innerHTML = `<h3>The 16 plots</h3><p>Each square is a plot of 16 × 16 tiles. An <span style="color:#e2c26b">amber</span> mark: owned on paper and held. <span style="color:#d8525a">Red</span>: held by force, owned by nobody. No mark: nature, claimable.</p>`;
+			return;
+		}
+		const id = plotId(z.x, z.y, selPlot), o = ownerOf(L, id), t = who(o.title), hd = who(o.holder);
+		const home = o.title && L.actors[o.title], house = home ? Object.values(L.actors).filter((a) => a.household === home.household && a.alive) : [];
+		$("plot").innerHTML = `<h3>Plot ${id}</h3><dl><dt>Title</dt><dd>${t || "Nobody: nature"}</dd><dt>Holder</dt><dd>${hd || "Nobody"}</dd></dl>
+    ${!o.title && !o.holder ? "<p>Unowned land. Claimable, by the rules the land session is working out.</p>" : ""}
+    ${!o.title && o.holder ? "<p>Held by force: possession without title. A raid took it, and the law has not caught up.</p>" : ""}
+    ${house.length > 1 ? `<h3>The household</h3><div class="list">${house.map((a) => `<div>${who(a.id)}${a.spouse && a.id !== home.id && a.spouse === home.id ? " (spouse)" : ""}</div>`).join("")}</div>` : ""}`;
+	}
+	const zoneFromEvent = (e) => {
+		const r = map.getBoundingClientRect(), k = map.width / r.width;
+		return [Math.floor((e.clientX - r.left) * k / Z), Math.floor((e.clientY - r.top) * k / Z)];
+	};
+	map.addEventListener("mousemove", (e) => {
+		const [x, y] = zoneFromEvent(e), z = zoneAt(L, x, y);
+		if (!z) {
+			tip.hidden = true;
+			return;
+		}
+		tip.innerHTML = describe(z);
+		tip.hidden = false;
+		const r = map.getBoundingClientRect(), bx = e.clientX - r.left, by = e.clientY - r.top;
+		tip.style.left = Math.min(bx + 14, r.width - 250) + "px";
+		tip.style.top = Math.min(by + 14, r.height - 110) + "px";
+	});
+	map.addEventListener("mouseleave", () => tip.hidden = true);
+	map.addEventListener("click", (e) => openZone(...zoneFromEvent(e)));
+	zc.addEventListener("click", (e) => {
+		if (!sel) return;
+		const r = zc.getBoundingClientRect(), k = zc.width / r.width, tx = Math.floor((e.clientX - r.left) * k / TZ), ty = Math.floor((e.clientY - r.top) * k / TZ);
+		selPlot = Math.floor(ty / 16) * 4 + Math.floor(tx / 16);
+		drawZone();
+		zonePanel();
+	});
+	for (const el of document.querySelectorAll("input[name=view]")) el.addEventListener("change", () => {
+		view = el.value;
+		draw();
+	});
+	$("roads").addEventListener("change", draw);
+	$("places").addEventListener("change", draw);
+	$("gen").addEventListener("click", () => make(+$("seed").value || 1));
+	$("rand").addEventListener("click", () => {
+		$("seed").value = Math.floor(Math.random() * 1e6);
+		make(+$("seed").value);
+	});
+	make(+$("seed").value);
+	window.__world = () => L;
+	//#endregion
+})();
+
+</script>
