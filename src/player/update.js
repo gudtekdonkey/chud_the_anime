@@ -6,7 +6,7 @@ import { gather, debrisXY, fling, crack } from '../fx/debris.js';
 import { storm, updateFx } from '../fx/fx.js';
 import { unleashMoon } from '../fx/moon.js';
 import { strike, updateCuts } from '../fx/slash.js';
-import { xTear } from '../fx/void.js';
+import { tear, xTear } from '../fx/void.js';
 import { rr, residue, spark, dust, after } from '../fx/util.js';
 import { held } from '../input.js';
 import { afterAttack, pickStance, setState, once, moveBy, blink, ghost, inputDir } from './actions.js';
@@ -146,7 +146,9 @@ export function update(dt, inp) {
       if (once('strike', T >= SK)) {
         if (c.kick) { P.flash = .034; dust(10, fd); S.shake = Math.max(S.shake, 2 / 60);
           rings.push({ x: P.x + fd * 14, y: P.y - 9, rx: 8, ry: 5, life: 2 / 60 }); }
-        else strike(c.rot, c.flip, !!c.big);
+        else { strike(c.rot, c.flip, !!c.big);   // every cut opens a black slash through the crescent, tilted with it, shut a beat later
+          const h = c.big ? 18 : 13, a = c.rot * c.flip * .6, [d] = reach(c.big ? 18 : 14, 0);
+          tear(P.x + fd * (d - h * Math.cos(a)), P.y - 12 - P.z - h * Math.sin(a) * .8, P.x + fd * (d + h * Math.cos(a)), P.y - 12 - P.z + h * Math.sin(a) * .8, c.big ? 3 : 2, .22); }
         ghost();
         if (c.big) { P.flash = .05; S.shake = Math.max(S.shake, 2 / 60); dust(8); }
         if (!c.kick) for (let k = 0; k < 5; k++) { const life = rr(.06, .12); frags.push({ x: P.x - fd * rr(4, 20), y: P.y - rr(4, 24), w: 3 + (Math.random() * 7 | 0), col: k % 2 ? '#ffffff' : COL.fx2, vx: fd * rr(10, 30), vy: 0, life, max: life, jx: 0, on: true }); } }
@@ -224,6 +226,7 @@ export function update(dt, inp) {
         rings.push({ x: cx + P.face * 8, y: P.y - 2, rx: 56 * W, ry: 28 * W, life: 1 / 60 });
         rings.push({ x: cx + P.face * 8, y: P.y - 2, rx: 30, ry: 15, life: 2 / 60 });
         crack(cx + P.face * 10, P.y);
+        xTear(cx + P.face * 10, P.y - 8, 34 * W, 1, 4, .35); xTear(cx + P.face * 10, P.y - 8, 34 * W, -1, 4, .35);   // the black slash: a great X where the blade lands
         if (pT('sweep', 'pillars')) pillars(cx + P.face * 10, P.y, W);
         dust(24);
       }

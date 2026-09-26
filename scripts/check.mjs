@@ -333,6 +333,14 @@ try {
   await run('E at the road: the wanderer joins', async () => {
     const n = (await party()).members.length; await walkTo(44, 210); await kb.press('e');
     await until('a fourth companion', k => window.__game.party.members.length > k, n); await shot('14-recruited'); });
+  // owner: the black slash (Cross Rift's tear) is in every offensive skill. Each key, once ready, must open one
+  await run('the black slash: J, I, hold I, O, P, U and N each open one', async () => {
+    for (const [k, cd, hold] of [['j'], ['i', 'double'], ['i', 'double', 900], ['o', 'moon', 400], ['p', 'rift'], ['u', 'sweep'], ['n', 'mirror']]) {
+      await reach(FREE, 8000); if (cd) await until(`${k} to be ready`, c => !(window.__game.P.cd[c] > 0), cd, 16000);
+      await until('the old slashes to close', () => !window.__game.V.length, undefined, 4000);
+      if (hold) { await kb.down(k); await sleep(hold); await kb.up(k); } else await kb.press(k);
+      await until(`a black slash from ${k}${hold ? ' (held)' : ''}`, () => window.__game.V.length > 0, undefined, 4000); }
+    await reach(FREE, 8000); });
   await run('X: die and come back', async () => { await kb.press('x'); await reach(/^death$/); await reach(/^idleGlitch$/, 5000); });
   step = '';
 

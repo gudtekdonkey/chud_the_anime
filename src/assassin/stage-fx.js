@@ -1,6 +1,7 @@
 import { COL } from '../config.js';
 import { rr, sgn } from '../fx/util.js';
 import { bleed } from '../fx/blood.js';
+import { tear } from '../fx/void.js';
 import { kick } from '../world/enemy-body.js';
 import { figure } from './pieces.js';
 import { EL, ec } from '../fx/element.js';
@@ -39,6 +40,8 @@ export const F = {
     for (let i = 0; i < 4 + 8 * mag; i++) { const a = (dir > 0 ? 0 : Math.PI) + rr(-.5, .5), v = rr(110, 230) * mag;
       F.spark(S, E.x + dir * 2, cy + rr(-5, 5), Math.cos(a) * v, Math.sin(a) * v * .6, rr(.07, .15), i % 2 ? WH : CY2, true); }
     bleed(wx(S, E.x), E.y, z, dir * S.m, mag);
+    { const a = rr(-1, 1), h = 8 + 8 * mag, x = wx(S, E.x);   // the black slash through him, the same one every skill cuts
+      tear(x - Math.cos(a) * h, cy - Math.sin(a) * h * .7, x + Math.cos(a) * h, cy + Math.sin(a) * h * .7, 1.5 + 1.5 * mag, .25); }
     if (E.body) kick(E.body, dir * E.face, mag);
     if (stop >= .09) S.impact = 2; },
 };

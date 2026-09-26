@@ -5,6 +5,7 @@ import { K } from '../assassin/markers.js';
 import { qiAdd } from '../player/qi.js';
 import { setState } from '../player/actions.js';
 import { residue } from '../fx/util.js';
+import { tear } from '../fx/void.js';
 import { PAIRED, fits, ROSTER } from './kit.js';
 import { standing, busy, say } from './companions.js';
 import { frames, poseOf, lenOf, paint, place, faceTo, white } from './figures.js';
@@ -52,7 +53,8 @@ export function pairStep(dt) {
   else if (t < .26) { const k = ez((t - .16) / .1); set(P, lerp2(x.A, [e.x - s * 20, e.y + 2], k)); set(a, lerp2(x.B, [e.x + s * 20, e.y - 2], k));
     x.ht = a.t = .09 + (t - .16) * 1.2;
     if (!x.cut && t >= .2) { x.cut = true; S.hitstop = .09; S.shake = .15; S.impact = 2; e.flash = 2 / 60;
-      lines.push({ x: e.x, y: e.y - 11, a: .6, t: 0 }, { x: e.x, y: e.y - 11, a: -.7, t: 0 }); } }
+      lines.push({ x: e.x, y: e.y - 11, a: .6, t: 0 }, { x: e.x, y: e.y - 11, a: -.7, t: 0 });
+      for (const r of [.6, -.7]) tear(e.x - Math.cos(r) * 20, e.y - 11 - Math.sin(r) * 20, e.x + Math.cos(r) * 20, e.y - 11 + Math.sin(r) * 20, 3, .6); } }   // the black slash along both cuts
   // the follow-through, held; then both resheathe together and he falls on the click
   else if (t < .8) { x.ht = a.t = .21 + (t - .26); const L = lenOf(frames(HERO, 'slash1'));
     if (x.ht > L) { x.anim = 'ready'; x.ht -= L; } if (a.t > lenOf(frames(a.c, 'slash1'))) { a.anim = 'ready'; a.t = 0; } }
