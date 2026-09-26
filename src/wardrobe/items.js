@@ -2,6 +2,7 @@ import { TAU, V } from './skeleton.js';
 import { bone } from './cloth.js';
 import { bandLine, ring } from './raster.js';
 import { drawHat3d } from '../rig/body3d.js';
+import { HD, strawHD, mantleHD } from '../rig/rig.js';
 
 // ---- The wardrobe: every item is data, measured from the bones, so it fits every pose (and, with rig v2, every facing) ----
 // Items and numbers from prototypes/19-rig-v2-and-clothing.html. Frames: 'h' hips, 'c' chest; u up the spine, v forward, b to his right.
@@ -15,7 +16,7 @@ const STRAW_3D = { sit: 3, levels: [{ h: -1, r: 8, fill: 'B', edge: 'K' }, { h: 
 export const ITEMS = [
   // ---- head ----
   { id: 'straw', slot: 'head', name: 'Wide straw hat', about: 'The one he walked in with. Its brim tips forward on a cut.',
-    parts: [{ kind: 'sidehat', rows: STRAW, hat3d: STRAW_3D, bias: 2.6 }] },   // over his head and eye, under the mantle and the near arm
+    parts: [{ kind: 'sidehat', rows: STRAW, hd: (...a) => strawHD(...a), hat3d: STRAW_3D, bias: 2.6 }] },   // over his head and eye, under the mantle and the near arm
   // ---- shoulders ----
   { id: 'mantle', slot: 'shoulders', name: 'Flat mantle', about: 'His mantle from the start. Draped flat down the back, never a hump; its tip lifts a hair when he moves.',
     parts: [{ kind: 'drape', col: 'M', edge: 'm', bias: 2.65 }] },   // over the head and hat, under the near arm, as it always was
@@ -96,6 +97,7 @@ export function drawPart(S, part, J) {
   if (part.kind === 'knot') { const q = S.P(bone(J, part.f).L(part.u, part.v, part.b)); S.dot(q[0], q[1], q[2] + bias, part.size, part.col); return; }
   if (part.kind === 'sidehat') {  // a hat drawn side on, its brim resting on the head, nudged forward by the pose (p.hat)
     if (!J.flat) return drawHat3d(S, J, part.hat3d, 0);   // any other facing: the same hat in the round
+    if (HD && part.hd) return part.hd((x, y, c) => S.px(x, y, bias, c), J.hcR, J.p.hat);   // 2x: the hat's own detailed drawing
     const [hx, hy] = J.hc, w = part.rows[0].length, x0 = Math.round(hx) - (w >> 1) + 1 + J.p.hat, y0 = Math.round(hy) - 1 - part.rows.length;
     part.rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') S.px(Math.round(x0 + x), y0 + y, bias, ch); }));
     return; }
@@ -103,7 +105,8 @@ export function drawPart(S, part, J) {
     if (!J.flat) return drawShell(S, { rings: DRAPE_3D, col: [part.col], inner: part.edge, bias: .5 }, J);   // any other facing: a close shell over the shoulders
     const L = (u, v) => S.P(J.L(u, v, 0)), f = J.p.flutter || 0, z = bias;
     S.poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], z, part.col);
-    S.seg(J.L(8.4, 2.1, 0), J.L(8.8, -1.4, 0), 1, part.edge, bias);
+    S.seg(J.L(8.4, 2.1, 0), J.L(8.8, -1.4, 0), HD ? .5 : 1, part.edge, bias);
+    if (HD) mantleHD((u, v) => J.L(u, v, 0), f, (a, b, w, c) => S.seg(a, b, w, c, bias), part.col, 'B');
     if (f > .5) { const q = L(2.6, -3.4); S.dot(q[0], q[1], z, 1, part.col); }
     return; }
   if (part.kind === 'sode') {   // a plate hung from each shoulder over the upper arm

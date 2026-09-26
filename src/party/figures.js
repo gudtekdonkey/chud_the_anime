@@ -1,4 +1,4 @@
-import { RC, FW, FH, OX, OY } from '../config.js';
+import { RC, FW, FH, OX, OY, PX, snap } from '../config.js';
 import { HILT } from '../rig/pose.js';
 import { ANIMS } from '../anims/anims.js';
 import { Raster, packPal } from '../wardrobe/raster.js';
@@ -37,8 +37,8 @@ export function white(cv) { wg.clearRect(0, 0, FW, FH); wg.drawImage(cv, 0, 0);
   wg.globalCompositeOperation = 'source-in'; wg.fillStyle = '#ffffff'; wg.fillRect(0, 0, FW, FH); wg.globalCompositeOperation = 'source-over'; return WHITE; }
 // a canvas on the floor at (x, y), as he is drawn: contact shadow, floor reflection, then the figure (o.flash white, o.alpha)
 export function place(g, cv, x, y, face, o = {}) {
-  x = Math.round(x); y = Math.round(y); const a = o.alpha ?? 1;
-  g.fillStyle = `rgba(20,24,24,${.35 * a})`; g.fillRect(x - 5, y, 10, 2);
-  g.save(); g.globalAlpha = .17 * a; g.translate(x, 2 * y + 1); g.scale(face, -1); g.drawImage(cv, -OX, -OY); g.restore();
-  g.save(); g.globalAlpha = a; g.translate(x, y); g.scale(face, 1); g.drawImage(o.flash ? white(cv) : cv, -OX, -OY); g.restore();
+  x = snap(x); y = snap(y); const a = o.alpha ?? 1;
+  g.fillStyle = `rgba(20,24,24,${.35 * a})`; g.fillRect(Math.round(x) - 5, Math.round(y), 10, 2);
+  g.save(); g.globalAlpha = .17 * a; g.translate(x, 2 * y + 1); g.scale(face / PX, -1 / PX); g.drawImage(cv, -OX, -OY); g.restore();
+  g.save(); g.globalAlpha = a; g.translate(x, y); g.scale(face / PX, 1 / PX); g.drawImage(o.flash ? white(cv) : cv, -OX, -OY); g.restore();
 }

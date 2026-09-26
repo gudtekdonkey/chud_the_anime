@@ -14,7 +14,7 @@ export function silPts(sh, f) {
   try { const c = document.createElement('canvas'); c.width = sh.fw; c.height = sh.fh; const cg = c.getContext('2d');
     cg.drawImage(sh.img, f * sh.fw, 0, sh.fw, sh.fh, 0, 0, sh.fw, sh.fh);
     const d = cg.getImageData(0, 0, sh.fw, sh.fh).data, A = (x, y) => x >= 0 && y >= 0 && x < sh.fw && y < sh.fh && d[(y * sh.fw + x) * 4 + 3] > 40;
-    for (let y = 0; y < sh.fh; y++) for (let x = 0; x < sh.fw; x++) if (A(x, y) && !(A(x - 1, y) && A(x + 1, y) && A(x, y - 1) && A(x, y + 1))) out.push([x - sh.ox, y - sh.oy]);
+    for (let y = 0; y < sh.fh; y++) for (let x = 0; x < sh.fw; x++) if (A(x, y) && !(A(x - 1, y) && A(x + 1, y) && A(x, y - 1) && A(x, y + 1))) out.push([(x - sh.ox) / (sh.s || 1), (y - sh.oy) / (sh.s || 1)]);
     const top = Math.min(...out.map(q => q[1])); out.top = out.filter(q => q[1] < top + 11); } catch (e) { /* an unreadable strip just gets no body-bound sparks */ }
   m.set(f, out); return out;
 }

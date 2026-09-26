@@ -1,4 +1,4 @@
-import { FW, FH, OX, OY } from '../config.js';
+import { FW, FH, OX, OY, PX } from '../config.js';
 import { g } from '../screen.js';
 import { RC } from '../config.js';
 import { rig } from '../rig/rig.js';
@@ -10,10 +10,10 @@ import { eyeDark } from './enemy-body.js';
 import { spriteTo, solid } from './sprite.js';
 
 // ---- Drawing the samurai: built like him, bare-headed with a topknot, in a darker red-grey, with a red eye ----
-const PAL = { K: '#3a2e31', D: '#5a4a4e', E: '#ff5a4a', e: '#7a2d27', W: '#cfd4d6', S: '#7d868e', s: '#3a3033' };
+const PAL = { K: '#3a2e31', D: '#5a4a4e', E: '#ff5a4a', e: '#7a2d27', W: '#cfd4d6', S: '#7d868e', s: '#3a3033', r: '#4a3b3f', o: '#2e2427', q: '#4e3f43' };
 const PAL_OUT = { ...PAL, E: '#2b2023' };   // the eye gone out
 const cv = document.createElement('canvas'); cv.width = FW; cv.height = FH;
-const cg = cv.getContext('2d'), sheet = { img: cv, fw: FW, fh: FH, n: 1, ox: OX, oy: OY };
+const cg = cv.getContext('2d'), sheet = { img: cv, fw: FW, fh: FH, n: 1, ox: OX, oy: OY, s: PX };
 // off the side (e.view, set as he turns to the ronin), his pose runs through the port and rig v2's body draws it, bare-headed.
 // The dead stay side on: the fall, the thud and the pieces are built side on.
 const YAW = Object.fromEntries(DIRS.map(d => [d.id, d.yaw]));

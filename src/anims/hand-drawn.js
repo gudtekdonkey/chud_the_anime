@@ -1,4 +1,6 @@
-import { OX, OY, RC } from '../config.js';
+import { OX, OY, RC, PX } from '../config.js';
+// one hand-drawn pixel: a PX block, rows counted up from the bottom row at bottom (in screen pixels)
+const cell = (g, x, y, bottom, rowsN) => g.fillRect(x, bottom + (y - rowsN + 1) * PX, PX, PX);
 import { pz } from '../rig/pose.js';
 
 // ---- Hand-drawn frames: the views the side-on rig cannot pose (opened to the camera, sitting with his back to it) ----
@@ -15,11 +17,11 @@ export const INVITE_FRONT = OPEN_FRONT.map((r, y) => { const a = [...r];
   if (y === 12) a[24] = 'D'; return a.join(''); });
 // another weapon's art swaps the katana's pixels (S, W) for its own front view (art.front: [x, y, colour] in these rows)
 export function frontFrame(g, fx, list, i, art) {
-  const b = [0, 0, 0, 1, 1, 1, 1, 0][i % 8], lift = i === 5 || i === 6, top = OY - list.length + 1, prop = art && art.front;
+  const b = [0, 0, 0, 1, 1, 1, 1, 0][i % 8], lift = i === 5 || i === 6, prop = art && art.front;
   list.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === '.' || (prop && (ch === 'S' || ch === 'W'))) return;
     let xx = x; if (lift && (ch === 'M' || ch === 'm') && y >= 11) xx += x < 14 ? -1 : 1;
-    g.fillStyle = RC[ch]; g.fillRect(fx + OX - 14 + xx, top + y + (y < 14 ? b : 0), 1, 1); }));
-  if (prop) for (const [x, y, ch] of prop) { g.fillStyle = RC[ch]; g.fillRect(fx + OX - 14 + x, top + y + (y < 14 ? b : 0), 1, 1); }
+    g.fillStyle = RC[ch]; cell(g, fx + OX + (xx - 14) * PX, y + (y < 14 ? b : 0), OY, list.length); }));
+  if (prop) for (const [x, y, ch] of prop) { g.fillStyle = RC[ch]; cell(g, fx + OX + (x - 14) * PX, y + (y < 14 ? b : 0), OY, list.length); }
 }
 
 // Sitting, back to the camera, cross-legged like a monk. Hand-drawn rows, 20 wide. A frame that returns a pose is left to the rig.
@@ -38,9 +40,9 @@ const STAND_BACK = [
   '.......KKKKKK.......', '......KKKKKKKK......', '......KKK..KKK......', '.......KK..KK.......',
   '.......KK..KK.......', '.......KK..KK.......', '.......KK..KK.......', '......KKK..KKK......'];
 function rows(g, fx, list, bottom, extra = []) {
-  const top = bottom - list.length + 1;
-  list.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = RC[ch]; g.fillRect(fx + OX - 10 + x, top + y, 1, 1); } }));
-  for (const [x, y, ch] of extra) { g.fillStyle = RC[ch]; g.fillRect(fx + OX - 10 + x, top + y, 1, 1); }
+  bottom = OY + (bottom - OY) * PX;   // bottom: OY, or OY - 1 for the seated breath, in the rig's own pixels
+  list.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = RC[ch]; cell(g, fx + OX + (x - 10) * PX, y, bottom, list.length); } }));
+  for (const [x, y, ch] of extra) { g.fillStyle = RC[ch]; cell(g, fx + OX + (x - 10) * PX, y, bottom, list.length); }
 }
 // art.sit: another weapon laid beside him instead of the katana, [x, y, colour] like SWORD_DOWN
 export function sitFrame(g, fx, name, i, art) {

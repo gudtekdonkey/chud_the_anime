@@ -7,7 +7,8 @@ import fs from 'node:fs';
 
 let step = '';
 function fail(msg) { console.error(`\nFAIL${step ? ` at "${step}"` : ''}: ${msg}`); process.exitCode = 1; throw new Error(msg); }
-const OUT = 'test-output';
+// `npm run check:hd` plays the same sequence at 2x (?hd), its screenshots in test-output/hd/
+const HDRUN = !!process.env.CHECK_HD, OUT = HDRUN ? 'test-output/hd' : 'test-output';
 fs.mkdirSync(OUT, { recursive: true });
 
 // the build must be ONE self-contained page (plus the prototypes copied beside it)
@@ -28,7 +29,7 @@ try {
   const proto = await page.request.get(new URL('prototypes/15-counter-stance.html', base).href);
   if (proto.status() !== 200) fail(`prototypes are not served (status ${proto.status()})`);
 
-  await page.goto(new URL('?test', base).href);
+  await page.goto(new URL(HDRUN ? '?test&hd' : '?test', base).href);
   await page.waitForFunction(() => window.__game && window.__game.P);
   // record every state he passes through (and the charged skill's name), once per animation frame
   await page.evaluate(() => { window.__log = [];

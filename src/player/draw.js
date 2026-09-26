@@ -1,4 +1,4 @@
-import { COL, FW, FH, OX, OY } from '../config.js';
+import { COL, FW, FH, OX, OY, PX } from '../config.js';
 import { g } from '../screen.js';
 import { P, S, wear, INV } from '../state.js';
 import { GLITCHY } from '../anims/anims.js';
@@ -38,7 +38,7 @@ function dressed(sheet, f) {
   if (!p) return [sheet, f];
   const cv = dress(R, wear, p, dt, viewYaw());
   if (sheet.glf[f]) sliceGlitch(R.g, 0, sheet.glf[f], glitchSeed(sheet.name, f));
-  return [{ img: cv, fw: FW, fh: FH, ox: OX, oy: OY }, 0];
+  return [{ img: cv, fw: FW, fh: FH, ox: OX, oy: OY, s: PX }, 0];
 }
 // the whetstone's cyan edge: the frame with the blade's white swapped for cyan; a baked sheet's frames are cached,
 // a live dressed frame is recoloured as it is drawn
@@ -51,7 +51,7 @@ function edged(sheet, f, cache) {
     const d = cg.getImageData(0, 0, sheet.fw, sheet.fh);
     for (let i = 0; i < d.data.length; i += 4) if (d.data[i] === BLADE_RGB[0] && d.data[i + 1] === BLADE_RGB[1] && d.data[i + 2] === BLADE_RGB[2]) [d.data[i], d.data[i + 1], d.data[i + 2]] = EDGE_RGB;
     cg.putImageData(d, 0, 0); if (m) m.set(f, c); }
-  return { img: c, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy };
+  return { img: c, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy, s: sheet.s };
 }
 export function drawPlayer() {
   if (P.hidden) return;   // inside the static bomb's burst
@@ -85,7 +85,7 @@ export function drawPlayer() {
   const sl = document.createElement('canvas'); sl.width = sheet.fw; sl.height = sheet.fh;
   const sg = sl.getContext('2d'); let y = 0;
   while (y < sheet.fh) { const h = 1 + (Math.random() * 3 | 0), off = Math.random() < .35 ? Math.round((Math.random() - .5) * 8) : 0; sg.drawImage(buf, 0, y, sheet.fw, h, off, y, sheet.fw, h); y += h; }
-  spriteTo(g, { img: sl, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy }, 0, P.x, P.y - P.z, P.face);
+  spriteTo(g, { img: sl, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy, s: sheet.s }, 0, P.x, P.y - P.z, P.face);
 }
 // a mirror image: a pale 1px rim, then his frame tinted cyan and sliced into rows that jump sideways (glitchy edges)
 const mcv = document.createElement('canvas'), mg = mcv.getContext('2d');
@@ -100,5 +100,5 @@ export function drawMirror(m) {
   bg2.globalAlpha = 1; bg2.globalCompositeOperation = 'source-over';
   mcv.width = sh.fw; mcv.height = sh.fh; let y = 0;
   while (y < sh.fh) { const h = 1 + (Math.random() * 3 | 0), off = EL.cur.glitch && Math.random() < .25 * m.glitch ? Math.round((Math.random() - .5) * 4 * m.glitch) : 0; mg.drawImage(buf, 0, y, sh.fw, h, off, y, sh.fw, h); y += h; }
-  spriteTo(g, { img: mcv, fw: sh.fw, fh: sh.fh, ox: sh.ox, oy: sh.oy }, 0, m.x, m.y, m.face, a);
+  spriteTo(g, { img: mcv, fw: sh.fw, fh: sh.fh, ox: sh.ox, oy: sh.oy, s: sh.s }, 0, m.x, m.y, m.face, a);
 }

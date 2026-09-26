@@ -10,6 +10,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `npm run build` | Builds ONE self-contained `dist/index.html` (vite-plugin-singlefile) and copies `prototypes/` to `dist/prototypes/`. Upload that file to itch.io as HTML5 |
 | `npm run preview` | Serves `dist/` |
 | `npm run check` | Builds, then `scripts/check.mjs` plays a key sequence in Chromium and asserts the states and no page errors. Screenshots and the state log go to `test-output/` |
+| `npm run check:hd` | The same check at 2× (`?hd`), screenshots in `test-output/hd/` |
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
@@ -20,7 +21,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | File | Owns |
 |---|---|
 | `main.js` | Boot, the fixed 60 Hz update loop under `requestAnimationFrame`, the debug hook |
-| `config.js` | `W`/`H`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY` (96×64; the rig draws in its old 48×48 box, `RX`/`RY`, shifted by whole pixels), `SQ` (floor squash) |
+| `config.js` | `W`/`H`, `PX` (screen pixels per world pixel: 2 with `?hd`, the owner's 2× ronin; else 1) and `snap`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY` (96×64 × `PX`; the rig draws in its old 48×48 box, `RX`/`RY`, scaled by `PX` and shifted by whole pixels), `SQ` (floor squash) |
 | `state.js` | ALL shared mutable state: the player `P`, what he wears (`wear`), `S` (`shake`, `hitstop`, `scr` screen flash, `roomClear`, `banner`, `smoke`: while the static bomb's smoke is up every enemy counts as isolated, `powerTest`: the page's power picker), the inventory `INV` (the HUD reads only this), `parts`, `pops` and every effect list |
 | `screen.js` | The `#game` canvas, its 2D context `g`, the `#hud` line |
 | `input.js` | Keyboard map, touch pad, `held`/`taps`, `readInput()`, the room-clear checkbox |
@@ -115,6 +116,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `ui/party-hud.js` | The party panel under the skill bar, and the E / K prompts over the world |
 | `styles.css` / `index.html` | The page; `index.html` holds markup only |
 
+- 2× (`?hd`): the canvas is 960×540 and `render()` draws the world in 480×270 units; a figure's canvas carries `PX` pixels per unit (a sheet's `s`), and rig widths are in rig pixels (`.5` is one screen pixel at 2×). Detail that only 2× can show goes behind `HD` (`rig/rig.js`) or `k.hd` in a weapon's art, so `PX` 1 draws exactly as before.
 - Shared state lives in `state.js` and is imported, never copied. A value other modules reassign goes on `S`, because an imported `let` cannot be reassigned.
 - Keep files focused and under about 400 lines. Keep the compact style and the short WHY comments.
 - A weapon changes poses and art only: its frames match the katana's count for every move, so timing, hit beats and effects stay shared. Reach and weight (hit pause, shake) are per weapon, 1 for the katana. A new move needs a pose per weapon (or the weapon's `adapt` covers it).

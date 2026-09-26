@@ -4,6 +4,7 @@ import { BY_ID, drawPart } from './items.js';
 import { fromSide, solve } from './skeleton.js';
 import { drawBody3d } from '../rig/body3d.js';
 import { port } from '../rig/port.js';
+import { HD } from '../rig/rig.js';
 
 // ---- Dressing a figure: the rig's pose and everything it wears, into one depth raster ----
 // a figure: the item ids it wears, the cloth state of each loose part, its clock and its velocity (px/s, in its own facing)
@@ -13,7 +14,7 @@ export const makeFigure = (items = ['straw', 'mantle']) => ({ outfit: new Set(it
 // facing runs the pose through port() and draws rig v2's body (body3d.js). The clothes hang from the same bones either way.
 export function dress(R, F, p, dt = 0, yaw = 0) {
   R.clear(); let J;
-  if (!yaw) { const { hc } = rigR(R, p); J = solve(fromSide(p), 0, true); J.hc = hc; }
+  if (!yaw) { const { hc, hcR } = rigR(R, p); J = solve(fromSide(p), 0, true); J.hc = hc; J.hcR = hcR; }
   else { J = solve(port(p), yaw);
     drawBody3d(R, J, { blink: p.dim > .5, hat: [...F.outfit].some(id => BY_ID[id] && BY_ID[id].slot === 'head'), art: p.wp && p.wp.d3 }); }
   const live = new Set();
@@ -30,6 +31,7 @@ export function dress(R, F, p, dt = 0, yaw = 0) {
       drawCloth(R, C, part, J);
     }); }
   for (const k of F.cloth.keys()) if (!live.has(k)) F.cloth.delete(k);   // taken off: its cloth starts fresh next time
+  if (HD) R.rim();
   return R.flush();
 }
 // he turned round: the side view mirrors him, so mirror his cloth too and it swings across to the new side instead of snapping
