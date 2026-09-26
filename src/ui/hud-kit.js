@@ -7,9 +7,10 @@ const clamp01 = k => Math.min(1, Math.max(0, k));
 export function panel(x, y, w, h) { g.fillStyle = 'rgba(12,13,17,.82)'; g.fillRect(x, y, w, h); g.fillStyle = '#2c323b';
   g.fillRect(x, y, w, 1); g.fillRect(x, y + h - 1, w, 1); g.fillRect(x, y, 1, h); g.fillRect(x + w - 1, y, 1, h); }
 // the fill edge is a 1px white line; notches split it (Qi in thirds)
-export function meter(x, y, w, h, k, col, notches, flash) {
+export function meter(x, y, w, h, k, col, notches, flash, chip, chipCol) {
   g.fillStyle = '#0c0d11'; g.fillRect(x - 1, y - 1, w + 2, h + 2); g.fillStyle = '#23272d'; g.fillRect(x, y, w, h);
-  const f = Math.round(w * clamp01(k)); g.fillStyle = flash ? WH : col; g.fillRect(x, y, f, h);
+  const f = Math.round(w * clamp01(k));
+  if (chip > k) { g.fillStyle = chipCol; g.fillRect(x + f, y, Math.round(w * clamp01(chip)) - f, h); }   // what was just lost, lingering g.fillStyle = flash ? WH : col; g.fillRect(x, y, f, h);
   if (f > 0 && f < w) { g.fillStyle = WH; g.fillRect(x + f - 1, y, 1, h); }
   g.fillStyle = '#0c0d11'; for (let i = 1; i < notches; i++) g.fillRect(x + Math.round(w * i / notches), y, 1, h); }
 // kind: weapon | quick | charm | skill. o: flash (white on change), cd (a shade that drains upward, 1 = full), dim (35% icon), key, count, frame

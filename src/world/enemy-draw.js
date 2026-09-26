@@ -44,10 +44,14 @@ export function drawEnemy(e) {
   // the floor reflection, as his
   g.save(); g.globalAlpha = .17 * e.alpha; g.translate(0, 2 * e.y + 1); g.scale(1, -1); spriteTo(g, sheet, 0, x, e.y, fl); g.restore();
   spriteTo(g, e.flash > 0 ? solid(sheet, 0, '#ffffff') : sheet, 0, x, e.y, fl, e.alpha);
-  // health: a thin bar over his head, only once he is hurt
-  if (e.alive && e.hp < e.maxHp) { const w = 12, bx = Math.round(e.x - w / 2), by = Math.round(e.y - 33);
+  // health: a thin bar over his head, only once he is hurt. What a blow took lingers pale, then drains (the chip);
+  // after the killing blow the bar stays until its chip has run out
+  const ch = e.chip.v;
+  if ((e.alive && e.hp < e.maxHp) || (!e.alive && e.state === 'dead' && ch > 0)) { const w = 12, bx = Math.round(e.x - w / 2), by = Math.round(e.y - 33);
+    const f = e.alive ? Math.max(1, Math.round(w * e.hp / e.maxHp)) : 0;
     g.fillStyle = '#1a1416'; g.fillRect(bx - 1, by - 1, w + 2, 3);
-    g.fillStyle = '#ff5a4a'; g.fillRect(bx, by, Math.max(1, Math.round(w * e.hp / e.maxHp)), 1); }
+    g.fillStyle = '#ffd2c8'; g.fillRect(bx + f, by, Math.max(0, Math.round(w * ch) - f), 1);
+    g.fillStyle = '#ff5a4a'; g.fillRect(bx, by, f, 1); }
   g.globalAlpha = 1;
 }
 // a dropped sword: blade and hilt, turning as it falls, flat once it lands
