@@ -4,7 +4,7 @@ import { RC } from '../config.js';
 import { S } from '../state.js';
 import { rig, rigR } from '../rig/rig.js';
 import { port } from '../rig/port.js';
-import { turner, turnTo, trueView } from '../rig/turn.js';
+import { turner, turnTo, trueView, sideOn } from '../rig/turn.js';
 import { WEST } from '../wardrobe/dress.js';
 import { drawBody3d } from '../rig/body3d.js';
 import { solve } from '../wardrobe/skeleton.js';
@@ -19,14 +19,14 @@ const cv = document.createElement('canvas'); cv.width = FW; cv.height = FH;
 const cg = cv.getContext('2d'), sheet = { img: cv, fw: FW, fh: FH, n: 1, ox: OX, oy: OY };
 // alive, he faces the ronin in his true facing (e.view, e.face: rig/turn.js), turning through the facings between, the west side
 // as itself: his sword stays in his right hand. Off the side his pose runs through the port and rig v2's body draws it, bare-headed.
-// The dead stay side on, mirrored by e.face: the fall, the thud and the pieces are built side on. Returns the frame and its flip.
+// The dead stay side on: the fall, the thud and the pieces are built side on; facing left, from his true left (the side rig from
+// his left, every pixel where the mirror put it), never mirrored. Returns the frame and its flip.
 const R3 = new Raster(FW, FH, OX, OY, .3, packPal({ ...RC, ...PAL })), R3_OUT = new Raster(FW, FH, OX, OY, .3, packPal({ ...RC, ...PAL_OUT }));
 function frame(e) {
   const now = performance.now() / 1000, dt = S.hitstop > 0 || e.drawT == null ? 0 : Math.min(.05, now - e.drawT); e.drawT = now;
   const p = e.body.out, out = eyeDark(e.body), want = trueView(e.view || 'E', e.face);
   if (!e.turn) e.turn = turner(want);
-  let yaw = 0, fl = e.face;
-  if (e.alive) { yaw = turnTo(e.turn, want, e.face, dt).yaw; fl = 1; } else turnTo(e.turn, e.face < 0 ? 'W' : 'E', e.face, -1);
+  const yaw = e.alive ? turnTo(e.turn, want, e.face, dt).yaw : sideOn(e.turn, e.face)[0], fl = 1;
   if (!yaw) { cg.clearRect(0, 0, FW, FH); rig(cg, 0, p, out ? PAL_OUT : PAL); return [sheet, fl]; }
   const R = out ? R3_OUT : R3; R.clear();
   if (Math.abs(yaw - Math.PI) < 1e-6 && WEST.mode === 'side') { rigR(R, p, true); return [{ ...sheet, img: R.flush(true) }, 1]; }   // the side rig from his left

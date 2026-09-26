@@ -126,13 +126,14 @@ function drawAttack(dt) {
   const t = st.t % (I + C + H + .6);
   let p, side = true, phase;
   if (t < I) { p = idle[Math.floor(t * ANIMS.idle.fps) % idle.length]; side = false; phase = 'idle, facing W'; }
-  else if (t < I + C) { p = cut[Math.min(cut.length - 1, Math.floor((t - I) * ANIMS.slash1.fps))]; phase = 'slash 1, side on (mirrored)'; }
-  else if (t < I + C + H) { p = sheathe[Math.min(sheathe.length - 1, Math.floor((t - I - C) * ANIMS.sheathe.fps))]; phase = 'sheathe, side on (mirrored)'; }
+  else if (t < I + C) { p = cut[Math.min(cut.length - 1, Math.floor((t - I) * ANIMS.slash1.fps))]; phase = 'slash 1, side on'; }
+  else if (t < I + C + H) { p = sheathe[Math.min(sheathe.length - 1, Math.floor((t - I - C) * ANIMS.sheathe.fps))]; phase = 'sheathe, side on'; }
   else { p = idle[0]; side = false; phase = 'idle, facing W'; }
   atk.forEach((A, i) => {
     const g = canvasFor($('atk' + i), 70 * 4, 58 * 4); floor(g, g.canvas.width, g.canvas.height);
     A.F = A.F || makeFigure(outfit());
-    const [cv, fl] = side ? [dress(RH, A.F, p, dt, 0, -1), -1] : hero(A.F, p, dt, 'W', A.mode);
+    // the game: facing west every move is his true left (the side rig from his left); before, and with rig v2 at 180°, a cut is the mirror
+    const [cv, fl] = side && A.mode !== 'side' ? [dress(RH, A.F, p, dt, 0, -1), -1] : hero(A.F, p, dt, 'W', A.mode);
     shadow(g, 35 * 4, 52 * 4, 4); put(g, cv, 35 * 4, 52 * 4, 4, fl);
   });
   $('atkphase').textContent = phase;

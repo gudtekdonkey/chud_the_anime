@@ -17,10 +17,16 @@ export const NEAR_ARM_Z = Z.nearArm;
 // from his left, the sword hand on the hilt: its forearm comes round the front of the belly, over the body (the skeleton's sleeves follow)
 export const onHilt = p => p.sword == null && Math.abs(p.fa[0] - HILT[0]) + Math.abs(p.fa[1] - HILT[1]) < .12, HILT_FORE_Z = Z.nearLeg + .2;
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
-// pal swaps the colours (the samurai's red-grey); p.bare drops the hat and mantle for a bare head and topknot
-export function rig(g, fx, p, pal = RC) {
+// pal swaps the colours (the samurai's red-grey); p.bare drops the hat and mantle for a bare head and topknot.
+// left: his true left side, near and far swapped, for a figure that will be drawn facing left (the caller still mirrors it);
+// the depths decide the paint order then, so the pixels are gathered and painted farthest first
+export function rig(g, fx, p, pal = RC, left = false) {
   // pixels past the frame's edge are dropped, so a long weapon never bleeds into the next frame of the sheet
-  return draw((x, y, z, c) => { if (x < 0 || x >= FW || y < 0 || y >= FH) return; g.fillStyle = pal[c]; g.fillRect(fx + x, y, 1, 1); }, p, true);
+  const paint = (x, y, c) => { if (x < 0 || x >= FW || y < 0 || y >= FH) return; g.fillStyle = pal[c]; g.fillRect(fx + x, y, 1, 1); };
+  if (!left) return draw((x, y, z, c) => paint(x, y, c), p, true);
+  const px = [], hc = draw((x, y, z, c) => px.push([x, y, z, c]), p, true, true);
+  px.map((q, i) => [q, i]).sort((a, b) => a[0][2] - b[0][2] || a[1] - b[1]).forEach(([q]) => paint(q[0], q[1], q[3]));
+  return hc;
 }
 // returns the head's centre, so the hat, hair and masks sit on exactly the pixels the head does.
 // left: his true left side, still facing right (dress.js mirrors it after): the same pixels with his left arm and leg the

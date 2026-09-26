@@ -8,6 +8,7 @@ import { residue } from '../fx/util.js';
 import { PAIRED, fits, ROSTER } from './kit.js';
 import { standing, busy, say } from './companions.js';
 import { frames, poseOf, lenOf, paint, place, faceTo, white } from './figures.js';
+import { sideOn } from '../rig/turn.js';
 
 // ---- Paired executions, on the odd occasion (owner): K with a companion nearby who is set up for it (meets the execution's needs) ----
 // The crossing cut: he glitches to the near side, the partner closes on the far side, both pass through him, hold, and resheathe
@@ -68,8 +69,8 @@ function end() {
 const heroPose = () => poseOf(frames(HERO, X.anim), X.ht);
 // the hero while it runs (the state machine does not draw him in 'exec'), the ghosts, and the crossing cut's two white lines
 export function pairedDrawables() {
-  const out = ghosts.map(gh => ({ y: gh.y - .1, d: () => gh.F && place(g, white(paint(gh.F, gh.pose, 0, gh.hero ? 'hero' : 'ally', 0, gh.face)), gh.x, gh.y, gh.face, { alpha: gh.alpha * (1 - gh.t / .3) }) }));
-  if (X) out.push({ y: P.y, d: () => place(g, paint(wear, heroPose(), S.hitstop > 0 ? 0 : 1 / 60, 'hero', 0, P.face), P.x, P.y, P.face) });
+  const out = ghosts.map(gh => ({ y: gh.y - .1, d: () => gh.F && place(g, white(paint(gh.F, gh.pose, 0, gh.hero ? 'hero' : 'ally', ...sideOn(null, gh.face))), gh.x, gh.y, 1, { alpha: gh.alpha * (1 - gh.t / .3) }) }));
+  if (X) out.push({ y: P.y, d: () => place(g, paint(wear, heroPose(), S.hitstop > 0 ? 0 : 1 / 60, 'hero', ...sideOn(null, P.face)), P.x, P.y, 1) });
   return out;
 }
 export function drawPairLines() {

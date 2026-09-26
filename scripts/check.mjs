@@ -90,11 +90,11 @@ try {
     for (let i = 1; i < seq.length; i++) { const a = ORDER.indexOf(seq[i - 1]), b = ORDER.indexOf(seq[i]), d = (b - a + 8) % 8;
       if (a < 0 || b < 0 || (d !== 1 && d !== 7)) fail(`the turn jumped from ${seq[i - 1]} to ${seq[i]} (${seq.join(' ')})`); }
     if (!seq.includes('S')) fail(`W to E did not turn by the camera: ${seq.join(' ')}`);
-    // a cut facing west stays side on: the side rig mirrored (owner: "Same side attack is fine")
+    // a cut facing west stays side on, but from his true left, never mirrored (owner: "don't mirror", the scabbard at his left hip)
     await kb.down('a'); await reach(/^run$/); await kb.up('a'); await reach(/^idle$/);
     await kb.press('j'); await reach(/^slash1$/);
     const c = await page.evaluate(() => ({ ...window.__game.PF }));
-    if (c.flip !== -1 || c.yaw !== 0) fail(`a cut facing west is drawn ${c.id}, flip ${c.flip}, not side on`);
+    if (c.id !== 'W' || c.flip !== 1 || Math.abs(c.yaw - Math.PI) > 1e-6) fail(`a cut facing west is drawn ${c.id}, yaw ${c.yaw}, flip ${c.flip}: mirrored, not his true left`);
     await shot('01a-true-W-cut'); await reach(/^idle$/, 10000);   // calm: he resheathes and stands
     // the samurai in guard come round to their true facing too: facing left, a west facing (a beat later, turning through the ones between)
     await sleep(700);

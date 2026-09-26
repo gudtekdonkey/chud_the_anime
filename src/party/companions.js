@@ -3,7 +3,7 @@ import { POSES } from '../anims/poses.js';
 import { pz } from '../rig/pose.js';
 import { g } from '../screen.js';
 import { living, damage, onKill, DMG, viewTo } from '../world/enemies.js';
-import { turner, turnTo, trueView } from '../rig/turn.js';
+import { turner, turnTo, trueView, sideOn } from '../rig/turn.js';
 import { collide } from '../world/room.js';
 import { qiAdd, QI_GAIN } from '../player/qi.js';
 import { WEAPONS } from '../weapons/weapons.js';
@@ -192,14 +192,14 @@ export function poseFor(a) {
   return poseOf(clip(a, a.anim), a.t);
 }
 // idle, walk and run turn with them through the eight true facings (rig/turn.js), the west side as itself;
-// cutting, the guard stance, the sheathe, down and dying stay side on, mirrored by face, as his do
+// cutting, the guard stance, the sheathe, down and dying stay side on, as his do: facing left, from their true left, never mirrored
 const TURNS = new Set(['idle', 'walk', 'run', 'runArmed']);
 export function drawAlly(a, dt = 1 / 60) {
   const alpha = a.state === 'dying' ? Math.max(0, 1 - Math.max(0, a.st - 2.8) / .6) : 1, d = S.hitstop > 0 ? 0 : dt;
   if (!a.turn) a.turn = turner(trueView(a.view, a.face));
-  let yaw = 0, fl = a.face;
-  if (a.state === 'up' && TURNS.has(a.anim)) { yaw = turnTo(a.turn, trueView(a.view, a.face), a.face, d).yaw; fl = 1; }
-  else turnTo(a.turn, a.face < 0 ? 'W' : 'E', a.face, -1);
+  let yaw, fl = 1;
+  if (a.state === 'up' && TURNS.has(a.anim)) yaw = turnTo(a.turn, trueView(a.view, a.face), a.face, d).yaw;
+  else [yaw, fl] = sideOn(a.turn, a.face);
   place(g, paint(a.F, poseFor(a), d, 'ally', yaw, fl), a.x, a.y, fl, { flash: a.flash > 0, alpha });
 }
 export const partyDrawables = skip => allies.filter(a => a !== skip).map(a => ({ y: a.y, d: () => drawAlly(a) }));

@@ -79,12 +79,12 @@
   </section>
 
   <section class="sec">
-    <h2>Attacks stay side on</h2>
-    <p>Your call: "Same side attack is fine". Facing west, a cut is still the side-on cut mirrored, so going from idle into a cut, the scabbard changes hip. With the side rig from his left it is the same silhouette with the near and far sides swapped; with rig v2 the change is bigger (a different drawing). Now: <span class="phase" id="atkphase"></span></p>
+    <h2>Attacks facing west: his true left too</h2>
+    <p>Attacks stay side on ("Same side attack is fine"), but nothing is mirrored any more ("don't mirror"): facing west a cut is drawn from his true left, so the scabbard stays at his left hip from idle, through the cut, to the sheathe. Every pixel is where the mirror put it, so hits and effects do not move; only the near and far sides are true. The executions, the samurai (the dead too), the companions and the mirror images do the same. Left: before, the mirror. Now: <span class="phase" id="atkphase"></span></p>
     <div class="atk">
       <div class="stage"><canvas id="atk0"></canvas><div class="cap">Before (mirror throughout)</div></div>
-      <div class="stage"><canvas id="atk1"></canvas><div class="cap">Idle in the side rig from his left (in the game)</div></div>
-      <div class="stage"><canvas id="atk2"></canvas><div class="cap">Idle in rig v2 at 180°</div></div>
+      <div class="stage"><canvas id="atk1"></canvas><div class="cap">True left throughout (in the game)</div></div>
+      <div class="stage"><canvas id="atk2"></canvas><div class="cap">Rig v2 at 180° idle, the cut mirrored (not used)</div></div>
     </div>
   </section>
 
@@ -99,7 +99,7 @@
     <h2>Decided and open</h2>
     <ul>
       <li><b>How to draw W: decided.</b> Your pick, the side rig seen from his left: W keeps his exact E pixels (the scabbard and the near arm swapped), it sits between SW and NW the way E sits between SE and NE, and a cut facing west changes only which side is near. Rig v2 at 180° stays on this page for comparison.</li>
-      <li><b>Attacks facing west</b> are still the mirror, as you asked. Drawing them from his true left too is possible later; it needs every cut ported, not just the walk.</li>
+      <li><b>Attacks facing west: decided.</b> Drawn from his true left, never mirrored, the scabbard at his left hip throughout.</li>
       <li><b>The turn speed</b> (0.03 s a facing) is a first guess.</li>
     </ul>
   </section>

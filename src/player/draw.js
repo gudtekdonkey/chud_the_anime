@@ -7,7 +7,7 @@ import { Raster } from '../wardrobe/raster.js';
 import { dress, makeFigure } from '../wardrobe/dress.js';
 import { frameOf } from './actions.js';
 import { playerFacing } from './facing.js';
-import { turnTo, trueView } from '../rig/turn.js';
+import { turnTo, trueView, sideOn } from '../rig/turn.js';
 import { glowK } from './body.js';
 import { spriteTo, solid } from '../world/sprite.js';
 import { EL } from '../fx/element.js';
@@ -98,16 +98,16 @@ export function drawPlayer() {
 // a mirror image: a pale 1px rim, then his frame tinted cyan and sliced into rows that jump sideways (glitchy edges)
 const mcv = document.createElement('canvas'), mg = mcv.getContext('2d'), RM = new Raster(FW, FH, OX, OY);
 // dressed live in what he wears, on its own cloth: stepping out of him it turns from his facing to the way it runs (its true
-// facing, player/mirror.js), the dash and the cut side on
+// facing, player/mirror.js), the dash and the cut side on, never mirrored
 function mirrorFrame(m, sh, f) {
   const p = !sh.custom && sh.poses && sh.poses[f]; if (!p) return [sh, f, m.face];
   if (!m.F) { m.F = makeFigure([...wear.outfit]); m.lt = m.t; m.lx = m.x; m.ly = m.y; }
   const dt = Math.min(.05, Math.max(0, m.t - m.lt)), F = m.F;
   if (dt > 0) F.vel = [(m.x - m.lx) / dt, (m.y - m.ly) / dt].map(v => Math.max(-300, Math.min(300, v)));
   Object.assign(m, { lt: m.t, lx: m.x, ly: m.y }); F.t += dt;
-  let yaw = 0, fl = m.face;
-  if (m.st === 'run') { yaw = turnTo(m.T, trueView(m.view, m.face), m.face, dt).yaw; fl = 1; }
-  else turnTo(m.T, m.face < 0 ? 'W' : 'E', m.face, -1);
+  let yaw, fl = 1;
+  if (m.st === 'run') yaw = turnTo(m.T, trueView(m.view, m.face), m.face, dt).yaw;
+  else [yaw, fl] = sideOn(m.T, m.face);   // the dash and the cut side on, facing left from his true left
   return [{ img: dress(RM, F, p, dt, yaw, fl), fw: FW, fh: FH, ox: OX, oy: OY }, 0, fl];
 }
 export function drawMirror(m) {

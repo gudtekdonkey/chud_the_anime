@@ -6,6 +6,9 @@ import { DIRS } from './port.js';
 export const YAW = Object.fromEntries(DIRS.map(d => [d.id, d.yaw]));
 const WEST = { E: 'W', SE: 'SW', NE: 'NW' }, IX = Object.fromEntries(DIRS.map((d, i) => [d.id, i]));
 export const trueView = (view, face) => face < 0 ? WEST[view] || view : view;
+// side on (attacks, skills, stances, the dead): E, or facing left W, his true left drawn by the side rig from his left, every pixel
+// where the mirror put it (owner: "don't mirror"). Returns [yaw, flip] for dress(); set the turner to it, no turn.
+export function sideOn(T, face) { if (T) turnTo(T, face < 0 ? 'W' : 'E', face, -1); return face < 0 ? [Math.PI, 1] : [0, 1]; }
 // a turn passes through the facings between, one 45° step at a time, so the hilt and scabbard never jump sides.
 // Half a turn (E to W) goes by the camera, the way a body turns toward the one watching; S to N goes by the side it faces.
 const STEP = .03;   // seconds a facing shows on the way round: 180° in about a tenth of a second
