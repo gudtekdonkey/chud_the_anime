@@ -29,6 +29,7 @@ export const ANIMS = {
   sitDown:  { n: 4,  fps: 8,  loop: false, about: 'Replaces wall sit: he turns his back to the camera and lowers himself to the floor.' },
   standUp:  { n: 4,  fps: 12, loop: false, about: 'Getting up from the monk sit: he rises, stands with his back to you, then turns. Plays before anything he does from sitting.' },
   sit:      { n: 8,  fps: 3,  loop: true,  about: 'Sitting cross-legged like a monk, back to the camera, katana laid beside him, breathing slowly. Any move gets him up.' },
+  exec:     { n: 1,  fps: 1,  loop: false, about: 'K assassination. Every enemy carries an isolation bubble (36 px): an empty one glows cyan, overlapping ones go grey and are joined by a link line. A kill line runs to the nearest enemy within K\'s reach (120 px), and a K keycap pops up over him only when he is also outside every other enemy\'s bubble. Press K then and he sets, breaks into slices and lands beside him in one of the seven approved executions (never the same twice running): behind the back, through and past, rising launch, whirlwind, far behind, peek-a-boo, and peek-a-boo from behind. The enemy is cut into real pieces of his own pixels. He always ends sheathed, and the kill makes K ready again 0.2 s later.' },
   death:    { n: 10, fps: 10, loop: false, about: 'Recoils, drops to a knee, falls forward and glitches apart. He comes back a second later.' },
 };
 export const GLITCHY = new Set(['idleGlitch', 'tele', 'double']);

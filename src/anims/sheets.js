@@ -31,7 +31,7 @@ function placeholderSheet(name) {
   for (let i = 0; i < n; i++) {
     if (name === 'sit' || name === 'sitDown' || name === 'standUp') { sitFrame(g, i * FW, name, i); continue; }
     if (name === 'ready4' || name === 'ready5') { frontFrame(g, i * FW, name === 'ready4' ? OPEN_FRONT : INVITE_FRONT, i); continue; }
-    const p = POSES[name][i % POSES[name].length];
+    const ps = POSES[name], p = ps && ps[i % ps.length];   // exec has no sheet: its stage draws him live
     if (p) rig(g, i * FW, p);
     const gl = GLF[name] && GLF[name][i];
     if (gl) sliceGlitch(g, i * FW, gl, i + name.length * 7);

@@ -84,6 +84,7 @@ Decisions made in the design sessions so far, newest last.
      - **Lock-on brackets** are reserved for big items you can pick up.
    - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, in a darker red-grey.
    - Executions are short and brutal, show only the key frames (each one leaning into the motion), and cut the enemy into real pieces.
+   - **In the game** (`src/assassin/`): the markers, the seven approved batch 1 executions and the 0.2 s K reset. Claude's guesses, open to tuning: K reaches 120 px; the bubbles are drawn at half the isolation distance so two overlap exactly when the enemies guard each other; the prototype's 0.75 s lock-on beat before he flashes is cut to 0.2 s; the execution is picked at random, never the same twice running. Decapitation (the eighth in prototype 14) is not in the approved list, so it is left out.
 3. **Clothing** (`prototypes/19-rig-v2-and-clothing.html`, loved: "great job on the clothing system", "let's do more"):
    - **All fifteen items stay**, and **the slots are good as they are**. More items to come.
    - **Lamellar and samurai armour may be coloured, but only faintly** (muted, low-saturation tints over the blacks). Cloth stays shades of black, never bright red.
