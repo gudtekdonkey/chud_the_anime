@@ -13,7 +13,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
-- The check reads the player and the enemies through `window.__game = { P, E, wear }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
+- The check reads the player and the enemies through `window.__game = { P, E, wear, INV, K }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
 
 ## Module map (`src/`)
 

@@ -115,6 +115,16 @@ try {
     const cd = await page.evaluate(() => ({ t: window.__game.P.cd.tele, max: window.__game.P.cdMax.tele }));
     if (!(cd.max <= .2 + 1e-9)) fail(`K was not reset to 0.2 s after the kill (${JSON.stringify(cd)})`);
     await until('K ready again', () => !(window.__game.P.cd.tele > 0), undefined, 1000); await sleep(500); await shot('11-after'); });
+  await run('K during an execution lines up the next: the last cut chains straight into it', async () => {
+    await until('a lone samurai in reach', () => !!window.__game.K.pick && !(window.__game.P.cd.tele > 0), undefined, 6000);
+    await kb.press('k'); await reach(/^exec$/); await page.evaluate(() => { window.__st = window.__game.P.exec; });
+    await sleep(250); await kb.press('k');
+    await until('K lined up during the execution', () => window.__st.queued, undefined, 1000);
+    await until('the first execution to let him go', () => window.__st.freed, undefined, 4000);
+    const c = await page.evaluate(() => ({ next: !!window.__st.next, s: window.__game.P.state, same: window.__game.P.exec === window.__st, name: window.__st.ex.name }));
+    if (c.next && (c.s !== 'exec' || c.same)) fail(`a lone samurai was in reach after "${c.name}" but K did not chain into him (${JSON.stringify(c)})`);
+    console.log(`  (after "${c.name}": ${c.next ? 'chained into the next execution' : 'nobody lone in reach, so no chain'})`);
+    await reach(/^(idle|ready\d)$/, 8000); });
   await run('Shift: ground slide', async () => { await kb.press('Shift'); await reach(/^slide$/); await reach(FREE); });
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
   await run('K: glitch teleport, then its cooldown refuses a second press', async () => {

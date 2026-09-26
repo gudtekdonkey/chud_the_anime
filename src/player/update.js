@@ -32,6 +32,7 @@ export function update(dt, inp) {
   P.hide = Math.max(0, (P.hide || 0) - dt); if (!(P.hide > 0)) P.goo = Math.max(0, (P.goo || 0) - dt);
   S.shake = Math.max(0, S.shake - dt); S.impact = Math.max(0, S.impact - 1); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
   updateCds(dt); updateFlow(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
+  if (P.state === 'exec' && inp.tele && P.exec) P.exec.queued = true;   // K during an execution lines up the next, hit pauses included
   updateFx(dt); updateEnemies(dt, S.hitstop > 0); updateStages(dt); updateMarkers();
   if (S.hitstop > 0) { S.hitstop -= dt; return; }
   updateCuts(dt); updateMirrors(dt); tickStages(dt);

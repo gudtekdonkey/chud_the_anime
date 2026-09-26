@@ -11,7 +11,7 @@ import { EXECS } from './executions.js';
 import { withShadow, drawPieces } from './pieces.js';
 import { SETTLE, stageBody, stepStageBody, updateStagePieces } from './stage-body.js';
 import { F, FX, updateStageFx, drawStageFloor, drawStageTop } from './stage-fx.js';
-import { K_RANGE } from './markers.js';
+import { K, K_RANGE, updateMarkers } from './markers.js';
 import { ISOLATION, targets, hold, faceOf, roomFade } from './targets.js';
 
 // ---- K on an isolated enemy: he flashes to him and plays an execution ----
@@ -74,7 +74,8 @@ export function tickStages(dt) {
       ex.run(St, c, R, E);
       if (E.flashT) St.flashUntil = c + E.flashT;
       if (c < .05 && !ex.stay) R.glitch = (.05 - c) * 24;
-      if (!St.freed && c >= (St.armed && St.t0 != null ? St.t0 + INTO_GUARD : ex.free)) free(St);
+      // K pressed during the execution: the next one starts on the last cut, with no stance between
+      if (!St.freed && c >= (St.armed && St.t0 != null ? St.t0 + (St.queued ? 0 : INTO_GUARD) : ex.free)) free(St);
     }
     stepStageBody(St, dt);
     }
@@ -90,6 +91,8 @@ function free(St) {
   St.freed = true; const R = St.R;
   [P.x, P.y] = St.landed = collide(St.ox + St.m * (R.x - St.ox), R.y); P.face = St.m * R.face;
   P.inv = false; P.exec = null;
+  // a queued K chains straight into the next lone enemy in reach, from where this one left him
+  if (St.queued) { updateMarkers(); St.next = K.pick; if (K.pick) { P.armed = true; onAssassination(); return assassinate(K.pick); } }
   if (St.armed) { setState(St.stance); P.armed = true; P.still = 0; }   // blade out; ~2 s of calm and he sheathes as after any attack
   else { P.armed = false; setState('idle'); if (!St.ex.bare) sheathClick(); }
   onAssassination();
