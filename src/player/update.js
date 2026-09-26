@@ -13,6 +13,7 @@ import { motes } from './body.js';
 import { hit, burst } from './hits.js';
 import { meditate, spawnMirror, updateMirrors } from './mirror.js';
 import { TAP, chargeUp, TC, RIFT, release, charged } from './skills.js';
+import { gate, startCd, updateCds } from './cooldowns.js';
 import { DUMMIES } from '../world/dummies.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
@@ -22,6 +23,7 @@ export function update(dt, inp) {
   P.ghosts.forEach(g => { g.age += dt; g.white -= dt; }); P.ghosts = P.ghosts.filter(g => g.age < g.hold + .25);
   for (const d of DUMMIES) { d.flash = Math.max(0, d.flash - dt); d.wob = Math.max(0, d.wob - dt); }
   S.shake = Math.max(0, S.shake - dt); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
+  updateCds(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
   updateFx(dt);
   if (S.hitstop > 0) { S.hitstop -= dt; return; }
   updateCuts(dt); updateMirrors(dt);
@@ -48,13 +50,13 @@ export function update(dt, inp) {
   if (canAttack) {
     if (inp.slash) return setState(P.armed ? 'slash1r' : 'slash1');
     if (inp.jump) { setState('jump'); P.vz = 150; return; }
-    if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); return; }
-    if (inp.tele) { setState('tele'); P.blinkDir = inputDir(inp); return; }
-    if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'double'; return; }
-    if (inp.rift) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'rift'; return; }
+    if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); startCd('slide'); return; }
+    if (inp.tele) { setState('tele'); P.blinkDir = inputDir(inp); startCd('tele'); return; }
+    if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'double'; startCd('double'); return; }
+    if (inp.rift) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'rift'; return; }   // O and P cool down from the release
     if (inp.moon) { setState('moonHold'); P.charge = 0; return; }
-    if (inp.mirror) return meditate();
-    if (inp.sweep) return setState('sweep');
+    if (inp.mirror) { startCd('mirror'); return meditate(); }
+    if (inp.sweep) { startCd('sweep'); return setState('sweep'); }
     if (inp.sit && s !== 'sit' && s !== 'sitDown') return setState('sitDown');
   }
 
@@ -180,7 +182,7 @@ export function update(dt, inp) {
       break;
     }
     case 'moonHold': { // O held: he charges in place, blade raised; letting go brings it down
-      if (held.has('moon')) chargeUp(dt, inp); else { const pw = P.charge || 0; setState('moon'); P.pow = pw; }
+      if (held.has('moon')) chargeUp(dt, inp); else { const pw = P.charge || 0; setState('moon'); P.pow = pw; startCd('moon'); }
       break;
     }
     case 'moon': {
@@ -196,11 +198,11 @@ export function update(dt, inp) {
     }
     case 'standUp': {
       if (T >= D) { const q = P.pending || {}; P.pending = null; setState('idle');
-        if (q.slash) setState('slash1'); else if (q.tele) { setState('tele'); P.blinkDir = q.dir; }
-        else if (q.double) { setState('double'); P.blinkDir = q.dir; P.hk = 'double'; } else if (q.sweep) setState('sweep');
+        if (q.slash) setState('slash1'); else if (q.tele) { setState('tele'); P.blinkDir = q.dir; startCd('tele'); }
+        else if (q.double) { setState('double'); P.blinkDir = q.dir; P.hk = 'double'; startCd('double'); } else if (q.sweep) { setState('sweep'); startCd('sweep'); }
         else if (q.rift) { setState('double'); P.blinkDir = q.dir; P.hk = 'rift'; } else if (q.moon) { setState('moonHold'); P.charge = 0; }
-        else if (q.mirror) meditate();
-        else if (q.slide) { setState('slide'); P.slideDir = q.dir; dust(6, q.dir[0]); } else if (q.jump) { setState('jump'); P.vz = 150; } }
+        else if (q.mirror) { meditate(); startCd('mirror'); }
+        else if (q.slide) { setState('slide'); P.slideDir = q.dir; dust(6, q.dir[0]); startCd('slide'); } else if (q.jump) { setState('jump'); P.vz = 150; } }
       break;
     }
     case 'death': {

@@ -56,9 +56,14 @@ try {
     await reach(/^ready\d$/); });
   await run('Shift: ground slide', async () => { await kb.press('Shift'); await reach(/^slide$/); await reach(FREE); });
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
-  await run('K: glitch teleport', async () => { await kb.press('k'); await reach(/^tele$/); await reach(FREE); });
+  await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
+    await kb.press('k'); await reach(/^tele$/); await reach(FREE);
+    await until('K on cooldown', () => window.__game.P.cd.tele > 0);
+    await kb.press('k'); await until('the refused press', () => window.__game.P.cdDeny.tele > 0);
+    if (await state() === 'tele') fail('K teleported again while cooling down'); });
   await run('tap I: glitch double slash', async () => { await kb.press('i'); await reach(/^double$/); await reach(FREE); });
   await run('hold I: Thousand Cuts', async () => {
+    await until('the I cooldown to end', () => !(window.__game.P.cd.double > 0), undefined, 4000);
     await kb.down('i'); await until('the I charge', () => window.__game.P.charge > .5); await shot('03-charge');
     await sleep(300); await kb.up('i'); await cv('Thousand Cuts'); await reach(FREE); });
   await run('hold O: Crescent Moon', async () => {
@@ -67,6 +72,11 @@ try {
   await run('P: Cross Rift', async () => { await kb.press('p'); await cv('Cross Rift'); await sleep(200); await shot('05-rift'); await reach(FREE); });
   await run('N: Mirror Meditation', async () => { await kb.press('n'); await reach(/^meditate$/); await sleep(500); await shot('06-mirrors'); await reach(FREE); });
   await run('U: storm slam', async () => { await kb.press('u'); await reach(/^sweep$/); await reach(FREE, 8000); });
+  await run('skill bar: the skills just used are cooling down, K has recovered', async () => {
+    const cd = await page.evaluate(() => ({ ...window.__game.P.cd }));
+    for (const k of ['moon', 'rift', 'mirror', 'sweep']) if (!(cd[k] > 0)) fail(`${k} is not cooling down (${JSON.stringify(cd)})`);
+    if (cd.tele !== 0) fail(`K is still cooling down (${cd.tele})`);
+    await shot('08-skill-bar'); });
   await run('C: sit, then a key to stand', async () => {
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });

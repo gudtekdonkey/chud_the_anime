@@ -44,7 +44,7 @@ The "Room is clear" box under the game treats the training dummies as props, so 
 
 - `index.html`: the page markup. `src/`: the game as ES modules (`main.js` boots it; `CLAUDE.md` has the full module map).
 - `src/rig/`, `src/anims/`: the posable rig and every animation's poses, baked into sheets at load.
-- `src/player/`: the state machine and the skills. `src/fx/`: the effect systems. `src/world/`: the room, dummies and rendering. `src/ui/`: the Qi meter, the moveset table and the sprite-strip tester.
+- `src/player/`: the state machine and the skills. `src/fx/`: the effect systems. `src/world/`: the room, dummies and rendering. `src/ui/`: the Qi meter, the skill bar, the moveset table and the sprite-strip tester.
 - `prototypes/`: style studies, character rounds, UI ideas and test builds, numbered in the order they were made. Each is a standalone HTML file (`13-charged-i.html`: hold I to charge, keys 1–6 pick one of six variations).
 - `docs/design-notes.md`: decisions made so far and what's next.
 - `scripts/check.mjs`: the smoke test.

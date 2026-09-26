@@ -1,12 +1,9 @@
 import { COL } from '../config.js';
 import { g } from '../screen.js';
 import { P } from '../state.js';
+import { pixText } from './pixfont.js';
 
 // the Qi meter, bottom left: a tiny pixel label, a 48px bar, glowing and crackling when full (the storm)
-const GLYPH = { Q: ['.##.', '#..#', '#..#', '#.##', '.###'], I: ['###', '.#.', '.#.', '.#.', '###'], S: ['###', '#..', '###', '..#', '###'],
-  T: ['###', '.#.', '.#.', '.#.', '.#.'], O: ['###', '#.#', '#.#', '#.#', '###'], R: ['##.', '#.#', '##.', '#.#', '#.#'], M: ['#...#', '##.##', '#.#.#', '#...#', '#...#'] };
-function pixText(txt, x, y, col) { g.fillStyle = col; for (const ch of txt) { const gl = GLYPH[ch];
-  gl.forEach((r, j) => [...r].forEach((c, i) => { if (c === '#') g.fillRect(x + i, y + j, 1, 1); })); x += gl[0].length + 1; } }
 export function drawQi() {
   const x = 30, y = 259, w = 48, full = P.storm > 0, blink = Math.floor(performance.now() / 90) % 2, fill = Math.round(w * P.qi);
   g.globalAlpha = .7; g.fillStyle = '#0d1012'; g.fillRect(16, 255, full ? 96 : 66, 11); g.globalAlpha = 1;

@@ -1,7 +1,8 @@
 // ---- Shared mutable state: the player, the camera beats and every effect list ----
 export const P = { x: 200, y: 180, z: 0, vz: 0, vx: 0, vy: 0, face: 1, state: 'idle', t: 0, still: 0, combo: false,
   hitDone: {}, ev: {}, inv: false, ghosts: [], dead: 0, flash: 0, struck: new Set(), charge: null, cv: null, fr: null, trem: 0,
-  qi: 0, qiIdle: 0, storm: 0, aura: 0 };
+  qi: 0, qiIdle: 0, storm: 0, aura: 0,
+  cd: {}, cdMax: {}, cdPop: {}, cdDeny: {} };  // cooldowns: seconds left, the full length, the ready glint, the refused-press blink
 export const parts = [];
 // reassigned from many modules, so they live on one object: screen shake, hit pause, the pale screen flash,
 // and roomClear (page checkbox: treat the training dummies as props, not enemies)
