@@ -1,0 +1,907 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Ronin Engine</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ground: #121416;
+    --panel: #1b1e21;
+    --rule: #30353a;
+    --ink: #eef1f0;
+    --muted: #9aa3a1;
+    --cyan: #6ff3e4;
+  }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 24px; }
+  header { display: grid; gap: 8px; max-width: 66ch; }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h1 span { color: var(--cyan); }
+  h2 { font: 700 20px/1.1 "Pixelify Sans", monospace; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  #game { width: 100%; max-width: 960px; aspect-ratio: 16 / 9; image-rendering: pixelated; display: block; outline: 1px solid var(--rule); cursor: pointer; background: #474c4a; }
+  #game:focus-visible { outline: 2px solid var(--cyan); }
+  .hud { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 500 14px/1.3 "Pixelify Sans", monospace; color: var(--muted); }
+  .hud b { color: var(--cyan); font-weight: 500; }
+  .keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 18px; color: var(--muted); font-size: 14px; }
+  kbd { font: 500 13px/1 "Pixelify Sans", monospace; background: var(--panel); border: 1px solid var(--rule); padding: 3px 6px; color: var(--ink); }
+  .pad { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pad button { font: 500 15px/1 "Pixelify Sans", monospace; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); min-width: 48px; height: 44px; padding-inline: 12px; touch-action: none; user-select: none; }
+  .pad .act { border-color: var(--cyan); }
+  @media (pointer: fine) { .pad { display: none; } }
+  section { display: grid; gap: 12px; }
+  .drop { border: 1px dashed var(--rule); background: var(--panel); padding: 18px; display: grid; gap: 14px; }
+  .drop.over { border-color: var(--cyan); }
+  .form { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; }
+  .form label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+  .form select, .form input { font: 15px Figtree, system-ui, sans-serif; background: var(--ground); color: var(--ink); border: 1px solid var(--rule); height: 38px; padding-inline: 8px; min-width: 0; }
+  .form input[type=number] { width: 90px; }
+  .form button { font: 500 15px "Pixelify Sans", monospace; background: var(--cyan); color: #0c1413; border: 0; height: 38px; padding-inline: 16px; cursor: pointer; }
+  .form button:disabled { background: var(--rule); color: var(--muted); cursor: default; }
+  .loaded { color: var(--muted); font-size: 14px; }
+  table { border-collapse: collapse; font-size: 14px; width: 100%; }
+  th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  td:first-child { font-family: "Pixelify Sans", monospace; color: var(--ink); white-space: nowrap; }
+  .tbl { overflow-x: auto; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Ronin engine, <span>rigged build</span></h1>
+    <p>The game engine at 480×270, top-down, now with our own ronin in place of the placeholder: a posable rig drawn pixel by pixel, so every move has real body motion (wind-up, lean, lunge, follow-through). He breathes calmly when idle, keeps the katana sheathed at his hip, draws it only to attack and resheathes after. Hit the training dummy to feel the impact.</p>
+  </header>
+
+  <section>
+    <canvas id="game" width="480" height="270" tabindex="0" aria-label="Game screen. Click, then use the keys listed below."></canvas>
+    <div class="hud" id="hud"></div>
+    <div class="keys">
+      <span><kbd>WASD</kbd> / <kbd>←↑↓→</kbd> move</span>
+      <span><kbd>J</kbd> slash (press twice to combo)</span>
+      <span><kbd>Space</kbd> jump</span>
+      <span><kbd>Shift</kbd> / <kbd>L</kbd> ground slide</span>
+      <span><kbd>K</kbd> glitch teleport</span>
+      <span><kbd>I</kbd> glitch double slash</span>
+      <span><kbd>U</kbd> glitch sweep</span>
+      <span><kbd>C</kbd> sit and rest</span>
+      <span><kbd>X</kbd> die (to test)</span>
+    </div>
+    <div class="pad" aria-label="Touch controls">
+      <button data-k="left" aria-label="Move left">←</button><button data-k="up" aria-label="Move up">↑</button>
+      <button data-k="down" aria-label="Move down">↓</button><button data-k="right" aria-label="Move right">→</button>
+      <button data-k="slash" class="act">Slash</button><button data-k="jump" class="act">Jump</button>
+      <button data-k="slide" class="act">Slide</button><button data-k="tele" class="act">Glitch</button>
+      <button data-k="double" class="act">Double</button><button data-k="sweep" class="act">Sweep</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Test a sprite strip</h2>
+    <div class="drop" id="drop">
+      <p>For testing new art: choose a sprite strip PNG (frames side by side in one row), pick which animation it is, and set the frame width. It replaces that placeholder at once. Nothing leaves your browser.</p>
+      <div class="form">
+        <label for="file">Strip PNG<input type="file" id="file" accept="image/png,image/gif,image/webp"></label>
+        <label for="anim">Animation<select id="anim"></select></label>
+        <label for="fw">Frame width, px<input type="number" id="fw" min="1" step="1"></label>
+        <label for="fps">Frames / sec<input type="number" id="fps" min="1" max="60" step="1" value="12"></label>
+        <label for="footY">Feet from bottom, px<input type="number" id="footY" min="0" step="1" value="0"></label>
+        <button id="apply" disabled>Use this strip</button>
+      </div>
+      <div class="loaded" id="loaded">Using placeholders for every animation.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The moveset</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Animation</th><th>Top-down behaviour</th></tr></thead>
+      <tbody id="moves"></tbody>
+    </table></div>
+  </section>
+</div>
+
+<script>
+const W = 480, H = 270;
+const COL = { body: '#15181c', mid: '#262b31', eye: '#6ff3e4', blade: '#f2f2f2', fx: '#52e8d6', fx2: '#b8fff6' };
+
+// ---- Animations: timing lives here, art comes from a sheet (placeholder or dropped strip) ----
+const ANIMS = {
+  idle:     { n: 16, fps: 6,  loop: true,  about: 'A calm breath, about 2.7 s: the chest and shoulders rise a pixel while the hips stay planted, and the mantle barely stirs. His hands hang free and the katana stays sheathed at his hip.' },
+  idleGlitch:{ n: 8, fps: 14, loop: false, about: 'After 4 s standing still he glitches once, then back to idle.' },
+  run:      { n: 8,  fps: 14, loop: true,  about: 'Leaning into the run with the arms swinging and the katana sheathed at the hip. Faces left or right by the last sideways input.' },
+  slide:    { n: 10, fps: 20, loop: false, about: 'Replaces wall slide: a push-off step, then he drops and glides leaning back, lead leg straight, back leg folded under, back arm raised behind for balance while the hat slips back. Momentum carries him up out of it.' },
+  jump:     { n: 4,  fps: 12, loop: false, about: 'A hop off the floor with the knees tucked. You can steer in the air. His shadow and reflection stay on the ground.' },
+  fall:     { n: 3,  fps: 12, loop: true,  about: 'The way down from a jump, the back arm up.' },
+  land:     { n: 3,  fps: 16, loop: false, about: 'Touchdown: knees soak it up, with a dust puff.' },
+  slash1:   { n: 12, fps: 30, loop: false, about: 'A light-speed quick-draw: a still wind-up and a glint, then he is already 22 px ahead and through the cut. Afterimages show every stage of the motion he went through, with speed lines and a crescent. He holds the follow-through. Press slash again to chain slash 2.' },
+  slash2:   { n: 12, fps: 30, loop: false, about: 'The answer cut: he sinks low, then is instantly past in a rising cut with the blade overhead, trailing afterimages of the rise.' },
+  j1ghost:  { n: 4,  fps: 30, loop: false, hidden: true, about: '' },
+  j2ghost:  { n: 4,  fps: 30, loop: false, hidden: true, about: '' },
+  sheathe:  { n: 6,  fps: 18, loop: false, about: 'After every attack: he flicks the blade, slides it home into the scabbard, it clicks, and his hand lets go of the hilt.' },
+  tele:     { n: 8,  fps: 22, loop: false, about: 'Glitch teleport: he drops into a sprinter\'s crouch and breaks into slices, blinks 56 px, and lands kneeling in a flurry of crackling electricity before rising. For a few seconds afterwards his body glitches at random, as if the jump is still settling. Glitch slivers hang at both ends.' },
+  double:   { n: 16, fps: 24, loop: false, about: 'Glitch double slash: a deep quick-draw crouch, vanish, then a long low lunge cut and a second cut down past his body. He freezes in the final pose, sheathes, and on the click the target bursts.' },
+  sweep:    { n: 24, fps: 20, loop: false, about: 'Storm slam: he kneels slowly and draws, rises out of the kneel with the blade whirling in a cyclone of lightning, leaps, and brings the blade all the way down. The slam cracks the floor, throws out a ring of bolts and shakes the screen.' },
+  sitDown:  { n: 4,  fps: 8,  loop: false, about: 'Replaces wall sit: he turns his back to the camera and lowers himself to the floor.' },
+  standUp:  { n: 4,  fps: 12, loop: false, about: 'Getting up from the monk sit: he rises, stands with his back to you, then turns. Plays before anything he does from sitting.' },
+  sit:      { n: 8,  fps: 3,  loop: true,  about: 'Sitting cross-legged like a monk, back to the camera, katana laid beside him, breathing slowly. Any move gets him up.' },
+  death:    { n: 10, fps: 10, loop: false, about: 'Recoils, drops to a knee, falls forward and glitches apart. He comes back a second later.' },
+};
+const GLITCHY = new Set(['idleGlitch', 'tele', 'double']);
+
+function sliceGlitch(g, fx, s, seed) {
+  let r = seed * 9301 + 49297;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  const d = g.getImageData(fx, 0, FW, FH);
+  const out = g.createImageData(FW, FH);
+  for (let y = 0; y < FH;) {
+    const h = 1 + (rnd() * 3 | 0), off = rnd() < s ? Math.round((rnd() - .5) * 10 * s) : 0;
+    for (let yy = y; yy < Math.min(FH, y + h); yy++) for (let x = 0; x < FW; x++) {
+      const sx = x - off; if (sx < 0 || sx >= FW) continue;
+      const i = (yy * FW + x) * 4, j = (yy * FW + sx) * 4;
+      for (let k = 0; k < 4; k++) out.data[i + k] = d.data[j + k];
+    }
+    y += h;
+  }
+  g.putImageData(out, fx, 0);
+  g.fillStyle = COL.fx;
+  for (let k = 0; k < 3 * s; k++) g.fillRect(fx + 14 + (rnd() * 20 | 0), 14 + (rnd() * 24 | 0), 3 + (rnd() * 8 | 0), 1);
+}
+// ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
+const FW = 48, FH = 48, OX = 24, OY = 40;
+const RC = { K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', H: '#2a2f37', G: '#3b424c', B: '#1a1d24',
+  E: '#6ff3e4', W: '#e9eeee', S: '#7d868e', s: '#2c3037' };
+const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
+// angles in radians: limbs 0 = straight down, + swings forward; knee + folds the shin back; elbow + folds the forearm forward
+const REST = { hx: 0, hy: 0, lean: .04, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
+  sword: null, sheathing: false, hat: 0, flutter: 0 };
+const pz = o => ({ ...REST, ...o });
+const HILT = [.42, 1.0];          // front hand resting on the hilt at the hip
+const lerpP = (a, b, k) => { const o = {}; for (const key in a) {
+  const x = a[key], y = b[key];
+  o[key] = Array.isArray(x) ? x.map((v, i) => v + (y[i] - v) * k) : typeof x === 'number' && typeof y === 'number' ? x + (y - x) * k : k < .5 ? x : y; }
+  return o; };
+
+function rig(g, fx, p) {
+  const put = (x, y, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
+  const blob = (x, y, w, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
+  const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
+    for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
+  const poly = (pts, c) => {
+    const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+    for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++)
+      for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+        let inside = false;
+        for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+          const [xi, yi] = pts[i], [xj, yj] = pts[j];
+          if ((yi > y + .5) !== (yj > y + .5) && x + .5 < (xj - xi) * (y + .5 - yi) / (yj - yi) + xi) inside = !inside;
+        }
+        if (inside) put(x, y, c);
+      }
+  };
+  const hip = [OX + p.hx, OY - 11 + p.hy];
+  const up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
+  // breath lifts the chest, shoulders and head but not the hips, so it reads as breathing, not bobbing
+  const L = (u, v) => { const b = u > 4 ? p.breath * Math.min(1, (u - 4) / 3) : 0;
+    return [hip[0] + up[0] * u + fw[0] * v, hip[1] + up[1] * u + fw[1] * v - b]; };
+  const dir = a => [Math.sin(a), Math.cos(a)];
+  const add = (a, d, k) => [a[0] + d[0] * k, a[1] + d[1] * k];
+  const leg = ([th, kn], c, off) => { const h = L(0, off), k = add(h, dir(th), 5), f = add(k, dir(th - kn), 6);
+    seg(h, k, 2, c); seg(k, f, 2, c); seg(f, [f[0] + 2, f[1]], 1, c); };
+  const arm = ([sh, el], c) => { const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
+    seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
+  const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
+
+  // far side first: scabbard, far arm, far leg
+  seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
+  arm(p.ba, 'D');
+  leg(p.bl, 'D', -.5);
+  // torso, near leg
+  poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
+  for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
+  leg(p.fl, 'K', .5);
+  // head and hat
+  const hc = L(10, .6);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
+  put(hc[0] + 1.5, hc[1], 'E');
+  const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
+  HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x - fx + fx, hy0 + y, ch); }));
+  // mantle over the shoulders, its back tip lifting a hair with the flutter
+  const f = p.flutter;
+  // it drapes flat down the back instead of standing off it, so it no longer reads as a hump
+  poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M');
+  seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
+  if (f > .5) put(...L(2.6, -3.4), 'M');
+  // near arm and the sword
+  const hand = arm(p.fa, 'K');
+  if (p.sword === null && !p.sheathing) {                    // sheathed: hilt pokes forward-up out of the scabbard
+    put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W');
+  } else if (p.sheathing) {                                  // sliding home: blade runs from the hand into the scabbard mouth
+    seg(hand, mouth, 1, 'W'); put(...hand, 'S'); put(...add(hand, [hand[0] - mouth[0], hand[1] - mouth[1]].map(v => v / (Math.hypot(hand[0] - mouth[0], hand[1] - mouth[1]) || 1)), 2), 'K');
+  } else {
+    const d = [Math.cos(p.sword), Math.sin(p.sword)];
+    seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S');
+    seg(add(hand, d, 1), add(hand, d, 13), 1, 'W');
+  }
+}
+
+// ---- Poses, one per frame ----
+const run8 = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);
+  return pz({ lean: .32, hy: Math.round(.5 - .5 * Math.cos(2 * a)), fl: [.95 * s, .3 + 1.1 * Math.max(0, c)], bl: [-.95 * s, .3 + 1.1 * Math.max(0, -c)],
+    fa: [-.7 * s + .3, .9], ba: [.7 * s - .5, .5], flutter: (i % 4) / 2 }); });
+// a calm breath: 16 frames, eased, with long rests at the top and bottom
+const BREATH = [0, 0, 0, .15, .45, .75, .95, 1, 1, 1, .85, .6, .3, .1, 0, 0];
+const FLUT = [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0];
+const idle16 = BREATH.map((b, i) => pz({ breath: b, fa: [.12 + b * .03, .18], ba: [-.08 - b * .03, .12], flutter: FLUT[i] }));
+const LUNGE = pz({ hx: 3, hy: 2, lean: .55, fl: [1.0, .9], bl: [-.95, .1] });
+const POSES = {
+  idle: idle16,
+  idleGlitch: idle16.filter((_, i) => i % 2 === 0),
+  run: run8,
+  // a push-off step, the drop, the long lean-back glide with the back arm up for balance, then momentum carries him up
+  slide: [
+    pz({ hy: 2, lean: .35, fl: [.6, .9], bl: [-.7, .3], fa: [.6, .6], ba: [-.9, .3] }),
+    pz({ hy: 4, lean: -.2, fl: [1.1, .4], bl: [.1, 1.6], fa: [.7, .6], ba: [-1.8, 0], flutter: 1 }),
+    ...[0, 1, 2, 3, 4].map(i => pz({ hy: 5, lean: -.58 + (i % 2) * .03, fl: [1.5, .08], bl: [.38, 2.3], fa: [.75, .75], ba: [-2.45 + (i % 2) * .1, -.2], hat: -1 - (i > 1 ? 1 : 0), flutter: i % 2 })),
+    pz({ hy: 4, lean: -.45, fl: [1.3, .2], bl: [.3, 2.0], fa: [.7, .7], ba: [-2.2, -.1], hat: -1 }),
+    pz({ hy: 2, lean: .2, fl: [.7, .8], bl: [-.3, .9], fa: [.5, .6], ba: [-1.1, .3] }),
+    pz({ hy: 1, lean: .12, fl: [.3, .3], bl: [-.2, .4], ba: [-.4, .2] }),
+  ],
+  jump: [pz({ hy: 3, lean: .3, fl: [.6, 1.0], bl: [-.4, .8] }),
+    ...[0, 1, 2].map(() => pz({ lean: .2, fl: [1.0, 1.7], bl: [.2, 1.9], fa: [.6, .6], ba: [-1.5, .2], flutter: 1 }))],
+  fall: [0, 1, 2].map(i => pz({ lean: .1, fl: [.4, .4 + i * .1], bl: [-.3, .5], fa: [.9, .3], ba: [-2.0, .2], flutter: i % 2 })),
+  land: [pz({ hy: 4, lean: .35, fl: [.8, 1.4], bl: [-.5, 1.0] }), pz({ hy: 2, lean: .2, fl: [.4, .7], bl: [-.3, .5] }), pz({ hy: 1 })],
+  // J: a light-speed quick-draw. A still wind-up, then on frame 3 he is simply already through the cut;
+  // the engine paints the motion he went through as afterimages (the jNghost sheets below)
+  slash1: [
+    pz({ fa: [.3, .7] }),
+    pz({ hy: 1, lean: -.05, fl: [.2, .4], bl: [-.25, .2], fa: HILT }),
+    pz({ hy: 2, lean: -.12, fl: [.3, .6], bl: [-.4, .3], fa: [.3, 1.2], ba: [-.05, .8] }),
+    ...[0, 1, 2, 3, 4, 5].map(i => pz({ hx: 3, hy: 3 - (i > 3 ? 1 : 0), lean: .72 - i * .01, fl: [1.1, 1.0], bl: [-1.05, .1], fa: [1.3, .05], sword: .9, ba: [-1.65, .1], hat: 1, flutter: i < 2 ? 1 : 0 })),
+    pz({ hx: 2, hy: 2, lean: .35, fl: [.6, .6], bl: [-.6, .2], fa: [.9, .5], sword: 1.25, ba: [-.8, .3] }),
+    pz({ hx: 1, hy: 1, lean: .2, fl: [.35, .35], bl: [-.35, .2], fa: [.7, .7], sword: 1.35, ba: [-.5, .3] }),
+    pz({ hx: 1, hy: 1, lean: .15, fl: [.3, .3], bl: [-.3, .2], fa: [.65, .75], sword: 1.4, ba: [-.4, .3] }),
+  ],
+  j1ghost: [
+    pz({ hy: 2, lean: .3, fl: [.5, .7], bl: [-.5, .2], fa: HILT, ba: [-.6, .3] }),
+    pz({ hx: 1, hy: 3, lean: .5, fl: [.8, .8], bl: [-.8, .15], fa: [1.0, .6], sword: -.25, ba: [-1.1, .2] }),
+    pz({ hx: 2, hy: 3, lean: .62, fl: [1.0, .9], bl: [-.95, .1], fa: [1.55, .1], sword: -.05, ba: [-1.45, .1] }),
+    pz({ hx: 3, hy: 3, lean: .7, fl: [1.1, 1.0], bl: [-1.05, .1], fa: [1.8, 0], sword: .35, ba: [-1.6, .1] }),
+  ],
+  slash2: [
+    pz({ hx: 1, hy: 2, lean: .2, fl: [.4, .5], bl: [-.5, .2], fa: [.6, .3], sword: 1.3, ba: [-.6, .3] }),
+    pz({ hx: 1, hy: 3, lean: .35, fl: [.55, .9], bl: [-.6, .35], fa: [.3, .2], sword: 2.0, ba: [-.3, .5] }),
+    pz({ hx: 1, hy: 4, lean: .4, fl: [.6, 1.1], bl: [-.6, .4], fa: [.25, .2], sword: 2.1, ba: [-.25, .5] }),
+    ...[0, 1, 2, 3, 4, 5].map(i => pz({ hx: 3, hy: i > 3 ? 1 : 0, lean: -.26, fl: [.9, .3], bl: [-.8, .15], fa: [2.85, -.1], sword: -1.75, ba: [-1.9, .2], hat: 1, flutter: i < 2 ? 1 : 0 })),
+    pz({ hx: 2, hy: 1, lean: -.05, fl: [.6, .4], bl: [-.5, .2], fa: [2.0, .2], sword: -.6, ba: [-1.2, .3] }),
+    pz({ hx: 2, hy: 2, lean: .12, fl: [.5, .5], bl: [-.45, .2], fa: [1.4, .3], sword: .6, ba: [-.8, .3] }),
+    pz({ hx: 1, hy: 1, lean: .1, fl: [.3, .3], bl: [-.3, .2], fa: [1.1, .4], sword: 1.0, ba: [-.5, .3] }),
+  ],
+  j2ghost: [
+    pz({ hy: 3, lean: .35, fl: [.55, .9], bl: [-.6, .35], fa: [.3, .2], sword: 2.0, ba: [-.3, .5] }),
+    pz({ hx: 1, hy: 2, lean: .12, fl: [.7, .6], bl: [-.7, .25], fa: [1.2, .1], sword: .2, ba: [-1.0, .3] }),
+    pz({ hx: 2, hy: 1, lean: -.1, fl: [.85, .4], bl: [-.75, .2], fa: [2.0, 0], sword: -.8, ba: [-1.5, .2] }),
+    pz({ hx: 3, hy: 0, lean: -.2, fl: [.9, .3], bl: [-.8, .15], fa: [2.6, -.1], sword: -1.4, ba: [-1.8, .2] }),
+  ],
+  // the flick, the slide home, the click, the hand letting go
+  sheathe: [
+    pz({ hy: 1, lean: .12, fa: [1.5, .1], sword: .85, ba: [-.3, .3] }),
+    pz({ hy: 1, lean: .1, fa: [1.15, .45], sheathing: true, ba: [-.25, .3] }),
+    pz({ hy: 1, lean: .08, fa: [.85, .7], sheathing: true, ba: [-.2, .3] }),
+    pz({ lean: .06, fa: [.6, .9], sheathing: true, ba: [-.15, .2] }),
+    pz({ lean: .05, fa: HILT, ba: [-.1, .15] }),
+    pz({ fa: [.25, .5] }),
+  ],
+  tele: [
+    pz({ hy: 2, lean: .4, fl: [.5, .9], bl: [-.5, .3], fa: HILT, ba: [-.9, .2] }),
+    pz({ hy: 3, lean: .58, fl: [.6, 1.1], bl: [-.6, .4], fa: HILT, ba: [-1.2, .2], flutter: 1 }),
+    pz({ hy: 3, lean: .6, fl: [.6, 1.1], bl: [-.6, .4], fa: HILT, ba: [-1.3, .2], flutter: 1 }),
+    pz({ hy: 3, lean: .62, fl: [.6, 1.1], bl: [-.6, .4], fa: HILT, ba: [-1.3, .2] }),
+    pz({ hy: 6, lean: .5, fl: [1.25, 1.95], bl: [-.15, 2.4], fa: HILT, ba: [-.7, .4], flutter: 1 }),
+    pz({ hy: 6, lean: .45, fl: [1.25, 1.95], bl: [-.15, 2.4], fa: HILT, ba: [-.6, .4] }),
+    pz({ hy: 3, lean: .3, fl: [.7, 1.0], bl: [-.2, 1.2], fa: HILT, ba: [-.4, .3] }),
+    pz({ hy: 1, lean: .12, fl: [.2, .3], bl: [-.15, .3], fa: [.3, .6] }),
+  ],
+  double: [
+    pz({ hy: 2, lean: .35, fl: [.5, .9], bl: [-.6, .3], fa: HILT, ba: [-.1, .7] }),
+    pz({ hy: 4, lean: .55, fl: [.8, 1.4], bl: [-.8, .5], fa: HILT, ba: [-.05, .8] }),
+    pz({ hy: 4, lean: .58, fl: [.8, 1.4], bl: [-.8, .5], fa: HILT, ba: [-.05, .8], flutter: 1 }),
+    pz({ hy: 4, lean: .6, fl: [.8, 1.4], bl: [-.8, .5], fa: HILT, ba: [-.05, .8] }),
+    null,
+    pz({ hx: 5, hy: 4, lean: .8, fl: [1.3, 1.2], bl: [-1.2, .1], fa: [1.95, 0], sword: -.45, ba: [-1.6, 0], hat: 1, flutter: 1 }),
+    pz({ hx: 5, hy: 4, lean: .82, fl: [1.3, 1.2], bl: [-1.2, .1], fa: [2.25, 0], sword: -.95, ba: [-1.65, 0], hat: 1, flutter: 1 }),
+    pz({ hx: 5, hy: 3, lean: .5, fl: [1.2, 1.1], bl: [-1.1, .1], fa: [2.75, .2], sword: -1.65, ba: [-1.0, .5], hat: 1 }),
+    pz({ hx: 7, hy: 5, lean: .9, fl: [1.4, 1.5], bl: [-1.3, .1], fa: [1.25, 0], sword: 1.0, ba: [-1.7, 0], hat: 1, flutter: 1 }),
+    ...[0, 1, 2, 3].map(i => pz({ hx: 7, hy: 6, lean: .95, fl: [1.45, 1.7], bl: [-1.35, .1], fa: [.65, .15], sword: 2.45, ba: [-1.85, 0], hat: 1, flutter: i === 0 ? 1 : 0 })),
+    pz({ hx: 6, hy: 4, lean: .6, fl: [1.1, 1.2], bl: [-1.0, .2], fa: [1.3, .3], sword: .75, ba: [-1.2, .2] }),
+    pz({ hx: 4, hy: 2, lean: .35, fl: [.7, .7], bl: [-.6, .2], fa: [.8, .7], sheathing: true, ba: [-.6, .2] }),
+    pz({ hx: 2, hy: 1, lean: .15, fl: [.3, .3], bl: [-.3, .2], fa: HILT, ba: [-.3, .2] }),
+  ],
+  // U: a slow kneel, a rising cyclone with the blade whirling, a leap, then the blade brought all the way down
+  sweep: [
+    ...[0, 1, 2, 3, 4, 5].map(i => { const k = i / 5; return pz({ hy: Math.round(k * 6), lean: .05 + k * .35, fl: [.2 + k * 1.0, .2 + k * 1.75], bl: [-.1 - k * .05, .1 + k * 2.3],
+      fa: i < 2 ? HILT : [.9 - k * .3, .4], sword: i < 2 ? null : 1.45, ba: [-.1, .2 + k * .4] }); }),
+    ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => { const k = i / 7; return pz({ hy: Math.round(6 - k * 8), lean: .3 - k * .45, fl: [1.2 - k * .9, 1.9 - k * 1.7], bl: [-.1 - k * .2, 2.3 - k * 2.1],
+      fa: [1.6 + k * 1.2, .1], sword: -1.2 + i * 2.4, ba: [-1.2 - k * 1.2, .1], hat: i % 2 ? -1 : 0, flutter: i % 2 }); }),
+    pz({ hy: -3, lean: -.2, fl: [.4, .5], bl: [-.3, .6], fa: [3.0, 0], sword: -1.62, ba: [2.9, .1], hat: -1, flutter: 1 }),
+    pz({ hy: -3, lean: -.22, fl: [.4, .5], bl: [-.3, .6], fa: [3.05, 0], sword: -1.62, ba: [2.95, .1], hat: -1 }),
+    pz({ hx: 2, hy: 3, lean: .5, fl: [1.0, 1.0], bl: [-.9, .3], fa: [1.9, 0], sword: -.2, ba: [1.4, .3], flutter: 1 }),
+    ...[0, 1, 2, 3, 4].map(i => pz({ hx: 3, hy: 6, lean: .9, fl: [1.35, 1.6], bl: [-1.2, .15], fa: [.9, .05], sword: 1.35, ba: [.9, .2], hat: 1, flutter: i === 0 ? 1 : 0 })),
+    pz({ hx: 2, hy: 4, lean: .55, fl: [1.0, 1.2], bl: [-.9, .3], fa: [1.1, .3], sword: 1.1, ba: [-.3, .3] }),
+    pz({ hx: 1, hy: 2, lean: .25, fl: [.5, .5], bl: [-.4, .3], fa: [1.2, .4], sword: .8, ba: [-.4, .3] }),
+  ],
+  death: [
+    pz({ hx: -1, lean: -.35, fa: [.9, .5], ba: [-1.2, .2] }),
+    pz({ hx: -2, lean: -.5, fl: [.4, .2], bl: [-.4, .4], fa: [1.1, .5], ba: [-1.5, .2], hat: -1 }),
+    pz({ hx: -3, hy: 1, lean: -.55, fl: [.5, .3], bl: [-.4, .6], fa: [1.0, .5], ba: [-1.5, .2], hat: -1 }),
+    pz({ hx: -2, hy: 4, lean: .3, fl: [1.1, 1.8], bl: [-.1, 2.3], fa: [.3, .2], ba: [-.2, .2] }),
+    pz({ hx: -2, hy: 5, lean: .45, fl: [1.2, 1.9], bl: [-.1, 2.4], fa: [.1, .1], ba: [-.1, .1] }),
+    pz({ hx: -2, hy: 5, lean: .5, fl: [1.2, 1.9], bl: [-.1, 2.4], fa: [.05, .1], ba: [-.05, .1] }),
+    ...[0, 1, 2, 3].map(() => pz({ hx: 2, hy: 9, lean: 1.45, fl: [1.2, 1.0], bl: [1.0, .9], fa: [1.6, .2], ba: [1.3, .2] })),
+  ],
+};
+// which frames get the baked slice glitch, and how hard
+const GLF = { idleGlitch: { 2: .8, 3: 1, 4: .8, 5: .5 }, tele: { 1: .4, 2: 1.1, 3: 1.9, 4: 1.4, 5: .5 }, double: { 2: .8, 3: 1.7 }, death: { 8: 1.2, 9: 2.4 } };
+
+// Sitting, back to the camera, cross-legged like a monk. Hand-drawn rows, 20 wide.
+const SIT_UP = [
+  '.......GGGGGG.......', '....GGHHHHHHHHGG....', '.GGHHHHHHHHHHHHHHGG.', 'GBBBBBBBBBBBBBBBBBBG', '.KBBBBBBBBBBBBBBBBK.',
+  '......KKKKKKKK......', '......KKKKKKKK......', '.......KKKKKK.......',
+  '.....mMMMMMMMMm.....', '....mMMMMMMMMMMm....', '....MMMMMMMMMMMM....', '....MMMMMMMMMMMM....',
+  '.....MMM.MM.MMM.....', '.....KKKKKKKKKK.....', '.....KKKDDDDKKK.....'];
+const SIT_LEGS = ['..KKKKKKKKKKKKKKKK..', '.KKKKDDKKKKDDKKKKKK.', '..KKKKKKKKKKKKKKKK..'];
+const SWORD_DOWN = [[16, 17, 'S'], [17, 17, 'W'], [18, 17, 'W'], [19, 17, 'W']];
+const STAND_BACK = [
+  '.......GGGGGG.......', '....GGHHHHHHHHGG....', '.GGHHHHHHHHHHHHHHGG.', 'GBBBBBBBBBBBBBBBBBBG', '.KBBBBBBBBBBBBBBBBK.',
+  '......KKKKKKKK......', '......KKKKKKKK......', '.......KKKKKK.......',
+  '.....mMMMMMMMMm.....', '....mMMMMMMMMMMm....', '....MMMMMMMMMMMM....', '....MMMMMMMMMMMM....',
+  '.....MMM.MM.MMM.....', '.....K.KKKKKK.K.....', '.....K.KKKKKK.K.....', '.......DDDDDD.......',
+  '.......KKKKKK.......', '......KKKKKKKK......', '......KKK..KKK......', '.......KK..KK.......',
+  '.......KK..KK.......', '.......KK..KK.......', '.......KK..KK.......', '......KKK..KKK......'];
+function rows(g, fx, list, bottom, extra = []) {
+  const top = bottom - list.length + 1;
+  list.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') { g.fillStyle = RC[ch]; g.fillRect(fx + OX - 10 + x, top + y, 1, 1); } }));
+  for (const [x, y, ch] of extra) { g.fillStyle = RC[ch]; g.fillRect(fx + OX - 10 + x, top + y, 1, 1); }
+}
+function sitFrame(g, fx, name, i) {
+  if (name === 'standUp') {
+    if (i === 0) return rows(g, fx, [...SIT_UP, ...SIT_LEGS], OY - 1, SWORD_DOWN);
+    if (i === 1) return rows(g, fx, [...STAND_BACK.slice(0, 16), '......KKKKKKKK......', '.....KKK....KKK.....', '....KKK......KKK....', '...KKKK......KKKK...'], OY);
+    if (i === 2) return rows(g, fx, STAND_BACK, OY);
+    return rig(g, fx, pz({ fa: [.3, .5] }));
+  }
+  if (name === 'sitDown') {
+    if (i === 0) return rows(g, fx, STAND_BACK, OY);
+    if (i === 1) return rows(g, fx, [...STAND_BACK.slice(0, 16), '......KKKKKKKK......', '.....KKK....KKK.....', '....KKK......KKK....', '...KKKK......KKKK...'], OY);
+    if (i === 2) return rows(g, fx, [...SIT_UP, ...SIT_LEGS], OY - 1, SWORD_DOWN);
+    return rows(g, fx, [...SIT_UP, ...SIT_LEGS], OY, SWORD_DOWN);
+  }
+  // seated breath: the back and shoulders rise a pixel, slowly; the hips and legs stay put
+  const up = [0, 0, 0, 1, 1, 1, 1, 0][i];
+  const body = up ? [...SIT_UP.slice(0, 14), SIT_UP[13], SIT_UP[14]] : SIT_UP;
+  rows(g, fx, [...body, ...SIT_LEGS], OY, SWORD_DOWN.map(([x, y, c]) => [x, y + up, c]));
+}
+
+function placeholderSheet(name) {
+  const { n } = ANIMS[name];
+  const c = document.createElement('canvas'); c.width = FW * n; c.height = FH;
+  const g = c.getContext('2d');
+  for (let i = 0; i < n; i++) {
+    if (name === 'sit' || name === 'sitDown' || name === 'standUp') { sitFrame(g, i * FW, name, i); continue; }
+    const p = POSES[name][i % POSES[name].length];
+    if (p) rig(g, i * FW, p);
+    const gl = GLF[name] && GLF[name][i];
+    if (gl) sliceGlitch(g, i * FW, gl, i + name.length * 7);
+  }
+  return { img: c, fw: FW, fh: FH, n, ox: OX, oy: OY, custom: false };
+}
+
+const SHEETS = {};
+for (const k in ANIMS) SHEETS[k] = placeholderSheet(k);
+const dur = k => ANIMS[k].n / ANIMS[k].fps;
+
+// ---- Room ----
+const FLOOR = { x0: 14, y0: 58, x1: 466, y1: 262 };
+const PILLARS = [{ x: 120, y: 132, w: 22, h: 12 }, { x: 338, y: 132, w: 22, h: 12 }, { x: 230, y: 214, w: 22, h: 12 }];
+const bg = document.createElement('canvas'); bg.width = W; bg.height = H;
+(() => {
+  const g = bg.getContext('2d'); let r = 11;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  g.fillStyle = '#474c4a'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < 2600; i++) { g.fillStyle = rnd() < .5 ? '#434846' : '#4b504e'; g.fillRect(rnd() * W | 0, rnd() * H | 0, 2, 1); }
+  g.fillStyle = '#414644';
+  for (let y = 70; y < H; y += 32) g.fillRect(0, y, W, 1);
+  for (let x = 16; x < W; x += 32) for (let y = 70; y < H; y += 32) g.fillRect(x + ((y / 32 | 0) % 2) * 16, y, 1, 32);
+  // back wall
+  g.fillStyle = '#2b2f2e'; g.fillRect(0, 0, W, 46);
+  g.fillStyle = '#343938'; g.fillRect(0, 46, W, 12);
+  g.fillStyle = '#5b615e'; g.fillRect(0, 57, W, 1);
+  g.fillStyle = '#262a29';
+  for (let y = 6; y < 46; y += 10) for (let x = (y / 10 % 2) * 12; x < W; x += 24) g.fillRect(x, y, 1, 10);
+  for (let y = 6; y < 46; y += 10) g.fillRect(0, y, W, 1);
+  g.fillStyle = '#1d2020'; g.fillRect(0, 0, 14, H); g.fillRect(W - 14, 0, 14, H);
+})();
+function drawPillar(g, p) {
+  g.fillStyle = '#2b2f2e'; g.fillRect(p.x, p.y - 30, p.w, p.h + 30);
+  g.fillStyle = '#3c4140'; g.fillRect(p.x, p.y - 34, p.w, 6);
+  g.fillStyle = '#5b615e'; g.fillRect(p.x, p.y - 34, p.w, 1);
+  g.fillStyle = '#232625'; g.fillRect(p.x + p.w - 4, p.y - 28, 4, p.h + 28);
+}
+
+// ---- Dummy target ----
+const dummy = { x: 300, y: 190, hp: 1, flash: 0, wob: 0, zap: 0 };
+function drawDummy(g) {
+  const x = Math.round(dummy.x + Math.sin(dummy.wob * 40) * dummy.wob * 8), y = dummy.y;
+  g.fillStyle = 'rgba(20,24,24,.35)'; g.fillRect(x - 6, y, 12, 2);
+  const c = dummy.flash > 0 ? '#ffffff' : '#6d5a44';
+  g.fillStyle = c; g.fillRect(x - 1, y - 22, 3, 22); g.fillRect(x - 7, y - 18, 15, 3);
+  g.fillStyle = dummy.flash > 0 ? '#ffffff' : '#8a7458'; g.fillRect(x - 4, y - 28, 9, 8);
+  if (!(dummy.flash > 0)) { g.fillStyle = COL.eye; g.fillRect(x, y - 25, 1, 1); }
+}
+
+// ---- Player ----
+const P = { x: 200, y: 180, z: 0, vz: 0, vx: 0, vy: 0, face: 1, state: 'idle', t: 0, still: 0, combo: false,
+  hitDone: {}, ev: {}, inv: false, ghosts: [], dead: 0, flash: 0 };
+const parts = [];
+let shake = 0, hitstop = 0;
+
+// ---- Engine effects: drawn in world space, never in the sheets, so they survive real art replacing the placeholder ----
+const frags = [], slashes = [], cuts = [], zaps = [], rings = [];
+const rr = (a, b) => a + Math.random() * (b - a), sgn = () => Math.random() < .5 ? -1 : 1;
+const FRAG_COLS = [COL.fx, COL.fx2, '#ffffff', '#0d1012'];
+// glitch slivers left hanging where the body was: slow upward drift, 1px sideways twitches, flicker, fade
+function residue(x, y, n) {
+  for (let i = 0; i < n; i++) { const life = rr(.6, 1);
+    frags.push({ x: x + rr(-9, 9), y: y - rr(2, 28), w: 1 + (Math.random() * 4 | 0), col: FRAG_COLS[i % 4], vx: rr(-3, 3), vy: rr(-6, -1), life, max: life, jx: 0, on: true }); }
+}
+// a crescent smear in front of him; big = the double slash's larger, tilted cuts
+// rot tilts its bulge up (-) or down (+); a big one sits back from the target so two tilted ones cross over it like an X
+function smear(face, rot = 0, flip = 1, big = false) {
+  const R = big ? 23 : 16, tx = P.x + face * (big ? 22 : 5), ty = P.y - 12 - P.z, back = big ? R * .45 : 0;
+  slashes.push({ x: tx - face * Math.cos(rot) * back, y: ty - Math.sin(rot) * back * SQ, face, rot, flip, R, d: big ? 6 : 5,
+    hold: big ? .09 : SLASH_HOLD, age: 0, broke: false, seed: Math.random() });
+}
+// the strike beat shared by every cut: crescent, whole-body flash
+function strike(rot, flip, big) { smear(P.face, rot, flip, big); P.flash = .034; }
+function zap(x0, y0, x1, y1, life, jit, col, o = {}) { const z = { x0, y0, x1, y1, life, max: life, jit, col, tick: 2, on: true, ...o }; z.pts = boltPts(z); zaps.push(z); }
+function line(out, x0, y0, x1, y1) { // Bresenham, so bolts are whole pixels with no smoothing
+  x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+  const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy;
+  for (;;) { out.push(x0, y0); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } }
+}
+function boltPts(z) { // a jagged polyline: every ~4px a vertex kicked 1..jit px sideways, plus an optional fork
+  const dx = z.x1 - z.x0, dy = z.y1 - z.y0, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L, seg = Math.max(2, Math.round(L / 4));
+  const vs = [[z.x0, z.y0]], out = [];
+  for (let i = 1; i < seg; i++) { const t = i / seg, o = sgn() * rr(1, z.jit); vs.push([z.x0 + dx * t + nx * o, z.y0 + dy * t + ny * o]); }
+  vs.push([z.x1, z.y1]);
+  for (let i = 1; i < vs.length; i++) line(out, vs[i - 1][0], vs[i - 1][1], vs[i][0], vs[i][1]);
+  if (z.fork && seg > 2) { const [fx, fy] = vs[1 + (Math.random() * (seg - 2) | 0)], a = Math.atan2(dy, dx) + sgn() * rr(.5, 1), l = rr(4, 8);
+    const mx = fx + Math.cos(a) * l / 2 + sgn(), my = fy + Math.sin(a) * l / 2 + sgn();
+    line(out, fx, fy, mx, my); line(out, mx, my, fx + Math.cos(a) * l, fy + Math.sin(a) * l); }
+  return out;
+}
+// he lands inside a burst of electric smoke: dark puffs that swell and rise, and bolts swirling round him
+const smoke = [], cracks = [];
+// jagged dark cracks from the slam point, cyan at the tip, lingering a second
+function crack(x, y) {
+  for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2 + rr(-.3, .3), out = []; let px = x, py = y;
+    for (let k = 0; k < 4; k++) { const nx = px + Math.cos(a + rr(-.5, .5)) * rr(4, 8), ny = py + Math.sin(a + rr(-.5, .5)) * rr(2, 4); line(out, px, py, nx, ny); px = nx; py = ny; }
+    cracks.push({ pts: out, life: 1.1, max: 1.1 }); }
+}
+function storm(x, y) {
+  P.flurry = .55; P.after = 3;   // the flurry of bolts, then a few seconds of random glitching as the jump settles
+}
+function updateFx(dt) {
+  P.glitchNow = Math.max(0, (P.glitchNow || 0) - dt);
+  if (P.after > 0) { P.after -= dt;
+    if (Math.random() < dt * 2.2 * Math.min(1, P.after / 1.5 + .3)) { P.glitchNow = rr(.05, .12);
+      const x = P.x + rr(-6, 6), y = P.y - rr(6, 24); zap(x, y, x + rr(-6, 6), y + rr(-5, 5), rr(.04, .08), 1.5, Math.random() < .5 ? COL.fx : '#ffffff');
+      if (Math.random() < .5) residue(P.x, P.y, 2); } }
+  for (const c of cracks) c.life -= dt;
+  for (let i = cracks.length - 1; i >= 0; i--) if (cracks[i].life <= 0) cracks.splice(i, 1);
+  for (const m of smoke) { m.x += m.vx * dt; m.y += m.vy * dt; m.r += m.vr * dt; m.vx *= .96; m.life -= dt; }
+  for (let i = smoke.length - 1; i >= 0; i--) if (smoke[i].life <= 0) smoke.splice(i, 1);
+  if (P.flurry > 0) { P.flurry -= dt;
+    const k = P.flurry / .5; // dense at first, thinning out
+    if (Math.random() < .3 + .6 * k) { const a = rr(0, 6.28), R = rr(4, 11), cx = P.x, cy = P.y - 12;
+      const x0 = cx + Math.cos(a) * R, y0 = cy + Math.sin(a) * R * 1.2, a2 = a + sgn() * rr(.6, 1.2);
+      zap(x0, y0, cx + Math.cos(a2) * (R + rr(-2, 4)), cy + Math.sin(a2) * (R + 2) * 1.2, rr(.05, .1), 1.6, [COL.fx, COL.fx2, '#ffffff'][Math.random() * 3 | 0]); }
+    if (Math.random() < .5 * k) { const a = rr(0, 6.28); frags.push({ x: P.x + Math.cos(a) * rr(3, 9), y: P.y - rr(3, 24), w: 1 + (Math.random() * 2 | 0), col: FRAG_COLS[Math.random() * 4 | 0],
+      vx: Math.cos(a) * rr(8, 20), vy: -rr(3, 12), life: rr(.3, .6), max: .6, jx: 0, on: true }); } }
+  for (const f of frags) { f.x += f.vx * dt; f.y += f.vy * dt; f.life -= dt;
+    if (Math.random() < .05) f.jx = f.jx ? 0 : sgn();
+    f.on = Math.random() < .3 + .65 * f.life / f.max; } // flickers more as it dies
+  for (const z of zaps) { z.life -= dt;
+    if (--z.tick <= 0) { z.pts = boltPts(z); z.tick = z.every || 2 + (Math.random() * 2 | 0); } // re-jag every 2-3 frames
+    z.on = Math.random() < (z.every === 1 ? .9 : .7); }
+  for (const r of rings) r.life -= dt;
+  // a shocked dummy keeps 2-3 short bolts crawling over it
+  if (dummy.zap > 0) { dummy.zap -= dt;
+    if (zaps.filter(z => z.dz).length < 3) { const x = dummy.x + rr(-7, 7), y = dummy.y - rr(3, 27);
+      zap(x, y, x + rr(-10, 10), y + rr(-8, 8), rr(.05, .09), 2.5, Math.random() < .5 ? '#ffffff' : COL.fx2, { every: 1, dz: true }); } }
+  for (const L of [frags, zaps, rings]) for (let i = L.length - 1; i >= 0; i--) if (L[i].life <= 0) L.splice(i, 1);
+}
+// slashes and cut lines age only outside hit pause, so the cut hangs frozen on impact
+function updateCuts(dt) {
+  for (const s of slashes) { s.age += dt;
+    if (s.age > s.hold && !s.broke) { s.broke = true; // shed a few slivers that trail back off the arc
+      for (let i = 0; i < 5; i++) { const a = rr(-1.3, 1.3), life = rr(.1, .16);
+        frags.push({ x: s.x + s.face * Math.cos(a) * s.R, y: s.y + Math.sin(a) * s.R * .8, w: 2 + (Math.random() * 3 | 0), col: i % 2 ? '#ffffff' : COL.fx2,
+          vx: -s.face * rr(20, 50), vy: rr(-10, 10), life, max: life, jx: 0, on: true }); } } }
+  for (const c of cuts) c.life -= dt;
+  for (const L of [slashes, cuts]) for (let i = L.length - 1; i >= 0; i--) if (L[i].age > L[i].hold + SLASH_BREAK || L[i].life <= 0) L.splice(i, 1);
+}
+const SLASH_HOLD = .05, SLASH_BREAK = .15, SQ = .8; // SQ flattens circles into the top-down floor plane
+function drawSlash(s) {
+  const k = Math.max(0, (s.age - s.hold) / SLASH_BREAK); // 0 while it holds full size, then 0→1 as it thins and breaks
+  const d = Math.max(1, s.d * (1 - k)), R = s.R + k * 2, c = Math.cos(s.rot), sn = Math.sin(s.rot), ox = Math.round(s.x), oy = Math.round(s.y);
+  const core = [], edge = [], trail = [];
+  for (let py = -Math.ceil(R) - 1; py <= Math.ceil(R) + 1; py++) for (let px = -Math.ceil(R) - 1; px <= Math.ceil(R) + 1; px++) {
+    const lx0 = px * s.face, dy = py / SQ, lx = lx0 * c + dy * sn, ly = (-lx0 * sn + dy * c) * s.flip;
+    const ro = Math.hypot(lx, ly); if (ro > R) continue;
+    const ri = Math.hypot(lx + d, ly - d * .35); if (ri <= R) continue; // the inner circle, nudged so one tip is fatter
+    if (k > 0 && ((Math.atan2(ly, lx) * R / 5 + s.seed) % 1 + 1) % 1 < k * .85) continue; // gaps widen until only slivers are left
+    (R - ro < 1.2 ? edge : ri - R < 1 ? trail : core).push(ox + px, oy + py); // cyan leading edge, pale trailing edge
+  }
+  g.globalAlpha = 1 - k * .5;
+  g.fillStyle = COL.eye; for (let i = 0; i < edge.length; i += 2) g.fillRect(edge[i], edge[i + 1], 1, 1);
+  g.fillStyle = COL.fx2; for (let i = 0; i < trail.length; i += 2) g.fillRect(trail[i], trail[i + 1], 1, 1);
+  g.fillStyle = '#ffffff'; for (let i = 0; i < core.length; i += 2) g.fillRect(core[i], core[i + 1], 1, 1);
+  g.globalAlpha = 1;
+}
+function drawFloorFx() {
+  for (const c of cracks) { const k = c.life / c.max; g.globalAlpha = Math.min(1, k * 2);
+    for (let i = 0; i < c.pts.length; i += 2) { g.fillStyle = i > c.pts.length * .8 && k > .6 ? COL.fx : '#24282a'; g.fillRect(c.pts[i], c.pts[i + 1], 1, 1); } }
+  g.globalAlpha = 1;
+}
+function drawFx() {
+  for (const m of smoke) { g.globalAlpha = Math.min(.85, m.life / m.max * 1.2); g.fillStyle = m.col; const r = Math.round(m.r);
+    for (let dy = -r; dy <= r; dy++) { const w = Math.round(Math.sqrt(r * r - dy * dy)); g.fillRect(Math.round(m.x) - w, Math.round(m.y) + dy, 2 * w + 1, 1); } }
+  g.globalAlpha = 1;
+  for (const s of slashes) drawSlash(s);
+  for (const c of cuts) { const k = c.life / c.max, x0 = Math.min(c.x0, c.x1), w = Math.abs(c.x1 - c.x0);
+    g.globalAlpha = Math.min(1, k * 1.5); g.fillStyle = '#ffffff'; g.fillRect(x0, c.y, w, 1);
+    if (k > .6) { g.fillRect(x0 + 6, c.y - 1, w - 12, 3); g.fillStyle = COL.eye; g.fillRect(x0 - 3, c.y, 3, 1); g.fillRect(x0 + w, c.y, 3, 1); } } // fat for its first frames, then a hairline
+  for (const r of rings) { g.globalAlpha = 1; g.fillStyle = '#ffffff';
+    for (let a = 0; a < Math.PI * 2; a += .5 / r.rx) g.fillRect(Math.round(r.x + Math.cos(a) * r.rx), Math.round(r.y + Math.sin(a) * r.ry), 1, 1); }
+  for (const z of zaps) { if (!z.on) continue;
+    g.globalAlpha = Math.min(1, z.life / z.max * 1.8); g.fillStyle = z.col;
+    for (let i = 0; i < z.pts.length; i += 2) g.fillRect(z.pts[i], z.pts[i + 1], 1, 1); }
+  for (const f of frags) { if (!f.on) continue;
+    g.globalAlpha = Math.min(1, f.life / f.max * 1.5); g.fillStyle = f.col; g.fillRect(Math.round(f.x + f.jx), Math.round(f.y), f.w, 1); }
+  g.globalAlpha = 1;
+}
+
+function setState(s) { P.state = s; P.t = 0; P.hitDone = {}; P.ev = {}; P.combo = false; }
+// true the first time an in-state beat is reached, so a strike fires once even if a frame skips past it
+const once = (k, when) => when && !P.ev[k] && (P.ev[k] = true);
+function collide(nx, ny) {
+  nx = Math.max(FLOOR.x0 + 6, Math.min(FLOOR.x1 - 6, nx));
+  ny = Math.max(FLOOR.y0, Math.min(FLOOR.y1, ny));
+  for (const p of PILLARS) {
+    if (nx > p.x - 5 && nx < p.x + p.w + 5 && ny > p.y - 2 && ny < p.y + p.h + 2) {
+      const dx = Math.min(nx - (p.x - 5), p.x + p.w + 5 - nx), dy = Math.min(ny - (p.y - 2), p.y + p.h + 2 - ny);
+      if (dx < dy) nx = nx - (p.x - 5) < p.x + p.w + 5 - nx ? p.x - 5 : p.x + p.w + 5;
+      else ny = ny - (p.y - 2) < p.y + p.h + 2 - ny ? p.y - 2 : p.y + p.h + 2;
+    }
+  }
+  return [nx, ny];
+}
+function moveBy(dx, dy) { [P.x, P.y] = collide(P.x + dx, P.y + dy); }
+function blink(dist, dir) {
+  const [dx, dy] = dir; const steps = Math.ceil(dist / 2);
+  for (let i = 0; i < steps; i++) moveBy(dx * 2, dy * 2);
+}
+function spark(x, y, vx, vy, life, col, streak) { parts.push({ x, y, vx, vy, life, max: life, col, streak }); }
+function dust(n, dir = 0) { for (let i = 0; i < n; i++) spark(P.x + (Math.random() - .5) * 8, P.y - 1, (Math.random() - .5) * 60 - dir * 40, -Math.random() * 16, .3 + Math.random() * .2, '#8f9692'); }
+function ghost() { P.ghosts.push({ state: P.state, f: frameOf(), x: P.x, y: P.y - P.z, face: P.face, age: 0 }); }
+
+function hit(kind, cx, cy, r) {
+  if (P.hitDone[kind]) return;
+  if (Math.hypot(dummy.x - cx, (dummy.y - 10 - cy) * 1.4) > r) return;
+  P.hitDone[kind] = true;
+  // short on purpose: a 3-frame white dummy, a 3-frame freeze, ONE shaken frame
+  dummy.flash = .05; dummy.wob = .25; hitstop = .05; shake = 1 / 60;
+  if (kind === 'sw') dummy.zap = .25;
+  // 6-12 short streaks, mostly thrown away from him
+  const away = Math.atan2(dummy.y - P.y, dummy.x - P.x), n = 6 + (Math.random() * 7 | 0);
+  for (let i = 0; i < n; i++) { const a = i < n * .7 ? away + rr(-1.1, 1.1) : rr(0, Math.PI * 2), v = rr(110, 170);
+    spark(dummy.x + rr(-2, 2), dummy.y - 16 + rr(-4, 4), Math.cos(a) * v, Math.sin(a) * v * .7, rr(.09, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
+}
+
+function frameOf() {
+  const a = ANIMS[P.state], n = SHEETS[P.state].n, f = Math.floor(P.t * a.fps);
+  return a.loop ? f % n : Math.min(n - 1, f);
+}
+function inputDir(inp) { const m = Math.hypot(inp.mx, inp.my); return m ? [inp.mx / m, inp.my / m] : [P.face, 0]; }
+
+function update(dt, inp) {
+  for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 40 * dt; q.life -= dt; }
+  for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
+  P.ghosts.forEach(g => g.age += dt); P.ghosts = P.ghosts.filter(g => g.age < (g.max || .25));
+  dummy.flash = Math.max(0, dummy.flash - dt); dummy.wob = Math.max(0, dummy.wob - dt);
+  shake = Math.max(0, shake - dt); P.flash = Math.max(0, P.flash - dt);
+  updateFx(dt);
+  if (hitstop > 0) { hitstop -= dt; return; }
+  updateCuts(dt);
+
+  P.t += dt;
+  const s = P.state, T = P.t, D = dur(s), u = T / D;
+  const free = s === 'idle' || s === 'run' || s === 'idleGlitch' || s === 'sit' || s === 'sitDown';
+  const canAttack = free || s === 'land' || s === 'sheathe';
+  if (inp.mx) P.face = Math.sign(inp.mx);
+  const moving = inp.mx || inp.my;
+
+  if (inp.die && s !== 'death') { setState('death'); return; }
+  if (s === 'sit' || s === 'sitDown') {
+    if (moving || inp.slash || inp.jump || inp.slide || inp.tele || inp.double || inp.sweep || inp.sit) {
+      P.pending = { slash: inp.slash, jump: inp.jump, slide: inp.slide, tele: inp.tele, double: inp.double, sweep: inp.sweep, dir: inputDir(inp) };
+      setState('standUp');
+    }
+    if (s === 'sitDown' && T >= D) setState('sit');
+    return;
+  }
+  if (s === 'standUp') { if (T >= D) { /* handled in the switch */ } else return; }
+  if (canAttack) {
+    if (inp.slash) return setState('slash1');
+    if (inp.jump) { setState('jump'); P.vz = 150; return; }
+    if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); return; }
+    if (inp.tele) { setState('tele'); P.blinkDir = inputDir(inp); return; }
+    if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); return; }
+    if (inp.sweep) return setState('sweep');
+    if (inp.sit && s !== 'sit' && s !== 'sitDown') return setState('sitDown');
+  }
+
+  switch (s) {
+    case 'idle': case 'run': case 'idleGlitch': case 'sit': case 'sitDown': {
+      if (moving) {
+        const [dx, dy] = inputDir(inp);
+        moveBy(dx * 78 * dt, dy * 78 * dt);
+        if (s !== 'run') setState('run');
+        P.still = 0;
+      } else {
+        P.still += dt;
+        if (s === 'run') setState('idle');
+        if (s === 'idle' && P.still > 4) { setState('idleGlitch'); P.still = 0; }
+        if (s === 'idleGlitch' && T >= D) setState('idle');
+        if (s === 'sitDown' && T >= D) setState('sit');
+      }
+      break;
+    }
+    case 'slide': {
+      const sp = 260 * (1 - u) + 50;
+      moveBy(P.slideDir[0] * sp * dt, P.slideDir[1] * sp * dt);
+      if (u < .7 && Math.random() < .5) dust(1, P.slideDir[0]);
+      if (Math.floor(T / .04) !== Math.floor((T - dt) / .04)) ghost();
+      if (T >= D + .08) setState(moving ? 'run' : 'idle');
+      break;
+    }
+    case 'jump': case 'fall': {
+      if (moving) { const [dx, dy] = inputDir(inp); moveBy(dx * 70 * dt, dy * 70 * dt); }
+      P.vz -= 520 * dt; P.z += P.vz * dt;
+      if (s === 'jump' && P.vz < 0) { P.state = 'fall'; P.t = 0; }
+      if (P.z <= 0) { P.z = 0; P.vz = 0; setState('land'); dust(8); }
+      break;
+    }
+    case 'land': if (T >= D) setState(moving ? 'run' : 'idle'); break;
+    case 'slash1': case 'slash2': {
+      // a glint in the eye, then he is simply through the cut: the body teleports ahead and the motion is left behind as afterimages
+      if (once('glint', T >= .06)) spark(P.x + P.face * 2, P.y - 21, 0, 0, .08, '#ffffff', false);
+      if (once('strike', T >= .1)) {
+        const x0 = P.x, y0 = P.y, gs = s === 'slash1' ? 'j1ghost' : 'j2ghost';
+        moveBy(P.face * (s === 'slash1' ? 22 : 18), 0);
+        for (let k = 0; k < 4; k++) P.ghosts.push({ state: gs, f: k, x: x0 + (P.x - x0) * (k + .5) / 4, y: y0 - P.z, face: P.face,
+          age: -k * .01, max: .2, a: .6, col: k % 2 ? COL.fx2 : '#ffffff' });
+        for (let k = 0; k < 8; k++) { const life = rr(.07, .15);
+          frags.push({ x: rr(Math.min(x0, P.x), Math.max(x0, P.x)), y: P.y - rr(3, 26), w: 4 + (Math.random() * 10 | 0), col: k % 3 ? '#ffffff' : COL.fx2,
+            vx: P.face * rr(20, 60), vy: 0, life, max: life, jx: 0, on: true }); }
+        strike(s === 'slash1' ? .15 : -.35, s === 'slash1' ? 1 : -1, false);
+        const lo = Math.min(x0, P.x), hi = Math.max(x0, P.x) + P.face * 14;
+        hit(s, Math.max(Math.min(lo, hi), Math.min(Math.max(lo, hi), dummy.x)), P.y - 12, 20);
+      }
+      if (T > .1 && T < .2) { moveBy(P.face * 22 * dt, 0); if (Math.random() < .3) dust(1, -P.face); }
+      if (s === 'slash1' && inp.slash && u > .4) P.combo = true;
+      if (T >= D) setState(P.combo ? 'slash2' : 'sheathe');
+      break;
+    }
+    case 'tele': {
+      P.inv = true;
+      if (u >= .45 && !P.moved) { P.moved = true; const fx = P.x, fy = P.y; blink(56, P.blinkDir);
+        residue(fx, fy, 12); residue(P.x, P.y, 12); storm(P.x, P.y);
+        const n = Math.hypot(P.x - fx, P.y - fy) | 0;
+        for (let i = 0; i < n; i += 2) spark(fx + (P.x - fx) * i / n, fy - 12 + (P.y - fy) * i / n + (Math.random() - .5) * 10, 0, 0, .18, COL.fx, false); }
+      if (T >= D) { P.moved = false; P.inv = false; setState('idle'); }
+      break;
+    }
+    case 'double': {
+      P.inv = T < .2;
+      if (T >= .15 && !P.moved) { P.moved = true; const fx0 = P.x, fy0 = P.y; blink(44, P.blinkDir); residue(fx0, fy0, 8); }
+      // two big crescents crossing like an X, 0.1 s apart, the second drawing a cut line through the target
+      if (once('c1', T >= .225)) { strike(-.5, 1, true); moveBy(P.face * 3, 0); }
+      if (once('c2', T >= .325)) { strike(.5, -1, true); moveBy(P.face * 3, 0);
+        cuts.push({ x0: P.x + P.face * 2, x1: P.x + P.face * 48, y: Math.round(P.y - 12), life: .1, max: .1 }); }
+      if (T >= .225 && T < .3) hit('d1', P.x + P.face * 14, P.y - 12, 26);
+      if (T >= .325 && T < .4) hit('d2', P.x + P.face * 14, P.y - 12, 26);
+      // the sheath click: whatever he cut bursts now, a beat after the blades
+      if (once('click', T >= .6)) { spark(P.x + P.face * 3, P.y - 10, 0, -10, .12, '#ffffff', false);
+        if (P.hitDone.d1 || P.hitDone.d2) { dummy.flash = .08; dummy.wob = .3; hitstop = .06; shake = 1 / 60;
+          cuts.push({ x0: dummy.x - 16, x1: dummy.x + 16, y: Math.round(dummy.y - 14), life: .14, max: .14 });
+          residue(dummy.x, dummy.y, 10);
+          for (let i = 0; i < 16; i++) { const a = rr(0, 6.28); spark(dummy.x, dummy.y - 14, Math.cos(a) * rr(80, 160), Math.sin(a) * rr(60, 120), rr(.12, .22), ['#ffffff', COL.fx2, COL.fx][i % 3], true); } } }
+      if (T >= D) { P.moved = false; P.inv = false; setState('idle'); }
+      break;
+    }
+    case 'sheathe': {
+      if (once('click', T >= 4 / 18)) spark(P.x + P.face * 3, P.y - 12, P.face * 6, -12, .1, '#ffffff', false);
+      if (T >= D) setState(moving ? 'run' : 'idle');
+      break;
+    }
+    case 'sweep': {
+      const cx = P.x, cy = P.y - 13, RISE = .3, TOP = .7, SLAM = .8;
+      // the cyclone: bolts whipping round him in a rising spiral while he comes up out of the kneel
+      if (T >= RISE && T < TOP) { const k = (T - RISE) / (TOP - RISE);
+        P.z = Math.round(k * 7);
+        for (let i = 0; i < 2; i++) { const a = T * 26 + i * Math.PI + rr(-.3, .3), R = 10 + k * 8, y = P.y - 4 - k * 20 - rr(0, 6);
+          zap(cx + Math.cos(a) * R, y, cx + Math.cos(a + 1.1) * R, y + Math.sin(a) * 3, rr(.05, .09), 1.6, [COL.fx, COL.fx2, '#ffffff'][i + (Math.random() * 2 | 0)]); }
+        if (Math.random() < .5) { const a = rr(0, 6.28); spark(cx + Math.cos(a) * 30, P.y - 1, -Math.cos(a) * 60, -rr(5, 20), .3, '#8f9692'); } }
+      if (T >= TOP && T < SLAM) P.z = 8;
+      if (once('slam', T >= SLAM)) {
+        P.z = 0; P.flash = .05; hitstop = .08; shake = .3; P.shakeAmp = 3;
+        const n = 10 + (Math.random() * 4 | 0);
+        for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + rr(-.2, .2), R = rr(48, 60);
+          zap(cx + P.face * 8, P.y - 2, cx + P.face * 8 + Math.cos(a) * R, P.y - 2 + Math.sin(a) * R * .5, rr(.12, .2), 3.2, i % 2 ? '#ffffff' : COL.fx2, { every: 1, fork: true }); }
+        rings.push({ x: cx + P.face * 8, y: P.y - 2, rx: 56, ry: 28, life: 1 / 60 });
+        rings.push({ x: cx + P.face * 8, y: P.y - 2, rx: 30, ry: 15, life: 2 / 60 });
+        crack(cx + P.face * 10, P.y);
+        dust(24);
+      }
+      if (T >= SLAM && T < SLAM + .1) hit('sw', cx + P.face * 8, P.y - 6, 60);
+      if (T > SLAM + .04 && Math.random() < (1 - (T - SLAM) / .4) * .7) { const a = rr(0, 6.28), R = rr(10, 55), x = cx + Math.cos(a) * R, y = P.y + Math.sin(a) * R * .5;
+        zap(x, y, x + rr(-7, 7), y + rr(-4, 4), rr(.06, .12), 2, Math.random() < .7 ? COL.fx : COL.fx2); }
+      if (T >= D) { P.z = 0; setState('sheathe'); }
+      break;
+    }
+    case 'standUp': {
+      if (T >= D) { const q = P.pending || {}; P.pending = null; setState('idle');
+        if (q.slash) setState('slash1'); else if (q.tele) { setState('tele'); P.blinkDir = q.dir; }
+        else if (q.double) { setState('double'); P.blinkDir = q.dir; } else if (q.sweep) setState('sweep');
+        else if (q.slide) { setState('slide'); P.slideDir = q.dir; dust(6, q.dir[0]); } else if (q.jump) { setState('jump'); P.vz = 150; } }
+      break;
+    }
+    case 'death': {
+      if (u > .8 && !P.burst) { P.burst = true; for (let i = 0; i < 30; i++) spark(P.x + (Math.random() - .5) * 26, P.y - Math.random() * 8, (Math.random() - .5) * 40, -20 - Math.random() * 40, .7, Math.random() < .5 ? COL.fx : COL.body, false); }
+      if (T >= D + 1) { P.burst = false; setState('idleGlitch'); }
+      break;
+    }
+  }
+}
+
+// ---- Drawing ----
+const game = document.getElementById('game'), g = game.getContext('2d');
+const buf = document.createElement('canvas'), bg2 = buf.getContext('2d');
+const tint = document.createElement('canvas'), tg = tint.getContext('2d');
+
+function spriteTo(ctx, sheet, f, x, y, face, alpha = 1) {
+  const w = sheet.fw, h = sheet.fh;
+  ctx.save(); ctx.globalAlpha *= alpha;
+  ctx.translate(Math.round(x), Math.round(y));
+  if (face < 0) ctx.scale(-1, 1);
+  ctx.drawImage(sheet.img, f * w, 0, w, h, -sheet.ox, -sheet.oy, w, h);
+  ctx.restore();
+}
+// the current frame recoloured solid (source-in), so any sprite can flash or ghost
+function solid(sh, f, col) {
+  tint.width = sh.fw; tint.height = sh.fh;
+  tg.drawImage(sh.img, f * sh.fw, 0, sh.fw, sh.fh, 0, 0, sh.fw, sh.fh);
+  tg.globalCompositeOperation = 'source-in'; tg.fillStyle = col; tg.fillRect(0, 0, sh.fw, sh.fh); tg.globalCompositeOperation = 'source-over';
+  return { img: tint, fw: sh.fw, fh: sh.fh, ox: sh.ox, oy: sh.oy };
+}
+function drawPlayer() {
+  const sheet = SHEETS[P.state], f = frameOf();
+  const glitchy = (GLITCHY.has(P.state) && sheet.custom) || P.glitchNow > 0;
+  // shadow and reflection
+  g.fillStyle = 'rgba(20,24,24,.35)';
+  const sw = Math.max(4, 12 - P.z / 4);
+  g.fillRect(Math.round(P.x - sw / 2), Math.round(P.y), Math.round(sw), 2);
+  g.save(); g.globalAlpha = .17; g.translate(0, 2 * P.y + 1); g.scale(1, -1);
+  spriteTo(g, sheet, f, P.x, P.y + P.z, P.face); g.restore();
+  // afterimages
+  for (const gh of P.ghosts) {
+    if (gh.age < 0) continue;
+    spriteTo(g, solid(SHEETS[gh.state], gh.f, gh.col || COL.fx), 0, gh.x, gh.y, gh.face, (gh.a || .45) * (1 - gh.age / (gh.max || .25)));
+  }
+  // strike frames: the whole body as a white silhouette for ~2 frames
+  if (P.flash > 0) { spriteTo(g, solid(sheet, f, '#ffffff'), 0, P.x, P.y - P.z, P.face); return; }
+  // the sprite; dropped-in glitch animations get the engine's slice effect on top
+  if (!glitchy) { spriteTo(g, sheet, f, P.x, P.y - P.z, P.face); return; }
+  buf.width = sheet.fw; buf.height = sheet.fh;
+  bg2.drawImage(sheet.img, f * sheet.fw, 0, sheet.fw, sheet.fh, 0, 0, sheet.fw, sheet.fh);
+  const sl = document.createElement('canvas'); sl.width = sheet.fw; sl.height = sheet.fh;
+  const sg = sl.getContext('2d'); let y = 0;
+  while (y < sheet.fh) { const h = 1 + (Math.random() * 3 | 0), off = Math.random() < .35 ? Math.round((Math.random() - .5) * 8) : 0; sg.drawImage(buf, 0, y, sheet.fw, h, off, y, sheet.fw, h); y += h; }
+  spriteTo(g, { img: sl, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy }, 0, P.x, P.y - P.z, P.face);
+}
+function render() {
+  g.save();
+  if (shake > 0) { const a = Math.max(1, Math.round((P.shakeAmp || 2) * Math.min(1, shake / .15))); g.translate(sgn() * a, sgn() * Math.ceil(a / 2)); } // never a zero offset
+  if (shake <= 0) P.shakeAmp = 2;
+  g.drawImage(bg, 0, 0);
+  drawFloorFx();
+  // depth-sort the pillars, the dummy and the player by their feet
+  const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), { y: dummy.y, d: () => drawDummy(g) }, { y: P.y, d: drawPlayer }];
+  items.sort((a, b) => a.y - b.y).forEach(i => i.d());
+  drawFx();
+  for (const q of parts) {
+    g.globalAlpha = Math.min(1, q.life / q.max * 1.6); g.fillStyle = q.col;
+    g.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);
+    if (q.streak) g.fillRect(Math.round(q.x - q.vx * .012), Math.round(q.y - q.vy * .012), 1, 1);
+  }
+  g.globalAlpha = 1;
+  g.restore();
+  hud.innerHTML = `animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}`;
+}
+
+// ---- Input ----
+const hud = document.getElementById('hud');
+const held = new Set(), taps = new Set();
+const KEYS = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down',
+  j: 'slash', ' ': 'jump', Shift: 'slide', l: 'slide', k: 'tele', i: 'double', u: 'sweep', c: 'sit', x: 'die' };
+game.addEventListener('keydown', e => { const k = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (!k) return; e.preventDefault(); if (!held.has(k)) taps.add(k); held.add(k); });
+game.addEventListener('keyup', e => { const k = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (k) held.delete(k); });
+game.addEventListener('blur', () => held.clear());
+game.addEventListener('pointerdown', () => game.focus());
+document.querySelectorAll('.pad button').forEach(b => {
+  const k = b.dataset.k;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); held.add(k); taps.add(k); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => held.delete(k)));
+});
+function readInput() {
+  const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0), my: (held.has('down') ? 1 : 0) - (held.has('up') ? 1 : 0),
+    slash: taps.has('slash'), jump: taps.has('jump'), slide: taps.has('slide'), tele: taps.has('tele'),
+    double: taps.has('double'), sweep: taps.has('sweep'), sit: taps.has('sit'), die: taps.has('die') };
+  taps.clear();
+  return inp;
+}
+
+let last = performance.now(), acc = 0;
+function frame(now) {
+  acc = Math.min(acc + (now - last) / 1000, .1); last = now;
+  while (acc >= 1 / 60) { acc -= 1 / 60; update(1 / 60, readInput()); }
+  render();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+// ---- Moveset table ----
+document.getElementById('moves').innerHTML = Object.entries(ANIMS).filter(([, a]) => !a.hidden).map(([k, a]) => `<tr><td>${k}</td><td>${a.about}</td></tr>`).join('');
+
+// ---- Dropping in real strips ----
+const sel = document.getElementById('anim'), fileIn = document.getElementById('file'), fwIn = document.getElementById('fw');
+const fpsIn = document.getElementById('fps'), footIn = document.getElementById('footY'), apply = document.getElementById('apply');
+const loaded = document.getElementById('loaded'), drop = document.getElementById('drop');
+sel.innerHTML = Object.keys(ANIMS).filter(k => !ANIMS[k].hidden).map(k => `<option value="${k}">${k}</option>`).join('');
+sel.addEventListener('change', () => fpsIn.value = ANIMS[sel.value].fps);
+let pending = null;
+function takeFile(f) {
+  if (!f) return;
+  const img = new Image();
+  img.onload = () => { pending = img; fwIn.value = img.height; apply.disabled = false; };
+  img.src = URL.createObjectURL(f);
+}
+fileIn.addEventListener('change', () => takeFile(fileIn.files[0]));
+['dragenter', 'dragover'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => drop.addEventListener(ev, e => { e.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', e => takeFile(e.dataTransfer.files[0]));
+apply.addEventListener('click', () => {
+  if (!pending) return;
+  const fw = Math.max(1, +fwIn.value || pending.height), n = Math.max(1, Math.floor(pending.width / fw));
+  const k = sel.value;
+  SHEETS[k] = { img: pending, fw, fh: pending.height, n, ox: Math.floor(fw / 2), oy: pending.height - (+footIn.value || 0), custom: true };
+  ANIMS[k].fps = Math.max(1, +fpsIn.value || ANIMS[k].fps);
+  const mine = Object.keys(SHEETS).filter(s => SHEETS[s].custom);
+  loaded.textContent = `Your sprites: ${mine.join(', ')}. Placeholders for the rest.`;
+  if (P.state === k) P.t = 0;
+  game.focus();
+});
+</script>

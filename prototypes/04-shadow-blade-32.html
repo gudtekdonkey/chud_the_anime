@@ -1,0 +1,204 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Shadow Blade 32</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ground: #1b1f2b;
+    --panel: #232838;
+    --rule: #343b50;
+    --ink: #ece8dc;
+    --muted: #9aa0b4;
+    --accent: #f2b33d;
+  }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 64px; display: grid; gap: 32px; }
+  header { display: grid; gap: 10px; max-width: 62ch; }
+  h1 { font: 700 clamp(30px, 5vw, 44px)/1.05 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  h1 span { color: var(--accent); }
+  header p { margin: 0; color: var(--muted); }
+  .bar { display: flex; flex-wrap: wrap; gap: 16px; }
+  .bar label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; color: var(--muted); font-size: 14px; }
+  .bar input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .rows { display: grid; gap: 20px; }
+  .row { background: var(--panel); border: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 230px) 1fr; }
+  @media (max-width: 760px) { .row { grid-template-columns: 1fr; } }
+  .meta { padding: 20px; border-right: 1px solid var(--rule); display: grid; gap: 10px; align-content: start; }
+  @media (max-width: 760px) { .meta { border-right: 0; border-bottom: 1px solid var(--rule); } }
+  .num { font: 700 36px/1 "Pixelify Sans", monospace; color: var(--accent); }
+  .meta h2 { font: 700 21px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  .meta p { margin: 0; color: var(--muted); font-size: 14px; }
+  .sw { display: flex; gap: 6px; }
+  .sw i { width: 22px; height: 22px; display: block; outline: 1px solid rgba(255,255,255,.12); }
+  .poses { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 560px) { .poses { grid-template-columns: 1fr; } }
+  .pose { display: grid; justify-items: center; gap: 10px; padding: 18px 10px 16px; }
+  .pose + .pose { border-left: 1px solid var(--rule); }
+  @media (max-width: 560px) { .pose + .pose { border-left: 0; border-top: 1px solid var(--rule); } }
+  canvas { image-rendering: pixelated; max-width: 100%; display: block; }
+  .pose span { font: 500 14px/1 "Pixelify Sans", monospace; color: var(--muted); letter-spacing: .05em; }
+  .sec { font: 700 26px/1.1 "Pixelify Sans", monospace; margin: 8px 0 -12px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .sec small { font: 500 14px/1 "Pixelify Sans", monospace; color: var(--muted); letter-spacing: .05em; }
+  .ask { border-top: 1px solid var(--rule); padding-top: 20px; color: var(--muted); max-width: 62ch; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Shadow blade, <span>32×32</span></h1>
+    <p>The same tall, skinny Shadow warrior redrawn on a 32×32 grid (about 27–29 pixels tall), so the head, arms and legs can sit in better proportion. Still flat, no outline, 4 colours. Each plays idle (watch for the blink), a walk and a saber slash.</p>
+    <div class="bar">
+      <label for="grid"><input type="checkbox" id="grid"> Show pixel grid</label>
+      <label for="play"><input type="checkbox" id="play" checked> Play animation</label>
+    </div>
+  </header>
+  <div class="rows" id="bodies"></div>
+  <p class="ask">Pick a letter, or mix parts, like the Wisp's pointed hood with the Scarf. Once he's settled I'll draw his side and back views and start the game.</p>
+</div>
+
+<script>
+// Shadow colourway: b cloak · c amber eyes · d dark (face, gloves, belt, boots) · s steel
+const PAL = { b: '#3a3f55', c: '#f2b33d', d: '#15171f', s: '#dfe3ea' };
+
+// Bodies are drawn as LEFT halves (8 wide) and mirrored into 16-wide sprites.
+const LANKY = [
+  '.......b', '......bb', '.....bbb', '....bbbb', '...bbddd', '...bbdcd', '...bbddd', '....bbbb',
+  '...bbbbb', '..bbbbbb', '..bbbbbb', '..bdbbbb', '..bdbbbb', '..bdbbbb', '..bdbbbb', '..bddddd',
+  '..d.bbbb', '....bbbb', '....bbbb', '...bbbbb', '...bbbb.', '.....dd.', '.....dd.', '.....dd.',
+  '.....dd.', '.....dd.', '....ddd.'];
+const WISP = [
+  '.......b', '.......b', '......bb', '......bb', '.....bbb', '....bbbb', '....bddd', '....bdcd',
+  '....bddd', '.....bbb', '....bbbb', '...bbbbb', '...bdbbb', '...bdbbb', '...bdbbb', '...bdbbb',
+  '...bdddd', '...d.bbb', '.....bbb', '.....bbb', '.....bbb', '....bbbb', '......d.', '......d.',
+  '......d.', '......d.', '......d.', '......d.', '.....dd.'];
+const COAT = [...LANKY.slice(0, 19),
+  '...bbbbb', '...bbbbb', '...bbbbb', '..bbbbb.', '..bbbbb.', '..bbbb..', '.....dd.', '....ddd.'];
+const SCARF = LANKY.map((r, y) => y === 7 ? '....dddd' : y === 8 ? '...ddddd' : r);
+const CAPE = LANKY.map((r, y) => {
+  if (y < 9 || y > 25) return r;
+  const a = [...r];
+  if (y <= 24) a[1] = 'b';
+  if (y >= 12 && y !== 25) a[0] = 'b';
+  if (y === 25) a[1] = 'b';
+  return a.join('');
+});
+
+const mirror = half => half.map(r => r + [...r].reverse().join(''));
+const LEGS = { left: [3, 7], right: [8, 12] };
+
+const BODIES = [
+  { name: 'Lanky', note: 'Plain and straight. Hood, shoulders, arms, belt and a short coat over long legs.',
+    rows: mirror(LANKY), hand: [13, 16], feet: 26, legTop: 21, eyes: 5 },
+  { name: 'Wisp', note: 'The thinnest. Tall pointed hood, narrow shoulders, one-pixel legs and a longer saber.',
+    rows: mirror(WISP), hand: [12, 17], feet: 28, legTop: 22, eyes: 7, blade: 3 },
+  { name: 'Long coat', note: 'Coat to the ankles, split at the front. Only the boots show under it.',
+    rows: mirror(COAT), hand: [13, 16], feet: 26, legTop: 25, eyes: 5 },
+  { name: 'Scarf', note: 'A dark scarf pulled up over the chin, its tail hanging down his left side.',
+    rows: mirror(SCARF), hand: [13, 16], feet: 26, legTop: 21, eyes: 5,
+    extra: [[1, 9], [1, 10], [0, 11], [1, 11], [0, 12], [0, 13], [1, 14]].map(([x, y]) => [x, y, 'd']) },
+  { name: 'Cape', note: 'A cape falling from the shoulders to the ankles, framing the thin body.',
+    rows: mirror(CAPE), hand: [13, 16], feet: 26, legTop: 21, eyes: 5 },
+];
+
+// Walk: lift one leg a pixel (its boot moves up), alternating sides.
+function lift(rows, b, side) {
+  if (!side) return rows;
+  const [x0, x1] = LEGS[side];
+  const out = rows.map(r => [...r]);
+  for (let y = b.legTop; y <= b.feet; y++)
+    for (let x = x0; x <= x1; x++) out[y][x] = y < b.feet ? rows[y + 1][x] : '.';
+  return out.map(r => r.join(''));
+}
+// Blink: the eyes go dark for one beat now and then while idle.
+const blink = (b, rows) => rows.map((r, y) => y === b.eyes ? r.replace(/c/g, 'd') : r);
+
+// Turn rows into a pixel list and add the saber relative to the hand.
+function pixels(b, rows, mode) {
+  const [hx, hy] = b.hand, len = b.blade || 0;
+  const px = [];
+  rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') px.push([x, y, ch]); }));
+  (b.extra || []).forEach(p => px.push(p));
+  const s = (x, y) => px.push([x, y, 's']);
+  if (mode === 'slash') {           // blade swept flat to the right, tip curling up
+    s(hx, hy - 1); s(hx, hy - 2); s(hx, hy + 1);
+    for (let i = 1; i <= 9 + len; i++) s(hx + i, hy);
+    s(hx + 10 + len, hy - 1); s(hx + 11 + len, hy - 2);
+  } else {                          // held upright, curving back at the tip
+    for (let i = -1; i <= 1; i++) s(hx + i, hy - 1);
+    for (let i = 2; i <= 8 + len; i++) s(hx, hy - i);
+    for (let i = 9; i <= 11; i++) s(hx + 1, hy - i - len);
+    s(hx + 2, hy - 12 - len);
+  }
+  return px;
+}
+
+const SCALE = 6, W = 34, H = 34, OX = 4, BASE = H - 3;
+let showGrid = false, play = true, tick = 0;
+const cells = [];
+
+function paint(ctx, body, px, pal, bob) {
+  for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
+    ctx.fillStyle = (x + y) % 2 ? '#7c8193' : '#868b9c';
+    ctx.fillRect(x * W / 2 * SCALE, y * H / 2 * SCALE, W / 2 * SCALE, H / 2 * SCALE);
+  }
+  const oy = BASE - body.feet;
+  ctx.fillStyle = 'rgba(0,0,0,.28)';
+  ctx.fillRect((OX + 3) * SCALE, (BASE + 1) * SCALE, 10 * SCALE, SCALE);
+  for (const [x, y, ch] of px) {
+    if (!pal[ch]) continue;
+    ctx.fillStyle = pal[ch];
+    ctx.fillRect((OX + x) * SCALE, (oy + y - bob) * SCALE, SCALE, SCALE);
+  }
+  if (showGrid) {
+    ctx.strokeStyle = 'rgba(255,255,255,.08)';
+    for (let i = 0; i <= W; i++) { ctx.beginPath(); ctx.moveTo(i * SCALE + .5, 0); ctx.lineTo(i * SCALE + .5, H * SCALE); ctx.stroke(); }
+    for (let i = 0; i <= H; i++) { ctx.beginPath(); ctx.moveTo(0, i * SCALE + .5); ctx.lineTo(W * SCALE, i * SCALE + .5); ctx.stroke(); }
+  }
+}
+
+// Each pose returns [pixels, bob] for a tick (one tick = 150ms).
+const POSES = {
+  Idle:  (b, t) => [pixels(b, play && t % 24 === 23 ? blink(b, b.rows) : b.rows), play && Math.floor(t / 3) % 2 ? 1 : 0],
+  Walk:  (b, t) => { const f = play ? Math.floor(t / 2) % 4 : 0; return [pixels(b, lift(b.rows, b, [null, 'left', null, 'right'][f])), f % 2 ? 0 : 1]; },
+  Slash: (b, t) => { const f = play ? t % 8 : 0; return [pixels(b, b.rows, f === 5 || f === 6 ? 'slash' : 'idle'), 0]; },
+};
+
+function row(root, i, title, note, pal, body) {
+  const sec = document.createElement('section');
+  sec.className = 'row';
+  sec.innerHTML = `
+    <div class="meta">
+      <div class="num">${i}</div>
+      <h2>${title}</h2>
+      <p>${note}</p>
+      <div class="sw">${Object.values(pal).map(c => `<i style="background:${c}" title="${c}"></i>`).join('')}</div>
+    </div>
+    <div class="poses"></div>`;
+  const poses = sec.querySelector('.poses');
+  for (const [name, fn] of Object.entries(POSES)) {
+    const div = document.createElement('div');
+    div.className = 'pose';
+    const cv = document.createElement('canvas');
+    cv.width = W * SCALE; cv.height = H * SCALE;
+    cv.setAttribute('role', 'img');
+    cv.setAttribute('aria-label', `${title} hooded warrior, ${name.toLowerCase()}`);
+    const label = document.createElement('span');
+    label.textContent = name;
+    div.append(cv, label);
+    poses.append(div);
+    cells.push({ ctx: cv.getContext('2d'), fn, pal, body });
+  }
+  root.append(sec);
+}
+
+BODIES.forEach((b, i) => row(document.getElementById('bodies'), String.fromCharCode(65 + i), b.name, b.note, PAL, b));
+
+const render = () => cells.forEach(c => { const [px, bob] = c.fn(c.body, tick); paint(c.ctx, c.body, px, c.pal, bob); });
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) { play = false; document.getElementById('play').checked = false; }
+render();
+setInterval(() => { if (play) { tick++; render(); } }, 150);
+document.getElementById('grid').addEventListener('change', e => { showGrid = e.target.checked; render(); });
+document.getElementById('play').addEventListener('change', e => { play = e.target.checked; tick = 0; render(); });
+</script>

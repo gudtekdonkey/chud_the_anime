@@ -1,0 +1,243 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Assassination Markers</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 26px; }
+  header { display: grid; gap: 8px; max-width: 70ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 18px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--rule); display: grid; }
+  .card canvas { width: 100%; aspect-ratio: 150 / 90; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--rule); }
+  .card div { padding: 14px 16px 16px; display: grid; gap: 6px; }
+  .num { font: 700 13px/1 "Pixelify Sans", monospace; color: var(--cyan); letter-spacing: .06em; }
+  .rule { background: var(--panel); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; max-width: 70ch; }
+  .rule b { color: var(--ink); font-weight: 600; }
+  .bar label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; color: var(--muted); font-size: 14px; }
+  .bar input { accent-color: var(--cyan); width: 16px; height: 16px; }
+  .bar input[type=range] { width: 160px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">K · assassination · feedback ideas</div>
+    <h1>Who can he assassinate?</h1>
+    <p>The rule: K only locks onto an enemy when no other enemy is within the isolation distance. Grouped enemies protect each other. Each scene has the ronin on the left, a lone enemy (assassinatable) up top, and a pair below. One of the pair patrols away and back, so you can watch the marker switch on the moment he is left alone. When two enemies are both valid, the nearer one is K's pick and gets the full marker; the other gets a faint one.</p>
+    <div class="bar">
+      <label for="iso">Isolation distance <input type="range" id="iso" min="20" max="60" value="36"> <span id="isoV">36 px</span></label>
+      <label for="show"><input type="checkbox" id="show"> Show the isolation distance in every scene</label>
+    </div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <div class="rule">
+    <h2>Your call</h2>
+    <p><b>Pick one or two to combine.</b> A strong pairing is usually one marker ON the target (to say "this one") and one piece of feedback about WHY the others are not valid, like idea 4's link lines.</p>
+    <p><b>The isolation distance:</b> drag the slider to feel it. 36 px is about one and a half body heights.</p>
+  </div>
+</div>
+
+<script>
+// ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
+const FW = 48, FH = 48, OX = 24, OY = 40;
+const RC = { K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', H: '#2a2f37', G: '#3b424c', B: '#1a1d24',
+  E: '#6ff3e4', W: '#e9eeee', S: '#7d868e', s: '#2c3037' };
+const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
+// angles in radians: limbs 0 = straight down, + swings forward; knee + folds the shin back; elbow + folds the forearm forward
+const REST = { hx: 0, hy: 0, lean: .04, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
+  sword: null, sheathing: false, hat: 0, flutter: 0 };
+const pz = o => ({ ...REST, ...o });
+const HILT = [.42, 1.0];          // front hand resting on the hilt at the hip
+const lerpP = (a, b, k) => { const o = {}; for (const key in a) {
+  const x = a[key], y = b[key];
+  o[key] = Array.isArray(x) ? x.map((v, i) => v + (y[i] - v) * k) : typeof x === 'number' && typeof y === 'number' ? x + (y - x) * k : k < .5 ? x : y; }
+  return o; };
+
+function rig(g, fx, p) {
+  const put = (x, y, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
+  const blob = (x, y, w, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
+  const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
+    for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
+  const poly = (pts, c) => {
+    const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+    for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++)
+      for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+        let inside = false;
+        for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+          const [xi, yi] = pts[i], [xj, yj] = pts[j];
+          if ((yi > y + .5) !== (yj > y + .5) && x + .5 < (xj - xi) * (y + .5 - yi) / (yj - yi) + xi) inside = !inside;
+        }
+        if (inside) put(x, y, c);
+      }
+  };
+  const hip = [OX + p.hx, OY - 11 + p.hy];
+  const up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
+  // breath lifts the chest, shoulders and head but not the hips, so it reads as breathing, not bobbing
+  const L = (u, v) => { const b = u > 4 ? p.breath * Math.min(1, (u - 4) / 3) : 0;
+    return [hip[0] + up[0] * u + fw[0] * v, hip[1] + up[1] * u + fw[1] * v - b]; };
+  const dir = a => [Math.sin(a), Math.cos(a)];
+  const add = (a, d, k) => [a[0] + d[0] * k, a[1] + d[1] * k];
+  const leg = ([th, kn], c, off) => { const h = L(0, off), k = add(h, dir(th), 5), f = add(k, dir(th - kn), 6);
+    seg(h, k, 2, c); seg(k, f, 2, c); seg(f, [f[0] + 2, f[1]], 1, c); };
+  const arm = ([sh, el], c) => { const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
+    seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
+  const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
+
+  // far side first: scabbard, far arm, far leg
+  seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
+  arm(p.ba, 'D');
+  leg(p.bl, 'D', -.5);
+  // torso, near leg
+  poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
+  for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
+  leg(p.fl, 'K', .5);
+  // head and hat
+  const hc = L(10, .6);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
+  put(hc[0] + 1.5, hc[1], 'E');
+  const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
+  HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x - fx + fx, hy0 + y, ch); }));
+  // mantle over the shoulders, its back tip lifting a hair with the flutter
+  const f = p.flutter;
+  // it drapes flat down the back instead of standing off it, so it no longer reads as a hump
+  poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M');
+  seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
+  if (f > .5) put(...L(2.6, -3.4), 'M');
+  // near arm and the sword
+  const hand = arm(p.fa, 'K');
+  if (p.sword === null && !p.sheathing) {                    // sheathed: hilt pokes forward-up out of the scabbard
+    put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W');
+  } else if (p.sheathing) {                                  // sliding home: blade runs from the hand into the scabbard mouth
+    seg(hand, mouth, 1, 'W'); put(...hand, 'S'); put(...add(hand, [hand[0] - mouth[0], hand[1] - mouth[1]].map(v => v / (Math.hypot(hand[0] - mouth[0], hand[1] - mouth[1]) || 1)), 2), 'K');
+  } else {
+    const d = [Math.cos(p.sword), Math.sin(p.sword)];
+    seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S');
+    seg(add(hand, d, 1), add(hand, d, 13), 1, 'W');
+  }
+}
+
+
+// ---- an original enemy: a hooded grunt, facing left, red eye ----
+const EN = ['....aaaa....', '...aaaaaa...', '..aabbbbaa..', '..abrbbbba..', '..aabbbbaa..', '...aaaaaa...', '..aaaaaaaa..', '.aaaaaaaaaa.',
+  '.aaaaaaaaaa.', '.aa.aaaa.aa.', '.aa.aaaa.aa.', '....aaaa....', '....aaaa....', '....a..a....', '....a..a....', '...aa..aa...'];
+const EC = { a: '#4b4145', b: '#1c1719', r: '#ff5a4a' };
+function drawEnemy(g, e, tint) {
+  const x0 = Math.round(e.x) - 6, y0 = Math.round(e.y) - 15 - e.bob;
+  g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(x0 + 2, Math.round(e.y) + 1, 8, 1);
+  EN.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === '.') return; g.fillStyle = tint || EC[ch]; g.fillRect(x0 + x, y0 + y + (y > 12 ? e.bob : 0), 1, 1); }));
+}
+
+// ---- the ronin, drawn once from the rig ----
+const ron = document.createElement('canvas'); ron.width = 48; ron.height = 48;
+rig(ron.getContext('2d'), 0, pz({ fa: [.3, .5] }));
+
+// ---- scenes ----
+const Wd = 150, Ht = 90;
+function floor(seed) {
+  const c = document.createElement('canvas'); c.width = Wd; c.height = Ht; const g = c.getContext('2d'); let r = seed;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  g.fillStyle = '#474c4a'; g.fillRect(0, 0, Wd, Ht);
+  for (let i = 0; i < Wd * Ht / 40; i++) { g.fillStyle = rnd() < .5 ? '#434846' : '#4b504e'; g.fillRect(rnd() * Wd | 0, rnd() * Ht | 0, 2, 1); }
+  return c;
+}
+let ISO = 36, SHOW = false;
+const CY = '#6ff3e4', CY2 = '#b8fff6', DIM = '#2c8f86';
+const px = (g, x, y, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), 1, 1); };
+function ellipse(g, x, y, rx, ry, c, dash = 0, rot = 0) {
+  for (let a = 0; a < Math.PI * 2; a += .5 / rx) { if (dash && Math.floor((a + rot) / dash) % 2) continue; px(g, x + Math.cos(a) * rx, y + Math.sin(a) * ry, c); }
+}
+
+// each idea: draw(g, e, t, k) for a valid target (k = 1 primary, .4 secondary), and optional protect(g, a, b, t) for a grouped pair
+const IDEAS = [
+  { name: 'Eye mark', note: 'A small cyan eye opens above the target and blinks slowly, the ronin\'s own eye. Quiet, in-world, reads at a glance.',
+    draw(g, e, t, k) { const x = e.x, y = e.y - 22 - e.bob; const open = (t % 1.6) > .12;
+      g.globalAlpha = k; px(g, x - 2, y, CY); px(g, x + 2, y, CY); px(g, x - 1, y - 1, CY); px(g, x + 1, y - 1, CY); px(g, x, y - 1, CY);
+      if (open) { px(g, x - 1, y + 1, CY); px(g, x + 1, y + 1, CY); px(g, x, y + 1, CY); px(g, x, y, '#ffffff'); } g.globalAlpha = 1; } },
+  { name: 'Lock-on brackets', note: 'Four corner brackets snap in around the target and breathe in and out by a pixel. The clearest "this one" signal.',
+    draw(g, e, t, k) { const p = e.lockT < .15 ? (1 - e.lockT / .15) * 10 : Math.round(Math.sin(t * 5) * .6 + .6);
+      const x0 = e.x - 9 - p, x1 = e.x + 8 + p, y0 = e.y - 19 - p - e.bob, y1 = e.y + 2 + p; g.globalAlpha = k; g.fillStyle = CY;
+      for (const [x, y, sx, sy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) { g.fillRect(Math.round(sx > 0 ? x : x - 2), Math.round(y), 3, 1); g.fillRect(Math.round(x), Math.round(sy > 0 ? y : y - 2), 1, 3); }
+      g.globalAlpha = 1; } },
+  { name: 'Ground sigil', note: 'A dashed cyan ring turns slowly on the floor under the target\'s feet. Leaves the body clean, works in a crowd of effects.',
+    draw(g, e, t, k) { g.globalAlpha = k; ellipse(g, e.x, e.y + 1, 9, 4, CY, .35, t * 1.5); g.globalAlpha = 1; } },
+  { name: 'Isolation bubble', note: 'Every enemy carries a faint bubble of the isolation distance. An empty bubble glows cyan. Overlapping bubbles are grey and joined by a link line, so you learn WHY they are safe.',
+    draw(g, e, t, k) { g.globalAlpha = .5 * k + .2; ellipse(g, e.x, e.y - 6, ISO, ISO * .55, CY, .12, t * .6); g.globalAlpha = 1; },
+    protect(g, a, b) { for (const e of [a, b]) { g.globalAlpha = .35; ellipse(g, e.x, e.y - 6, ISO, ISO * .55, '#8b9290', .12); }
+      g.globalAlpha = .7; const n = Math.hypot(b.x - a.x, b.y - a.y) | 0; for (let i = 0; i < n; i += 3) px(g, a.x + (b.x - a.x) * i / n, a.y - 8 + (b.y - a.y) * i / n, '#9aa3a1'); g.globalAlpha = 1; } },
+  { name: 'Glitch shimmer', note: 'The target flickers with cyan glitch slices every second or so, as if the ronin\'s power is already reaching into it.',
+    tint: true,
+    draw(g, e, t, k) { if ((t * 1.3 + e.x * .01) % 1 < .14) { g.globalAlpha = .9 * k; for (let i = 0; i < 3; i++) { g.fillStyle = i % 2 ? CY : CY2; g.fillRect(Math.round(e.x - 7 + Math.random() * 6), Math.round(e.y - 16 + Math.random() * 14), 3 + (Math.random() * 5 | 0), 1); } g.globalAlpha = 1; } } },
+  { name: 'Kill line', note: 'A dotted line runs from the ronin to his pick, with a bright pulse travelling along it. Shows the target and the path he will flash along.',
+    draw(g, e, t, k, P) { if (k < 1) return; const n = Math.hypot(e.x - P.x, e.y - P.y) | 0, pos = (t * 1.4 % 1) * n;
+      for (let i = 0; i < n; i += 3) { const hot = Math.abs(i - pos) < 4; g.globalAlpha = hot ? 1 : .45; px(g, P.x + (e.x - P.x) * i / n, P.y - 10 + (e.y - 10 - P.y + 10) * i / n, hot ? '#ffffff' : CY); } g.globalAlpha = 1; } },
+  { name: 'Blade pip', note: 'A tiny sword icon hovers point-down over the target and bobs. A game-y, unmistakable "strike here".',
+    draw(g, e, t, k) { const x = e.x, y = e.y - 27 - e.bob + Math.round(Math.sin(t * 4)); g.globalAlpha = k;
+      for (let i = 0; i < 5; i++) px(g, x, y + i, '#ffffff'); px(g, x - 1, y + 5, CY); px(g, x, y + 5, CY); px(g, x + 1, y + 5, CY); px(g, x, y + 6, CY); px(g, x, y + 7, CY); g.globalAlpha = 1; } },
+  { name: 'Marked shadow', note: 'The target\'s shadow turns into a dark pool with a thin cyan rim, like the floor is opening under him. The subtlest one.',
+    draw(g, e, t, k) { g.globalAlpha = .55 * k; g.fillStyle = '#15181a'; g.fillRect(Math.round(e.x - 7), Math.round(e.y), 14, 2); g.fillRect(Math.round(e.x - 5), Math.round(e.y + 2), 10, 1);
+      g.globalAlpha = (.5 + .4 * Math.sin(t * 3)) * k; ellipse(g, e.x, e.y + 1, 8, 2.5, CY); g.globalAlpha = 1; } },
+  { name: 'Heartbeat', note: 'A tiny cyan pulse line beats above the target. Grouped enemies show a flat grey line instead: protected, for now.',
+    draw(g, e, t, k) { const x0 = e.x - 6, y = e.y - 23 - e.bob, ph = (t * 1.2) % 1; g.globalAlpha = k;
+      for (let i = 0; i < 13; i++) { const u = i / 12, d = Math.abs(u - ph) < .1 ? [0, -3, 2, -1][Math.min(3, Math.floor(Math.abs(u - ph) * 40))] : 0; px(g, x0 + i, y + d, Math.abs(u - ph) < .1 ? '#ffffff' : CY); } g.globalAlpha = 1; },
+    protect(g, a, b) { for (const e of [a, b]) { g.globalAlpha = .6; for (let i = 0; i < 13; i++) px(g, e.x - 6 + i, e.y - 23 - e.bob, '#8b9290'); } g.globalAlpha = 1; } },
+  { name: 'Key prompt', note: 'A small pixel K keycap floats over the target. The most explicit, good while the player is still learning the move.',
+    draw(g, e, t, k) { const x = Math.round(e.x) - 4, y = Math.round(e.y - 29 - e.bob + (t % 1 < .5 ? 0 : 1)); g.globalAlpha = k;
+      g.fillStyle = '#1b1e21'; g.fillRect(x, y, 9, 9); g.fillStyle = CY; g.fillRect(x, y, 9, 1); g.fillRect(x, y + 8, 9, 1); g.fillRect(x, y, 1, 9); g.fillRect(x + 8, y, 1, 9);
+      g.fillStyle = '#ffffff'; g.fillRect(x + 3, y + 2, 1, 5); g.fillRect(x + 4, y + 4, 1, 1); g.fillRect(x + 5, y + 3, 1, 1); g.fillRect(x + 5, y + 5, 1, 1); g.fillRect(x + 6, y + 2, 1, 1); g.fillRect(x + 6, y + 6, 1, 1); g.globalAlpha = 1; } },
+  { name: 'Spotlight', note: 'The room dims a touch and a soft pool of light sits on the target. Moody and cinematic, strongest when few targets are valid.',
+    pre(g, list, t) { g.globalAlpha = .28; g.fillStyle = '#0b0d0e'; g.fillRect(0, 0, Wd, Ht); g.globalAlpha = 1; },
+    draw(g, e, t, k) { const R = 16; g.globalAlpha = .11 * k; g.fillStyle = '#d8fff9';
+      for (let r = R; r > 3; r -= 3) { for (let dy = -r; dy <= r; dy++) { const w = Math.round(Math.sqrt(r * r - dy * dy) * 1.3); g.fillRect(Math.round(e.x - w), Math.round(e.y - 8 + dy * .8), 2 * w, 1); } } g.globalAlpha = 1; } },
+  { name: 'Brackets + link lines', note: 'Two ideas combined: lock-on brackets on the target, grey link lines between enemies that protect each other.',
+    draw(g, e, t, k) { IDEAS[1].draw(g, e, t, k); },
+    protect(g, a, b) { g.globalAlpha = .7; const n = Math.hypot(b.x - a.x, b.y - a.y) | 0; for (let i = 0; i < n; i += 2) px(g, a.x + (b.x - a.x) * i / n, a.y - 8 + (b.y - a.y) * i / n, i % 4 ? '#6e7573' : '#9aa3a1'); g.globalAlpha = 1; } },
+];
+
+const root = document.getElementById('grid'), scenes = [];
+IDEAS.forEach((idea, i) => {
+  const card = document.createElement('section'); card.className = 'card';
+  card.innerHTML = `<canvas width="${Wd}" height="${Ht}" role="img" aria-label="Scene showing the ${idea.name} marker"></canvas><div><span class="num">${String(i + 1).padStart(2, '0')}</span><h2>${idea.name}</h2><p>${idea.note}</p></div>`;
+  root.append(card);
+  scenes.push({ g: card.querySelector('canvas').getContext('2d'), idea, floor: floor(11 + i * 37), phase: i * .7,
+    en: [{ x: 108, y: 34, bob: 0, lockT: 0 }, { x: 96, y: 76, bob: 0, lockT: 0 }, { x: 126, y: 72, bob: 0, lockT: 0 }] });
+});
+const P = { x: 26, y: 62 };
+const iso = document.getElementById('iso'), isoV = document.getElementById('isoV');
+iso.addEventListener('input', () => { ISO = +iso.value; isoV.textContent = ISO + ' px'; });
+document.getElementById('show').addEventListener('change', e => SHOW = e.target.checked);
+
+let t0 = performance.now(), still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function frame(now) {
+  const t = still ? 2 : (now - t0) / 1000;
+  for (const S of scenes) {
+    const { g, idea, en } = S, tt = t + S.phase;
+    // the patroller wanders from its partner and back over 7 s
+    en[1].x = 96 - (Math.sin(tt * Math.PI * 2 / 7) * .5 + .5) * 44;
+    en.forEach((e, i) => e.bob = Math.floor(tt * 1.5 + i) % 2);
+    const valid = en.map((e, i) => en.every((o, j) => j === i || Math.hypot(o.x - e.x, (o.y - e.y) * 1.3) > ISO));
+    en.forEach((e, i) => { e.lockT = valid[i] ? e.lockT + 1 / 60 : 0; });
+    // K's pick: the nearest valid one
+    let pick = -1, best = 1e9; en.forEach((e, i) => { const d = Math.hypot(e.x - P.x, e.y - P.y); if (valid[i] && d < best) { best = d; pick = i; } });
+    g.drawImage(S.floor, 0, 0);
+    if (idea.pre) idea.pre(g, en, tt);
+    if (SHOW) for (const e of en) { g.globalAlpha = .25; ellipse(g, e.x, e.y - 6, ISO, ISO * .55, '#ffffff', .12); g.globalAlpha = 1; }
+    if (idea.protect) for (let i = 0; i < en.length; i++) for (let j = i + 1; j < en.length; j++)
+      if (Math.hypot(en[j].x - en[i].x, (en[j].y - en[i].y) * 1.3) <= ISO) idea.protect(g, en[i], en[j], tt);
+    // ground-level markers first, then bodies sorted by feet, then overhead markers
+    const ground = ['Ground sigil', 'Marked shadow', 'Isolation bubble', 'Kill line', 'Spotlight'].includes(idea.name);
+    if (ground) en.forEach((e, i) => valid[i] && idea.draw(g, e, tt, i === pick ? 1 : .4, P));
+    const bodies = [{ y: P.y, d: () => g.drawImage(ron, P.x - 24, P.y - 40) }, ...en.map((e, i) => ({ y: e.y, d: () => drawEnemy(g, e) }))];
+    bodies.sort((a, b) => a.y - b.y).forEach(b => b.d());
+    if (!ground) en.forEach((e, i) => valid[i] && idea.draw(g, e, tt, i === pick ? 1 : .4, P));
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>

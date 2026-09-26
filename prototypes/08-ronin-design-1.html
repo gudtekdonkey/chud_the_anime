@@ -1,0 +1,295 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Ronin Design, Round 1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ground: #121416;
+    --panel: #1b1e21;
+    --rule: #30353a;
+    --ink: #eef1f0;
+    --muted: #9aa3a1;
+    --cyan: #6ff3e4;
+    --red: #e8375f;
+  }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 28px; }
+  header { display: grid; gap: 8px; max-width: 66ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 22px/1.1 "Pixelify Sans", monospace; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  canvas { image-rendering: pixelated; display: block; }
+  .opt { background: var(--panel); border: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 230px) 1fr; }
+  @media (max-width: 820px) { .opt { grid-template-columns: 1fr; } }
+  .meta { padding: 20px; border-right: 1px solid var(--rule); display: grid; gap: 10px; align-content: start; }
+  @media (max-width: 820px) { .meta { border-right: 0; border-bottom: 1px solid var(--rule); } }
+  .letter { font: 700 36px/1 "Pixelify Sans", monospace; color: var(--red); }
+  .dirs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  @media (max-width: 560px) { .dirs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .dir { display: grid; justify-items: center; gap: 8px; padding: 14px 6px 12px; }
+  .dir + .dir { border-left: 1px solid var(--rule); }
+  @media (max-width: 560px) { .dir:nth-child(3) { border-left: 0; } .dir:nth-child(n+3) { border-top: 1px solid var(--rule); } }
+  .dir canvas { width: 100%; max-width: 176px; aspect-ratio: 44 / 44; }
+  .dir span { font: 500 14px/1 "Pixelify Sans", monospace; color: var(--muted); letter-spacing: .05em; }
+  .scale { display: grid; gap: 10px; }
+  .scale canvas { width: 100%; max-width: 960px; aspect-ratio: 416 / 60; outline: 1px solid var(--rule); }
+  .bar { display: flex; flex-wrap: wrap; gap: 16px; }
+  .bar label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; color: var(--muted); font-size: 14px; }
+  .bar input { accent-color: var(--cyan); width: 16px; height: 16px; }
+  .sw { display: flex; gap: 5px; flex-wrap: wrap; }
+  .sw i { width: 18px; height: 18px; display: block; outline: 1px solid rgba(255,255,255,.12); }
+  ol { margin: 0; padding-left: 1.3em; color: var(--muted); display: grid; gap: 6px; max-width: 66ch; }
+  ol b { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Design session · round 1 of 4 · silhouette</div>
+    <h1>Our top-down ronin</h1>
+    <p>One body, hand-drawn pixel by pixel from above at game scale: 24 wide and 26 tall, the same height as the samurai. A wide straw hat throws his face into shadow, and one cyan eye shows under the brim. A katana sits at his hip, and a black cloak ends in a ragged hem. Row 0 is the bare base, and options A to C only add the crimson cloth. Each one plays its idle facing down, up, left and right.</p>
+    <div class="bar">
+      <label for="play"><input type="checkbox" id="play" checked> Play idle</label>
+      <label for="glitch"><input type="checkbox" id="glitch" checked> Idle glitch every few seconds</label>
+    </div>
+  </header>
+
+  <div id="opts" style="display:grid;gap:20px"></div>
+
+  <section class="scale">
+    <h2>At game scale</h2>
+    <p>The base and all three options, each in four directions, at 2×. A 1080p screen shows them at 4×. The hat, eye and crimson have to read here, not only zoomed in.</p>
+    <canvas id="scale" width="416" height="60" role="img" aria-label="The base and options A, B and C at game scale"></canvas>
+  </section>
+
+  <section class="scale">
+    <h2>What I need from you</h2>
+    <ol>
+      <li><b>The base first:</b> does the body read right? Then pick A, B or C, or mix them, like "B's mantle with A's scarf tails".</li>
+      <li><b>The hat:</b> is it the right width? It can go flatter and wider, or taller and more pointed.</li>
+      <li><b>The eye:</b> one cyan eye, or two?</li>
+      <li><b>The body:</b> slimmer, or bulkier in the cloak?</li>
+    </ol>
+    <p>Round 2 is the run in all four directions, round 3 the slash combo and slide, round 4 the glitch moves and death.</p>
+  </section>
+</div>
+
+<script>
+const PAL = {
+  K: '#0c0d11', D: '#1d2129', G: '#3d4550', H: '#2b313a', E: '#6ff3e4', e: '#2c8f86',
+  R: '#e8375f', r: '#9e1f45', W: '#e9eeee', S: '#7d868e',
+};
+// K black · D dark plane · G light edge · H hat top · E eye · e eye glow · R/r crimson · W hilt · S guard
+
+// ---- The body, three views. Rows are 24 wide; left is the side view mirrored. ----
+const HAT = [
+  '.........GGGGGG.........',
+  '......GGGHHHHHHGGG......',
+  '...GGHHHHHHHHHHHHHHGG...',
+  '.GHHHHHHHHHHHHHHHHHHHHG.',
+  'GDDDDDDDDDDDDDDDDDDDDDDG',
+  '.KDDDDDDDDDDDDDDDDDDDDK.',
+];
+const HAT_SIDE = [
+  '..........GGGGG.........',
+  '.......GGHHHHHHGG.......',
+  '....GGHHHHHHHHHHHHGG....',
+  '..GHHHHHHHHHHHHHHHHHHG..',
+  '.GDDDDDDDDDDDDDDDDDDDDG.',
+  '..KDDDDDDDDDDDDDDDDDDK..',
+];
+const VIEWS = {
+  down: [...HAT,
+    '........KKKKKKKK........',
+    '........KKEeKKKK........',
+    '.......KKKKKKKKKK.......',
+    '......DDKKKKKKKKKK......',
+    '.....GDDKKKKKKKKKKK.....',
+    '.....GDKKKKKKKKKKKK.....',
+    '.....GDKKKKKKKKKKKK..W..',
+    '.....GDKKKKKKKKKKKK.W...',
+    '....GDDKKKKKKKKKKKKS....',
+    '....GDKKKKKKKKKKKKKK....',
+    '....GDKKKKKKKKKKKKKK....',
+    '....DDKKKKKKKKKKKKKK....',
+    '....DKKKKKKKKKKKKKKK....',
+    '...DDKKKKKKKKKKKKKKKK...',
+    '...DKKKKKKKKKKKKKKKKK...',
+    '........KK....KK........',
+    '........KK....KK........',
+    '........KK....KK........',
+    '........KK....KK........',
+    '.......KKK....KKK.......'],
+  up: [...HAT,
+    '........KKKKKKKK........',
+    '........KKKKKKKK........',
+    '.......KKKKKKKKKK.......',
+    '......DDKKKKKKKKKK......',
+    '.....GDDKKKKKKKKKKK.....',
+    '.....GDKKKKKKKKKKKK.....',
+    '..W..GDKKKKKKKKKKKK.....',
+    '...W.GDKKKKKKKKKKKK.....',
+    '....SDDKKKKKKKKKKKKK....',
+    '....GDKKKKKKKKKKKKKK....',
+    '....GDKKKKKKKKKKKKKK....',
+    '....DDKKKKKKKKKKKKKK....',
+    '....DKKKKKKKKKKKKKKK....',
+    '...DDKKKKKKKKKKKKKKKK...',
+    '...DKKKKKKKKKKKKKKKKK...',
+    '........KK....KK........',
+    '........KK....KK........',
+    '........KK....KK........',
+    '........KK....KK........',
+    '........KK....KK........'],
+  right: [...HAT_SIDE,
+    '.........KKKKKK.........',
+    '.........KKKKKEe........',
+    '.........KKKKKK.........',
+    '........DKKKKKKK........',
+    '.......GDKKKKKKK........',
+    '.......GDKKKKKKK........',
+    '.......GDKKKKKKK.W......',
+    '.......DKKKKKKKKS.......',
+    '......DKKKKKKKKK........',
+    '......DKKKKKKKKK........',
+    '.....DDKKKKKKKKK........',
+    '.....DKKKKKKKKKK........',
+    '....DKKKKKKKKKKK........',
+    '....DKKKKKKKKKKKK.......',
+    '.........KK.KK..........',
+    '.........KK.KK..........',
+    '.........KK.KK..........',
+    '.........KK..KK.........',
+    '.........KKK..KKK.......'],
+};
+// The ragged hem, two hand-drawn states that alternate as he breathes.
+const HEM = {
+  down:  [['...DKK.KKKKKKKKK.KKKK...', '...K...KK.KKK..K..K.....'], ['...DKKKK.KKKK.KKKKKKK...', '....K.K..KK.K.KK...K....']],
+  up:    [['...DKKK.KKKKKKK.KKKK....', '....K..KK.KKK..K...K....'], ['...DKKKKK.KKKKK.KKKK....', '...K..K..KK.K..KK..K....']],
+  right: [['...KK.KKKKKKKKKK........', '...K..K.KK..KK..........'], ['..KKK.KKKKKKKKK.........', '..K...KK.K..KK..........']],
+};
+
+// ---- Crimson cloth options, drawn as runs of pixels: [row, col, 'pixels'] per view and hem state ----
+const OPTIONS = [
+  { letter: '0', name: 'Base', note: 'The bare body with no cloth. Judge this first: hat width, face shadow, the one eye, the cloak shape, the katana at the hip and the stance.',
+    cloth: { down: [[], []], up: [[], []], right: [[], []] } },
+  { letter: 'A', name: 'Scarf', note: 'A crimson scarf around the neck. Its two long tails hang down his back and stream behind him when he turns side-on.',
+    cloth: {
+      down:  [[[8, 8, 'RRRRRrrr'], [9, 7, 'R'], [10, 7, 'r'], [9, 16, 'rr'], [10, 17, 'r']],
+              [[8, 8, 'RRRRRrrr'], [9, 7, 'R'], [10, 6, 'r'], [9, 16, 'rr'], [10, 17, 'r']]],
+      up:    [[[8, 8, 'RRRRRrrr'], ...[9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(y => [y, y < 14 ? 11 : 11 + ((y / 2 | 0) % 2), y % 3 ? 'Rr' : 'R.']), ...[9, 10, 11, 12, 13, 14, 15, 16].map(y => [y, 14, 'r'])],
+              [[8, 8, 'RRRRRrrr'], ...[9, 10, 11, 12, 13, 14, 15, 16, 17, 18].map(y => [y, y < 14 ? 11 : 10 + ((y / 2 | 0) % 2), y % 3 ? 'Rr' : 'R.']), ...[9, 10, 11, 12, 13, 14, 15, 16].map(y => [y, 14 + (y > 13 ? 1 : 0), 'r'])]],
+      right: [[[8, 9, 'RRRRrr'], [8, 6, 'RRR'], [9, 4, 'RRr'], [10, 3, 'Rr'], [11, 2, 'r'], [9, 7, 'r']],
+              [[8, 9, 'RRRRrr'], [8, 6, 'RRR'], [9, 5, 'RR'], [9, 3, 'r'], [10, 2, 'Rr'], [11, 1, 'r'], [9, 7, 'r']]],
+    } },
+  { letter: 'B', name: 'Mantle', note: 'A short crimson mantle over the shoulders, ragged at the edge. It gives the biggest block of colour, so he reads well from far away.',
+    cloth: {
+      down:  [[[8, 6, 'rRRRRRRRRrr'], [9, 5, 'RR'], [9, 17, 'rr'], [10, 5, 'R'], [10, 18, 'r'], [11, 5, 'R'], [11, 18, 'r'], [12, 4, 'R.R'], [12, 18, 'r']],
+              [[8, 6, 'rRRRRRRRRrr'], [9, 5, 'RR'], [9, 17, 'rr'], [10, 5, 'R'], [10, 18, 'r'], [11, 5, 'R'], [11, 18, 'r'], [12, 5, 'R'], [12, 17, '.r']]],
+      up:    [[[8, 6, 'RRRRRRRRRRRr'], [9, 5, 'RRRRRRRRRRRrr'], [10, 5, 'RRRRRRRRRRrrr'], [11, 5, 'RRRRRRRRRrrrr'], [12, 5, 'RR.RRRRR.Rrrr'], [13, 6, 'R..R.RR..r.r']],
+              [[8, 6, 'RRRRRRRRRRRr'], [9, 5, 'RRRRRRRRRRRrr'], [10, 5, 'RRRRRRRRRRrrr'], [11, 5, 'RRRRRRRRRrrrr'], [12, 5, 'RRRR.RRRRR.rr'], [13, 5, 'R.RR..R.RR..r']]],
+      right: [[[8, 8, 'RRRRrr'], [9, 7, 'RRRRRr'], [10, 6, 'RRRRRr'], [11, 6, 'RRRRr'], [12, 6, 'R.RR'], [13, 6, 'R..R']],
+              [[8, 8, 'RRRRrr'], [9, 7, 'RRRRRr'], [10, 6, 'RRRRRr'], [11, 5, 'RRRRRr'], [12, 5, 'RR.R'], [13, 5, '.R.R']]],
+    } },
+  { letter: 'C', name: 'Obi sash', note: 'A crimson sash tied at the waist with two tails that hang to his knees. The quietest option: the colour sits low and moves with the legs.',
+    cloth: {
+      down:  [[[15, 6, 'rRRRRRRRRRRRrr'], [16, 7, 'RR'], [17, 7, 'Rr'], [18, 7, 'R'], [19, 6, 'Rr'], [20, 6, 'R'], [16, 10, 'r'], [17, 10, 'r'], [18, 10, 'r']],
+              [[15, 6, 'rRRRRRRRRRRRrr'], [16, 7, 'RR'], [17, 6, 'Rr'], [18, 6, 'R'], [19, 6, 'R'], [20, 5, 'Rr'], [16, 10, 'r'], [17, 10, 'r'], [18, 11, 'r']]],
+      up:    [[[15, 6, 'RRRRRRRRRRRRrr'], [16, 10, 'RRrr'], [17, 11, 'Rr'], [18, 11, 'Rr'], [19, 11, 'R.r'], [20, 10, 'R..r'], [21, 10, 'R'], [21, 14, 'r']],
+              [[15, 6, 'RRRRRRRRRRRRrr'], [16, 10, 'RRrr'], [17, 11, 'Rr'], [18, 10, 'R.r'], [19, 10, 'R..r'], [20, 10, 'R...r'], [21, 11, 'R']]],
+      right: [[[15, 7, 'rRRRRRRRRr'], [16, 6, 'RR'], [17, 5, 'Rr'], [18, 4, 'R'], [19, 3, 'Rr'], [20, 3, 'R']],
+              [[15, 7, 'rRRRRRRRRr'], [16, 6, 'RR'], [17, 5, 'RR'], [18, 4, 'Rr'], [19, 3, 'R'], [20, 2, 'Rr']]],
+    } },
+];
+
+// ---- Build a frame: body, hem, cloth, with the upper body bobbing on the breath ----
+const LEG0 = 21;   // rows from here down are the legs, which stay planted
+function frame(opt, view, f, glitch) {
+  const base = view === 'left' ? 'right' : view;
+  const rows = VIEWS[base].map(r => [...r]);
+  const hem = HEM[base][f % 2];
+  rows[19] = [...hem[0]]; rows[20] = [...hem[1]];
+  for (const [y, x, s] of opt.cloth[base][f % 2]) [...s].forEach((ch, i) => { if (ch !== '.') rows[y][x + i] = ch; });
+  const bob = f === 1 || f === 2 ? 1 : 0;
+  const px = [];
+  rows.forEach((r, y) => r.forEach((ch, x) => {
+    if (ch === '.') return;
+    const yy = y < LEG0 ? y + bob : y;
+    px.push([view === 'left' ? 23 - x : x, yy, ch]);
+  }));
+  // idle glitch: shift a few bands of rows sideways and leave cyan scraps
+  if (glitch) {
+    const bands = [[3, 5, 2], [9, 11, -2], [14, 15, 3]];
+    for (const q of px) for (const [a, b, dx] of bands) if (q[1] >= a && q[1] <= b) q[0] += dx;
+    px.push([2, 10, 'E'], [3, 10, 'e'], [4, 10, 'e'], [19, 15, 'E'], [20, 15, 'e'], [21, 4, 'e'], [22, 4, 'e']);
+  }
+  return px;
+}
+
+// ---- Drawing ----
+function floorTile(W, H, seed) {
+  const c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'); let r = seed;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  g.fillStyle = '#474c4a'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < W * H / 40; i++) { g.fillStyle = rnd() < .5 ? '#434846' : '#4b504e'; g.fillRect(rnd() * W | 0, rnd() * H | 0, 2, 1); }
+  return c;
+}
+function drawSprite(g, px, ox, oy) {
+  const feet = oy + 25;
+  // reflection, mirrored under the feet
+  g.globalAlpha = .17;
+  for (const [x, y, ch] of px) { g.fillStyle = PAL[ch]; g.fillRect(ox + x, 2 * feet + 1 - (oy + y), 1, 1); }
+  g.globalAlpha = 1;
+  g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(ox + 6, feet + 1, 12, 1);
+  for (const [x, y, ch] of px) { g.fillStyle = PAL[ch]; g.fillRect(ox + x, oy + y, 1, 1); }
+}
+
+const DIRS = [['down', 'Facing down'], ['up', 'Facing up'], ['left', 'Facing left'], ['right', 'Facing right']];
+const cells = [];
+const optsRoot = document.getElementById('opts');
+OPTIONS.forEach((o, oi) => {
+  const sec = document.createElement('section');
+  sec.className = 'opt';
+  sec.innerHTML = `
+    <div class="meta">
+      <div class="letter">${o.letter}</div>
+      <h2>${o.name}</h2>
+      <p>${o.note}</p>
+      <div class="sw">${['K', 'D', 'G', 'H', 'E', 'R', 'r', 'W'].map(k => `<i style="background:${PAL[k]}" title="${PAL[k]}"></i>`).join('')}</div>
+    </div>
+    <div class="dirs"></div>`;
+  const dirs = sec.querySelector('.dirs');
+  DIRS.forEach(([view, label], di) => {
+    const d = document.createElement('div'); d.className = 'dir';
+    const cv = document.createElement('canvas'); cv.width = 44; cv.height = 44;
+    cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', `Option ${o.letter}, ${label.toLowerCase()}, idle`);
+    const s = document.createElement('span'); s.textContent = label;
+    d.append(cv, s); dirs.append(d);
+    cells.push({ g: cv.getContext('2d'), opt: o, view, floor: floorTile(44, 44, 7 + oi * 13 + di * 29), phase: di });
+  });
+  optsRoot.append(sec);
+});
+const scale = document.getElementById('scale').getContext('2d');
+const scaleFloor = floorTile(416, 60, 99);
+
+let play = true, glitchOn = true, t = 0;
+function render() {
+  const f = play ? Math.floor(t / 10) % 4 : 0;
+  for (const c of cells) {
+    const gl = glitchOn && play && (t + c.phase * 37) % 220 < 4;
+    c.g.drawImage(c.floor, 0, 0);
+    drawSprite(c.g, frame(c.opt, c.view, f, gl), 10, 6);
+  }
+  scale.drawImage(scaleFloor, 0, 0);
+  OPTIONS.forEach((o, i) => DIRS.forEach(([view], j) => drawSprite(scale, frame(o, view, (f + j) % 4, false), 6 + i * 104 + j * 24, 14)));
+}
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) { play = false; document.getElementById('play').checked = false; }
+document.getElementById('play').addEventListener('change', e => { play = e.target.checked; render(); });
+document.getElementById('glitch').addEventListener('change', e => { glitchOn = e.target.checked; });
+render();
+setInterval(() => { if (play) { t++; render(); } }, 1000 / 60);
+</script>

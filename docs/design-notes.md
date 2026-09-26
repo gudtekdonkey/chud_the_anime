@@ -1,0 +1,35 @@
+# Design notes
+
+Decisions made in the design sessions so far, newest last.
+
+## Look
+
+- Top-down, 480×270 native resolution, integer-scaled (4× on 1080p). Same scale as Hyper Light Drifter.
+- The ronin is **compact**: 20×26 px, about the height of Penusbmic's Glitch Samurai.
+- Dark silhouette: a near-black body, a wide straw hat (keep its height-to-width ratio), a black mantle, and two cyan eyes.
+- The katana stays sheathed at his hip. He draws it only to attack and resheathes after every attack.
+- Clothing items can be put on or taken off: mantle, scarf, cape, obi sash. They are all **shades of black**, never bright red.
+- Effects colours: cyan `#6ff3e4` / `#52e8d6` / `#b8fff6` and white, on a muted grey floor `#474c4a`. Glitch slices, jagged electric bolts, a floor reflection.
+- A hit is "dramatic yet controlled": whole-body white flash for about 2 frames, a short hit pause, a small screen shake.
+
+## Moves (game/index.html)
+
+- **Idle:** a calm breath about 2.7 s long. The chest rises, the hips stay put and the cloth barely moves. No robotic bobbing.
+- **J:** a light-speed quick-draw. He's already through the cut; afterimages show the motion. Press again for a second cut.
+- **Slide (was wall slide):** he leans back, lead leg out, back arm up behind for balance.
+- **K, glitch teleport:** electric flurry on arrival, then random glitching for a few seconds. With no enemy near, you can spam it.
+- **I, glitch double slash:** approved as is.
+- **U, storm slam:** a slow kneel, a rising cyclone, then a big slam that shakes the screen.
+- **C, sit:** back to the camera, cross-legged like a monk. Standing up plays before anything else.
+
+## Next
+
+1. **Held I:** hold to charge, release for a far longer dash with a much bigger area of effect. Six variations are being prototyped.
+2. **K assassinations:**
+   - With an isolated enemy in range (no other enemy within the isolation distance, 36 px to start), K flashes to it and plays an execution.
+   - A kill resets K after 0.2 s.
+   - 40 executions, built and approved 5 at a time.
+   - A marker shows who can be assassinated. The options are in `prototypes/12-assassin-markers.html`.
+3. **Clothing redesign.** The mantle was flattened because it read as a hump; the rest still needs a pass.
+4. **Front and back views** for every move. Everything uses the side view today.
+5. **Real enemies** with health, needed by K.

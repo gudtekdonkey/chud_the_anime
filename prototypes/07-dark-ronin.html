@@ -1,0 +1,478 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Dark Ronin</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ground: #121316;
+    --panel: #1b1d21;
+    --rule: #30343a;
+    --ink: #f1ecf4;
+    --muted: #9da49f;
+    --accent: #e8375f;
+    --cyan: #ff8fa6;
+  }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 64px; display: grid; gap: 28px; }
+  header { display: grid; gap: 10px; max-width: 64ch; }
+  h1 { font: 700 clamp(30px, 5vw, 44px)/1.05 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  h1 span { color: var(--accent); }
+  h2 { font: 700 22px/1.1 "Pixelify Sans", monospace; margin: 0; }
+  header p, .note { margin: 0; color: var(--muted); }
+  canvas { image-rendering: pixelated; display: block; }
+  .stage { display: grid; gap: 12px; }
+  #stage { width: 100%; max-width: 960px; aspect-ratio: 16 / 9; outline: 1px solid var(--rule); cursor: pointer; }
+  #stage:focus-visible { outline: 2px solid var(--cyan); }
+  .keys { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; color: var(--muted); font-size: 14px; }
+  kbd { font: 500 13px/1 "Pixelify Sans", monospace; background: var(--panel); border: 1px solid var(--rule); padding: 3px 6px; color: var(--ink); }
+  .pad { display: flex; flex-wrap: wrap; gap: 8px; }
+  .pad button { font: 500 15px/1 "Pixelify Sans", monospace; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); min-width: 48px; height: 44px; padding-inline: 12px; cursor: pointer; touch-action: none; user-select: none; }
+  .pad button:focus-visible { outline: 2px solid var(--cyan); }
+  .pad .act { border-color: var(--accent); }
+  @media (pointer: fine) { .pad { display: none; } }
+  .poses { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); background: var(--panel); border: 1px solid var(--rule); }
+  @media (max-width: 760px) { .poses { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .pose { display: grid; justify-items: center; gap: 10px; padding: 16px 8px 14px; }
+  .pose + .pose { border-left: 1px solid var(--rule); }
+  @media (max-width: 760px) { .pose:nth-child(odd) { border-left: 0; } .pose:nth-child(n+3) { border-top: 1px solid var(--rule); } }
+  .pose canvas { width: 100%; max-width: 240px; aspect-ratio: 60 / 44; }
+  .pose span { font: 500 14px/1 "Pixelify Sans", monospace; color: var(--muted); letter-spacing: .05em; }
+  .sw { display: flex; gap: 5px; flex-wrap: wrap; }
+  .sw i { width: 18px; height: 18px; display: block; outline: 1px solid rgba(255,255,255,.12); }
+  ul { margin: 0; padding-left: 1.2em; color: var(--muted); max-width: 64ch; display: grid; gap: 4px; }
+  ul b { color: var(--ink); font-weight: 600; }
+  .bar label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; color: var(--muted); font-size: 14px; }
+  .bar input { accent-color: var(--accent); width: 16px; height: 16px; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>The ronin, <span>in the dark</span></h1>
+    <p>Redrawn in the style of your references: a dark blue-grey silhouette with cyan eyes, a crimson cape and sash, and a faint reflection on a flat grey floor. Every other colour comes from his effects: embers off the cape, a cyan energy slash, a blink dash that breaks him into sparks and rebuilds him at the far end, and a crimson shard spell.</p>
+  </header>
+
+  <section class="stage">
+    <h2>Play with him</h2>
+    <canvas id="stage" width="480" height="270" tabindex="0" aria-label="Game screen, 480 by 270. Click, then move with WASD or the arrow keys, J or Space to slash, K or Shift to blink, L or E to cast."></canvas>
+    <div class="keys">
+      <span>Click the screen, then</span>
+      <span><kbd>WASD</kbd> / <kbd>←↑↓→</kbd> move</span>
+      <span><kbd>J</kbd> / <kbd>Space</kbd> slash</span>
+      <span><kbd>K</kbd> / <kbd>Shift</kbd> blink</span>
+      <span><kbd>L</kbd> / <kbd>E</kbd> cast</span>
+    </div>
+    <div class="pad" aria-label="Touch controls">
+      <button data-k="left" aria-label="Move left">←</button>
+      <button data-k="up" aria-label="Move up">↑</button>
+      <button data-k="down" aria-label="Move down">↓</button>
+      <button data-k="right" aria-label="Move right">→</button>
+      <button data-k="slash" class="act">Slash</button>
+      <button data-k="dash" class="act">Blink</button>
+      <button data-k="cast" class="act">Cast</button>
+    </div>
+    <p class="note">One 480×270 screen, the same resolution as Hyper Light Drifter, shown at 2×.</p>
+  </section>
+
+  <section class="stage">
+    <h2>Up close, 4×</h2>
+    <div class="poses" id="poses"></div>
+    <div class="bar"><label for="play"><input type="checkbox" id="play" checked> Play the close-ups</label></div>
+  </section>
+
+  <section class="stage">
+    <h2>What changed</h2>
+    <ul>
+      <li><b>Silhouette:</b> the body, hood and trousers are a dark blue-grey, with one lighter panel tone so the arms and legs still read. The face is just two cyan eyes.</li>
+      <li><b>Two accent colours, as in the robot sheet:</b> cyan for the eyes, blade and blink, crimson for the cloth, embers and spell. The floor carries a mirror reflection.</li>
+      <li><b>Blink:</b> he flashes, bursts into sparks that fly the way he's going, vanishes, and rebuilds from a ring of sparks at the far end. The cape arrives with him and settles.</li>
+      <li><b>Cast:</b> sparks gather to his hand, then eight crimson shards fire outward with a ring flash.</li>
+    </ul>
+    <div class="sw" id="sw"></div>
+  </section>
+</div>
+
+<script>
+const PAL = { h: '#151a20', H: '#242c35', f: '#151a20', e: '#6ff3e4', l: '#0d1014', o: '#c02a55',
+              g: '#ff6f8e', C: '#e8375f', c: '#a8224a', k: '#6b1636', t: '#a8224a' };
+const BLADE = { S: '#e6fffc', s: '#52e8d6', w: '#ffffff' };
+document.getElementById('sw').innerHTML = [...Object.values(PAL), BLADE.S, BLADE.s]
+  .map(c => `<i style="background:${c}" title="${c}"></i>`).join('');
+
+// Front view, 16×23, lit from the upper left. h/H cloak light/shade, f face, e visor,
+// l wraps and gloves, C/c the obi. The cape hangs behind, the sash tails in front.
+const BODY = [
+  '.......hH.......',
+  '......hhHH......',
+  '.....hhhhHH.....',
+  '.....hhhhHH.....',
+  '.....hehheH.....',
+  '.....hhhhHH.....',
+  '......hhHH......',
+  '.....hhhHHH.....',
+  '....hhhhhHHH....',
+  '....h.hhHH.H....',
+  '....h.hhHH.H....',
+  '....h.hhHH.H....',
+  '....l.oooo.l....',
+  '....l.hhHH.l....',
+  '......hhHH......',
+  '.....hhhHHH.....',
+  '....hhh..HHH....',
+  '....hhh..HHH....',
+  '....hhh..HHH....',
+  '.....hh..HH.....',
+  '.....ll..ll.....',
+  '.....ll..ll.....',
+  '....lll..lll....',
+];
+const FEET = 22, HIPS = 16, SW = 16, SH = 23;
+
+function bodyPx(bob, step) {
+  const px = [];
+  BODY.forEach((r, y) => [...r].forEach((ch, x) => {
+    if (ch === '.') return;
+    let yy = y < 14 ? y + bob : y;
+    if (step && y >= HIPS && (step === 'L' ? x < 8 : x >= 8)) {
+      if (y === HIPS) return;
+      yy = y - 1;
+    }
+    px.push([x, yy, ch]);
+  }));
+  return px;
+}
+
+// ---- Cloth: verlet points held by distance constraints ----
+const G = 140, DAMP = 0.985;
+class Cloth {
+  constructor(cols, rows, seg, flare) { Object.assign(this, { cols, rows, seg, flare, p: null }); }
+  restH(j) { return 1.13 + j * this.flare; }
+  reset(anchor) {
+    this.p = [];
+    for (let j = 0; j < this.rows; j++) for (let i = 0; i < this.cols; i++) {
+      const a = anchor(i); const x = a.x + (i - (this.cols - 1) / 2) * j * this.flare * .5, y = a.y + j * this.seg;
+      this.p.push({ x, y, px: x, py: y });
+    }
+  }
+  at(i, j) { return this.p[j * this.cols + i]; }
+  step(dt, anchor, fx, fy) {
+    for (const q of this.p) {
+      const vx = (q.x - q.px) * DAMP, vy = (q.y - q.py) * DAMP;
+      q.px = q.x; q.py = q.y;
+      q.x += vx + fx * dt * dt; q.y += vy + (G + fy) * dt * dt;
+    }
+    for (let it = 0; it < 8; it++) {
+      for (let i = 0; i < this.cols; i++) { const a = anchor(i), q = this.at(i, 0); q.x = a.x; q.y = a.y; }
+      for (let j = 0; j < this.rows; j++) for (let i = 0; i < this.cols; i++) {
+        if (j + 1 < this.rows) link(this.at(i, j), this.at(i, j + 1), this.seg, j === 0);
+        if (i + 1 < this.cols) link(this.at(i, j), this.at(i + 1, j), this.restH(j), j === 0);
+      }
+    }
+  }
+}
+class Chain {
+  constructor(n, seg) { Object.assign(this, { n, seg, p: null }); }
+  reset(a) { this.p = Array.from({ length: this.n }, (_, k) => ({ x: a.x, y: a.y + k * this.seg, px: a.x, py: a.y + k * this.seg })); }
+  step(dt, a, fx, fy) {
+    for (const q of this.p) {
+      const vx = (q.x - q.px) * .97, vy = (q.y - q.py) * .97;
+      q.px = q.x; q.py = q.y; q.x += vx + fx * dt * dt; q.y += vy + (G + fy) * dt * dt;
+    }
+    for (let it = 0; it < 6; it++) {
+      this.p[0].x = a.x; this.p[0].y = a.y;
+      for (let k = 0; k + 1 < this.n; k++) link(this.p[k], this.p[k + 1], this.seg, k === 0);
+    }
+  }
+}
+function link(a, b, rest, pinA) {
+  const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1e-6, diff = (d - rest) / d;
+  if (pinA) { b.x -= dx * diff; b.y -= dy * diff; return; }
+  a.x += dx * diff * .5; a.y += dy * diff * .5; b.x -= dx * diff * .5; b.y -= dy * diff * .5;
+}
+
+// Rasterise the cape. Bunched cloth darkens into folds; the lit edge takes a highlight.
+function capePx(cloth) {
+  const out = [], { cols, rows } = cloth;
+  for (let j = 0; j + 1 < rows; j++) for (let i = 0; i + 1 < cols; i++) {
+    const a = cloth.at(i, j), b = cloth.at(i + 1, j), c = cloth.at(i + 1, j + 1), d = cloth.at(i, j + 1);
+    const squeeze = Math.hypot(b.x - a.x, b.y - a.y) / cloth.restH(j);
+    let ch = i < (cols - 1) * .45 ? 'C' : 'c';
+    if (squeeze < .78) ch = ch === 'C' ? 'c' : 'k';
+    if (i === 0 && j < rows - 3 && squeeze > .78) ch = 'g';
+    if (j === rows - 2) ch = ch === 'C' || ch === 'g' ? 'c' : 'k';
+    const x0 = Math.floor(Math.min(a.x, b.x, c.x, d.x)), x1 = Math.ceil(Math.max(a.x, b.x, c.x, d.x));
+    const y0 = Math.floor(Math.min(a.y, b.y, c.y, d.y)), y1 = Math.ceil(Math.max(a.y, b.y, c.y, d.y));
+    for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+      const P = { x: x + .5, y: y + .5 };
+      if (inTri(P, a, b, c) || inTri(P, a, c, d)) out.push([x, y, ch]);
+    }
+  }
+  return out;
+}
+function inTri(p, a, b, c) {
+  const s = (p1, p2, p3) => (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+  const d1 = s(p, a, b), d2 = s(p, b, c), d3 = s(p, c, a);
+  return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0));
+}
+function chainPx(chain) {
+  const out = [];
+  for (let k = 0; k + 1 < chain.n; k++) {
+    const a = chain.p[k], b = chain.p[k + 1], n = Math.max(1, Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) * 1.5));
+    for (let s = 0; s <= n; s++) out.push([Math.floor(a.x + (b.x - a.x) * s / n), Math.floor(a.y + (b.y - a.y) * s / n), 't']);
+  }
+  return out;
+}
+
+// Energy slash, a crescent on the facing side. phase 1 = full, 2 = fading.
+function slashPx(phase, dir) {
+  const px = [], cx = 7.5, cy = 12, a0 = -1.9, a1 = 1.1, R = 12.5;
+  for (let y = -3; y < 28; y++) for (let x = -8; x < 24; x++) {
+    const dx = (x + .5 - cx) * dir, dy = y + .5 - cy, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
+    if (a < a0 || a > a1) continue;
+    const u = (a - a0) / (a1 - a0);
+    const thick = phase === 1 ? 1 + 3.4 * Math.sin(Math.PI * u) : (u > .35 ? .6 + 1.4 * Math.sin(Math.PI * u) : 0);
+    if (d > R || d < R - thick) continue;
+    px.push([x, y, phase === 1 && d > R - 1.2 ? 'S' : 's']);
+  }
+  return px;
+}
+
+// ---- Actor ----
+function actor(x, y, blinkDist = 60) {
+  const A = { x, y, vx: 0, vy: 0, dir: 1, walk: 0, t: 0, slashT: -1, blinkT: -1, castT: -1, dash: [1, 0], parts: [], emberClock: 0, hidden: false,
+    blinkDist, cape: new Cloth(7, 9, 1.7, .16), tails: [new Chain(6, 1.4), new Chain(5, 1.4)] };
+  settle(A);
+  return A;
+}
+const capeAnchor = (A, bob) => i => ({ x: Math.round(A.x) + 4.6 + i * (6.8 / 6), y: Math.round(A.y) + 7.6 + bob });
+const tailAnchor = (A, bob, k) => ({ x: Math.round(A.x) + 9.5 + k, y: Math.round(A.y) + 12.5 + bob });
+function settle(A) {
+  A.cape.reset(capeAnchor(A, 0));
+  A.tails.forEach((c, k) => c.reset(tailAnchor(A, 0, k)));
+  for (let i = 0; i < 90; i++) stepCloth(A, 1 / 60, 0);
+}
+function stepCloth(A, dt, bob) {
+  const wind = 14 * Math.sin(A.t * .9) + 8 * Math.sin(A.t * 2.3 + 1);
+  for (let s = 0; s < 2; s++) {
+    A.cape.step(dt / 2, capeAnchor(A, bob), wind, 0);
+    A.tails.forEach((c, k) => c.step(dt / 2, tailAnchor(A, bob, k), wind * 1.4, 0));
+  }
+}
+function pose(A) {
+  const moving = Math.hypot(A.vx, A.vy) > 1;
+  if (!moving) return { bob: Math.floor(A.t * 1.6) % 2, step: null };
+  const f = Math.floor(A.walk / 4.5) % 4;
+  return { bob: f % 2 ? 0 : 1, step: ['L', null, 'R', null][f] };
+}
+const spark = (A, x, y, vx, vy, life, col, streak) => A.parts.push({ x, y, vx, vy, life, max: life, col, streak });
+function bodyWorld(A) {
+  const ox = Math.round(A.x), oy = Math.round(A.y);
+  return [...capePx(A.cape), ...bodyPx(0).map(([x, y, ch]) => [x + ox, y + oy, ch])];
+}
+function update(A, dt, inp, bounds) {
+  A.t += dt;
+  const busy = A.blinkT >= 0 || A.castT >= 0;
+  if (inp.mx && !busy) A.dir = Math.sign(inp.mx);
+  // Blink: flash, burst into sparks, vanish, rebuild at the far end.
+  if (inp.dash && !busy) {
+    const mx = inp.mx || (inp.my ? 0 : A.dir), my = inp.my || 0, m = Math.hypot(mx, my) || 1;
+    A.dash = [mx / m, my / m]; A.blinkT = 0; A.from = [A.x, A.y];
+    A.to = [Math.max(bounds[0], Math.min(bounds[2], A.x + A.dash[0] * A.blinkDist)),
+            Math.max(bounds[1], Math.min(bounds[3], A.y + A.dash[1] * A.blinkDist))];
+  }
+  if (inp.slash && A.slashT < 0 && !busy) {
+    A.slashT = 0;
+    A.cape.p.forEach(q => { q.px += A.dir * .35; q.py -= .08; });
+  }
+  if (inp.cast && !busy && A.slashT < 0) A.castT = 0;
+
+  if (A.blinkT >= 0) {
+    const t0 = A.blinkT; A.blinkT += dt; const t = A.blinkT;
+    A.vx = A.vy = 0;
+    if (t0 < .05 && t >= .05) {                       // dissolve
+      for (const [x, y, ch] of bodyWorld(A)) if (Math.random() < .55)
+        spark(A, x + .5, y + .5, A.dash[0] * (90 + Math.random() * 160) + (Math.random() - .5) * 40,
+              A.dash[1] * (90 + Math.random() * 160) + (Math.random() - .5) * 40, .18 + Math.random() * .14,
+              'gCc'.includes(ch) ? PAL.C : Math.random() < .5 ? BLADE.s : BLADE.S, true);
+      A.hidden = true;
+    }
+    if (t0 < .15 && t >= .15) {                       // arrive: move, keep the cloth with him
+      const dx = Math.round(A.to[0]) - Math.round(A.x), dy = Math.round(A.to[1]) - Math.round(A.y);
+      A.x = A.to[0]; A.y = A.to[1];
+      [A.cape.p, ...A.tails.map(c => c.p)].forEach(ps => ps.forEach(q => {
+        q.x += dx; q.y += dy; q.px += dx + A.dash[0] * .6; q.py += dy + A.dash[1] * .6;
+      }));
+      const cx = Math.round(A.x) + 8, cy = Math.round(A.y) + 12;
+      for (let i = 0; i < 26; i++) {
+        const a = Math.random() * Math.PI * 2, r = 10 + Math.random() * 5;
+        spark(A, cx + Math.cos(a) * r, cy + Math.sin(a) * r * .8, -Math.cos(a) * r * 9, -Math.sin(a) * r * 7, .11, i % 3 ? BLADE.s : PAL.C, true);
+      }
+    }
+    if (t0 < .21 && t >= .21) A.hidden = false;
+    if (t > .36) A.blinkT = -1;
+  } else if (A.castT >= 0) {
+    const t0 = A.castT; A.castT += dt; const t = A.castT;
+    A.vx = A.vy = 0;
+    const hx = Math.round(A.x) + (A.dir > 0 ? 12 : 3), hy = Math.round(A.y) + 13;
+    if (t < .32 && Math.random() < .7) {             // gather to the hand
+      const a = Math.random() * Math.PI * 2, r = 9 + Math.random() * 6;
+      spark(A, hx + Math.cos(a) * r, hy + Math.sin(a) * r, -Math.cos(a) * r * 5, -Math.sin(a) * r * 5, .2, Math.random() < .5 ? PAL.C : PAL.g, false);
+    }
+    if (t0 < .32 && t >= .32) {                       // release: eight shards and a ring
+      const cx = Math.round(A.x) + 8, cy = Math.round(A.y) + 13;
+      for (let i = 0; i < 8; i++) {
+        const a = i / 8 * Math.PI * 2;
+        spark(A, cx, cy, Math.cos(a) * 150, Math.sin(a) * 110, .5, PAL.C, true);
+        spark(A, cx, cy, Math.cos(a) * 140, Math.sin(a) * 102, .45, PAL.g, true);
+      }
+      A.ring = { x: cx, y: cy, t: 0 };
+      A.cape.p.forEach(q => { q.py += .25; });
+    }
+    if (t > .55) A.castT = -1;
+  } else {
+    const m = Math.hypot(inp.mx, inp.my) || 1;
+    A.vx = inp.mx / m * 72; A.vy = inp.my / m * 72;
+  }
+  A.x = Math.max(bounds[0], Math.min(bounds[2], A.x + A.vx * dt));
+  A.y = Math.max(bounds[1], Math.min(bounds[3], A.y + A.vy * dt));
+  A.walk += Math.hypot(A.vx, A.vy) * dt;
+  if (A.slashT >= 0) { A.slashT += dt; if (A.slashT > .34) A.slashT = -1; }
+  if (A.ring) { A.ring.t += dt; if (A.ring.t > .18) A.ring = null; }
+  // Embers drift up off the cape's hem.
+  A.emberClock += dt;
+  if (!A.hidden && A.emberClock > .28) {
+    A.emberClock = 0;
+    const hem = A.cape.at(Math.floor(Math.random() * A.cape.cols), A.cape.rows - 1);
+    spark(A, hem.x, hem.y, (Math.random() - .5) * 8, -12 - Math.random() * 10, .9 + Math.random() * .6, Math.random() < .6 ? PAL.C : PAL.g, false);
+  }
+  for (const q of A.parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.px = q.x - q.vx * dt; q.py = q.y - q.vy * dt; q.life -= dt; }
+  A.parts = A.parts.filter(q => q.life > 0);
+  stepCloth(A, dt, pose(A).bob);
+}
+
+function draw(ctx, A, ground) {
+  ctx.drawImage(ground, 0, 0);
+  const ox = Math.round(A.x), oy = Math.round(A.y), { bob, step } = pose(A);
+  const put = (px, dx, dy, tint) => { for (const [x, y, ch] of px) { ctx.fillStyle = tint || PAL[ch] || BLADE[ch]; ctx.fillRect(dx + x, dy + y, 1, 1); } };
+  const flash = A.blinkT >= 0 && (A.blinkT < .05 || (A.blinkT >= .21 && A.blinkT < .26)) ? BLADE.S : null;
+  const cape = capePx(A.cape), body = bodyPx(bob, step), tails = A.tails.flatMap(chainPx);
+  if (!A.hidden) {
+    // mirror reflection on the floor
+    const floor = oy + FEET + 1;
+    ctx.globalAlpha = .16;
+    for (const [x, y, ch] of cape) { ctx.fillStyle = PAL[ch]; ctx.fillRect(x, 2 * floor - y, 1, 1); }
+    for (const [x, y, ch] of body) { ctx.fillStyle = PAL[ch]; ctx.fillRect(ox + x, 2 * floor - (oy + y), 1, 1); }
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(20,24,24,.35)';
+    ctx.fillRect(ox + 3, floor, 10, 1);
+    put(cape, 0, 0, flash);
+    put(body, ox, oy, flash);
+    put(tails, 0, 0, flash);
+  }
+  const s = A.slashT;
+  if (s >= 0 && !A.hidden) {
+    if (s < .06) put([[A.dir > 0 ? 12 : 3, 13 + bob, 'S'], [A.dir > 0 ? 13 : 2, 12 + bob, 's'], [A.dir > 0 ? 13 : 2, 14 + bob, 's']], ox, oy);
+    else if (s < .17) put(slashPx(1, A.dir), ox, oy);
+    else if (s < .26) { ctx.globalAlpha = .8; put(slashPx(2, A.dir), ox, oy); ctx.globalAlpha = 1; }
+  }
+  // blink streak between the two points
+  if (A.blinkT >= .05 && A.blinkT < .24) {
+    ctx.globalAlpha = .5 * (1 - (A.blinkT - .05) / .19);
+    ctx.fillStyle = BLADE.s;
+    const [fx, fy] = A.from, [tx, ty] = A.to, n = Math.ceil(Math.hypot(tx - fx, ty - fy));
+    for (let i = 0; i <= n; i++) ctx.fillRect(Math.round(fx + 8 + (tx - fx) * i / n), Math.round(fy + 12 + (ty - fy) * i / n), 1, 1);
+    ctx.globalAlpha = 1;
+  }
+  // cast ring
+  if (A.ring) {
+    const r = 3 + A.ring.t / .18 * 14;
+    ctx.globalAlpha = 1 - A.ring.t / .18; ctx.fillStyle = PAL.g;
+    for (let i = 0; i < 48; i++) { const a = i / 48 * Math.PI * 2; ctx.fillRect(Math.round(A.ring.x + Math.cos(a) * r), Math.round(A.ring.y + Math.sin(a) * r * .75), 1, 1); }
+    ctx.globalAlpha = 1;
+  }
+  // sparks, embers and shards
+  for (const q of A.parts) {
+    ctx.globalAlpha = Math.min(1, q.life / q.max * 1.6);
+    ctx.fillStyle = q.col;
+    ctx.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);
+    if (q.streak) ctx.fillRect(Math.round(q.x - q.vx * .012), Math.round(q.y - q.vy * .012), 1, 1);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Pastel grass with darker tufts and a few pink flowers, seeded.
+function groundFor(seed, W, H) {
+  const g = document.createElement('canvas'); g.width = W; g.height = H;
+  const x = g.getContext('2d'); let r = seed;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  x.fillStyle = '#474c4a'; x.fillRect(0, 0, W, H);
+  for (let i = 0; i < W * H / 40; i++) {
+    x.fillStyle = rnd() < .5 ? '#434846' : '#4b504e';
+    x.fillRect(rnd() * W | 0, rnd() * H | 0, 2, 1);
+  }
+  return g;
+}
+
+// ---- The playable stage ----
+const stage = document.getElementById('stage'), sctx = stage.getContext('2d');
+const hero = actor(232, 120), stageGround = groundFor(4242, 480, 270);
+const held = new Set(), taps = new Set();
+const KEYS = { ArrowLeft: 'left', a: 'left', A: 'left', ArrowRight: 'right', d: 'right', D: 'right',
+  ArrowUp: 'up', w: 'up', W: 'up', ArrowDown: 'down', s: 'down', S: 'down',
+  j: 'slash', J: 'slash', ' ': 'slash', k: 'dash', K: 'dash', Shift: 'dash', l: 'cast', L: 'cast', e: 'cast', E: 'cast' };
+stage.addEventListener('keydown', e => { const k = KEYS[e.key]; if (!k) return; e.preventDefault(); if (!held.has(k)) taps.add(k); held.add(k); });
+stage.addEventListener('keyup', e => { const k = KEYS[e.key]; if (k) held.delete(k); });
+stage.addEventListener('blur', () => held.clear());
+stage.addEventListener('pointerdown', () => stage.focus());
+document.querySelectorAll('.pad button').forEach(b => {
+  const k = b.dataset.k;
+  b.addEventListener('pointerdown', e => { e.preventDefault(); held.add(k); taps.add(k); });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => held.delete(k)));
+});
+function stageInput() {
+  const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0), my: (held.has('down') ? 1 : 0) - (held.has('up') ? 1 : 0),
+    slash: taps.has('slash'), dash: taps.has('dash'), cast: taps.has('cast') };
+  taps.clear();
+  return inp;
+}
+
+// ---- The four close-ups, each scripted ----
+const PW = 60, PH = 44;
+const SCRIPTS = {
+  Idle: () => ({ mx: 0, my: 0 }),
+  Run: A => { if (A.x > 38) A.goal = -1; if (A.x < 6) A.goal = 1; return { mx: A.goal || 1, my: 0 }; },
+  Slash: A => { A.clock = (A.clock || 0) + 1; return { mx: 0, my: 0, slash: A.clock % 84 === 30 }; },
+  Blink: A => { A.clock = (A.clock || 0) + 1; const go = A.clock % 80 === 40; if (go) A.goal = A.x < 22 ? 1 : -1; return { mx: go ? A.goal : 0, my: 0, dash: go }; },
+  Cast: A => { A.clock = (A.clock || 0) + 1; return { mx: 0, my: 0, cast: A.clock % 96 === 30 }; },
+};
+const closeups = Object.entries(SCRIPTS).map(([name, script], i) => {
+  const div = document.createElement('div'); div.className = 'pose';
+  const cv = document.createElement('canvas'); cv.width = PW; cv.height = PH;
+  cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', `Dark ronin, ${name.toLowerCase()}, 4 times zoom`);
+  const label = document.createElement('span'); label.textContent = name;
+  div.append(cv, label); document.getElementById('poses').append(div);
+  const A = actor(name === 'Blink' ? 8 : 22, 12, 34);
+  return { A, script, ctx: cv.getContext('2d'), ground: groundFor(97 + i * 131, PW, PH) };
+});
+
+let playCloseups = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+document.getElementById('play').checked = playCloseups;
+document.getElementById('play').addEventListener('change', e => playCloseups = e.target.checked);
+
+let last = performance.now(), acc = 0;
+const DT = 1 / 60;
+function frame(now) {
+  acc = Math.min(acc + (now - last) / 1000, .1); last = now;
+  while (acc >= DT) {
+    acc -= DT;
+    update(hero, DT, stageInput(), [0, 0, 480 - SW, 270 - SH - 2]);
+    if (playCloseups) closeups.forEach(c => update(c.A, DT, c.script(c.A), [2, 2, PW - SW - 2, PH - SH - 3]));
+  }
+  draw(sctx, hero, stageGround);
+  closeups.forEach(c => draw(c.ctx, c.A, c.ground));
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>

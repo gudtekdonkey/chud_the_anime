@@ -1,0 +1,196 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Hooded Blade</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ground: #1b1f2b;
+    --panel: #232838;
+    --rule: #343b50;
+    --ink: #ece8dc;
+    --muted: #9aa0b4;
+    --accent: #f2b33d;
+  }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 36px 64px; display: grid; gap: 32px; }
+  header { display: grid; gap: 10px; max-width: 62ch; }
+  h1 { font: 700 clamp(30px, 5vw, 44px)/1.05 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  h1 span { color: var(--accent); }
+  header p { margin: 0; color: var(--muted); }
+  .bar { display: flex; flex-wrap: wrap; gap: 16px; }
+  .bar label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; color: var(--muted); font-size: 14px; }
+  .bar input { accent-color: var(--accent); width: 16px; height: 16px; }
+  .rows { display: grid; gap: 20px; }
+  .row { background: var(--panel); border: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 230px) 1fr; }
+  @media (max-width: 760px) { .row { grid-template-columns: 1fr; } }
+  .meta { padding: 20px; border-right: 1px solid var(--rule); display: grid; gap: 10px; align-content: start; }
+  @media (max-width: 760px) { .meta { border-right: 0; border-bottom: 1px solid var(--rule); } }
+  .num { font: 700 36px/1 "Pixelify Sans", monospace; color: var(--accent); }
+  .meta h2 { font: 700 21px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  .meta p { margin: 0; color: var(--muted); font-size: 14px; }
+  .sw { display: flex; gap: 6px; }
+  .sw i { width: 22px; height: 22px; display: block; outline: 1px solid rgba(255,255,255,.12); }
+  .poses { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  @media (max-width: 560px) { .poses { grid-template-columns: 1fr; } }
+  .pose { display: grid; justify-items: center; gap: 10px; padding: 18px 10px 16px; }
+  .pose + .pose { border-left: 1px solid var(--rule); }
+  @media (max-width: 560px) { .pose + .pose { border-left: 0; border-top: 1px solid var(--rule); } }
+  canvas { image-rendering: pixelated; max-width: 100%; display: block; }
+  .pose span { font: 500 14px/1 "Pixelify Sans", monospace; color: var(--muted); letter-spacing: .05em; }
+  .sec { font: 700 26px/1.1 "Pixelify Sans", monospace; margin: 8px 0 -12px; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  .sec small { font: 500 14px/1 "Pixelify Sans", monospace; color: var(--muted); letter-spacing: .05em; }
+  .ask { border-top: 1px solid var(--rule); padding-top: 20px; color: var(--muted); max-width: 62ch; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Hooded blade, <span>style B</span></h1>
+    <p>A hooded warrior with a curved saber, no outline, 4 colours. First five body shapes, then four colourways. Each one plays idle, a walk step and a saber slash.</p>
+    <div class="bar">
+      <label for="grid"><input type="checkbox" id="grid"> Show pixel grid</label>
+      <label for="play"><input type="checkbox" id="play" checked> Play animation</label>
+    </div>
+  </header>
+  <h2 class="sec">Body shapes <small>A–E, crimson</small></h2>
+  <div class="rows" id="bodies"></div>
+  <h2 class="sec">Colourways <small>1–4, standard body</small></h2>
+  <div class="rows" id="rows"></div>
+  <p class="ask">Pick a body (A–E) and a colourway (1–4), or tell me what to change: hood shape, longer blade, a cape, face showing or hidden. Then I'll draw the side and back views and start the game.</p>
+</div>
+
+<script>
+// b cloak · c skin (or eye glow) · d dark (belt, boots, face shadow) · s steel
+// Each body lists its rows, where the sword hand is, and which row holds the feet.
+const BODIES = [
+  { name: 'Standard', note: 'The first drawing. Balanced, 12 tall.', hand: [9, 7], feet: 10,
+    step: ['.dd....dd...', '...dd.dd....'], rows: [
+    '....bb......', '...bbbb.....', '..bbbbbb....', '.bbddddbb...', '.bcdccdcb...', '.bbccccbb...',
+    'bbbbbbbbb...', 'cbddddddbc..', '.bbbbbbbb...', '.bbbbbbbb...', '..dd..dd....', '............'] },
+  { name: 'Stout', note: 'Short and wide, no neck. Tough and a bit comic, 10 tall.', hand: [9, 6], feet: 8,
+    step: ['..dd..dd....', 'dd......dd..'], rows: [
+    '....bb......', '...bbbb.....', '..bbbbbb....', '.bbddddbb...', '.bcdccdcb...', 'bbbbbbbbbb..',
+    'cbddddddbc..', 'bbbbbbbbbb..', '.dd....dd...', '............'] },
+  { name: 'Tall', note: 'Lean duelist with long legs. Fast and sharp, 14 tall.', hand: [7, 7], feet: 13,
+    step: ['..dd.dd.', 'dd....dd'], rows: [
+    '...bb...', '..bbbb..', '.bbbbbb.', '.bddddb.', '.bdccdb.', '.bccccb.', 'bbbbbbbb',
+    'cbbbbbbc', '.bddddb.', '.bbbbbb.', '.bbbbbb.', '..d..d..', '..d..d..', '.dd..dd.'] },
+  { name: 'Brute', note: 'Huge shoulders, heavy frame. The saber looks small in his hand.', hand: [11, 8], feet: 10,
+    step: ['.ddd....ddd.', '...ddd.ddd..'], rows: [
+    '.....bb.....', '....bbbb....', '...bbbbbb...', '...bddddb...', '...bdccdb...', '..bbccccbb..',
+    'bbbbbbbbbbbb', 'bbbbbbbbbbbb', 'cbbddddddbbc', '.bbbbbbbbbb.', '..ddd..ddd..', '............'] },
+  { name: 'Little', note: 'Tiny and round, big hood. Cute, 8 tall.', hand: [7, 5], feet: 7,
+    step: ['dd....dd', '..d..d..'], rows: [
+    '...bb...', '..bbbb..', '.bbbbbb.', '.bdccdb.', 'bbccccbb', 'cbbbbbbc', '.bbbbbb.', '.dd..dd.'] },
+];
+
+const VARIANTS = [
+  { name: 'Crimson', note: 'Red hood, the classic wanderer. Reads well on stone and grass.',
+    pal: { b: '#b8423c', c: '#f3c08c', d: '#2b2d42', s: '#dfe3ea' } },
+  { name: 'Forest', note: 'Green ranger hood. Calmer, fits outdoor levels.',
+    pal: { b: '#3f9160', c: '#f3c08c', d: '#23263a', s: '#dfe3ea' } },
+  { name: 'Dusk', note: 'Muted indigo. Quiet and mysterious, with bright steel.',
+    pal: { b: '#555c96', c: '#f3c08c', d: '#1f2233', s: '#f2e6c9' } },
+  { name: 'Shadow', note: 'Face hidden in the hood, only two amber eyes. Gloved hands.',
+    pal: { b: '#3a3f55', c: '#f2b33d', d: '#15171f', s: '#dfe3ea' }, shadow: true },
+];
+
+// Hides the face: dark face, glowing eyes, gloved hands (standard body only).
+const shadowFace = rows => rows.map((r, y) => {
+  if (y === 4) return r.replace('.bcdccdcb', '.bdcddcdb');
+  if (y === 5) return r.replace('.bbccccbb', '.bbddddbb');
+  if (y === 7) return r.replace(/c/g, 'd');
+  return r;
+});
+
+// Turn rows into a pixel list and add the saber relative to the hand.
+function pixels(rows, [hx, hy], mode) {
+  const px = [];
+  rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') px.push([x, y, ch]); }));
+  const s = (x, y) => px.push([x, y, 's']);
+  if (mode === 'slash') {           // blade swept flat to the right, tip curling up
+    s(hx + 1, hy - 1); s(hx + 1, hy + 1);
+    for (let i = 2; i <= 5; i++) s(hx + i, hy);
+    s(hx + 6, hy - 1);
+  } else {                          // held upright, curving back at the tip
+    for (let i = 0; i < 3; i++) s(hx + i, hy - 1);
+    for (let i = 2; i <= 4; i++) s(hx + 1, hy - i);
+    s(hx + 2, hy - 5); s(hx + 2, hy - 6);
+  }
+  return px;
+}
+const stepRows = (b, i) => b.rows.map((r, y) => y === b.feet && i ? b.step[i - 1] : r);
+
+const SCALE = 8, W = 22, H = 20, OX = 3, BASE = H - 3;
+let showGrid = false, play = true, tick = 0;
+const cells = [];
+
+function paint(ctx, body, px, pal, lift) {
+  for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
+    ctx.fillStyle = (x + y) % 2 ? '#4a5068' : '#545a73';
+    ctx.fillRect(x * W / 2 * SCALE, y * H / 2 * SCALE, W / 2 * SCALE, H / 2 * SCALE);
+  }
+  const bw = Math.max(...body.rows.map(r => r.length));
+  const oy = BASE - body.feet;
+  ctx.fillStyle = 'rgba(0,0,0,.3)';
+  ctx.fillRect((OX + 1) * SCALE, (BASE + 1) * SCALE, (bw - 2) * SCALE, SCALE);
+  for (const [x, y, ch] of px) {
+    if (!pal[ch]) continue;
+    ctx.fillStyle = pal[ch];
+    ctx.fillRect((OX + x) * SCALE, (oy + y - lift) * SCALE, SCALE, SCALE);
+  }
+  if (showGrid) {
+    ctx.strokeStyle = 'rgba(255,255,255,.08)';
+    for (let i = 0; i <= W; i++) { ctx.beginPath(); ctx.moveTo(i * SCALE + .5, 0); ctx.lineTo(i * SCALE + .5, H * SCALE); ctx.stroke(); }
+    for (let i = 0; i <= H; i++) { ctx.beginPath(); ctx.moveTo(0, i * SCALE + .5); ctx.lineTo(W * SCALE, i * SCALE + .5); ctx.stroke(); }
+  }
+}
+
+// Each pose returns [pixels, lift] for a tick (one tick = 150ms).
+const POSES = {
+  Idle:  (b, fix, t) => [pixels(fix(b.rows), b.hand), play && Math.floor(t / 3) % 2 ? 1 : 0],
+  Walk:  (b, fix, t) => { const f = play ? Math.floor(t / 2) % 4 : 0; return [pixels(fix(stepRows(b, [0, 1, 0, 2][f])), b.hand), f % 2 ? 0 : 1]; },
+  Slash: (b, fix, t) => { const f = play ? t % 8 : 0; return [pixels(fix(b.rows), b.hand, f === 5 || f === 6 ? 'slash' : 'idle'), 0]; },
+};
+
+function row(root, i, title, note, pal, body, fix) {
+  const sec = document.createElement('section');
+  sec.className = 'row';
+  sec.innerHTML = `
+    <div class="meta">
+      <div class="num">${i}</div>
+      <h2>${title}</h2>
+      <p>${note}</p>
+      <div class="sw">${Object.values(pal).map(c => `<i style="background:${c}" title="${c}"></i>`).join('')}</div>
+    </div>
+    <div class="poses"></div>`;
+  const poses = sec.querySelector('.poses');
+  for (const [name, fn] of Object.entries(POSES)) {
+    const div = document.createElement('div');
+    div.className = 'pose';
+    const cv = document.createElement('canvas');
+    cv.width = W * SCALE; cv.height = H * SCALE;
+    cv.setAttribute('role', 'img');
+    cv.setAttribute('aria-label', `${title} hooded warrior, ${name.toLowerCase()}`);
+    const label = document.createElement('span');
+    label.textContent = name;
+    div.append(cv, label);
+    poses.append(div);
+    cells.push({ ctx: cv.getContext('2d'), fn, pal, body, fix });
+  }
+  root.append(sec);
+}
+
+const same = r => r;
+BODIES.forEach((b, i) => row(document.getElementById('bodies'), String.fromCharCode(65 + i), b.name, b.note, VARIANTS[0].pal, b, same));
+VARIANTS.forEach((v, i) => row(document.getElementById('rows'), i + 1, v.name, v.note, v.pal, BODIES[0], v.shadow ? shadowFace : same));
+
+const render = () => cells.forEach(c => { const [px, lift] = c.fn(c.body, c.fix, tick); paint(c.ctx, c.body, px, c.pal, lift); });
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) { play = false; document.getElementById('play').checked = false; }
+render();
+setInterval(() => { if (play) { tick++; render(); } }, 150);
+document.getElementById('grid').addEventListener('change', e => { showGrid = e.target.checked; render(); });
+document.getElementById('play').addEventListener('change', e => { play = e.target.checked; tick = 0; render(); });
+</script>
