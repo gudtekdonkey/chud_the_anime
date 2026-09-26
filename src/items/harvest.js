@@ -12,10 +12,9 @@ import { putOut } from './quick.js';
 import { living, onKill as onEnemyKill } from '../world/enemies.js';
 
 // ---- Harvest (hold E near the fallen): their remains stream into him as EXP ----
-// until real kills exist, two placeholder remains lie in the room; onKill() adds a real body (draw: false, it draws itself)
+// every kill leaves a body to harvest (e: the enemy, who draws himself); a body without one draws the placeholder remains
 export const FALLEN = [];
-export function addFallen(x, y, exp = 60, draw = true) { FALLEN.push({ x, y, exp, left: exp, draw }); }
-addFallen(178, 152); addFallen(84, 128);
+export function addFallen(x, y, exp = 60, e = null) { FALLEN.push({ x, y, exp, left: exp, e }); }
 const RANGE = 40, RATE = 50;   // px (y counts 1.6x); EXP per second
 const inRange = f => f.left > 0 && Math.hypot(f.x - P.x, (f.y - P.y) * 1.6) < RANGE;
 export const harvestable = () => FALLEN.find(inRange);
@@ -24,13 +23,13 @@ export function harvest(dt, holding) {
   const f = harvestable();
   if (!holding || !f) { setState('idle'); return; }
   const n = Math.min(f.left, RATE * dt); f.left -= n; addExp(n);
-  if ((P.hv = (P.hv || 0) + dt) > .03) { P.hv = 0; arc(f.x + rr(-8, 8), f.y - rr(0, 4), { dur: .45, h: rr(4, 10), col: '#a08288', col2: COL.fx, trail: false }); }
+  if ((P.hv = (P.hv || 0) + dt) > .03) { P.hv = 0; arc(f.x + rr(-8, 8), f.y - rr(0, 4), { dur: .45, h: rr(4, 10), col: COL.fx, col2: '#ffffff', trail: false }); }
 }
-export function fallenDrawables() { return FALLEN.filter(f => f.draw && f.left > 0).map(f => ({ y: f.y, d: () => drawS(REMAINS, f.x, f.y, { alpha: .35 + .65 * f.left / f.exp }) })); }
+export function fallenDrawables() { return FALLEN.filter(f => !f.e && f.left > 0).map(f => ({ y: f.y, d: () => drawS(REMAINS, f.x, f.y, { alpha: .35 + .65 * f.left / f.exp }) })); }
 
 // ---- Hooks for the enemies and assassination work, and the relics that ride on them ----
 // a kill: its body becomes harvestable, and the next sheath click can carry the Sageo Knot's shock
-export function onKill(e) { addFallen(e.x, e.y, 60, false); P.killClick = 1.5; }
+export function onKill(e) { addFallen(e.x, e.y, 60, e); P.killClick = 1.5; }
 onEnemyKill((e, o) => { onKill(e); if (o.execution) onExecution(); });   // every real death leaves a body to harvest
 // an execution: the Temple Bell rings for +25% Qi
 export function onExecution() { if (has('bell')) qiAdd(.25); }
@@ -40,10 +39,13 @@ export function sheathClick() {
   for (const d of living()) if (Math.hypot(d.x - P.x, (d.y - P.y) * 1.4) < 56) { zap(P.x + P.face * 3, P.y - 10, d.x, d.y - 14, .18, 2.5, COL.fx2, { every: 1 }); chainHit(d); }
 }
 // damage to him (n in 0..1): a hit puts the incense out; the Paper Crane saves one killing blow per area, glitching him out at 1 health
+// HURT_HOOKS: anything that can take the blow for him first (a companion's Iron Oath) returns true
+export const HURT_HOOKS = [];
 export function hurt(n) {
+  if (HURT_HOOKS.some(fn => fn(n))) return;
   putOut(); if (P.state === 'incense') setState('idle');
   if (INV.hp - n <= 0 && has('crane') && !P.craneUsed) { P.craneUsed = true; INV.hp = .02; P.glitchNow = .3; P.after = 1.5; return; }
   INV.hp = Math.max(0, INV.hp - n); S.shake = Math.max(S.shake, 1 / 60); P.flash = .034;
   if (INV.hp <= 0) setState('death');
 }
-export function tickHarvest(dt) { P.killClick = Math.max(0, (P.killClick || 0) - dt); for (let i = FALLEN.length - 1; i >= 0; i--) if (FALLEN[i].left <= 0) FALLEN.splice(i, 1); }
+export function tickHarvest(dt) { P.killClick = Math.max(0, (P.killClick || 0) - dt); for (let i = FALLEN.length - 1; i >= 0; i--) if (FALLEN[i].left <= 0 || FALLEN[i].e?.alive) FALLEN.splice(i, 1); }   // a body the new squad replaced is gone

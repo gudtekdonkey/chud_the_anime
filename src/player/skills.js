@@ -11,6 +11,7 @@ import { silPts, bodyPt, motes } from './body.js';
 import { hit, hitSeg, burst } from './hits.js';
 import { CD, startCd } from './cooldowns.js';
 import { collide } from '../world/room.js';
+import { T, powerCast } from './power.js';
 import { EL } from '../fx/element.js';
 
 // ---- Charging (hold I, O or P): sparks and bolts converge onto his body while it glows ----
@@ -40,9 +41,10 @@ export function chargeUp(dt, inp) {
 // vanish (4) for V s, lunge cut (5-6), second cut (7-8), freeze (9) for `hold` s, resheathe (13-15); the payoff lands on the click in frame 14.
 export const TC = { name: 'Thousand Cuts', dist: 110, V: .34, hold: .24,
   go() { const x0 = P.x, y0 = P.y; residue(x0, y0, 14); blink(P.dist, P.blinkDir); P.C = [P.x, P.y]; P.face0 = P.face; P.a0 = rr(0, 6.28); P.last = [x0, y0 - 12];
+    P.tcN = T('tc', 'cuts');   // more cuts with power, packed into the same vanish
     hit('tc', P.x, P.y - 12, 30 + 30 * P.k); },
-  frame(t) { const j = t / (this.V / 7) | 0, ph = t - j * this.V / 7; return ph < .033 ? 5 + j % 4 : 4; },
-  tick(t) { const j = Math.min(6, t / (this.V / 7) | 0); if (t >= this.V || !once('tc' + j, true)) return;
+  frame(t) { const n = P.tcN || 7, j = t / (this.V / n) | 0, ph = t - j * this.V / n; return ph < .033 ? 5 + j % 4 : 4; },
+  tick(t) { const n = P.tcN || 7, j = Math.min(n - 1, t / (this.V / n) | 0); if (t >= this.V || !once('tc' + j, true)) return;
     // a new spot on a flattened circle round the point, facing in; each gets its own crescent angle
     const a = P.a0 + j * 2.4, rad = 16 + 12 * P.k, [cx, cy] = P.C;
     [P.x, P.y] = collide(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad * .6); P.face = Math.sign(cx - P.x) || 1; P.fr = 5 + j % 4;
@@ -56,7 +58,7 @@ export const TC = { name: 'Thousand Cuts', dist: 110, V: .34, hold: .24,
     for (const d of P.struck) burst(d, 1.2); } };
 export const RIFT = { name: 'Cross Rift', dist: 120, V: .08, hold: .3,
   go() { dash(); },
-  arm(sign) { const h = 30 + 42 * P.k, cx = P.x + P.face * (30 + 26 * P.k), cy = P.y - 12, hx = h * .85, hy = h * .42 * sign;
+  arm(sign) { const h = (30 + 42 * P.k) * T('rift', 'size'), cx = P.x + P.face * (30 + 26 * P.k), cy = P.y - 12, hx = h * .85, hy = h * .42 * sign;
     P.X = [cx, cy, h]; hitSeg('cr' + sign, cx - hx, cy - hy, cx + hx, cy + hy, 12 + 8 * P.k);
     return tear(cx - hx, cy - hy, cx + hx, cy + hy, 2.5 + 3.5 * P.k); },
   c1() { strike(-.5, 1, true); P.r1 = this.arm(1); }, c2() { strike(.5, -1, true); P.r2 = this.arm(-1); },
@@ -77,7 +79,13 @@ export const RIFT = { name: 'Cross Rift', dist: 120, V: .08, hold: .3,
       ring(cx, cy + 2, h * .9, h * .5, .1); ring(cx, cy + 2, h * .5, h * .28, .24, 1.1, COL.fx2); ring(cx, cy + 2, 6, 3, .3, h / 5, '#ffffff'); ring(cx, cy + 12, h * .4, h * .12, .4, 1.8, COL.fx);
       hit('crB', cx, cy, h * .95); residue(cx, cy + 14, 12);
       for (let i = 0; i < 34; i++) { const a = rr(0, 6.28); spark(cx, cy, Math.cos(a) * rr(90, 220), Math.sin(a) * rr(60, 140), rr(.12, .26), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
-      for (const d of P.struck) burst(d, 1.2); }); } };
+      for (const d of P.struck) burst(d, 1.2);
+      const e = T('rift', 'echo'); if (e) after(.25, () => echo(cx, cy, h * e)); }); } };
+// power III: the rift's echo, a second, smaller detonation where the X was
+function echo(cx, cy, h) {
+  S.hitstop = .05; S.shake = 2 / 60; ring(cx, cy + 2, h * .9, h * .5, .1); ring(cx, cy + 2, h * .5, h * .28, .2, 1.1, '#ffffff');
+  hit('crE', cx, cy, h * .95); for (let i = 0; i < 20; i++) { const a = rr(0, 6.28); spark(cx, cy, Math.cos(a) * rr(70, 170), Math.sin(a) * rr(50, 110), rr(.1, .2), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
+  for (let i = 0; i < 5; i++) { const a = rr(0, 6.28), R = rr(h * .4, h * .8); zap(cx, cy, cx + Math.cos(a) * R, cy + Math.sin(a) * R * .55, rr(.08, .14), 2.5, i % 2 ? '#ffffff' : COL.fx2, { every: 1 }); } }
 // the dash both use: blink along the aim (walls and pillars clamp it), slivers at the start, a streak along the way
 function dash() {
   const x0 = P.x, y0 = P.y; residue(x0, y0, 14); blink(P.dist, P.blinkDir);
@@ -90,6 +98,7 @@ export function release(v, min = 0) {
   P.k = .35 + .65 * c; // size scale: a short hold is still a charged move, a full one is the full thing
   P.dist = 44 + (v.dist - 44) * c;
   startCd(v === RIFT ? 'rift' : 'double', v === RIFT ? CD.rift : CD.tc);   // cools down from the release
+  powerCast();
 }
 export function charged(dt) {
   const v = P.cv, t = (P.ct += dt), V = v.V, F = V + .16 + v.hold;

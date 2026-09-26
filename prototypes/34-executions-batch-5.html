@@ -30,7 +30,7 @@
   <header>
     <div class="eyebrow">K · executions · batch 5</div>
     <h1>Ten clean cuts</h1>
-    <p>Executions 36 to 45: the common ones. No glitches, no lightning, no tricks: a draw, a thrust, a trip, a sidestep, the kesa cut every swordsman learns first. Each is short, one idea, and ends with him sheathing on the click. They play on the deaths pass, so the body flows, goes limp, lands and bleeds as approved.</p>
+    <p>Executions 36 to 45: the common ones. No glitches, no lightning, no tricks: a draw, a thrust, a trip, a sidestep, the kesa cut every swordsman learns first. Each is short, one idea, and ends with him sheathing on the click. They play on the deaths pass, so the body flows, goes limp, lands and bleeds as approved. Round 2: in 41, 42 and 43 the blade really goes into him (hidden inside, the point out the far side, red when it comes out, the blood pumping after it), and in 44 the cut takes his sword arm.</p>
     <div class="bar"><label for="slow"><input type="checkbox" id="slow"> Half speed</label></div>
   </header>
   <div class="grid" id="grid"></div>
@@ -120,13 +120,14 @@ function rig(g, fx, p) {
     seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
     if (f > .5) put(...L(2.6, -3.4), 'M'); }
   // near arm and the sword
+  if (p.noArm) return;   // cut off at the shoulder: the arm and what it held are pieces now
   const hand = arm(p.fa, 'K');
   if (p.point) { const d = dir(p.fa[0] + p.fa[1]); put(...add(hand, d, 1.6), 'K'); put(...add(hand, d, 2.6), 'K'); }   // two fingers
   if (p.sword === null && !p.sheathing && p.bsword == null) {                    // sheathed: hilt pokes forward-up out of the scabbard
     put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W');
   } else if (p.sheathing) {                                  // sliding home: blade runs from the hand into the scabbard mouth
     seg(hand, mouth, 1, 'W'); put(...hand, 'S'); put(...add(hand, [hand[0] - mouth[0], hand[1] - mouth[1]].map(v => v / (Math.hypot(hand[0] - mouth[0], hand[1] - mouth[1]) || 1)), 2), 'K');
-  } else if (p.sword !== null) {
+  } else if (p.sword !== null && !p.noBlade) {
     const d = [Math.cos(p.sword), Math.sin(p.sword)];
     seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S');
     seg(add(hand, d, 1), add(hand, d, 13), 1, p.scab ? 's' : 'W'); if (p.scab) { put(...add(hand, d, 1), 'S'); put(...add(hand, d, 13), 'S'); }
@@ -439,6 +440,45 @@ function scar(g, S, t) { const L = S.my.scar; if (!L || S.my.scarOff) return; co
 // blood flung off the blade in an arc onto the floor (chiburi)
 function fling(S, x, y, dir) { if (!S.fx.drops) return; for (let i = 0; i < 9; i++) S.fx.drops.push({ x: x + dir * rr(0, 4), y: y + rr(-1, 1), z: rr(8, 14), vx: dir * rr(30, 70), vy: rr(-4, 4), vz: rr(-20, 20), c: ['#7a1b24', '#5a121a', '#931f2c'][i % 3], big: i % 3 === 0 }); }
 
+function smallCrack(S, x, y, n = 3) { for (let i = 0; i < n; i++) { const a = rr(0, 6.28), out = []; line(out, x, y, x + Math.cos(a) * rr(2, 4), y + Math.sin(a) * rr(1, 2)); S.fx.cracks.push({ pts: out, life: 1, max: 1 }); } }
+// ---------- the blade in the body ----------
+// Where the blade is inside him it is hidden, and it comes out the far side; while it is in, blood wells at the wound; torn out,
+// it spurts in pulses; the part that was in him stays red until the flick. The ronin's pose carries noBlade and the page draws the blade.
+const BL = ['#7a1b24', '#5a121a', '#931f2c'];
+// the ronin's hand in the world for a pose: the rig's own arm maths, on the grounded pose
+function handOf(R, pose) {
+  const p = (R.z > .5 || pose.air) ? pose : ground(pose);
+  const hip = [OX + p.hx, OY - 11 + p.hy], up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
+  const up2 = [Math.sin(p.lean + p.chest), -Math.cos(p.lean + p.chest)], fw2 = [Math.cos(p.lean + p.chest), Math.sin(p.lean + p.chest)];
+  const w = [hip[0] + up[0] * 4, hip[1] + up[1] * 4], b = p.breath || 0;
+  const s = [w[0] + up2[0] * 3, w[1] + up2[1] * 3 - b];
+  const dir = a => [Math.sin(a), Math.cos(a)], e = [s[0] + dir(p.fa[0])[0] * 4, s[1] + dir(p.fa[0])[1] * 4];
+  const h = [e[0] + dir(p.fa[0] + p.fa[1])[0] * 4, e[1] + dir(p.fa[0] + p.fa[1])[1] * 4];
+  return [R.face > 0 ? R.x + h[0] - 24 : R.x - h[0] + 23, R.y - (R.z || 0) + h[1] - 40];
+}
+// draw the blade from the hand: hidden inside E's body (and under the floor), red where it has been in him. Returns the wound and the exit
+function sunkBlade(g, S, R, pose, E, stain = 0, floorY = null) {
+  const [hx, hy] = handOf(R, pose), d = [R.face * Math.cos(pose.sword), Math.sin(pose.sword)];
+  const body = E && !E.gone ? new Set(pixelsOf(E).map(q => Math.round(q[0]) + ',' + Math.round(q[1]))) : new Set();
+  const px = (x, y, c) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), 1, 1); };
+  for (let k = 0; k <= 2.5; k += .5) px(hx - d[0] * k, hy - d[1] * k, RC.K);   // the grip
+  px(hx, hy, RC.S);                                                          // the guard
+  let wound = null, exit = null, depth = 0, seen = new Set();
+  for (let k = 1; k <= 13; k += .5) { const x = Math.round(hx + d[0] * k), y = Math.round(hy + d[1] * k), key = x + ',' + y;
+    if (seen.has(key)) continue; seen.add(key);
+    const inside = body.has(key) || (floorY != null && y > floorY);
+    if (inside) { if (!wound) wound = [x, y]; depth = 13 - k; continue; }
+    if (wound && !exit) exit = [x, y];
+    px(x, y, 13 - k < stain ? BL[(k * 2 | 0) % 3] : RC.W); }
+  return { wound, exit, depth: wound ? 13 - Math.hypot(wound[0] - hx, wound[1] - hy) : 0 };
+}
+// blood leaving a wound: n drops at (x, y) in the world, thrown along (vx, vz); floorY is where they land
+function squirt(S, x, y, floorY, vx, vz, n = 2, spread = .3) { if (!S.fx.drops) return;
+  for (let i = 0; i < n; i++) S.fx.drops.push({ x: x + rr(-.5, .5), y: floorY + rr(-1, 1), z: floorY - y, vx: vx * (1 + rr(-spread, spread)) + rr(-6, 6), vy: rr(-5, 5),
+    vz: vz * (1 + rr(-spread, spread)), c: BL[Math.random() * 3 | 0], big: Math.random() < .4 }); }
+// an artery: strong beats that weaken, 0..1 at time u after the wound opened
+const beat = (u, rate = 4.2, last = 1.4) => u < 0 || u > last ? 0 : (((u * rate) % 1) < .35 ? 1 : .12) * (1 - u / last * .75);
+
 const EXECS = [
   // ---------------- 36 ----------------
   { name: 'Draw Cut', note: 'He lands low in front of the enemy, one hand on the hilt and the other on the saya. The enemy flinches and lifts his sword high to strike. The ronin sinks an inch, and then he is a step further on with the blade out level at the end of his reach: one horizontal cut, drawn and delivered in the same frame. He holds there. The enemy stays frozen at the top of his swing with a thin line across his waist. On the click, his top half slides back off the cut and falls, and his legs fold under him.',
@@ -562,106 +602,146 @@ const EXECS = [
     } },
 
   // ---------------- 41 ----------------
-  { name: 'Knee, then Neck', note: 'Two cuts. The first is low and flat into the enemy\'s front knee, and it drops him onto both knees in front of the ronin, upright, his sword falling out of his hands. He looks up. The ronin steps round to his side, lifts the blade high in both hands and waits one breath. Then the second cut, straight down behind the neck. The head drops and rolls; the kneeling body stays upright a moment, and on the click it tips forward onto the floor.',
-    side: -1, gap: 18, dur: 1.85,
+  { name: 'Knee, then Neck', note: 'Two strikes. The first is low and flat into the enemy\'s front knee, and it drops him onto both knees in front of the ronin, upright, his sword falling out of his hands. He looks up. The ronin steps to his side, turns the blade point down in both fists over his head, and drives it straight down into the hollow at the base of the neck, all the way in. The enemy seizes on it, arms jerking up. The ronin tears it out and the blood comes after it in beats; the blade comes out red. He flicks it clean and sheathes, and on the click the man tips forward onto his face.',
+    side: -1, gap: 18, dur: 2.15,
     run(S, t, R, E) {
       const lowCut = pz({ hx: 2, hy: 6, lean: .55, chest: .45, fl: [1.2, 1.7], bl: [-.95, .6], fa: [1.15, .1], sword: .55, ba: [.9, .3], flutter: 1 });
-      const lift = pz({ hy: 1, lean: -.05, chest: -.18, fl: [.35, .4], bl: [-.45, .3], fa: [3.0, .35], ba: [2.8, .5], sword: -1.75 });
-      const drop = pz({ hy: 3, lean: .35, chest: .4, fl: [.55, .75], bl: [-.6, .35], fa: [1.35, .15], sword: 1.25, ba: [1.2, .3], hat: 1 });
-      const C1 = .12, STEP = .3, C2 = .72, SH = 1.02, CLICK = SH + .34;
+      const flip = pz({ hy: 1, lean: -.05, chest: -.15, fl: [.4, .5], bl: [-.45, .3], fa: [2.8, 1.25], ba: [2.6, 1.35], sword: 1.5, noBlade: true });
+      const plunge = pz({ hy: 2, lean: .18, chest: .12, fl: [.75, 1.05], bl: [-.6, .35], fa: [1.62, .3], ba: [1.48, .42], sword: 1.5, noBlade: true, hat: 1 });
+      const deep = pz({ ...plunge, hy: 4, lean: .24, chest: .16, fl: [.85, 1.35], fa: [1.55, .3], ba: [1.42, .42] });
+      const rip = pz({ hy: 1, lean: -.12, chest: -.22, fl: [.45, .5], bl: [-.5, .3], fa: [2.45, 1.1], ba: [2.25, 1.2], sword: 1.45, noBlade: true, flutter: 1 });
+      const C1 = .12, STEP = .32, PL = .74, RIP = 1.14, FL = 1.34, SH = 1.4, CLICK = SH + .34;
       R.face = 1;
       R.pose = at([[0, pz({ hy: 4, lean: .45, fl: [.8, 1.3], bl: [-.7, .4], fa: HILT, ba: [.2, 1.2] })], [C1 - .001, pz({ hy: 5, lean: .5, fl: [.9, 1.5], bl: [-.6, .5], fa: HILT, ba: [.2, 1.2] })],
-        [C1, lowCut, hold], [C1 + .1, pz({ ...lowCut, flutter: 0 })], [STEP, pz({ hy: 2, lean: .1, fa: [1.4, .5], sword: -.6, ba: [1.2, .7] })], [.55, lift], [C2 - .001, pz({ ...lift, hy: 1.5 })],
-        [C2, drop, hold], [C2 + .1, pz({ ...drop, lean: .4, chest: .45 })], [SH, pz({ ...drop, hat: 0 })], ...quickSheathe(SH, pz({ ...drop, hat: 0 })).slice(1)], t);
-      R.x = EPOS.x - 18 + (t >= C1 ? 2 : 0) - (t >= STEP ? 1 * cl01((t - STEP) / .2) : 0);
+        [C1, lowCut, hold], [C1 + .1, pz({ ...lowCut, flutter: 0 })], [STEP, pz({ hy: 2, lean: .1, fa: [1.4, .5], sword: -.6, ba: [1.2, .7] })], [.56, flip], [PL - .001, pz({ ...flip, hy: .5 })],
+        [PL, plunge, hold], [PL + .12, deep], [RIP - .001, deep], [RIP, rip, hold], [FL - .001, pz({ ...rip, hy: 1.5 })], [FL, K5.flick, hold], ...quickSheathe(SH, K5.flick).slice(1)], t);
+      // his fists over the base of the neck: stand beside him with the point clear of him, then step in onto it
+      const aim = E.x - handOf({ x: 0, y: R.y, face: 1 }, plunge)[0];
+      R.x = t < STEP ? EPOS.x - 16 : t < PL ? EPOS.x - 16 + (aim - 7 - EPOS.x + 16) * cl01((t - STEP) / .2) : t < RIP ? aim : aim - 2;
       E.face = -1;
       const kneelUp = pz({ hy: 7, lean: .06, chest: .12, fl: [1.45, 2.3], bl: [-.2, 2.45], fa: [.35, .6], ba: [.25, .55], sword: null });
-      const looking = pz({ ...kneelUp, chest: -.1, lean: 0 }), bowed = pz({ ...kneelUp, chest: .3, lean: .12 });
-      const pose = at([[0, EG], [.07, RX.flinch], [C1 + .02, pz({ ...RX.flinch, hy: 4, fl: [.7, 1.4] })], [C1 + .16, kneelUp], [.45, looking], [C2 - .05, bowed], [CLICK, pz({ ...bowed, chest: .38 })],
-        [CLICK + .2, RX.handsDown], [CLICK + .45, RX.prone]], t);
-      E.pose = pose;
+      const looking = pz({ ...kneelUp, chest: -.12, lean: 0 }), seized = pz({ ...kneelUp, chest: -.05, lean: .02, fa: [1.2, .5], ba: [1.0, .6] });
+      const slack = pz({ ...kneelUp, chest: .35, lean: .14, fa: [.2, .3], ba: [.1, .3] });
+      E.pose = at([[0, EG], [.07, RX.flinch], [C1 + .02, pz({ ...RX.flinch, hy: 4, fl: [.7, 1.4] })], [C1 + .16, kneelUp], [.45, looking], [PL - .02, looking], [PL + .04, seized],
+        [RIP, pz({ ...seized, fa: [1.4, .4], ba: [1.3, .5] })], [RIP + .12, slack], [CLICK, pz({ ...slack, chest: .45 })], [CLICK + .2, RX.handsDown], [CLICK + .45, RX.prone]], t);
+      E.jit = t > PL && t < RIP ? ((t * 60 | 0) % 2 ? 1 : 0) : 0;
       S.once('c1', t >= C1, () => { F.hit(S, E, .07, .06); F.cut(S, E.x - 12, E.y - 7, E.x + 6, E.y - 6, .12); F.cres(S, E.x - 3, E.y - 6, 1, 9, .1, 1, .14); dropSword(S, E, RX.flinch, -1); });
-      S.once('c2', t >= C2, () => { F.hit(S, E, .1, .1);
-        const px = pixelsOf(E), top = Math.min(...px.map(q => q[1])), L = [E.x - 8, top + 5.5, E.x + 8, top + 5.5];
-        S.pieces.push(...toPieces(px.filter(q => q[1] < top + 5.5), [], E.y, P => { P.vx = -18 + rr(-4, 4); P.vz = 24; P.va = -7; }));
-        F.cut(S, ...L, .14); F.cres(S, E.x, top + 4, 1, 10, 1.3, 1, .16); F.burst(S, E.x, top + 6, 10, 120); });
-      if (t >= C2) pose.noHead = true;
+      S.once('pl', t >= PL, () => { F.hit(S, E, .12, .1); S.shake = .08; });
+      const W = S.my.res && S.my.res.wound;
+      if (W && t > PL && t < RIP) { S.my.wound = W; S.my.stain = Math.max(S.my.stain || 0, S.my.res.depth); if (Math.random() < .35) squirt(S, W[0], W[1], E.y, rr(-12, 12), rr(4, 18), 1); }
+      S.once('rip', t >= RIP, () => { F.hit(S, E, .06, .05); const w = S.my.wound || [E.x, E.y - 16]; squirt(S, w[0], w[1], E.y, 8, 120, 16, .5); });
+      if (t > RIP && S.my.wound) { const b = beat(t - RIP); if (b > .5) squirt(S, S.my.wound[0], S.my.wound[1] + (t - RIP) * 2, E.y, -14 * b, 85 * b, 2); }
+      S.once('flick', t >= FL + .02, () => { fling(S, R.x + 8, R.y, 1); S.my.stain = 0; });
       S.once('click', t >= CLICK, () => { S.stop = .04; });
-    } },
+    },
+    items(g, S, items, t, R, E) { if (R.pose.noBlade) items.push({ y: R.y + .02, d: () => { S.my.res = sunkBlade(g, S, R, R.pose, E, t > 1.14 ? S.my.stain || 0 : 0); } }); } },
 
   // ---------------- 42 ----------------
-  { name: 'Hamstring', note: 'He lands behind the enemy, low, and the enemy never gets round. One flat cut behind both knees. The man\'s back arches and his legs go, and he drops onto his knees facing away. The ronin rises behind him, turns the blade point down in both hands, and drives it down between the shoulder blades. He holds it there, then draws it out; the enemy sways, and on the click he pitches forward onto his face.',
-    side: 1, gap: 19, dur: 1.75,
+  { name: 'Hamstring', note: 'He lands behind the enemy, low, and the enemy never gets round. One flat cut behind both knees. The man\'s back arches and his legs go, and he drops onto his knees facing away. The ronin rises behind him, turns the blade point down in both fists, and drives it in between the shoulder blades on a slant, so the point comes out through his belly in front. He holds it there while the man shudders on it, then tears it out; blood spurts from both holes, and the blade is red to the hilt. He flicks it clean, and on the click the enemy pitches forward onto his face.',
+    side: 1, gap: 19, dur: 2.0,
     run(S, t, R, E) {
       const cut = pz({ hx: 2, hy: 7, lean: .7, chest: .4, fl: [1.3, 1.85], bl: [-.8, .9], fa: [1.2, .05], sword: .45, ba: [-.6, .3], flutter: 1 });
-      const raise = pz({ hy: 1, lean: -.05, chest: -.15, fl: [.4, .5], bl: [-.45, .3], fa: [2.7, 1.25], ba: [2.5, 1.35], sword: 1.5 });
-      const plunge = pz({ hx: 1, hy: 4, lean: .45, chest: .5, fl: [.9, 1.25], bl: [-.7, .4], fa: [1.2, .7], ba: [1.05, .8], sword: 1.55 });
-      const C1 = .12, UP = .42, PL = .6, OUT = .92, SH = 1.02, CLICK = SH + .34;
+      const raise = pz({ hy: 1, lean: -.05, chest: -.15, fl: [.4, .5], bl: [-.45, .3], fa: [2.75, 1.2], ba: [2.55, 1.3], sword: 1.2, noBlade: true });
+      const plunge = pz({ hy: 2, lean: .2, chest: .14, fl: [.75, 1.05], bl: [-.6, .35], fa: [1.62, .3], ba: [1.48, .42], sword: 1.2, noBlade: true, hat: 1 });
+      const deep = pz({ ...plunge, hy: 4, lean: .26, chest: .18, fl: [.85, 1.35], fa: [1.55, .3], ba: [1.42, .42] });
+      const tear = pz({ hy: 1, lean: -.15, chest: -.2, fl: [.45, .5], bl: [-.5, .3], fa: [2.35, 1.05], ba: [2.15, 1.15], sword: 1.1, noBlade: true, flutter: 1 });
+      const C1 = .12, UP = .42, PL = .64, OUT = 1.02, FL = 1.2, SH = 1.26, CLICK = SH + .34;
       R.face = -1;
       R.pose = at([[0, pz({ hy: 5, lean: .55, fl: [.9, 1.5], bl: [-.6, .5], fa: HILT, ba: [.2, 1.2] })], [C1 - .001, pz({ hy: 6, lean: .6, fl: [1.0, 1.6], bl: [-.6, .6], fa: HILT, ba: [.2, 1.2] })],
-        [C1, cut, hold], [C1 + .1, pz({ ...cut, flutter: 0 })], [UP, raise], [PL - .001, raise], [PL, plunge, hold], [OUT, pz({ ...plunge, hy: 3.5 })], [OUT + .07, pz({ ...raise, hy: 2, fa: [2.2, 1.0], sword: 1.3 })],
-        [SH, K5.flick], ...quickSheathe(SH, K5.flick).slice(1)], t);
-      R.x = EPOS.x + 19 - (t >= C1 ? 2 : 0) - (t >= UP ? 7 * cl01((t - UP) / .15) : 0);
+        [C1, cut, hold], [C1 + .1, pz({ ...cut, flutter: 0 })], [UP, raise], [PL - .001, pz({ ...raise, hy: .5 })], [PL, plunge, hold], [PL + .12, deep], [OUT - .001, deep],
+        [OUT, tear, hold], [FL - .001, pz({ ...tear, hy: 1.5 })], [FL, K5.flick, hold], ...quickSheathe(SH, K5.flick).slice(1)], t);
+      // his fists over the spine between the shoulder blades
+      const aim = E.x + 2 - handOf({ x: 0, y: R.y, face: -1 }, plunge)[0];
+      R.x = t < UP ? EPOS.x + 17 : t < PL ? EPOS.x + 17 + (aim + 7 - EPOS.x - 17) * cl01((t - UP) / .18) : t < OUT ? aim : aim + 2;
       E.face = -1;
       const drop = pz({ hy: 7, lean: -.2, chest: -.4, fl: [1.45, 2.3], bl: [-.2, 2.45], fa: [.6, .5], ba: [-.4, .4], sword: .8 });
-      const pinned = pz({ ...drop, lean: .15, chest: .25, fa: [.3, .3], ba: [.2, .3], sword: null });
-      E.pose = at([[0, EG], [.07, RX.flinch], [C1 + .01, pz({ ...RX.jolt, hy: 3 })], [C1 + .18, drop], [PL - .02, pz({ ...drop, lean: -.1, chest: -.25 })], [PL + .02, pinned, hold], [OUT, pinned],
-        [OUT + .1, pz({ ...pinned, lean: .25, chest: .35 })], [CLICK - .05, pz({ ...pinned, lean: .3, chest: .4 })], [CLICK + .2, RX.handsDown], [CLICK + .45, RX.prone]], t);
+      const onIt = pz({ ...drop, sword: null, lean: .05, chest: -.3, fa: [1.1, .4], ba: [.9, .5] });
+      const slack = pz({ ...drop, sword: null, lean: .25, chest: .35, fa: [.3, .3], ba: [.2, .3] });
+      E.pose = at([[0, EG], [.07, RX.flinch], [C1 + .01, pz({ ...RX.jolt, hy: 3 })], [C1 + .18, drop], [PL - .02, pz({ ...drop, lean: -.1, chest: -.25 })], [PL + .03, onIt], [OUT, onIt],
+        [OUT + .1, slack], [CLICK - .05, pz({ ...slack, lean: .3, chest: .4 })], [CLICK + .2, RX.handsDown], [CLICK + .45, RX.prone]], t);
+      E.jit = t > PL && t < OUT ? ((t * 60 | 0) % 2 ? 1 : 0) : 0;
       S.once('c1', t >= C1, () => { F.hit(S, E, .07, .06); F.cut(S, E.x + 12, E.y - 6, E.x - 4, E.y - 5, .12); F.cres(S, E.x + 2, E.y - 5, -1, 9, .1, 1, .14); });
       S.once('drop', t >= C1 + .14, () => dropSword(S, E, drop, -1));
-      S.once('pl', t >= PL, () => { F.hit(S, E, .1, .1); for (let k = 0; k < 8; k++) F.spark(S, E.x, E.y - 12, rr(-60, 60), rr(-80, -20), .15, k % 2 ? WH : CY2, true); });
-      S.once('out', t >= OUT, () => { F.burst(S, E.x, E.y - 14, 6, 90); });
-      S.once('flick', t >= OUT + .12, () => fling(S, R.x - 8, R.y, -1));
+      S.once('pl', t >= PL, () => { F.hit(S, E, .12, .1); S.shake = .08; });
+      const res = S.my.res;
+      if (res && res.wound && t > PL && t < OUT) { S.my.wound = res.wound; S.my.exit = res.exit; S.my.stain = Math.max(S.my.stain || 0, 13 - (res.exit ? 1 : 3));
+        if (Math.random() < .3) squirt(S, res.wound[0], res.wound[1], E.y, rr(-8, 14), rr(4, 16), 1);
+        if (res.exit && Math.random() < .5) squirt(S, res.exit[0], res.exit[1], E.y, rr(-30, -10), rr(-5, 10), 1); }
+      S.once('out', t >= OUT, () => { F.hit(S, E, .06, .05); const w = S.my.wound || [E.x + 2, E.y - 15]; squirt(S, w[0], w[1], E.y, 20, 110, 14, .5);
+        if (S.my.exit) squirt(S, S.my.exit[0], S.my.exit[1], E.y, -45, 20, 10, .5); });
+      if (t > OUT && S.my.wound) { const b = beat(t - OUT); if (b > .5) squirt(S, S.my.wound[0], S.my.wound[1] + (t - OUT) * 3, E.y, 10 * b, 70 * b, 2); }
+      S.once('flick', t >= FL + .02, () => { fling(S, R.x - 8, R.y, -1); S.my.stain = 0; });
       S.once('click', t >= CLICK, () => { S.stop = .04; });
-    } },
+    },
+    items(g, S, items, t, R, E) { if (R.pose.noBlade) items.push({ y: R.y + .02, d: () => { S.my.res = sunkBlade(g, S, R, R.pose, E, t > 1.02 ? S.my.stain || 0 : 0); } }); } },
 
   // ---------------- 43 ----------------
-  { name: 'Trip', note: 'He never draws until the man is down. He lands close, drops low and sweeps the enemy\'s front foot out with his own. The enemy goes over backwards and lands flat on his back, winded. The ronin steps over him, draws, and drives the point straight down into his chest. The man jerks once, legs and arms coming up. The ronin pulls the blade out, flicks the blood off it onto the floor, and sheathes; on the click the eye goes out.',
-    side: -1, gap: 10, dur: 1.8,
+  { name: 'Trip', note: 'He never draws until the man is down. He lands close, drops low and sweeps the enemy\'s front foot out with his own. The enemy goes over backwards and lands flat on his back, winded. The ronin steps over him, draws, turns the blade point down, and drives it through his chest and into the floor beneath him. The man jerks on it, legs and arms coming up, pinned. The ronin wrenches it out; the blood follows it up in a spout, then pumps in weakening beats as the man goes still. He flicks the red off the blade onto the floor and sheathes; on the click the eye goes out.',
+    side: -1, gap: 10, dur: 2.05,
     run(S, t, R, E) {
       const sweep = pz({ hx: 1, hy: 7, lean: .35, chest: .2, fl: [1.55, .15], bl: [-.35, 2.2], fa: HILT, ba: [.6, .4], flutter: 1 });
       const stand = pz({ hy: 1, lean: .1, fl: [.45, .45], bl: [-.45, .25], fa: HILT, ba: [-.2, .3] });
-      const high = pz({ hy: 1, lean: .05, chest: -.1, fl: [.5, .5], bl: [-.45, .3], fa: [2.9, 1.2], ba: [2.7, 1.3], sword: 1.52 });
-      const stab = pz({ hx: 1, hy: 4, lean: .45, chest: .5, fl: [.9, 1.3], bl: [-.6, .45], fa: [1.1, .6], ba: [1.0, .7], sword: 1.56 });
-      const SW = .1, DRAW = .5, STAB = .72, PULL = 1.0, SH = 1.12, CLICK = SH + .34;
+      const high = pz({ hy: 1, lean: .05, chest: -.1, fl: [.5, .5], bl: [-.45, .3], fa: [2.9, 1.2], ba: [2.7, 1.3], sword: 1.52, noBlade: true });
+      const stab = pz({ hx: 1, hy: 4, lean: .45, chest: .5, fl: [.9, 1.3], bl: [-.6, .45], fa: [1.25, .6], ba: [1.1, .7], sword: 1.55, noBlade: true, hat: 1 });
+      const deep = pz({ ...stab, hy: 5, lean: .52, chest: .55, fa: [1.1, .55], ba: [1.0, .65] });
+      const wrench = pz({ hy: 0, lean: -.12, chest: -.2, fl: [.5, .45], bl: [-.5, .3], fa: [2.6, 1.15], ba: [2.4, 1.25], sword: 1.5, noBlade: true, flutter: 1 });
+      const SW = .1, DRAW = .5, STAB = .74, PULL = 1.12, FL = 1.3, SH = 1.36, CLICK = SH + .34;
       R.face = 1;
       R.pose = at([[0, pz({ hy: 3, lean: .3, fl: [.6, .95], bl: [-.6, .35], fa: HILT, ba: [-.5, .45] })], [SW - .04, pz({ hy: 6, lean: .3, fl: [.7, 1.6], bl: [-.5, 1.4], fa: HILT, ba: [.4, .6] })], [SW, sweep, hold], [SW + .12, pz({ ...sweep, flutter: 0 })],
-        [.36, stand], [DRAW, pz({ hy: 1, lean: .1, fa: [1.5, .8], sword: -.8, ba: [1.3, .9] })], [.62, high], [STAB - .001, high], [STAB, stab, hold], [PULL, pz({ ...stab, hy: 3.5 })], [PULL + .06, pz({ ...high, hy: 2 })], [SH, K5.flick], ...quickSheathe(SH, K5.flick).slice(1)], t);
-      R.x = EPOS.x - 10 + (t >= .36 ? 6 * cl01((t - .36) / .2) : 0);
+        [.36, stand], [DRAW, pz({ hy: 1, lean: .1, fa: [1.5, .8], sword: -.8, ba: [1.3, .9] })], [.63, high], [STAB - .001, high], [STAB, stab, hold], [STAB + .1, deep], [PULL - .001, deep],
+        [PULL, wrench, hold], [FL - .001, pz({ ...wrench, hy: 1 })], [FL, K5.flick, hold], ...quickSheathe(SH, K5.flick).slice(1)], t);
+      // over him, the point above the middle of his chest
+      const chest = E.x + 5, aim = chest - handOf({ x: 0, y: R.y, face: 1 }, stab)[0];
+      R.x = t < .36 ? EPOS.x - 10 : t < STAB ? EPOS.x - 10 + (aim - 6 - EPOS.x + 10) * cl01((t - .36) / .25) : t < PULL ? aim : aim - 1;
       E.face = -1;
       const tip = pz({ hy: 1, lean: -.45, chest: -.3, fl: [1.1, .2], bl: [.2, .4], fa: [-1.6, .3], ba: [-1.9, .3], sword: -1.8 });
-      const jerk = pz({ ...B3.supine, fl: [1.5, .9], bl: [1.3, 1.1], fa: [-1.2, .8], ba: [.2, 1.3] });
+      const jerk = pz({ ...B3.supine, fl: [1.5, .95], bl: [1.3, 1.15], fa: [-1.1, .9], ba: [.3, 1.4] });
       E.pose = at([[0, EG], [.06, RX.flinch], [SW + .02, tip], [SW + .2, pz({ ...B3.sitBack, sword: -1.2 })], [SW + .3, pz({ ...B3.supine, sword: null })], [STAB, pz({ ...B3.supine, sword: null })],
-        [STAB + .05, jerk], [STAB + .25, B3.supine]], t);
+        [STAB + .05, jerk], [STAB + .2, pz({ ...jerk, fl: [1.35, .6], fa: [-1.4, .6] })], [PULL, jerk], [PULL + .25, B3.supine]], t);
+      E.jit = t > STAB && t < PULL ? ((t * 60 | 0) % 2 ? 1 : 0) : 0;
       S.once('sw', t >= SW, () => { F.dust(S, E.x - 3, E.y, 8); F.hit(S, E, .05, 1 / 60); });
       S.once('drop', t >= SW + .14, () => dropSword(S, E, tip, 1));
-      S.once('stab', t >= STAB, () => { F.hit(S, E, .1, .1); for (let k = 0; k < 8; k++) F.spark(S, E.x, E.y - 3, rr(-70, 70), rr(-60, -10), .15, k % 2 ? WH : CY2, true); });
-      S.once('flick', t >= PULL + .1, () => fling(S, R.x + 8, R.y, 1));
+      S.once('stab', t >= STAB, () => { F.hit(S, E, .12, .1); S.shake = .08; F.dust(S, chest, E.y, 6); smallCrack(S, chest, E.y + 1, 4); });
+      const res = S.my.res;
+      if (res && res.wound && t > STAB && t < PULL) { S.my.wound = res.wound; S.my.stain = Math.max(S.my.stain || 0, res.depth); if (Math.random() < .35) squirt(S, res.wound[0], res.wound[1], E.y, rr(-16, 16), rr(6, 22), 1); }
+      S.once('pull', t >= PULL, () => { F.hit(S, E, .06, .05); const w = S.my.wound || [chest, E.y - 3]; squirt(S, w[0], w[1], E.y, 4, 150, 18, .45); });
+      if (t > PULL && S.my.wound) { const b = beat(t - PULL, 3.6, 1.6); if (b > .5) squirt(S, S.my.wound[0], S.my.wound[1], E.y, rr(-8, 8), 95 * b, 2); }
+      S.once('flick', t >= FL + .02, () => { fling(S, R.x + 8, R.y, 1); S.my.stain = 0; });
       S.once('click', t >= CLICK, () => { S.stop = .03; });
-    } },
+    },
+    items(g, S, items, t, R, E) { if (R.pose.noBlade) items.push({ y: R.y + .02, d: () => { S.my.res = sunkBlade(g, S, R, R.pose, E, t > 1.12 ? S.my.stain || 0 : 0, E.y + 1); } }); } },
 
   // ---------------- 44 ----------------
-  { name: 'Side Step', note: 'He lands too close and the enemy swings at once, a big cut at his head. The ronin is not there: one small step aside and a half turn, and the blade goes through the space he left. The enemy is carried on past by his own swing, overextended, his back open. The ronin draws and cuts across it in one motion. The man arches, staggers two steps forward, and on the click falls on his face.',
-    side: -1, gap: 9, dur: 1.55,
+  { name: 'Side Step', note: 'He lands too close and the enemy swings at once, a big cut at his head. The ronin is not there: one small step aside and a half turn, and the blade goes through the space he left. The enemy is carried on past by his own swing, his sword arm stretched out in front of him. The ronin draws and brings the blade down on it at the shoulder. The arm goes, sword and all, turning end over end across the floor. The man stares at where it was; the stump spurts in beats; he clutches at it, staggers, sinks to his knees, and on the click falls on his face.',
+    side: -1, gap: 9, dur: 1.9,
     run(S, t, R, E) {
       const slip = pz({ hx: -1, hy: 3, lean: -.1, chest: -.25, fl: [.3, .7], bl: [-.8, .5], fa: HILT, ba: [-.9, .3], flutter: 1 });
-      const pivot = pz({ hy: 3, lean: .25, chest: .1, fl: [.6, .95], bl: [-.6, .35], fa: HILT, ba: [.3, 1.2] });
-      const cut = pz({ hx: 2, hy: 4, lean: .55, chest: .4, fl: [1.05, 1.25], bl: [-1.0, .15], fa: [1.45, -.05], sword: .2, ba: [-.9, .3], hat: 1, flutter: 1 });
-      const SWING = .16, TURN = .32, CUT = .42, SH = .72, CLICK = SH + .34;
-      R.pose = at([[0, pz({ hy: 3, lean: .3, fl: [.6, .95], bl: [-.6, .35], fa: HILT, ba: [-.5, .45] })], [SWING - .04, slip], [TURN, slip], [TURN + .001, pivot, hold], [CUT - .001, pivot], [CUT, cut, hold],
-        [CUT + .1, pz({ ...cut, flutter: 0 })], [SH, pz({ ...cut, lean: .45, chest: .3, flutter: 0, hat: 0 })], ...quickSheathe(SH, pz({ ...cut, lean: .45, chest: .3, flutter: 0, hat: 0 })).slice(1)], t);
-      // he steps back and aside (up the floor), then the enemy's swing carries him past, and the ronin is behind him
+      const pivot = pz({ hy: 2, lean: .1, chest: -.1, fl: [.55, .8], bl: [-.6, .35], fa: [2.5, .55], sword: -1.7, ba: [2.3, .7] });
+      const chop = pz({ hx: 2, hy: 5, lean: .6, chest: .5, fl: [1.1, 1.35], bl: [-1.0, .15], fa: [1.05, .15], sword: 1.1, ba: [.9, .25], hat: 1, flutter: 1 });
+      const SWING = .16, TURN = .3, CUT = .42, SH = .8, CLICK = SH + .34 + .12;
+      R.pose = at([[0, pz({ hy: 3, lean: .3, fl: [.6, .95], bl: [-.6, .35], fa: HILT, ba: [-.5, .45] })], [SWING - .04, slip], [TURN, slip], [TURN + .001, pivot, hold], [CUT - .001, pivot], [CUT, chop, hold],
+        [CUT + .12, pz({ ...chop, flutter: 0 })], [SH, pz({ ...chop, lean: .45, chest: .35, flutter: 0, hat: 0 })], ...quickSheathe(SH, pz({ ...chop, lean: .45, chest: .35, flutter: 0, hat: 0 })).slice(1)], t);
       const k = cl01((t - .05) / .12);
       R.x = EPOS.x - 9 + 4 * k - (t >= CUT ? 3 : 0); R.y = EPOS.y + 1 - 4 * k;
       R.face = t < TURN ? 1 : -1;
       E.face = -1;
       const k2 = cl01((t - SWING + .04) / .22);
-      E.x = EPOS.x - 22 * eOut(k2) - (t > CUT ? 6 * cl01((t - CUT) / .5) : 0);
-      E.pose = at([[0, EG], [.05, RX.windup], [SWING, pz({ ...RX.swung, hx: 3 })], [CUT, pz({ ...RX.swung, hx: 4, lean: .7 })], [CUT + .03, pz({ ...RX.jolt, sword: .6 })],
-        [CUT + .3, pz({ ...RX.stiff, lean: .2, chest: .1, fl: [.6, .5] })], [CLICK - .02, pz({ ...RX.sag, lean: .45 })], [CLICK + .2, RX.handsDown], [CLICK + .45, RX.prone]], t);
+      E.x = EPOS.x - 22 * eOut(k2) - (t > CUT ? 7 * cl01((t - CUT) / .8) : 0);
+      const reach = pz({ ...RX.swung, hx: 4, lean: .65 }), stare = pz({ hy: 2, lean: -.1, chest: -.3, fl: [.4, .5], bl: [-.45, .3], fa: [1.3, .1], ba: [.4, .9], sword: null });
+      const clutch = pz({ hy: 4, lean: .25, chest: .4, fl: [.5, .8], bl: [-.5, .5], fa: [.5, .3], ba: [1.5, 1.9], sword: null });
+      const pose = at([[0, EG], [.05, RX.windup], [SWING, pz({ ...RX.swung, hx: 3 })], [CUT, reach], [CUT + .04, stare], [CUT + .3, clutch], [CUT + .6, pz({ ...clutch, hy: 5, fl: [.8, 1.3], lean: .35 })],
+        [CLICK - .05, pz({ ...RX.kneel, ba: [1.5, 1.9] })], [CLICK + .2, pz({ ...RX.handsDown, ba: [1.2, 1.6] })], [CLICK + .45, RX.prone]], t);
+      if (t >= CUT) pose.noArm = true;
+      E.pose = pose;
       S.once('swing', t >= SWING, () => whiff(S, E, -1));
-      S.once('cut', t >= CUT, () => { F.hit(S, E, .1, .1); F.cut(S, E.x + 12, E.y - 17, E.x - 6, E.y - 13, .14); F.cres(S, E.x + 2, E.y - 15, -1, 11, .2, 1, .16); F.ghost(S, { ...R, pose: pivot }, CY, .1); });
-      S.once('drop', t >= CUT + .2, () => dropSword(S, E, RX.jolt, -1));
+      // the arm: the difference between him with it and without it, cut from his body as it is seen
+      S.once('cut', t >= CUT, () => {
+        E.pose = reach; const whole = pixelsOf(E); E.pose = { ...reach, noArm: true }; const rest = new Set(pixelsOf(E).map(q => q[0] + ',' + q[1])); E.pose = pose;
+        const arm = whole.filter(q => !rest.has(q[0] + ',' + q[1]));
+        S.pieces.push(...toPieces(arm, [], E.y, P => { P.vx = -48 + rr(-6, 6); P.vz = 55; P.va = rr(9, 13); }));
+        const sx = E.x - 4, sy = E.y - 18; S.my.stump = [sx, sy];
+        F.hit(S, E, .12, .1); F.cut(S, sx + 6, sy - 6, sx - 4, sy + 5, .14); F.cres(S, sx + 1, sy, -1, 11, .9, 1, .16); squirt(S, sx, sy, E.y, -50, 60, 14, .5); });
+      if (S.my.stump && t > CUT) { const b = beat(t - CUT, 4, 1.6); if (b > .5) { const [ox, oy] = S.my.stump, dx = E.x - EPOS.x + 22; squirt(S, ox + (E.x - (EPOS.x - 22)), oy + Math.min(6, (t - CUT) * 5), E.y, -35 * b, 55 * b, 2); } }
       S.once('click', t >= CLICK, () => { S.stop = .04; });
     } },
 
@@ -801,7 +881,7 @@ function sprung(S, E, raw) {
     if (sp.tw === 1 && u > 1.05) { sp.tw = 2; V.fa1 += rr(2, 3.5); sp.nv += .8; } }
   // the eye: it flickers and goes out once he is down
   sp.eyeDark = sp.thudT != null && (sp.t - sp.thudT > .45 || (sp.t - sp.thudT > .12 && (sp.t * 30 | 0) % 3 === 0));
-  const out = { ...tgt, hx: X.hx, hy: X.hy, lean: X.lean, chest: X.chest, sword: X.sword, neck: sp.neck };
+  const out = { ...tgt, hx: X.hx, hy: X.hy, lean: X.lean, chest: X.chest, sword: X.sword, neck: sp.neck, noHead: raw.noHead || tgt.noHead, noArm: raw.noArm || tgt.noArm };
   for (const k of CH2) out[k] = [X[k + '0'], X[k + '1']];
   sp.out = out; return out;
 }
@@ -821,7 +901,7 @@ const pixelsOf0 = pixelsOf;
 pixelsOf = function (A) {
   const S = CUR, E = PASS.on && S && A.enemy ? foeOf(S, A.pose) : null, sp = E && E.__sp;
   if (!sp || !sp.out) return pixelsOf0(A);
-  EYE_DARK = sp.eyeDark; try { return pixelsOf0({ ...A, pose: { ...sp.out, noHead: A.pose.noHead, noUpper: A.pose.noUpper, lower: A.pose.lower } }); } finally { EYE_DARK = false; }
+  EYE_DARK = sp.eyeDark; try { return pixelsOf0({ ...A, pose: { ...sp.out, noHead: A.pose.noHead, noUpper: A.pose.noUpper, lower: A.pose.lower, noArm: A.pose.noArm } }); } finally { EYE_DARK = false; }
 };
 const paint0 = paint;
 paint = function (pose, enemy, eye) {

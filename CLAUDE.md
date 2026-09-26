@@ -13,7 +13,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
-- The check reads the player and the enemies through `window.__game = { P, E, wear, INV, K }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
+- The check reads the player, the enemies, what he wears, the inventory, `S` and the K markers through `window.__game = { P, E, wear, INV, S, K }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
 
 ## Module map (`src/`)
 
@@ -21,7 +21,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 |---|---|
 | `main.js` | Boot, the fixed 60 Hz update loop under `requestAnimationFrame`, the debug hook |
 | `config.js` | `W`/`H`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY` (96×64; the rig draws in its old 48×48 box, `RX`/`RY`, shifted by whole pixels), `SQ` (floor squash) |
-| `state.js` | ALL shared mutable state: the player `P`, what he wears (`wear`), `S` (`shake`, `hitstop`, `scr` screen flash, `roomClear`, `banner`), the inventory `INV` (the HUD reads only this), `parts`, `pops` and every effect list |
+| `state.js` | ALL shared mutable state: the player `P`, what he wears (`wear`), `S` (`shake`, `hitstop`, `scr` screen flash, `roomClear`, `banner`, `smoke`: while the static bomb's smoke is up every enemy counts as isolated, `powerTest`: the page's power picker), the inventory `INV` (the HUD reads only this), `parts`, `pops` and every effect list |
 | `screen.js` | The `#game` canvas, its 2D context `g`, the `#hud` line |
 | `input.js` | Keyboard map, touch pad, `held`/`taps`, `readInput()`, the room-clear checkbox |
 | `rig/pose.js` | `pz()` (pose from REST), `HILT`, `lerpP`, `ease`/`lin`, `keyed()` (eased keyframes to frames) |
@@ -46,6 +46,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `player/combo.js` | The J combo ladder (`CUTS`, `comboMax()` from `INV.basic`, landed basic cuts) and Flow (six chained cuts let the next skill on cooldown cast) |
 | `player/cooldowns.js` | `CD` (every active's cooldown), `startCd`, `gate` (refuses a key on cooldown), `onAssassination` (K back in 0.2 s) |
 | `player/qi.js` | The Qi meter's gains (`qiAdd` from hits, `qiFill` from items, which never wakes the storm) and Storm Chain (`chainFrom`) |
+| `player/power.js` | The power tier's effects: `PW` stats (`pw`), each skill's I / II / III numbers (`TIERS`, `T`), `powerCast` (stone at II, ribbons of light at III) |
 | `player/weapon.js` | `WEAPONS` (blade length, reach, weight), `setWeapon`; a stopgap until the weapon pose layer lands |
 | `player/body.js` | His silhouette points (sparks and bolts land on his body), `motes`, `glowK` |
 | `player/personality.js` | `setPersonality()`: bakes a trait mix into his idle, walk and run and their speeds (`P.gait`) |
@@ -86,7 +87,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `world/sprite.js` | `spriteTo`, `solid` (a frame recoloured solid) |
 | `world/render.js` | `render()`: depth sort by feet, effects, particles, screen flash, items over the world, the HUD, HUD text |
 | `items/items.js` | The lock-on, E (tap = the item's verb, hold = Harvest), quick slots 1-4, the item states, the Cracked Mirror cut |
-| `items/inventory.js` | Writing to `INV`: `has` (charms), `heal`, `addMon`/`addShards`/`addQuick`/`addCharm`, `showBanner`, `addExp` (levels) |
+| `items/inventory.js` | Writing to `INV`: `has` (charms), `heal`, `addMon`/`addShards`/`addQuick`/`addCharm`, `showBanner`, `addExp` (levels), `powerTier`/`offer` (the power tier) |
 | `items/big.js` | The big items (shrine, Grave Nodachi, sealed chest, rift tablet): their acts and drawing |
 | `items/pickups.js` | Small pickups, floor consumables and relics: magnet, fly-in, collect; chest loot |
 | `items/quick.js` | The consumables' uses (static bomb, thunder talisman, whetstone, grave incense) |
@@ -105,6 +106,13 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `ui/element-picker.js` | The element buttons over the game, `[` / `]` to step through them |
 | `ui/strip-tester.js` | "Test a sprite strip": drop a PNG strip in place of any animation |
 | `ui/wardrobe.js` | The wardrobe under the game: one item per slot, outfit presets |
+| `party/kit.js` | The party: `ROSTER` (him bound to `P.weapon` / `wear` / `INV.charms`, then companions), kits, the `BAG`, charms by scope, paired-execution needs, companion levels and stats, equipping |
+| `party/figures.js` | Drawing anyone in the party: weapon + trait frames (cached), the ally palette, `place` |
+| `party/companions.js` | Companions in the room: ranks of six, weapon roles, hits and Qi, EXP, downed / lifted / dead (`hurtAlly`), Iron Oath |
+| `party/recruit.js` | Recruiting: the road wanderer, the guarded captive, the camp board |
+| `party/paired.js` | Paired executions on K (the crossing cut) |
+| `ui/kit-screen.js` | Tab: the kit screen for him and every companion (pauses the game) |
+| `ui/party-hud.js` | The party panel under the skill bar, and the E / K prompts over the world |
 | `styles.css` / `index.html` | The page; `index.html` holds markup only |
 
 - Shared state lives in `state.js` and is imported, never copied. A value other modules reassign goes on `S`, because an imported `let` cannot be reassigned.
@@ -126,8 +134,8 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, a darker red-grey.
 - Executions are short and brutal, show only the key frames (each leaning into the motion), and cut the enemy into real pieces.
 - Assassination markers: every enemy has an isolation bubble (empty glows cyan; overlapping ones go grey and are joined by a link line); a kill line runs to the nearest enemy he can dash to; the K prompt appears only when that enemy is in range AND outside every other enemy's bubble; lock-on brackets are reserved for big pickups.
-- Skills and keys: move WASD / arrows · hold V walk · J slash (again in the follow-through for the next cut, up to six as landed cuts grow his basic skill) · Shift or L slide · Space jump · K glitch teleport, or on a lone enemy in reach an execution · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing) · E tap: the locked-on item's verb, hold near the fallen: Harvest · 1-4 quick slots. Reserved by the design (not built yet): F counter, R Blade Recall, Q Lightning Chain; X becomes Time Slice and C Breath of Qi. Storm Chain is passive: 8 s whenever the Qi meter fills.
-- Items and HUD (`prototypes/20-items.html`, built as displayed): big items are the only things with lock-on brackets; small pickups magnetise within about 22 px; relics go to the first empty charm slot. Qi from items fills the meter but only a landed hit wakes Storm Chain. Health and Qi are 0..1; Qi is notched in thirds. `INV.power` (1..3) is the I / II / III tier; where it comes from is still the owner's call.
+- Skills and keys: move WASD / arrows · hold V walk · J slash (again in the follow-through for the next cut, up to six as landed cuts grow his basic skill) · Shift or L slide · Space jump · K glitch teleport, or on a lone enemy in reach an execution · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing) · E tap: the locked-on item's verb, hold near the fallen: Harvest · 1-4 quick slots · Tab kit screen · G party hold / follow · E by a recruit: take them on, held by a downed companion: lift them · K with a companion set up for it: a paired execution · H cut a companion down (testing). Reserved by the design (not built yet): F counter, R Blade Recall, Q Lightning Chain; X becomes Time Slice and C Breath of Qi. Storm Chain is passive: 8 s whenever the Qi meter fills.
+- Items and HUD (`prototypes/20-items.html`, built as displayed): big items are the only things with lock-on brackets; small pickups magnetise within about 22 px; relics go to the first empty charm slot. Qi from items fills the meter but only a landed hit wakes Storm Chain. Health and Qi are 0..1; Qi is notched in thirds. `INV.power` (1..3) is the I / II / III tier, from relics and upgrades (owner): 1 + shrine upgrades (OFFER 3 shards at a prayed shrine, two at most) + power relics worn, capped at III. Power raises every skill's tier AND scales stats (owner); the numbers live in `player/power.js`.
 - Facing (`P.view`, the port system): idle, walk, run and runArmed face the way he last moved: E, SE, S, NE or N; the west side mirrors the east with `P.face`. Harvest faces N. Every attack, skill and stance is still side on. The samurai turn the same way toward the ronin (`e.view`, a beat late) while they guard, flinch and stagger; the dead stay side on. Guard: the check's "eight facings" step.
 - Cooldowns (`player/cooldowns.js`): K 3 s (none with no enemy near; 0.2 s after an assassination) · I 2 s, Thousand Cuts 8 s · O 10 s · P 12 s · N 14 s · U 8 s · slide 1 s. J and jump have none.
 

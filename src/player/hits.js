@@ -2,6 +2,7 @@ import { COL } from '../config.js';
 import { P, S, INV, cuts } from '../state.js';
 import { rr, residue, spark } from '../fx/util.js';
 import { QI_GAIN, qiAdd, chainFrom } from './qi.js';
+import { pw } from './power.js';
 import { ENEMIES, DMG, damage } from '../world/enemies.js';
 import { weapon } from '../weapons/weapons.js';
 import { has } from '../items/inventory.js';
@@ -23,10 +24,10 @@ export function hitOne(e, i, kind, fx = P.x, fy = P.y) {
     spark(e.x + rr(-2, 2), e.y - 16 + rr(-4, 4), Math.cos(a) * v, Math.sin(a) * v * .7, rr(.09, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
   if (base === 'slash') landCut();   // basic skill and the Flow chain
   if (P.storm > 0) chainFrom(e); else qiAdd((QI_GAIN[base] || 0) * qiMul());
-  damage(e, DMG[base] || 1, fx, fy);
+  damage(e, (DMG[base] || 1) * pw('dmg'), fx, fy);   // power: up to 1.5x
 }
-// Split Tsuba: +25%; a whetstone edge: twice as fast
-const qiMul = () => (has('tsuba') ? 1.25 : 1) * (INV.edge > 0 ? 2 : 1);
+// Split Tsuba: +25%; a whetstone edge: twice as fast; power: up to +30%
+const qiMul = () => (has('tsuba') ? 1.25 : 1) * (INV.edge > 0 ? 2 : 1) * pw('qi');
 // the blade's own cuts (J, and I's two) reach further with a longer weapon
 export function hit(kind, cx, cy, r) {
   ENEMIES.forEach((d, i) => { if (d.alive && !P.hitDone[kind + i] && Math.hypot(d.x - cx, (d.y - 10 - cy) * 1.4) <= r) hitOne(d, i, kind); });
@@ -43,7 +44,7 @@ export function hitSeg(kind, x0, y0, x1, y1, r) {
 // On one already down it is only the slivers and streaks over the body
 export function burst(d, p = 1) {
   if (!d.alive) { residue(d.x, d.y, 6 * p | 0); for (let i = 0; i < 8 * p; i++) { const a = rr(0, 6.28); spark(d.x, d.y - 4, Math.cos(a) * rr(60, 120) * p, Math.sin(a) * rr(30, 70) * p, rr(.1, .2), ['#ffffff', COL.fx2, COL.fx][i % 3], true); } return; }
-  damage(d, DMG.burst * p, P.x, P.y); d.flash = .08;
+  damage(d, DMG.burst * p * pw('dmg'), P.x, P.y); d.flash = .08;
   cuts.push({ x0: Math.round(d.x - 16 * p), x1: Math.round(d.x + 16 * p), y: Math.round(d.y - 14), life: .14, max: .14 });
   residue(d.x, d.y, 10 * p | 0);
   for (let i = 0; i < 16 * p; i++) { const a = rr(0, 6.28); spark(d.x, d.y - 14, Math.cos(a) * rr(80, 160) * p, Math.sin(a) * rr(60, 120) * p, rr(.12, .22), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
