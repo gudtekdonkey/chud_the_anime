@@ -1,0 +1,3565 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Mon and Koku</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --faint: #5d6664; --cyan: #6ff3e4;
+    --cheap: #4fa3b8; --dear: #d59a4a; --bad: #e0737a; --good: #8fd6a0; }
+  html, body { background: var(--ground); }
+  body { margin: 0; color: var(--ink); font: 15px/1.5 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 20px; }
+  header { display: grid; gap: 8px; max-width: 80ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  h2 { font: 700 18px/1.15 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  h3 { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  p { margin: 0; color: var(--muted); } b { color: var(--ink); font-weight: 600; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+  .bar label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 14px; }
+  select, input[type=number] { background: var(--panel); color: var(--ink); border: 1px solid var(--rule); padding: 4px 6px; font: inherit; }
+  input[type=number] { width: 7em; }
+  button { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .06em; color: var(--ink); background: transparent; border: 1px solid var(--rule); padding: 7px 10px; cursor: pointer; }
+  button:hover { border-color: #4a5157; } button.on { border-color: var(--cyan); color: var(--cyan); }
+  button:focus-visible, input:focus-visible, select:focus-visible, canvas:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .clock { font: 500 15px/1 "Pixelify Sans", monospace; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .main { display: grid; grid-template-columns: minmax(0, 560px) minmax(0, 1fr); gap: 20px; align-items: start; }
+  @media (max-width: 1020px) { .main { grid-template-columns: 1fr; } }
+  .col { display: grid; gap: 16px; min-width: 0; }
+  .panel { background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 10px; min-width: 0; }
+  .mapbox { position: relative; background: var(--panel); border: 1px solid var(--rule); }
+  canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; }
+  #map { cursor: crosshair; }
+  .tip { position: absolute; pointer-events: none; background: #0d0f10ee; border: 1px solid var(--rule); padding: 6px 8px; font-size: 13px; max-width: 250px; z-index: 2; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--muted); align-items: center; }
+  .sw { width: 10px; height: 10px; flex: none; display: inline-block; }
+  .ramp { width: 120px; height: 8px; background: linear-gradient(90deg, var(--cheap), #5d6664, var(--dear)); display: inline-block; }
+  .scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; font-variant-numeric: tabular-nums; }
+  th { font: 500 12px/1.2 "Pixelify Sans", monospace; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); text-align: right; padding: 4px 6px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+  td { text-align: right; padding: 3px 6px; border-bottom: 1px solid #25292d; white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  tr.sel td { background: #232a2c; } tbody tr { cursor: pointer; } tbody tr:hover td { background: #20262a; }
+  .unit { color: var(--faint); font-size: 12px; }
+  .cmp { display: inline-block; width: 60px; height: 6px; background: #262b2f; position: relative; vertical-align: middle; }
+  .cmp i { position: absolute; top: 0; bottom: 0; }
+  .cmp::after { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--faint); }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: 14px; font-variant-numeric: tabular-nums; }
+  dt { color: var(--muted); } dd { margin: 0; }
+  .pill { display: inline-block; font: 500 11px/1 "Pixelify Sans", monospace; letter-spacing: .06em; text-transform: uppercase; padding: 3px 6px; border: 1px solid currentColor; }
+  .pill.bad { color: var(--bad); } .pill.good { color: var(--good); } .pill.warn { color: var(--dear); }
+  .weight { position: relative; height: 14px; background: #262b2f; }
+  .weight i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--cyan); }
+  .weight b { position: absolute; top: -3px; bottom: -3px; width: 1px; background: var(--muted); }
+  .ticks { position: relative; height: 16px; font-size: 11px; color: var(--muted); }
+  .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .feed { display: grid; gap: 4px; font-size: 13px; max-height: 240px; overflow: auto; }
+  .feed div { display: flex; gap: 8px; } .feed time { color: var(--faint); flex: none; font-variant-numeric: tabular-nums; }
+  .stack { display: flex; height: 14px; gap: 2px; }
+  .stack i { display: block; height: 100%; }
+  .chartbox { position: relative; }
+  .note { font-size: 13px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Economy · prototype 37</div>
+    <h1>Mon and koku</h1>
+    <p>The living world's economy on the simulation core. Every region keeps a market whose prices answer its own stock; land yields koku at the autumn harvest and taxes climb to the lords; caravans carry goods along the roads; every household earns by its trade and spends by its class. <b>Play</b> or <b>fast-forward</b>, pick a good to colour the map by its price, click a region to open its market and its lord.</p>
+    <div class="bar">
+      <button type="button" id="play">Play</button>
+      <label for="speed">Speed <select id="speed"><option value="1">a day a frame</option><option value="7" selected>a week a frame</option><option value="28">a season a frame</option></select></label>
+      <button type="button" id="year">Live a year</button>
+      <span class="clock" id="clock"></span>
+      <label for="good">Map shows <select id="good"></select></label>
+      <label for="seed">Seed <input type="number" id="seed" value="12345"></label>
+      <button type="button" id="gen">Make this world</button>
+    </div>
+  </header>
+  <div class="main">
+    <div class="col">
+      <div class="mapbox"><canvas id="map" width="500" height="500" tabindex="0" role="img" aria-label="The world, coloured by the price of the chosen good"></canvas><div class="tip" id="tip" hidden></div></div>
+      <div class="legend" id="legend"></div>
+      <div class="panel"><h3>The world's books</h3><div id="books"></div></div>
+      <div class="panel"><h3>News from the markets</h3><div class="feed" id="feed"></div></div>
+    </div>
+    <div class="col">
+      <div class="panel"><h2 id="rname">Region</h2><p id="rsub" class="note"></p>
+        <div class="scroll"><table id="market"></table></div><p class="note" id="silknote"></p></div>
+      <div class="panel"><h3 id="ctitle">Price over time</h3><div class="chartbox"><canvas id="chart" width="700" height="220" role="img" aria-label="Price history"></canvas><div class="tip" id="ctip" hidden></div></div>
+        <div class="legend" id="clegend"></div></div>
+      <div class="grid2">
+        <div class="panel"><h3>The lord</h3><div id="lord"></div></div>
+        <div class="panel"><h3>The ronin's purse</h3><div id="purse"></div></div>
+      </div>
+      <div class="panel"><h3>Wealth by household</h3><div class="scroll"><table id="wealth"></table></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+	//#region src/sim/rng.js
+	function hash(...parts) {
+		let h = 2166136261;
+		for (const p of parts) {
+			const s = String(p);
+			for (let i = 0; i < s.length; i++) {
+				h ^= s.charCodeAt(i);
+				h = Math.imul(h, 16777619) >>> 0;
+			}
+			h ^= 40503;
+			h = Math.imul(h, 16777619) >>> 0;
+		}
+		return h >>> 0;
+	}
+	function rng(seed) {
+		let a = seed >>> 0;
+		const next = () => {
+			a = a + 1831565813 >>> 0;
+			let t = a;
+			t = Math.imul(t ^ t >>> 15, t | 1);
+			t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+			return ((t ^ t >>> 14) >>> 0) / 4294967296;
+		};
+		return {
+			next,
+			range: (lo, hi) => lo + next() * (hi - lo),
+			int: (lo, hi) => lo + Math.floor(next() * (hi - lo + 1)),
+			chance: (p) => next() < p,
+			pick: (arr) => arr[Math.floor(next() * arr.length)],
+			weighted: (pairs) => {
+				let t = 0;
+				for (const [, w] of pairs) t += w;
+				let x = next() * t;
+				for (const [v, w] of pairs) if ((x -= w) < 0) return v;
+				return pairs[pairs.length - 1][0];
+			},
+			shuffle: (arr) => {
+				for (let i = arr.length - 1; i > 0; i--) {
+					const j = Math.floor(next() * (i + 1));
+					[arr[i], arr[j]] = [arr[j], arr[i]];
+				}
+				return arr;
+			}
+		};
+	}
+	const rngFor = (seed, ...keys) => rng(hash(seed, ...keys));
+	//#endregion
+	//#region src/sim/time.js
+	const TIME = {
+		REAL_MS_PER_HOUR: 1e5,
+		HOURS_PER_DAY: 24,
+		DAYS_PER_SEASON: 28,
+		SEASONS: [
+			"spring",
+			"summer",
+			"autumn",
+			"winter"
+		],
+		DAWN: 5,
+		DUSK: 19
+	};
+	const HOURS_PER_SEASON = TIME.HOURS_PER_DAY * TIME.DAYS_PER_SEASON;
+	const HOURS_PER_YEAR = HOURS_PER_SEASON * TIME.SEASONS.length;
+	function calendar(h) {
+		const day = Math.floor(h / TIME.HOURS_PER_DAY), hour = h % TIME.HOURS_PER_DAY, si = Math.floor(h / HOURS_PER_SEASON) % 4;
+		return {
+			h,
+			hour,
+			day,
+			dayOfSeason: day % TIME.DAYS_PER_SEASON + 1,
+			seasonIndex: si,
+			season: TIME.SEASONS[si],
+			year: Math.floor(h / HOURS_PER_YEAR) + 1,
+			night: hour >= TIME.DUSK || hour < TIME.DAWN
+		};
+	}
+	const SYSTEMS = [];
+	function system(def) {
+		const i = SYSTEMS.findIndex((s) => s.id === def.id);
+		if (i >= 0) SYSTEMS.splice(i, 1);
+		SYSTEMS.push({
+			order: 50,
+			...def
+		});
+		SYSTEMS.sort((a, b) => a.order - b.order);
+		return def;
+	}
+	function createLedger(seed, realNow = Date.now()) {
+		return {
+			v: 1,
+			seed: seed >>> 0,
+			hour: 0,
+			realAt: realNow,
+			size: {
+				w: 100,
+				h: 100
+			},
+			zones: [],
+			regions: [],
+			cultures: [],
+			plots: {},
+			actors: {},
+			player: null,
+			log: [],
+			ids: {},
+			sys: {}
+		};
+	}
+	function initSystems(L) {
+		for (const s of SYSTEMS) if (s.init && !L.sys[s.id]) {
+			L.sys[s.id] = {};
+			s.init(L);
+		}
+	}
+	function newId(L, kind) {
+		const n = (L.ids[kind] || 0) + 1;
+		L.ids[kind] = n;
+		return kind + n;
+	}
+	const zoneAt = (L, x, y) => x < 0 || y < 0 || x >= L.size.w || y >= L.size.h ? null : L.zones[y * L.size.w + x];
+	const LISTENERS = /* @__PURE__ */ new Map();
+	const LOG_CAP = 4e3;
+	function emit(L, type, data = {}) {
+		const e = {
+			h: L.hour,
+			type,
+			...data
+		};
+		L.log.push(e);
+		if (L.log.length > 4e3) L.log.splice(0, L.log.length - LOG_CAP);
+		for (const fn of LISTENERS.get(type) || []) fn(e, L);
+		for (const fn of LISTENERS.get("*") || []) fn(e, L);
+		return e;
+	}
+	const HOURLY_CATCHUP = 48;
+	function advance(L, hours, live = false) {
+		const hourly = live || hours <= HOURLY_CATCHUP;
+		for (let i = 0; i < hours; i++) {
+			L.hour++;
+			const cal = calendar(L.hour);
+			if (hourly) {
+				for (const s of SYSTEMS) if (s.onHour) s.onHour(L, cal, rngFor(L.seed, "h", L.hour, s.id));
+			}
+			if (cal.hour === 0) {
+				if (cal.dayOfSeason === 1) {
+					if (cal.seasonIndex === 0) {
+						for (const s of SYSTEMS) if (s.onYear) s.onYear(L, cal, rngFor(L.seed, "y", cal.year, s.id));
+					}
+					for (const s of SYSTEMS) if (s.onSeason) s.onSeason(L, cal, rngFor(L.seed, "s", cal.day, s.id));
+				}
+				for (const s of SYSTEMS) if (s.onDay) s.onDay(L, cal, rngFor(L.seed, "d", cal.day, s.id));
+			}
+		}
+	}
+	//#endregion
+	//#region src/sim/cultures.js
+	const CLASSES = {
+		royal: {
+			rank: 6,
+			dress: "royal",
+			weapons: [
+				["katana", 3],
+				["daisho", 2],
+				["tessen", 1]
+			],
+			jobs: ["lord"]
+		},
+		noble: {
+			rank: 5,
+			dress: "dark",
+			weapons: [
+				["katana", 3],
+				["daisho", 2],
+				["tessen", 1]
+			],
+			jobs: [
+				"lord",
+				"magistrate",
+				"steward"
+			]
+		},
+		retainer: {
+			rank: 4,
+			dress: "dark",
+			weapons: [
+				["katana", 5],
+				["daisho", 2],
+				["nodachi", 1]
+			],
+			jobs: [
+				"retainer",
+				"guard",
+				"magistrate",
+				"tax collector"
+			]
+		},
+		ronin: {
+			rank: 3,
+			dress: "black",
+			weapons: [
+				["katana", 5],
+				["nodachi", 2],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"ronin",
+				"bounty hunter",
+				"guard"
+			]
+		},
+		ashigaru: {
+			rank: 2,
+			dress: "earth",
+			weapons: [
+				["yari", 5],
+				["katana", 1],
+				["tetsubo", 1]
+			],
+			jobs: [
+				"ashigaru",
+				"guard",
+				"courier"
+			]
+		},
+		monk: {
+			rank: 3,
+			dress: "black",
+			weapons: [["naginata", 3], ["bo", 3]],
+			jobs: [
+				"monk",
+				"abbot",
+				"healer"
+			]
+		},
+		commoner: {
+			rank: 1,
+			dress: "earth",
+			weapons: [
+				["kama", 3],
+				["bo", 1],
+				["tanto", 1],
+				["nunchaku", 1]
+			],
+			jobs: [
+				"farmer",
+				"farmer",
+				"farmer",
+				"fisher",
+				"woodcutter",
+				"miner",
+				"smith",
+				"merchant",
+				"innkeeper",
+				"carpenter",
+				"weaver",
+				"brewer",
+				"courier"
+			]
+		},
+		rebel: {
+			rank: 1,
+			dress: "earth",
+			weapons: [
+				["naginata", 3],
+				["yari", 3],
+				["kama", 3],
+				["nunchaku", 1],
+				["katana", 1]
+			],
+			jobs: ["farmer", "rebel"]
+		},
+		outlaw: {
+			rank: 0,
+			dress: "earth",
+			weapons: [
+				["katana", 2],
+				["tanto", 2],
+				["kanabo", 2],
+				["tetsubo", 1],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"bandit",
+				"smuggler",
+				"thief"
+			]
+		},
+		shinobi: {
+			rank: 2,
+			dress: "black",
+			weapons: [
+				["tanto", 3],
+				["kusarigama", 3],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"shinobi",
+				"spy",
+				"courier"
+			]
+		}
+	};
+	const KINDS = {
+		clan: {
+			count: 7,
+			size: 7,
+			label: "clan",
+			classes: [
+				["noble", 1],
+				["retainer", 6],
+				["ashigaru", 8],
+				["commoner", 30],
+				["monk", 1]
+			],
+			traits: [
+				"soldier",
+				"stoic",
+				"proud",
+				"veteran",
+				"calm"
+			],
+			despise: [
+				"drunk",
+				"lazy",
+				"slouch"
+			],
+			royalty: true
+		},
+		court: {
+			count: 1,
+			size: 2,
+			label: "court",
+			classes: [
+				["royal", 2],
+				["noble", 5],
+				["retainer", 6],
+				["commoner", 20]
+			],
+			traits: [
+				"regal",
+				"vain",
+				"serene",
+				"scholar"
+			],
+			despise: [
+				"drunk",
+				"scratcher",
+				"brawler"
+			],
+			royalty: true
+		},
+		rebels: {
+			count: 3,
+			size: 5,
+			label: "free valleys",
+			classes: [
+				["rebel", 12],
+				["commoner", 20],
+				["monk", 2],
+				["ronin", 1]
+			],
+			traits: [
+				"restless",
+				"grim",
+				"weary",
+				"eager"
+			],
+			despise: [
+				"regal",
+				"vain",
+				"cocky"
+			]
+		},
+		monastic: {
+			count: 2,
+			size: 3,
+			label: "temple lands",
+			classes: [["monk", 8], ["commoner", 14]],
+			traits: [
+				"serene",
+				"monk",
+				"humble",
+				"calm"
+			],
+			despise: [
+				"menacing",
+				"vain",
+				"drunk"
+			]
+		},
+		bandits: {
+			count: 2,
+			size: 4,
+			label: "outlaw coast",
+			classes: [
+				["outlaw", 14],
+				["ronin", 3],
+				["commoner", 6]
+			],
+			traits: [
+				"menacing",
+				"cocky",
+				"brawler",
+				"drunk",
+				"twitchy"
+			],
+			despise: [
+				"soldier",
+				"regal",
+				"monk"
+			]
+		},
+		shinobi: {
+			count: 1,
+			size: 2,
+			label: "hidden villages",
+			classes: [["shinobi", 8], ["commoner", 10]],
+			traits: [
+				"shinobi",
+				"wary",
+				"nimble",
+				"shadow"
+			],
+			despise: [
+				"cocky",
+				"hummer",
+				"vain"
+			]
+		},
+		merchants: {
+			count: 2,
+			size: 4,
+			label: "merchant league",
+			classes: [
+				["commoner", 24],
+				["ronin", 3],
+				["ashigaru", 3]
+			],
+			traits: [
+				"cheerful",
+				"glancer",
+				"eager",
+				"vain"
+			],
+			despise: ["menacing", "brawler"]
+		},
+		fishers: {
+			count: 1,
+			size: 4,
+			label: "fishing folk",
+			classes: [["commoner", 24], ["ronin", 1]],
+			traits: [
+				"weary",
+				"cheerful",
+				"calm",
+				"hummer"
+			],
+			despise: ["regal", "cocky"]
+		},
+		miners: {
+			count: 1,
+			size: 4,
+			label: "mountain folk",
+			classes: [
+				["commoner", 22],
+				["ashigaru", 2],
+				["outlaw", 1]
+			],
+			traits: [
+				"heavy",
+				"lumbering",
+				"grim",
+				"stoic"
+			],
+			despise: ["vain", "nimble"]
+		}
+	};
+	const REL = {
+		"clan|clan": -.3,
+		"clan|court": .4,
+		"clan|rebels": -.8,
+		"clan|monastic": .2,
+		"clan|bandits": -.9,
+		"clan|shinobi": -.3,
+		"clan|merchants": .3,
+		"clan|fishers": .1,
+		"clan|miners": .1,
+		"court|rebels": -1,
+		"court|monastic": .3,
+		"court|bandits": -.9,
+		"court|shinobi": -.5,
+		"court|merchants": .4,
+		"court|fishers": .1,
+		"court|miners": .1,
+		"rebels|monastic": .3,
+		"rebels|bandits": -.4,
+		"rebels|shinobi": .1,
+		"rebels|merchants": -.2,
+		"rebels|fishers": .4,
+		"rebels|miners": .4,
+		"monastic|bandits": -.6,
+		"monastic|shinobi": -.2,
+		"monastic|merchants": .1,
+		"monastic|fishers": .3,
+		"monastic|miners": .2,
+		"bandits|shinobi": -.2,
+		"bandits|merchants": -.9,
+		"bandits|fishers": -.5,
+		"bandits|miners": -.3,
+		"shinobi|merchants": 0,
+		"shinobi|fishers": 0,
+		"shinobi|miners": 0,
+		"merchants|fishers": .3,
+		"merchants|miners": .3,
+		"fishers|miners": .2,
+		"court|court": .5,
+		"rebels|rebels": .4,
+		"monastic|monastic": .5,
+		"bandits|bandits": -.2,
+		"merchants|merchants": -.1,
+		"shinobi|shinobi": .3,
+		"fishers|fishers": .5,
+		"miners|miners": .5
+	};
+	const kindRelation = (a, b) => REL[a + "|" + b] ?? REL[b + "|" + a] ?? 0;
+	const ON = [
+		"ka",
+		"ta",
+		"na",
+		"ma",
+		"sa",
+		"ha",
+		"ya",
+		"ra",
+		"wa",
+		"ki",
+		"shi",
+		"chi",
+		"ni",
+		"mi",
+		"ri",
+		"ku",
+		"tsu",
+		"nu",
+		"mu",
+		"yu",
+		"ru",
+		"ko",
+		"to",
+		"no",
+		"mo",
+		"yo",
+		"ro",
+		"se",
+		"te",
+		"ne",
+		"me",
+		"re",
+		"ga",
+		"ji",
+		"zu",
+		"do",
+		"bo",
+		"go",
+		"hi",
+		"fu",
+		"ho",
+		"o",
+		"a",
+		"i",
+		"u",
+		"e"
+	];
+	const PLACE_END = [
+		"mura",
+		"hara",
+		"yama",
+		"kawa",
+		"zawa",
+		"saka",
+		"no",
+		"ta",
+		"shima",
+		"oka",
+		"tani",
+		"hama",
+		"mori",
+		"ishi",
+		"se"
+	];
+	const GIVEN_M = [
+		"rō",
+		"ta",
+		"suke",
+		"maru",
+		"zō",
+		"nobu",
+		"mune",
+		"hide",
+		"kichi",
+		"emon",
+		"bei",
+		"shirō",
+		"jirō"
+	];
+	const GIVEN_F = [
+		"ko",
+		"e",
+		"yo",
+		"no",
+		"mi",
+		"ne",
+		"ha",
+		"ka",
+		"ri",
+		"sa"
+	];
+	const cap$1 = (s) => s[0].toUpperCase() + s.slice(1);
+	const placeName = (r) => cap$1(r.pick(ON) + r.pick(ON) + r.pick(PLACE_END));
+	const familyName = (r) => cap$1(r.pick(ON) + r.pick(ON) + r.pick([
+		"moto",
+		"da",
+		"yama",
+		"kawa",
+		"no",
+		"mura",
+		"saki",
+		"ta",
+		"hara",
+		"gawa"
+	]));
+	const givenName = (r, sex) => cap$1(r.pick(ON) + (sex === "f" ? r.pick(GIVEN_F) : r.pick(ON) + r.pick(GIVEN_M)));
+	//#endregion
+	//#region src/sim/actors.js
+	const nameOf = (a) => `${a.given} ${a.family}`;
+	function makeActor(L, r, o) {
+		const cls = CLASSES[o.cls], sex = o.sex || (r.chance(.5) ? "m" : "f");
+		const a = {
+			id: newId(L, "a"),
+			given: givenName(r, sex),
+			family: o.family || familyName(r),
+			sex,
+			born: L.hour - Math.round((o.age ?? 30) * HOURS_PER_YEAR) - r.int(0, HOURS_PER_YEAR - 1),
+			alive: true,
+			culture: o.culture,
+			cls: o.cls,
+			job: o.job || r.pick(cls.jobs),
+			rank: cls.rank,
+			home: o.home || null,
+			spouse: null,
+			parents: [],
+			children: [],
+			household: o.household || null,
+			weapon: r.weighted(cls.weapons),
+			traits: [],
+			karma: 0,
+			standing: {},
+			money: purse$1(r, o.cls),
+			holds: []
+		};
+		const kind = o.culture != null && L.cultures[o.culture] ? KINDS[L.cultures[o.culture].kind] : null;
+		if (kind) a.traits.push([r.pick(kind.traits), +r.range(.5, 1).toFixed(2)]);
+		if (r.chance(.4)) a.traits.push([r.pick([
+			"calm",
+			"nervous",
+			"cheerful",
+			"grim",
+			"lazy",
+			"eager",
+			"wary",
+			"proud",
+			"humble",
+			"weary"
+		]), +r.range(.3, .8).toFixed(2)]);
+		L.actors[a.id] = a;
+		return a;
+	}
+	function purse$1(r, cls) {
+		const m = {
+			royal: [
+				0,
+				0,
+				[20, 60]
+			],
+			noble: [
+				[500, 2e3],
+				[5, 30],
+				[2, 10]
+			],
+			retainer: [
+				[200, 900],
+				[0, 5],
+				0
+			],
+			ronin: [
+				[20, 400],
+				0,
+				0
+			],
+			ashigaru: [
+				[30, 200],
+				0,
+				0
+			],
+			monk: [
+				[0, 60],
+				0,
+				0
+			],
+			commoner: [
+				[30, 300],
+				0,
+				0
+			],
+			rebel: [
+				[10, 120],
+				0,
+				0
+			],
+			outlaw: [
+				[20, 500],
+				[0, 3],
+				0
+			],
+			shinobi: [
+				[100, 600],
+				[0, 4],
+				0
+			]
+		}[cls] || [
+			[0, 50],
+			0,
+			0
+		];
+		const v = (x) => Array.isArray(x) ? r.int(x[0], x[1]) : x;
+		return {
+			mon: v(m[0]),
+			silver: v(m[1]),
+			ryo: v(m[2])
+		};
+	}
+	function marry(a, b) {
+		a.spouse = b.id;
+		b.spouse = a.id;
+		b.family = a.sex === "m" ? a.family : b.family;
+		if (b.sex === "m") a.family = b.family;
+	}
+	function bear(L, r, mother, father, o = {}) {
+		const c = makeActor(L, r, {
+			cls: o.cls || father.cls,
+			culture: father.culture,
+			family: father.family,
+			home: father.home,
+			household: father.household,
+			age: o.age ?? 0,
+			job: o.job
+		});
+		c.parents = [father.id, mother.id];
+		father.children.push(c.id);
+		mother.children.push(c.id);
+		return c;
+	}
+	const HOUSES = {
+		town: 8,
+		village: 4
+	};
+	function populate(L) {
+		for (const z of L.zones) {
+			if (z.kind === "sea" || z.kind === "wild") continue;
+			const reg = L.regions[z.region], cult = L.cultures[reg.culture], kind = KINDS[cult.kind], r = rngFor(L.seed, "people", z.x, z.y), home = [z.x, z.y];
+			const commonCls = kind.classes.filter(([c]) => CLASSES[c].rank <= 3 && c !== "monk");
+			if (z.kind === "town" || z.kind === "village") {
+				if (z.kind === "town") {
+					const lordCls = cult.kind === "court" ? "royal" : cult.kind === "clan" ? "noble" : cult.kind === "monastic" ? "monk" : "commoner";
+					const lord = household$1(L, r, cult.id, lordCls, home, {
+						age: r.int(34, 60),
+						job: "lord",
+						kids: r.int(1, 4)
+					});
+					lord.lord = reg.id;
+					reg.lord = lord.id;
+				}
+				for (let i = 0; i < HOUSES[z.kind]; i++) household$1(L, r, cult.id, r.weighted(commonCls), home, { plot: `${z.x},${z.y}:${i + 1}` });
+			} else if (z.kind === "camp") {
+				const chief = makeActor(L, r, {
+					cls: "outlaw",
+					culture: cult.id,
+					home,
+					age: r.int(28, 50),
+					job: "bandit"
+				});
+				chief.chief = true;
+				z.holder = chief.id;
+				for (let i = 0; i < r.int(4, 7); i++) makeActor(L, r, {
+					cls: r.chance(.8) ? "outlaw" : "ronin",
+					culture: cult.id,
+					home,
+					age: r.int(17, 45),
+					household: chief.id
+				});
+			} else if (z.kind === "fort") for (let i = 0; i < r.int(5, 8); i++) makeActor(L, r, {
+				cls: r.chance(.4) ? "retainer" : "ashigaru",
+				culture: cult.id,
+				home,
+				age: r.int(18, 45),
+				sex: "m"
+			});
+			else if (z.kind === "shrine") for (let i = 0; i < r.int(1, 3); i++) makeActor(L, r, {
+				cls: "monk",
+				culture: cult.id,
+				home,
+				age: r.int(20, 70)
+			});
+		}
+		const r = rngFor(L.seed, "player");
+		const start = L.zones.filter((z) => z.kind === "village").sort((a, b) => Math.hypot(a.x - 50, a.y - 50) - Math.hypot(b.x - 50, b.y - 50))[0];
+		const p = makeActor(L, r, {
+			cls: "ronin",
+			culture: null,
+			home: null,
+			age: 28,
+			sex: "m",
+			job: "ronin"
+		});
+		p.weapon = "katana";
+		p.traits = [];
+		p.money = {
+			mon: 120,
+			silver: 0,
+			ryo: 0
+		};
+		p.at = [start.x, start.y];
+		L.player = p.id;
+	}
+	function household$1(L, r, culture, cls, home, o = {}) {
+		const sex = r.chance(.85) ? "m" : "f", head = makeActor(L, r, {
+			cls,
+			culture,
+			home,
+			sex,
+			age: o.age ?? r.int(22, 55),
+			job: o.job
+		});
+		head.household = head.id;
+		let spouse = null;
+		if (r.chance(.8)) {
+			spouse = makeActor(L, r, {
+				cls,
+				culture,
+				home,
+				sex: sex === "m" ? "f" : "m",
+				age: Math.max(18, ageish(L, head) + r.int(-6, 4)),
+				household: head.id
+			});
+			marry(head, spouse);
+		}
+		const kids = o.kids ?? r.int(0, 4);
+		for (let i = 0; i < kids && spouse; i++) {
+			const age = Math.max(0, ageish(L, head) - r.int(18, 35));
+			if (age <= 0 && i > 0) break;
+			bear(L, r, head.sex === "f" ? head : spouse, head.sex === "m" ? head : spouse, {
+				age,
+				cls
+			});
+		}
+		if (r.chance(.2)) {
+			const elder = makeActor(L, r, {
+				cls,
+				culture,
+				home,
+				family: head.family,
+				age: ageish(L, head) + r.int(20, 30),
+				household: head.id
+			});
+			head.parents.push(elder.id);
+			elder.children.push(head.id);
+		}
+		if (o.plot) {
+			L.plots[o.plot] = {
+				title: head.id,
+				holder: head.id
+			};
+			head.holds.push(o.plot);
+		}
+		return head;
+	}
+	const ageish = (L, a) => Math.floor((L.hour - a.born) / HOURS_PER_YEAR);
+	//#endregion
+	//#region src/sim/worldgen.js
+	function noise(seed, scale, octaves = 4) {
+		const cache = /* @__PURE__ */ new Map(), cell = (ix, iy) => {
+			const k = ix + "," + iy;
+			let v = cache.get(k);
+			if (v == null) {
+				v = hash(seed, ix, iy) % 1e5 / 1e5;
+				cache.set(k, v);
+			}
+			return v;
+		};
+		const sm = (t) => t * t * (3 - 2 * t);
+		const one = (x, y) => {
+			const ix = Math.floor(x), iy = Math.floor(y), fx = sm(x - ix), fy = sm(y - iy);
+			const a = cell(ix, iy), b = cell(ix + 1, iy), c = cell(ix, iy + 1), d = cell(ix + 1, iy + 1);
+			return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+		};
+		return (x, y) => {
+			let v = 0, amp = 1, tot = 0, f = 1 / scale;
+			for (let o = 0; o < octaves; o++) {
+				v += one(x * f, y * f) * amp;
+				tot += amp;
+				amp *= .5;
+				f *= 2;
+			}
+			return v / tot;
+		};
+	}
+	function generateWorld(seed, realNow = Date.now()) {
+		const L = createLedger(seed, realNow), { w, h } = L.size;
+		const elevN = noise(hash(seed, "elev"), 22), moistN = noise(hash(seed, "moist"), 18), warpN = noise(hash(seed, "warp"), 14, 2);
+		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+			const dx = (x - w / 2) / (w / 2), dy = (y - h / 2) / (h / 2), edge = Math.max(0, Math.max(Math.abs(dx), Math.abs(dy * 1.05)) - .78);
+			const elev = Math.max(0, Math.min(1, elevN(x, y) * 1.3 + .02 - edge * 2.2)), moist = moistN(x + 400, y + 400);
+			let biome = "plains";
+			if (elev < .26) biome = "sea";
+			else if (elev < .3) biome = "coast";
+			else if (elev > .74) biome = "mountains";
+			else if (elev > .6) biome = "hills";
+			else if (moist > .64) biome = elev < .42 ? "marsh" : "forest";
+			else if (moist > .5) biome = elev < .46 ? "paddy" : moist > .58 ? "bamboo" : "forest";
+			L.zones.push({
+				x,
+				y,
+				biome,
+				region: -1,
+				kind: biome === "sea" ? "sea" : "wild",
+				road: false
+			});
+		}
+		const land = L.zones.filter((z) => z.biome !== "sea");
+		const r = rngFor(seed, "regions"), seeds = [];
+		for (let minD = 9; seeds.length < 100 && minD > 2; minD -= .5) for (let tries = 0; tries < 4e3 && seeds.length < 100; tries++) {
+			const z = r.pick(land);
+			if (seeds.every((s) => Math.hypot(s.x - z.x, s.y - z.y) >= minD)) seeds.push(z);
+		}
+		for (const z of land) {
+			let best = 0, bd = 1e9;
+			const wx = z.x + (warpN(z.x, z.y) - .5) * 8, wy = z.y + (warpN(z.x + 99, z.y + 99) - .5) * 8;
+			seeds.forEach((s, i) => {
+				const d = Math.hypot(s.x - wx, s.y - wy);
+				if (d < bd) {
+					bd = d;
+					best = i;
+				}
+			});
+			z.region = best;
+		}
+		L.regions = seeds.map((s, i) => ({
+			id: i,
+			name: placeName(rngFor(seed, "rname", i)),
+			culture: -1,
+			seat: null,
+			zones: 0,
+			center: [s.x, s.y]
+		}));
+		for (const z of land) L.regions[z.region].zones++;
+		const adj = L.regions.map(() => /* @__PURE__ */ new Set());
+		for (const z of land) for (const [dx, dy] of [[1, 0], [0, 1]]) {
+			const n = zoneAt(L, z.x + dx, z.y + dy);
+			if (n && n.region >= 0 && n.region !== z.region) {
+				adj[z.region].add(n.region);
+				adj[n.region].add(z.region);
+			}
+		}
+		const cr = rngFor(seed, "cultures"), kinds = [];
+		for (const [kind, k] of Object.entries(KINDS)) for (let i = 0; i < k.count; i++) kinds.push(kind);
+		cr.shuffle(kinds);
+		const starts = [cr.int(0, 99)];
+		while (starts.length < kinds.length) {
+			let best = -1, bd = -1;
+			for (const g of L.regions) {
+				if (starts.includes(g.id)) continue;
+				const d = Math.min(...starts.map((s) => Math.hypot(L.regions[s].center[0] - g.center[0], L.regions[s].center[1] - g.center[1])));
+				if (d > bd) {
+					bd = d;
+					best = g.id;
+				}
+			}
+			starts.push(best);
+		}
+		L.cultures = kinds.map((kind, i) => {
+			return {
+				id: i,
+				kind,
+				name: cultureName(rngFor(seed, "cname", i), kind),
+				regions: [starts[i]],
+				relations: {},
+				hue: Math.round(i * 137.5) % 360
+			};
+		});
+		starts.forEach((g, i) => L.regions[g].culture = i);
+		for (let guard = 0; guard < 1e3 && L.regions.some((g) => g.culture < 0); guard++) {
+			const order = L.cultures.slice().sort((a, b) => a.regions.length / KINDS[a.kind].size - b.regions.length / KINDS[b.kind].size);
+			let grew = false;
+			for (const c of order) {
+				const free = [...new Set(c.regions.flatMap((g) => [...adj[g]]))].filter((g) => L.regions[g].culture < 0);
+				if (free.length) {
+					const g = cr.pick(free);
+					L.regions[g].culture = c.id;
+					c.regions.push(g);
+					grew = true;
+					break;
+				}
+			}
+			if (!grew) {
+				const g = L.regions.find((q) => q.culture < 0), n = [...adj[g.id]].find((q) => L.regions[q].culture >= 0);
+				const c = L.cultures[n != null ? L.regions[n].culture : 0];
+				g.culture = c.id;
+				c.regions.push(g.id);
+			}
+		}
+		const border = /* @__PURE__ */ new Set();
+		for (const g of L.regions) for (const n of adj[g.id]) if (L.regions[n].culture !== g.culture) border.add([g.culture, L.regions[n].culture].sort().join("|"));
+		for (const a of L.cultures) for (const b of L.cultures) if (a.id < b.id) {
+			const hr = rngFor(seed, "rel", a.id, b.id), v = Math.max(-1, Math.min(1, kindRelation(a.kind, b.kind) + (border.has(a.id + "|" + b.id) ? -.2 : 0) + hr.range(-.25, .25)));
+			a.relations[b.id] = b.relations[a.id] = +v.toFixed(2);
+		}
+		const pr = rngFor(seed, "places");
+		const placed = [];
+		const fit = {
+			town: {
+				paddy: 3,
+				plains: 3,
+				coast: 2,
+				forest: 1,
+				bamboo: 1,
+				hills: 1
+			},
+			village: {
+				paddy: 4,
+				plains: 3,
+				coast: 3,
+				forest: 2,
+				bamboo: 2,
+				hills: 1,
+				marsh: 1
+			},
+			camp: {
+				forest: 3,
+				hills: 3,
+				bamboo: 2,
+				marsh: 2,
+				mountains: 1
+			},
+			fort: {
+				hills: 4,
+				plains: 2,
+				mountains: 2
+			},
+			shrine: {
+				hills: 3,
+				mountains: 3,
+				forest: 2,
+				bamboo: 2
+			}
+		};
+		for (const g of L.regions) {
+			const zs = land.filter((z) => z.region === g.id), kind = L.cultures[g.culture].kind;
+			const place = (what, minGap = 4) => {
+				const cands = zs.filter((z) => z.kind === "wild" && fit[what][z.biome] && placed.every((o) => Math.abs(o.x - z.x) + Math.abs(o.y - z.y) >= minGap));
+				if (!cands.length) return null;
+				const z = pr.weighted(cands.map((c) => [c, fit[what][c.biome]]));
+				z.kind = what;
+				placed.push(z);
+				return z;
+			};
+			const seat = place(kind === "bandits" ? "camp" : "town", 5) || zs[0];
+			if (!placed.includes(seat)) placed.push(seat);
+			seat.kind = kind === "bandits" ? "camp" : "town";
+			seat.name = placeName(rngFor(seed, "seat", g.id));
+			g.seat = [seat.x, seat.y];
+			const nv = kind === "bandits" ? pr.int(0, 1) : pr.int(2, Math.min(4, 1 + Math.floor(zs.length / 25)));
+			for (let i = 0; i < nv; i++) {
+				const z = place("village");
+				if (z) z.name = placeName(rngFor(seed, "village", z.x, z.y));
+			}
+			const ncamp = kind === "bandits" ? pr.int(2, 3) : pr.int(0, 2);
+			for (let i = 0; i < ncamp; i++) {
+				const z = place("camp", 3);
+				if (z) z.name = placeName(rngFor(seed, "camp", z.x, z.y)) + " camp";
+			}
+			if (kind === "clan" || kind === "court") {
+				const z = place("fort", 4);
+				if (z) z.name = placeName(rngFor(seed, "fort", z.x, z.y)) + " fort";
+			}
+			if (pr.chance(kind === "monastic" ? 1 : .6)) {
+				const z = place("shrine", 3);
+				if (z) z.name = placeName(rngFor(seed, "shrine", z.x, z.y)) + " shrine";
+			}
+		}
+		const seats = L.regions.map((g) => zoneAt(L, ...g.seat));
+		const linked = [seats[0]], rest = seats.slice(1);
+		while (rest.length) {
+			let bi = 0, bj = 0, bd = 1e9;
+			for (let i = 0; i < linked.length; i++) for (let j = 0; j < rest.length; j++) {
+				const d = Math.hypot(linked[i].x - rest[j].x, linked[i].y - rest[j].y);
+				if (d < bd) {
+					bd = d;
+					bi = i;
+					bj = j;
+				}
+			}
+			road(L, linked[bi], rest[bj]);
+			linked.push(rest.splice(bj, 1)[0]);
+		}
+		for (const z of land) if (z.kind === "village" || z.kind === "fort" || z.kind === "shrine") road(L, z, zoneAt(L, ...L.regions[z.region].seat));
+		populate(L);
+		initSystems(L);
+		return L;
+	}
+	const COST = {
+		sea: 1e9,
+		coast: 1.5,
+		plains: 1,
+		paddy: 1.3,
+		forest: 2,
+		bamboo: 2.2,
+		marsh: 3.5,
+		hills: 2.5,
+		mountains: 6
+	};
+	function road(L, a, b) {
+		if (!a || !b || a === b) return;
+		const { w } = L.size, start = a.y * w + a.x, goal = b.y * w + b.x, g = /* @__PURE__ */ new Map([[start, 0]]), from = /* @__PURE__ */ new Map(), open = [[0, start]];
+		const push = (f, i) => {
+			open.push([f, i]);
+			let k = open.length - 1;
+			while (k > 0) {
+				const p = k - 1 >> 1;
+				if (open[p][0] <= open[k][0]) break;
+				[open[p], open[k]] = [open[k], open[p]];
+				k = p;
+			}
+		};
+		const pop = () => {
+			const top = open[0], last = open.pop();
+			if (open.length) {
+				open[0] = last;
+				let k = 0;
+				for (;;) {
+					const l = 2 * k + 1, r = l + 1;
+					let m = k;
+					if (l < open.length && open[l][0] < open[m][0]) m = l;
+					if (r < open.length && open[r][0] < open[m][0]) m = r;
+					if (m === k) break;
+					[open[m], open[k]] = [open[k], open[m]];
+					k = m;
+				}
+			}
+			return top;
+		};
+		while (open.length) {
+			const [, i] = pop();
+			if (i === goal) break;
+			const x = i % w, y = (i - x) / w;
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			]) {
+				const n = zoneAt(L, x + dx, y + dy);
+				if (!n) continue;
+				const j = n.y * w + n.x;
+				const c = g.get(i) + (n.road ? .35 : COST[n.biome]);
+				if (c < (g.get(j) ?? 0xe8d4a51000)) {
+					g.set(j, c);
+					from.set(j, i);
+					push(c + Math.abs(n.x - b.x) + Math.abs(n.y - b.y), j);
+				}
+			}
+		}
+		for (let i = goal; i != null && i !== start; i = from.get(i)) L.zones[i].road = true;
+		L.zones[start].road = true;
+	}
+	function cultureName(r, kind) {
+		const n = familyName(r);
+		return {
+			clan: `the ${n} clan`,
+			court: `the Court of ${placeName(r)}`,
+			rebels: `the free valleys of ${placeName(r)}`,
+			monastic: `the temples of ${placeName(r)}`,
+			bandits: `the ${r.pick([
+				"Red",
+				"Black",
+				"Salt",
+				"Crow",
+				"Iron"
+			])} ${r.pick([
+				"Tide",
+				"Coast",
+				"Knives",
+				"Wake"
+			])}`,
+			shinobi: `the hidden ${n}`,
+			merchants: `the ${n} league`,
+			fishers: `the ${placeName(r)} fisherfolk`,
+			miners: `the ${placeName(r)} mountain folk`
+		}[kind];
+	}
+	Object.fromEntries([
+		"grass",
+		"field",
+		"paddy",
+		"forest",
+		"bamboo",
+		"water",
+		"rock",
+		"sand",
+		"road",
+		"building",
+		"marsh",
+		"shrine",
+		"palisade",
+		"wall"
+	].map((t, i) => [t, i]));
+	const plotId = (zx, zy, n) => `${zx},${zy}:${n}`;
+	function ownerOf(L, pid) {
+		if (L.plots[pid]) return L.plots[pid];
+		const [zx, zy] = pid.split(":")[0].split(",").map(Number), z = zoneAt(L, zx, zy), reg = L.regions[z.region];
+		if (z.kind === "town" || z.kind === "village" || z.kind === "fort") return {
+			title: reg ? reg.lord ?? null : null,
+			holder: reg ? reg.lord ?? null : null
+		};
+		if (z.kind === "camp") return {
+			title: null,
+			holder: z.holder ?? null
+		};
+		return {
+			title: null,
+			holder: null
+		};
+	}
+	//#endregion
+	//#region src/sim/economy/tune.js
+	const COIN = {
+		mon: {
+			worth: 1,
+			grams: 3.75
+		},
+		silver: {
+			worth: 16,
+			grams: 3.75
+		},
+		ryo: {
+			worth: 1e3,
+			grams: 18
+		}
+	};
+	const LOAD = [
+		{
+			upto: 2,
+			name: "light",
+			speed: 1,
+			dodge: true,
+			theft: 1
+		},
+		{
+			upto: 6,
+			name: "laden",
+			speed: .92,
+			dodge: true,
+			theft: 1.5
+		},
+		{
+			upto: 12,
+			name: "heavy",
+			speed: .75,
+			dodge: false,
+			theft: 3
+		},
+		{
+			upto: 1e9,
+			name: "overloaded",
+			speed: .5,
+			dodge: false,
+			theft: 5
+		}
+	];
+	const BANK = {
+		deposit: .01,
+		perSeason: .005,
+		exchange: .02
+	};
+	const CHANGE_UP = 3e3;
+	const GOODS = [
+		"rice",
+		"fish",
+		"salt",
+		"sake",
+		"timber",
+		"iron",
+		"cloth",
+		"silk",
+		"weapons",
+		"horses",
+		"tools"
+	];
+	const GOOD = {
+		rice: {
+			unit: "koku",
+			base: 1e3,
+			days: 60,
+			eps: .8,
+			rot: .0015,
+			cap: 4
+		},
+		fish: {
+			unit: "basket",
+			base: 40,
+			days: 6,
+			eps: 1,
+			rot: .04,
+			cap: 3
+		},
+		salt: {
+			unit: "bale",
+			base: 300,
+			days: 60,
+			eps: .8,
+			rot: 0,
+			cap: 4
+		},
+		sake: {
+			unit: "to",
+			base: 120,
+			days: 30,
+			eps: 1,
+			rot: .002,
+			cap: 3
+		},
+		timber: {
+			unit: "koku",
+			base: 100,
+			days: 30,
+			eps: 1,
+			rot: 0,
+			cap: 3
+		},
+		iron: {
+			unit: "kan",
+			base: 50,
+			days: 40,
+			eps: 1,
+			rot: 0,
+			cap: 3
+		},
+		cloth: {
+			unit: "tan",
+			base: 250,
+			days: 40,
+			eps: 1,
+			rot: 0,
+			cap: 3
+		},
+		silk: {
+			unit: "tan",
+			base: 8e3,
+			days: 60,
+			eps: 1.2,
+			rot: 0,
+			cap: 3
+		},
+		weapons: {
+			unit: "blade",
+			base: 2500,
+			days: 40,
+			eps: 1,
+			rot: 0,
+			cap: 3
+		},
+		horses: {
+			unit: "horse",
+			base: 4e3,
+			days: 60,
+			eps: 1,
+			rot: .001,
+			cap: 3
+		},
+		tools: {
+			unit: "piece",
+			base: 60,
+			days: 40,
+			eps: 1,
+			rot: 0,
+			cap: 3
+		}
+	};
+	const PRICE_MIN = .25;
+	const PRICE_EASE = .2;
+	const GUILD_SPEND = .2;
+	const CHILD = .5;
+	const NEED = {
+		rice: 1 / 112,
+		fish: .02,
+		salt: .0012,
+		cloth: .004,
+		timber: .01,
+		tools: .012,
+		iron: .004
+	};
+	const WAR_ARMS = {
+		weapons: .004,
+		horses: .0015
+	};
+	const JOBS = {
+		farmer: {
+			kind: "farm",
+			make: { horses: .0025 }
+		},
+		rebel: {
+			kind: "farm",
+			make: { horses: .0015 }
+		},
+		fisher: {
+			kind: "make",
+			make: {
+				fish: 3.5,
+				salt: .12
+			}
+		},
+		woodcutter: {
+			kind: "make",
+			make: { timber: .9 }
+		},
+		miner: {
+			kind: "make",
+			make: { iron: .3 }
+		},
+		smith: {
+			kind: "make",
+			make: {
+				tools: .3,
+				weapons: .008
+			},
+			use: { iron: .4 }
+		},
+		weaver: {
+			kind: "make",
+			make: {
+				cloth: .2,
+				silk: .002
+			}
+		},
+		brewer: {
+			kind: "make",
+			make: { sake: .4 },
+			use: { rice: .05 }
+		},
+		merchant: { kind: "guild" },
+		ronin: {
+			kind: "hire",
+			wage: 16
+		},
+		innkeeper: { kind: "service" },
+		carpenter: { kind: "service" },
+		courier: { kind: "service" },
+		healer: { kind: "service" },
+		monk: { kind: "temple" },
+		abbot: { kind: "temple" },
+		lord: { kind: "none" },
+		ashigaru: {
+			kind: "stipend",
+			wage: 7
+		},
+		guard: {
+			kind: "stipend",
+			wage: 8
+		},
+		retainer: {
+			kind: "stipend",
+			wage: 18
+		},
+		magistrate: {
+			kind: "stipend",
+			wage: 20
+		},
+		steward: {
+			kind: "stipend",
+			wage: 18
+		},
+		"tax collector": {
+			kind: "stipend",
+			wage: 12
+		},
+		"bounty hunter": {
+			kind: "stipend",
+			wage: 8
+		},
+		shinobi: {
+			kind: "stipend",
+			wage: 10
+		},
+		spy: {
+			kind: "stipend",
+			wage: 10
+		},
+		bandit: {
+			kind: "rob",
+			take: 14
+		},
+		smuggler: {
+			kind: "rob",
+			take: 12
+		},
+		thief: {
+			kind: "rob",
+			take: 10
+		}
+	};
+	const ADULT = [14, 70];
+	const MERCH_SHARE = .03;
+	const TEMPLE_SHARE = .06;
+	const TEMPLE_SINK = .002;
+	const ALMS = .3;
+	const SPEND = .04;
+	const RESERVE = {
+		royal: 3e4,
+		noble: 5e3,
+		retainer: 800,
+		ronin: 200,
+		ashigaru: 200,
+		monk: 60,
+		commoner: 150,
+		rebel: 100,
+		outlaw: 100,
+		shinobi: 300
+	};
+	const TASTE = {
+		royal: {
+			silk: .35,
+			sake: .1,
+			horses: .1,
+			weapons: .05,
+			cloth: .05,
+			service: .2,
+			offering: .15
+		},
+		noble: {
+			sake: .15,
+			horses: .15,
+			weapons: .15,
+			cloth: .15,
+			timber: .1,
+			service: .15,
+			offering: .15
+		},
+		retainer: {
+			sake: .25,
+			weapons: .25,
+			horses: .1,
+			cloth: .15,
+			service: .15,
+			offering: .1
+		},
+		ronin: {
+			sake: .4,
+			weapons: .25,
+			cloth: .1,
+			service: .2,
+			offering: .05
+		},
+		ashigaru: {
+			sake: .35,
+			weapons: .1,
+			cloth: .15,
+			fish: .1,
+			service: .2,
+			offering: .1
+		},
+		monk: {
+			cloth: .2,
+			service: .2,
+			offering: .6
+		},
+		commoner: {
+			sake: .25,
+			fish: .15,
+			cloth: .15,
+			timber: .1,
+			tools: .1,
+			service: .15,
+			offering: .1
+		},
+		rebel: {
+			sake: .25,
+			fish: .15,
+			cloth: .15,
+			timber: .1,
+			tools: .1,
+			weapons: .05,
+			service: .1,
+			offering: .1
+		},
+		outlaw: {
+			sake: .5,
+			weapons: .2,
+			horses: .05,
+			cloth: .05,
+			service: .2
+		},
+		shinobi: {
+			sake: .15,
+			weapons: .3,
+			cloth: .2,
+			tools: .1,
+			service: .15,
+			offering: .1
+		}
+	};
+	const HOARD = .005;
+	const KOKU_TILE = {
+		paddy: .05,
+		field: .03,
+		grass: .002
+	};
+	const TAX = {
+		plot: .4,
+		zone: .3
+	};
+	const TAX_KIND = {
+		rebels: .2,
+		merchants: .3,
+		monastic: .3,
+		bandits: 0
+	};
+	const TENANT_SHARE = .5;
+	const KEEP_DAYS = 1.15;
+	const RICE_HOLD = 1.5;
+	const HARVEST = {
+		season: 2,
+		low: .85,
+		high: 1.15,
+		drought: .06,
+		droughtQ: [.3, .6],
+		bumper: .06,
+		bumperQ: [1.25, 1.4]
+	};
+	const CARAVAN = {
+		every: 7,
+		value: 3e4,
+		minGain: .15,
+		perZone: .012,
+		speed: 4,
+		max: 3,
+		rob: .06,
+		guarded: .3,
+		near: 2
+	};
+	//#endregion
+	//#region src/sim/economy/money.js
+	const purse = (mon = 0, silver = 0, ryo = 0) => ({
+		mon,
+		silver,
+		ryo
+	});
+	const worth = (m) => m ? (m.mon || 0) + (m.silver || 0) * COIN.silver.worth + (m.ryo || 0) * COIN.ryo.worth : 0;
+	const weightOf = (m) => m ? ((m.mon || 0) * COIN.mon.grams + (m.silver || 0) * COIN.silver.grams + (m.ryo || 0) * COIN.ryo.grams) / 1e3 : 0;
+	function burden(m) {
+		const kg = weightOf(m);
+		return {
+			kg,
+			...LOAD.find((t) => kg <= t.upto)
+		};
+	}
+	function pay(m, amt) {
+		if (amt <= 0) return 0;
+		if (m.mon >= amt) {
+			m.mon -= amt;
+			return amt;
+		}
+		let need = amt - m.mon;
+		m.mon = 0;
+		const s = m.silver || 0, ss = Math.min(s, Math.ceil(need / COIN.silver.worth));
+		if (ss > 0) {
+			m.silver = s - ss;
+			m.mon += ss * COIN.silver.worth - Math.min(need, ss * COIN.silver.worth);
+			need -= Math.min(need, ss * COIN.silver.worth);
+		}
+		const r = m.ryo || 0, rr = Math.min(r, Math.ceil(need / COIN.ryo.worth));
+		if (rr > 0) {
+			m.ryo = r - rr;
+			m.mon += rr * COIN.ryo.worth - Math.min(need, rr * COIN.ryo.worth);
+			need -= Math.min(need, rr * COIN.ryo.worth);
+		}
+		return amt - need;
+	}
+	function changeUp(m) {
+		if (m.mon > 3e3) {
+			const n = Math.floor((m.mon - CHANGE_UP / 3) / COIN.ryo.worth);
+			m.ryo = (m.ryo || 0) + n;
+			m.mon -= n * COIN.ryo.worth;
+		}
+	}
+	const addTo = (m, add) => {
+		m.mon = (m.mon || 0) + (add.mon || 0);
+		m.silver = (m.silver || 0) + (add.silver || 0);
+		m.ryo = (m.ryo || 0) + (add.ryo || 0);
+		return m;
+	};
+	function takeCoins(m, c) {
+		for (const k of [
+			"mon",
+			"silver",
+			"ryo"
+		]) if ((m[k] || 0) < (c[k] || 0)) return false;
+		for (const k of [
+			"mon",
+			"silver",
+			"ryo"
+		]) m[k] = (m[k] || 0) - (c[k] || 0);
+		return true;
+	}
+	const fmt = (v) => v >= 1e3 ? `${(v / 1e3).toFixed(v >= 1e4 ? 0 : 1)} ryō` : `${Math.round(v)} mon`;
+	//#endregion
+	//#region src/sim/economy/setup.js
+	const G = GOODS.length;
+	const GI = Object.fromEntries(GOODS.map((g, i) => [g, i]));
+	const JOB_LIST = Object.keys(JOBS);
+	const JI = Object.fromEntries(JOB_LIST.map((j, i) => [j, i]));
+	const FARM = JOB_LIST.map((j) => JOBS[j].kind === "farm");
+	const MIN_STOCK = {
+		rice: 5,
+		fish: 5,
+		salt: 1,
+		sake: 5,
+		timber: 5,
+		iron: 5,
+		cloth: 3,
+		silk: .5,
+		weapons: 1,
+		horses: 1,
+		tools: 2
+	};
+	const minStock = (g) => MIN_STOCK[GOODS[g]] ?? 1;
+	const GROUNDS = {
+		coast: {
+			grass: .3,
+			conv: .3
+		},
+		plains: {
+			grass: .6,
+			field: .3,
+			conv: .7
+		},
+		paddy: {
+			paddy: .67,
+			grass: .22,
+			conv: .22
+		},
+		forest: {
+			grass: .2,
+			conv: .9
+		},
+		bamboo: {
+			grass: .2,
+			conv: .3
+		},
+		marsh: {
+			grass: .1,
+			conv: .1
+		},
+		hills: {
+			grass: .4,
+			conv: .7
+		},
+		mountains: {
+			grass: .1,
+			conv: .3
+		},
+		sea: { conv: 0 }
+	};
+	const RING = (() => {
+		const f = new Array(16).fill(0), mid = 32;
+		for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+			const d = Math.hypot(x - mid, y - mid);
+			if (d > 16 && d < 28) f[Math.floor(y / 16) * 4 + Math.floor(x / 16)]++;
+		}
+		return f.map((n) => n / 256);
+	})();
+	const POT = /* @__PURE__ */ new WeakMap();
+	function plotKoku(L, zx, zy, n) {
+		const E = L.sys.economy, over = E && E.plotKoku;
+		if (over) for (const _ in over) {
+			const o = over[plotId(zx, zy, n)];
+			if (o != null) return o;
+			break;
+		}
+		let m = POT.get(L);
+		if (!m) POT.set(L, m = /* @__PURE__ */ new Map());
+		const zi = zy * L.size.w + zx;
+		let a = m.get(zi);
+		if (!a) {
+			a = /* @__PURE__ */ new Float64Array(16);
+			for (let k = 0; k < a.length; k++) a[k] = potential(L, zx, zy, k);
+			m.set(zi, a);
+		}
+		return a[n];
+	}
+	function potential(L, zx, zy, n) {
+		const z = zoneAt(L, zx, zy), g = GROUNDS[z.biome] || GROUNDS.sea, wet = z.biome === "paddy" || z.biome === "marsh";
+		const ring = z.kind === "town" || z.kind === "village" ? RING[n] : 0, K = KOKU_TILE;
+		const base = (g.field || 0) * K.field + (g.paddy || 0) * K.paddy + (g.grass || 0) * K.grass;
+		return +(256 * (ring * (g.conv * (wet ? K.paddy : K.field) + (1 - g.conv) * base) + (1 - ring) * base) * (.85 + hash(L.seed, "pk", zx, zy, n) % 1e3 / 1e3 * .3)).toFixed(2);
+	}
+	function zoneLord(L, z) {
+		if (z.lord != null) return z.lord;
+		if (z.kind === "camp") return z.holder ?? null;
+		const reg = L.regions[z.region];
+		return reg ? reg.lord ?? null : null;
+	}
+	function initEconomy(L) {
+		const E = L.sys.economy, w = L.size.w;
+		Object.assign(E, {
+			v: 1,
+			regions: [],
+			lords: {},
+			pantry: {},
+			routes: [],
+			caravans: [],
+			kura: {},
+			banks: {},
+			plotKoku: {},
+			flow: {
+				mint: 0,
+				loot: 0,
+				temple: 0,
+				buried: 0,
+				fees: 0,
+				other: 0
+			},
+			years: [],
+			hist: [],
+			stats: {}
+		});
+		const ix = index(L);
+		for (const reg of L.regions) {
+			const zs = {
+				coast: 0,
+				sea: 0,
+				forest: 0,
+				bamboo: 0,
+				hills: 0,
+				mountains: 0,
+				plains: 0,
+				paddy: 0,
+				marsh: 0
+			};
+			let n = 0;
+			for (const z of L.zones) if (z.region === reg.id) {
+				zs[z.biome]++;
+				n++;
+				if (z.biome === "coast") for (const [dx, dy] of [
+					[1, 0],
+					[-1, 0],
+					[0, 1],
+					[0, -1]
+				]) {
+					const q = zoneAt(L, z.x + dx, z.y + dy);
+					if (q && q.biome === "sea") {
+						zs.sea++;
+						break;
+					}
+				}
+			}
+			const cl = (v, lo, hi) => +Math.max(lo, Math.min(hi, v)).toFixed(2), kind = L.cultures[reg.culture].kind;
+			const land = {
+				fish: cl(zs.sea / 6 + zs.marsh / 8 + .2, .2, 1),
+				salt: cl(zs.sea / 5, 0, 1),
+				timber: cl((zs.forest + zs.bamboo) / 10 + zs.hills / 40, .1, 1),
+				iron: cl((zs.mountains + zs.hills / 3) / 15, .05, 1),
+				horses: cl((zs.plains + zs.hills / 2) / 20, .05, 1),
+				silk: {
+					court: 1,
+					merchants: .25,
+					clan: .05
+				}[kind] || 0,
+				rice: 1,
+				sake: 1,
+				cloth: 1,
+				weapons: 1,
+				tools: 1
+			};
+			const pop = ix.pop[reg.id] || 0, dem = GOODS.map((g) => pop * (NEED[g] || 0));
+			dem[GI.sake] = pop * .006;
+			dem[GI.weapons] = pop * 6e-4;
+			dem[GI.horses] = pop * 2e-4;
+			dem[GI.silk] = (ix.royals[reg.id] || 0) * .001;
+			dem[GI.iron] = pop * .01;
+			const stock = dem.map((d, g) => +Math.max(minStock(g), d * GOOD[GOODS[g]].days).toFixed(2));
+			E.regions.push({
+				id: reg.id,
+				land,
+				pop,
+				stock,
+				price: GOODS.map((g) => GOOD[g].base),
+				dem: dem.map((d) => +d.toFixed(4)),
+				fill: GOODS.map(() => 1),
+				guild: pop * 150,
+				temple: pop * 5,
+				imp: GOODS.map(() => 0),
+				exp: GOODS.map(() => 0),
+				owe: dem.map((d, g) => g === GI.rice ? 0 : +(d * GOOD[GOODS[g]].base * .9 * 14).toFixed(1)),
+				pool: {
+					service: 0,
+					guild: 0
+				},
+				buried: 0,
+				q: 1,
+				war: 0,
+				famine: false,
+				made: GOODS.map(() => 0),
+				sold: GOODS.map(() => 0)
+			});
+		}
+		rankLords(L);
+		for (const id in E.lords) E.lords[id].granary = +(E.lords[id].koku * TAX.plot * .5).toFixed(2);
+		for (const h of ix.hh) if (h.farm) E.pantry[h.key] = +(h.m.length * 60 / 112).toFixed(2);
+		const seatOf = new Map(L.regions.map((g) => [g.seat[1] * w + g.seat[0], g.id])), seen = /* @__PURE__ */ new Set();
+		for (const g of L.regions) {
+			const s = g.seat[1] * w + g.seat[0], from = /* @__PURE__ */ new Map([[s, -1]]), q = [s];
+			while (q.length) {
+				const i = q.shift(), x = i % w, y = (i - x) / w;
+				if (i !== s && seatOf.has(i)) {
+					const b = seatOf.get(i), k = Math.min(g.id, b) + "|" + Math.max(g.id, b);
+					if (!seen.has(k)) {
+						seen.add(k);
+						const path = [];
+						for (let j = i; j !== -1; j = from.get(j)) path.push(j);
+						path.reverse();
+						E.routes.push({
+							a: g.id,
+							b,
+							path
+						});
+					}
+					continue;
+				}
+				for (const [dx, dy] of [
+					[1, 0],
+					[-1, 0],
+					[0, 1],
+					[0, -1]
+				]) {
+					const n = zoneAt(L, x + dx, y + dy);
+					if (!n || !n.road) continue;
+					const j = n.y * w + n.x;
+					if (!from.has(j)) {
+						from.set(j, i);
+						q.push(j);
+					}
+				}
+			}
+		}
+	}
+	function rankLords(L) {
+		const E = L.sys.economy;
+		for (const id in E.lords) E.lords[id].koku = 0;
+		const add = (id, k, region) => {
+			if (!id) return;
+			const l = E.lords[id] || (E.lords[id] = {
+				region,
+				koku: 0,
+				granary: 0,
+				taxIn: 0,
+				taxOut: 0,
+				paid: 1
+			});
+			l.koku += k;
+		};
+		for (const z of L.zones) {
+			if (z.kind !== "town" && z.kind !== "village" && z.kind !== "fort") continue;
+			const lord = zoneLord(L, z);
+			for (let n = 0; n < 16; n++) {
+				const k = plotKoku(L, z.x, z.y, n);
+				if (lord) add(lord, k, z.region);
+				else {
+					const o = ownerOf(L, plotId(z.x, z.y, n));
+					if (o.holder) add(o.holder, k, z.region);
+				}
+			}
+		}
+		for (const pid in L.plots) {
+			const o = L.plots[pid];
+			if (!o.holder || o.holder !== L.player) continue;
+			const [zx, zy] = pid.split(":")[0].split(",").map(Number), z = zoneAt(L, zx, zy);
+			if (o.holder && o.holder === L.player) add(o.holder, plotKoku(L, zx, zy, +pid.split(":")[1]), z.region);
+		}
+		for (const id in E.lords) E.lords[id].koku = +E.lords[id].koku.toFixed(1);
+	}
+	const TASTES = Object.fromEntries(Object.entries(TASTE).map(([c, t]) => [c, Object.entries(t).filter(([k]) => k !== "silk" || c === "royal").flatMap(([k, v]) => [k === "service" ? -1 : k === "offering" ? -2 : GI[k], v])]));
+	function routeDanger(L, ix) {
+		if (ix.danger) return ix.danger;
+		const w = L.size.w, near = CARAVAN.near;
+		ix.danger = L.sys.economy.routes.map((rt) => Int32Array.from(rt.path, (zi) => {
+			const x = zi % w, y = (zi - x) / w;
+			for (let dy = -near; dy <= near; dy++) for (let dx = -near; dx <= near; dx++) {
+				const j = (y + dy) * w + x + dx;
+				if (ix.camps.has(j)) return j;
+			}
+			return -1;
+		}));
+		return ix.danger;
+	}
+	const CACHE = /* @__PURE__ */ new WeakMap();
+	function index(L) {
+		const year = Math.floor(L.hour / HOURS_PER_YEAR), stamp = `${L.ids.a || 0}:${year}`;
+		let ix = CACHE.get(L);
+		if (ix && ix.stamp === stamp) return ix;
+		const t0 = year * HOURS_PER_YEAR, w = L.size.w, R = L.regions.length, map = /* @__PURE__ */ new Map(), adultLo = t0 - ADULT[1] * HOURS_PER_YEAR, adultHi = t0 - ADULT[0] * HOURS_PER_YEAR;
+		const NJ = JOB_LIST.length, G_ = GOODS.length;
+		const scratch = ix ? ix.scratch : Array.from({ length: R }, () => ({
+			rate: new Float64Array(NJ),
+			payer: new Int8Array(NJ),
+			paid: /* @__PURE__ */ new Float64Array(5),
+			want: new Float64Array(G_),
+			buy: new Float64Array(G_),
+			made: new Float64Array(G_),
+			inputs: new Float64Array(NJ * G_),
+			cap: new Float64Array(NJ * G_),
+			capOf: new Float64Array(G_)
+		}));
+		ix = {
+			stamp,
+			hh: [],
+			byRegion: [],
+			pop: new Array(R).fill(0),
+			royals: new Array(R).fill(0),
+			jobs: [],
+			farmers: /* @__PURE__ */ new Map(),
+			merchants: [],
+			camps: /* @__PURE__ */ new Set(),
+			scratch
+		};
+		for (let r = 0; r < R; r++) {
+			ix.jobs.push(new Array(NJ).fill(0));
+			ix.merchants.push([]);
+			ix.byRegion.push([]);
+		}
+		for (const id in L.actors) {
+			const a = L.actors[id];
+			if (!a.alive || id === L.player || !a.home) continue;
+			const z = zoneAt(L, a.home[0], a.home[1]);
+			if (!z || z.region < 0) continue;
+			const key = a.household || a.id;
+			let h = map.get(key);
+			if (!h) {
+				h = {
+					key,
+					zi: z.y * w + z.x,
+					region: z.region,
+					m: [],
+					head: null,
+					farm: false
+				};
+				map.set(key, h);
+			}
+			h.m.push(a);
+			if (a.id === key) h.head = a;
+			ix.pop[z.region]++;
+			if (a.cls === "royal") ix.royals[z.region]++;
+			const mo = a.money;
+			if (typeof mo.silver !== "number") mo.silver = 0;
+			if (typeof mo.ryo !== "number") mo.ryo = 0;
+			if (!mo.mon) mo.mon = 0;
+			else if (Number.isInteger(mo.mon)) {
+				mo.mon += .5;
+				mo.mon -= .5;
+			}
+			const j = JI[a.job];
+			if (j !== void 0 && a.born <= adultHi && a.born > adultLo) {
+				ix.jobs[z.region][j]++;
+				if (FARM[j]) ix.farmers.set(h.zi, (ix.farmers.get(h.zi) || 0) + 1);
+				if (j === JI.merchant) ix.merchants[z.region].push(a.id);
+			}
+		}
+		for (const h of map.values()) {
+			if (!h.head) h.head = h.m[0];
+			if (h.m[0] !== h.head) {
+				h.m.splice(h.m.indexOf(h.head), 1);
+				h.m.unshift(h.head);
+			}
+			h.mm = h.m.map((a) => a.money);
+			h.bb = h.m.map((a) => a.born);
+			h.jj = h.m.map((a) => JI[a.job] ?? -1);
+			const cls = h.head.cls;
+			h.reserve = RESERVE[cls] ?? 150;
+			h.taste = TASTES[cls] || TASTES.commoner;
+			h.outlaw = cls === "outlaw";
+			h.farm = h.m.some((a) => a.holds && a.holds.length || FARM[JI[a.job]]);
+			ix.hh.push(h);
+			ix.byRegion[h.region].push(h);
+		}
+		for (const z of L.zones) if (z.kind === "camp") ix.camps.add(z.y * w + z.x);
+		CACHE.set(L, ix);
+		return ix;
+	}
+	function moneySupply(L) {
+		const E = L.sys.economy, byCls = {};
+		let purses = 0;
+		for (const id in L.actors) {
+			const a = L.actors[id];
+			if (!a.money) continue;
+			const v = worth(a.money);
+			purses += v;
+			byCls[a.cls] = (byCls[a.cls] || 0) + v;
+		}
+		let guild = 0, temple = 0, pools = 0, buried = 0;
+		for (const r of E.regions) {
+			guild += r.guild;
+			temple += r.temple;
+			pools += r.pool.service + r.pool.guild;
+			buried += r.buried;
+		}
+		let kura = 0;
+		for (const k in E.kura) kura += worth(E.kura[k].money);
+		let banks = 0;
+		for (const t in E.banks) for (const id in E.banks[t]) banks += worth(E.banks[t][id]);
+		return {
+			total: purses + guild + temple + pools + kura + banks,
+			purses,
+			guild,
+			temple,
+			pools,
+			kura,
+			banks,
+			buried,
+			byCls
+		};
+	}
+	//#endregion
+	//#region src/sim/economy/day.js
+	const YEAR_DAYS = TIME.DAYS_PER_SEASON * 4;
+	const HARVEST_DAY = HARVEST.season * TIME.DAYS_PER_SEASON;
+	const daysToHarvest = (cal) => (HARVEST_DAY - cal.day % YEAR_DAYS + YEAR_DAYS - 1) % YEAR_DAYS + 1;
+	const RICE = GI.rice;
+	JOB_LIST.length;
+	const FIGHTERS = [
+		"ashigaru",
+		"guard",
+		"retainer",
+		"ronin",
+		"bounty hunter",
+		"shinobi"
+	];
+	const NEEDS = Object.entries(NEED).filter(([g]) => g !== "rice").map(([g, q]) => [GI[g], q]);
+	const SERVICE = [
+		"innkeeper",
+		"carpenter",
+		"courier",
+		"healer"
+	];
+	const P_GUILD = 0;
+	const P_LORD = 1;
+	const P_SERVICE = 2;
+	const P_TEMPLE = 3;
+	const P_MERCH = 4;
+	const MINS = GOODS.map((g, i) => minStock(i));
+	const DAYS = GOODS.map((g) => GOOD[g].days);
+	const p0 = (R, g) => R.price[g];
+	const target = (R, g) => Math.max(MINS[g], R.dem[g] * DAYS[g]);
+	const DT = 14;
+	const per = (x) => 1 - Math.pow(1 - x, DT);
+	const LOW = 2e3;
+	const RICE_DAY = NEED.rice;
+	const PER_SPEND = per(SPEND);
+	const PER_HOARD = per(HOARD / TIME.DAYS_PER_SEASON);
+	const SELL_STEP = Math.min(1, DT / 14);
+	const PER = {
+		guild: per(GUILD_SPEND),
+		temple: per(TEMPLE_SHARE),
+		sink: per(TEMPLE_SINK),
+		merch: per(MERCH_SHARE),
+		ease: per(PRICE_EASE),
+		made: per(.1),
+		dem: per(.03)
+	};
+	const KEEP = GOODS.map((g) => Math.pow(1 - GOOD[g].rot, DT));
+	const GDEF = GOODS.map((g) => GOOD[g]);
+	function economyDay(L, cal) {
+		const E = L.sys.economy, ix = index(L), toH = daysToHarvest(cal), turn = cal.day % 14;
+		const lo = L.hour - ADULT[1] * HOURS_PER_YEAR, hi = L.hour - ADULT[0] * HOURS_PER_YEAR;
+		for (let r = turn; r < E.regions.length; r += 14) {
+			const R = E.regions[r], S = prep(L, E, R, ix, toH);
+			for (const h of ix.byRegion[r]) household(E, h, R, S, lo, hi, toH);
+			close(L, E, R, S, ix);
+		}
+	}
+	const MAKERS = JOB_LIST.map((j, i) => [i, JOBS[j]]).filter(([, d]) => d.make).map(([i, d]) => ({
+		j: i,
+		make: Object.entries(d.make).map(([g, q]) => [
+			GI[g],
+			q,
+			g
+		]),
+		use: d.use ? Object.entries(d.use).map(([g, q]) => [GI[g], q]) : null
+	}));
+	const OTHERS = JOB_LIST.map((j, i) => [i, JOBS[j]]).filter(([, d]) => !d.make && d.kind !== "none");
+	const J_ = (name) => JI[name];
+	const SVC$1 = SERVICE.map(J_);
+	const FIGHT = FIGHTERS.map(J_);
+	const MONKS = [J_("monk"), J_("abbot")];
+	const MERCH = J_("merchant");
+	const MINER = J_("miner");
+	const sum = (J, list) => {
+		let t = 0;
+		for (let i = 0; i < list.length; i++) t += J[list[i]];
+		return t;
+	};
+	function prep(L, E, R, ix, toH) {
+		const J = ix.jobs[R.id], p = R.price, S = ix.scratch[R.id];
+		S.rate.fill(0);
+		S.payer.fill(0);
+		S.inputs.fill(0);
+		S.cap.fill(0);
+		S.capOf.fill(0);
+		S.paid.fill(0);
+		S.want.fill(0);
+		S.buy.fill(0);
+		S.made.fill(0);
+		S.rev = 0;
+		S.svcIn = 0;
+		S.offer = 0;
+		S.hungry = 0;
+		S.almsPaid = 0;
+		S.alms = Math.max(0, R.temple) * ALMS;
+		const reg = L.regions[R.id], lord = reg.lord != null && L.actors[reg.lord] && L.actors[reg.lord].alive ? L.actors[reg.lord] : null;
+		S.lord = lord;
+		for (let k = 0; k < MAKERS.length; k++) {
+			const m = MAKERS[k], n = J[m.j];
+			if (!n) continue;
+			let q0 = -1;
+			for (let e = 0, gi, q1, g; e < m.make.length && (gi = m.make[e][0], q1 = m.make[e][1], g = m.make[e][2], true); e++) {
+				const x = q1 * (R.land[g] ?? 1);
+				if (x > 0) {
+					S.cap[k * G + gi] = x * n;
+					S.capOf[gi] += x * n;
+				}
+				if (x > 0 && R.stock[gi] <= GOOD[g].cap * target(R, gi) && q0 < 0) q0 = x;
+			}
+			if (q0 < 0) continue;
+			let avail = 1;
+			if (m.use) for (let e = 0, ui, u; e < m.use.length && (ui = m.use[e][0], u = m.use[e][1], true); e++) {
+				const need = u * q0 * n * DT;
+				if (need > 0) avail = Math.min(avail, R.stock[ui] / need);
+			}
+			let first = true;
+			for (let e = 0, gi, q1, g; e < m.make.length && (gi = m.make[e][0], q1 = m.make[e][1], g = m.make[e][2], true); e++) {
+				let x = q1 * (R.land[g] ?? 1);
+				if (x <= 0 || R.stock[gi] > GOOD[g].cap * target(R, gi)) continue;
+				if (first) {
+					x *= avail;
+					first = false;
+				}
+				S.made[gi] += x * n * DT;
+			}
+			if (m.use) for (let e = 0, ui, u; e < m.use.length && (ui = m.use[e][0], u = m.use[e][1], true); e++) S.inputs[k * G + ui] = u * q0 * n * DT * avail;
+		}
+		let owed = 0;
+		for (let k = 0; k < MAKERS.length; k++) {
+			const m = MAKERS[k], n = J[m.j];
+			if (!n) continue;
+			let v = 0;
+			for (let g = 0; g < G; g++) if (S.cap[k * G + g] > 0) v += R.owe[g] * S.cap[k * G + g] / S.capOf[g];
+			let cost = 0;
+			if (m.use) for (let e = 0, ui; e < m.use.length && (ui = m.use[e][0], true); e++) {
+				const used = S.inputs[k * G + ui];
+				S.inputs[k * G + ui] = 0;
+				if (used > 0) {
+					cost += used * p[ui];
+					S.buy[ui] += used;
+				}
+			}
+			const inp = Math.min(cost, v);
+			S.rate[m.j] = (v - inp) / n / DT;
+			S.payer[m.j] = P_GUILD;
+			owed += v - inp;
+		}
+		const budget = Math.max(0, R.guild);
+		if (owed > budget) {
+			const s = budget / owed;
+			for (let k = 0, m; k < MAKERS.length && (m = MAKERS[k], true); k++) S.rate[m.j] *= s;
+			owed = budget;
+		}
+		let left = budget - owed;
+		let hired = 0;
+		for (let o = 0, j, d; o < OTHERS.length && (j = OTHERS[o][0], d = OTHERS[o][1], true); o++) if (d.kind === "hire" || d.kind === "rob" || d.kind === "stipend" && !lord) hired += (d.wage || d.take) * J[j] * DT;
+		const cash = hired > 0 ? Math.min(1, left * .5 / hired) : 1;
+		left -= Math.min(hired, left * .5);
+		S.riceRoom = R.stock[RICE] < RICE_HOLD * target(R, RICE);
+		S.riceBudget = Math.max(0, left + 150 * R.pop) * PER.guild;
+		const miners = J[MINER];
+		if (miners) {
+			const m = miners * 2 * (R.land.iron ?? 1) * DT;
+			E.flow.mint += m;
+			if (lord) lord.money.mon += m;
+			else R.guild += m;
+		}
+		const Lr = lord && E.lords[lord.id];
+		if (Lr && Lr.granary > 0 && S.riceRoom && S.riceBudget > 0) {
+			const q = Math.min(Lr.granary * Math.min(1, DT / Math.max(14, toH)), S.riceBudget / (p[RICE] * .85)), v = q * p[RICE] * .85;
+			Lr.granary -= q;
+			S.made[RICE] += q;
+			lord.money.mon += v;
+			S.paid[P_GUILD] += v;
+			S.riceBudget -= v;
+		}
+		let stip = 0;
+		for (let o = 0, j, d; o < OTHERS.length && (j = OTHERS[o][0], d = OTHERS[o][1], true); o++) if (d.kind === "stipend") stip += d.wage * J[j];
+		const sStip = stip > 0 && lord ? Math.min(1, worth(lord.money) / (stip * DT)) : 1;
+		if (lord && sStip < 1 && !R.unpaid && L.hour - (R.unpaidAt || -1e9) > 672) {
+			R.unpaid = true;
+			R.unpaidAt = L.hour;
+			emit(L, "econ.unpaid", {
+				region: R.id,
+				lord: lord.id,
+				zone: reg.seat,
+				share: +sStip.toFixed(2)
+			});
+		}
+		if (sStip >= 1) R.unpaid = false;
+		S.escrow = lord ? pay(lord.money, Math.min(worth(lord.money), stip * sStip * DT * 1.1)) : 0;
+		const svc = sum(J, SVC$1), monks = sum(J, MONKS), merch = J[MERCH];
+		for (let o = 0, j, d; o < OTHERS.length && (j = OTHERS[o][0], d = OTHERS[o][1], true); o++) {
+			if (!J[j]) continue;
+			if (d.kind === "stipend") {
+				S.rate[j] = d.wage * (lord ? sStip : cash);
+				S.payer[j] = lord ? P_LORD : P_GUILD;
+			} else if (d.kind === "hire" || d.kind === "rob") {
+				S.rate[j] = (d.wage || d.take) * cash;
+				S.payer[j] = P_GUILD;
+			} else if (d.kind === "service") {
+				S.rate[j] = svc ? Math.max(0, R.pool.service) / svc / DT : 0;
+				S.payer[j] = P_SERVICE;
+			} else if (d.kind === "temple") {
+				S.rate[j] = monks ? R.temple * PER.temple / monks / DT : 0;
+				S.payer[j] = P_TEMPLE;
+			} else if (d.kind === "guild") {
+				S.rate[j] = merch ? Math.max(0, R.pool.guild) / merch / DT : 0;
+				S.payer[j] = P_MERCH;
+			}
+		}
+		if (R.war > L.hour && lord) {
+			const men = sum(J, FIGHT);
+			for (const [g, q] of [
+				[RICE, R.pop * NEED.rice * .25 * DT],
+				[GI.weapons, men * WAR_ARMS.weapons * DT],
+				[GI.horses, men * WAR_ARMS.horses * DT]
+			]) {
+				S.want[g] += q;
+				const c = pay(lord.money, q * R.fill[g] * p[g]);
+				S.buy[g] += c / p[g];
+				S.rev += c;
+			}
+		}
+		return S;
+	}
+	function household(E, h, R, S, lo, hi, toH) {
+		const A = h.m, M = h.mm, B = h.bb, JJ = h.jj, rate = S.rate, paid = S.paid, payer = S.payer;
+		let n = 0, W = 0, head = null, income = 0;
+		for (let k = 0; k < A.length; k++) {
+			if (!A[k].alive) continue;
+			const m = M[k];
+			if (head === null) head = m;
+			const b = B[k];
+			n += b > hi ? CHILD : 1;
+			const j = JJ[k];
+			if (j >= 0) {
+				if (b <= hi && b > lo) {
+					const inc = rate[j];
+					if (inc > 0) {
+						income += inc;
+						paid[payer[j]] += inc * DT;
+					}
+				}
+			}
+		}
+		if (n === 0) return;
+		income *= DT;
+		head.mon += income;
+		W = head.mon + head.silver * 16 + head.ryo * 1e3;
+		if (W < LOW) for (let k = 0; k < A.length; k++) {
+			const m = M[k];
+			if (m !== head && A[k].alive) W += m.mon + m.silver * 16 + m.ryo * 1e3;
+		}
+		const p = R.price, f = R.fill, want = S.want, bought = S.buy, key = h.key;
+		let spend = 0, rice = n * RICE_DAY * DT, pan = E.pantry[key] || 0;
+		if (pan > 0) {
+			const t = pan < rice ? pan : rice;
+			pan -= t;
+			rice -= t;
+		}
+		if (rice > 0) {
+			want[RICE] += rice;
+			let got = rice * f[RICE], c = got * p[RICE];
+			if (c > W) {
+				c = W;
+				got = c / p[RICE];
+			}
+			spend += c;
+			bought[RICE] += got;
+			if (got < rice * .8 && h.outlaw) {
+				const take = rice * f[RICE] - got;
+				bought[RICE] += take;
+				R.stolen = (R.stolen || 0) + take;
+				got += take;
+			}
+			if (got < rice * .8 && S.alms > 0) {
+				const q = Math.min(rice * f[RICE] - got, S.alms / p[RICE]);
+				S.alms -= q * p[RICE];
+				S.almsPaid += q * p[RICE];
+				bought[RICE] += q;
+				got += q;
+			}
+			if (got < rice * .8) S.hungry += n;
+		}
+		for (let k = 0; k < NEEDS.length; k++) {
+			const g = NEEDS[k][0], q = n * NEEDS[k][1] * DT;
+			want[g] += q;
+			let got = q * f[g], c = got * p[g];
+			if (c > W - spend) {
+				c = W - spend;
+				got = c / p[g];
+			}
+			spend += c;
+			bought[g] += got;
+		}
+		const D = PER_SPEND * (W - spend - h.reserve * (1 + .25 * (n - 1)));
+		if (D > 0) {
+			const T = h.taste;
+			for (let k = 0; k < T.length; k += 2) {
+				const g = T[k], v = D * T[k + 1];
+				if (g === -1) {
+					S.svcIn += v;
+					spend += v;
+				} else if (g === -2) {
+					S.offer += v;
+					spend += v;
+				} else {
+					const q = v / p[g];
+					want[g] += q;
+					bought[g] += q * f[g];
+					spend += v * f[g];
+				}
+			}
+		}
+		if (spend > 0) {
+			let left = spend - pay(head, spend);
+			for (let k = 0; k < A.length && left > 1e-9; k++) if (A[k].alive && M[k] !== head) left -= pay(M[k], left);
+			S.rev += spend - left;
+		}
+		if (h.farm && S.riceBudget > 0) {
+			const extra = pan - n * RICE_DAY * toH * KEEP_DAYS;
+			if (extra > .01 && S.riceRoom) {
+				const q = Math.min(extra * SELL_STEP, S.riceBudget / (p[RICE] * .85)), v = q * p[RICE] * .85;
+				pan -= q;
+				S.made[RICE] += q;
+				head.mon += v;
+				paid[P_GUILD] += v;
+				S.riceBudget -= v;
+			}
+		}
+		if (pan !== 0 || E.pantry[key] !== void 0) E.pantry[key] = pan;
+		const over = W - spend - 4 * h.reserve * (1 + .25 * (n - 1));
+		if (over > 0) {
+			const lost = pay(head, over * PER_HOARD);
+			R.buried += lost;
+			E.flow.buried += lost;
+		}
+		if (head.mon > 3e3) changeUp(head);
+		else head.mon = Math.round(head.mon * 100) / 100;
+	}
+	function close(L, E, R, S, ix) {
+		const J = ix.jobs[R.id], svcWorkers = sum(J, SVC$1);
+		R.guild += S.rev - S.svcIn - S.offer - S.paid[P_GUILD];
+		if (svcWorkers) R.pool.service += S.svcIn - S.paid[P_SERVICE];
+		else {
+			R.guild += S.svcIn;
+			R.pool.service -= S.paid[P_SERVICE];
+		}
+		if (sum(J, MONKS)) R.temple += S.offer - S.paid[P_TEMPLE];
+		else {
+			R.pool.service += S.offer;
+			R.temple -= S.paid[P_TEMPLE];
+		}
+		R.temple -= S.almsPaid;
+		R.guild += S.almsPaid;
+		R.alms = (R.alms || 0) + S.almsPaid;
+		R.pool.guild -= S.paid[P_MERCH];
+		if (S.lord) {
+			const back = S.escrow - S.paid[P_LORD];
+			if (back >= 0) S.lord.money.mon += back;
+			else R.guild += back + pay(S.lord.money, -back);
+		} else R.guild -= S.paid[P_LORD];
+		const sink = R.temple * PER.sink;
+		R.temple -= sink;
+		E.flow.temple += sink;
+		let owes = 0;
+		for (let g = 0; g < G; g++) {
+			if (g === RICE || !S.capOf[g]) {
+				R.owe[g] = 0;
+				R.imp[g] = 0;
+				R.exp[g] = 0;
+				continue;
+			}
+			const local = S.made[g] + R.imp[g] > 0 ? S.made[g] / (S.made[g] + R.imp[g]) : 1;
+			R.owe[g] = S.buy[g] * p0(R, g) * .85 * local + R.exp[g];
+			R.imp[g] = 0;
+			R.exp[g] = 0;
+			owes += R.owe[g];
+		}
+		const extra = R.guild - owes - 30 * R.pop;
+		if (extra > 0 && J[MERCH] > 0) {
+			const m = extra * PER.merch;
+			R.guild -= m;
+			R.pool.guild += m;
+		}
+		for (let g = 0; g < G; g++) {
+			const def = GDEF[g], st = Math.max(0, R.stock[g] + S.made[g] - S.buy[g]) * KEEP[g];
+			R.stock[g] = st;
+			R.made[g] += (S.made[g] / DT - R.made[g]) * PER.made;
+			R.sold[g] += (S.buy[g] / DT - R.sold[g]) * PER.made;
+			R.dem[g] += (S.want[g] / DT - R.dem[g]) * PER.dem;
+			R.fill[g] = S.want[g] > 0 ? Math.min(1, (st + S.made[g]) / S.want[g]) : 1;
+			const t = target(R, g), x = Math.pow(t / Math.max(st, t * .01), def.eps), want = def.base * (x < .25 ? PRICE_MIN : x > 8 ? 8 : x);
+			R.price[g] += (want - R.price[g]) * PER.ease;
+		}
+		R.hungry = S.hungry;
+		const days = R.stock[RICE] / Math.max(1e-6, R.dem[RICE]);
+		if (!R.famine && days < 5 && R.dem[RICE] > .05) {
+			R.famine = true;
+			emit(L, "econ.famine", {
+				region: R.id,
+				zone: L.regions[R.id].seat,
+				price: Math.round(R.price[RICE])
+			});
+		} else if (R.famine && days > 20) {
+			R.famine = false;
+			emit(L, "econ.famine.end", {
+				region: R.id,
+				zone: L.regions[R.id].seat
+			});
+		}
+	}
+	//#endregion
+	//#region src/sim/economy/season.js
+	const FARM_JOB = JOB_LIST.map((j) => JOBS[j].kind === "farm");
+	const hands = (h) => h.jj.reduce((s, j, k) => s + (j >= 0 && FARM_JOB[j] && h.m[k].alive ? 1 : 0), 0);
+	const r2 = (v) => Math.round(v * 100) / 100;
+	const r3 = (v) => Math.round(v * 1e3) / 1e3;
+	function economySeason(L, cal, r) {
+		const E = L.sys.economy;
+		if (cal.seasonIndex === HARVEST.season) harvest(L, r);
+		upkeep(L, cal);
+		E.hist.push({
+			h: L.hour,
+			price: E.regions.map((R) => R.price.map((v) => Math.round(v)))
+		});
+		if (E.hist.length > 8) E.hist.splice(0, E.hist.length - 8);
+	}
+	function harvest(L, r) {
+		const E = L.sys.economy, ix = index(L), w = L.size.w;
+		for (const R of E.regions) {
+			const roll = r.next();
+			R.q = roll < HARVEST.drought ? r.range(...HARVEST.droughtQ) : roll > 1 - HARVEST.bumper ? r.range(...HARVEST.bumperQ) : r.range(HARVEST.low, HARVEST.high);
+			R.q = +R.q.toFixed(2);
+			R.crop = 0;
+			R.tax = 0;
+			if (R.q < HARVEST.low) emit(L, "econ.drought", {
+				region: R.id,
+				zone: L.regions[R.id].seat,
+				q: R.q
+			});
+		}
+		for (const id in E.lords) {
+			E.lords[id].taxIn = 0;
+			E.lords[id].taxOut = 0;
+		}
+		const toLord = (id, k, region) => {
+			if (!id) return;
+			const l = E.lords[id] || (E.lords[id] = {
+				region,
+				koku: 0,
+				granary: 0,
+				taxIn: 0,
+				taxOut: 0,
+				paid: 1
+			});
+			l.granary += k;
+			l.taxIn += k;
+		};
+		const farmsOf = /* @__PURE__ */ new Map();
+		for (const h of ix.hh) if (h.farm) {
+			const a = farmsOf.get(h.zi) || [];
+			a.push(h);
+			farmsOf.set(h.zi, a);
+		}
+		for (const z of L.zones) {
+			if (z.kind !== "town" && z.kind !== "village") continue;
+			const kind = L.cultures[L.regions[z.region].culture].kind, rate = TAX_KIND[kind] ?? TAX.plot;
+			const zi = z.y * w + z.x, R = E.regions[z.region], lord = zoneLord(L, z), regLord = L.regions[z.region].lord, farms = farmsOf.get(zi) || [];
+			const def = {
+				title: L.regions[z.region].lord ?? null,
+				holder: L.regions[z.region].lord ?? null
+			};
+			const plots = [];
+			for (let n = 0; n < 16; n++) {
+				const o = L.plots[plotId(z.x, z.y, n)] || def;
+				if (o.holder) plots.push({
+					n,
+					o,
+					k: plotKoku(L, z.x, z.y, n)
+				});
+			}
+			const houseOf = (p) => farms.find((h) => h.m.some((a) => a.id === p.o.holder));
+			for (const p of plots) p.house = houseOf(p);
+			plots.sort((a, b) => (a.house ? 0 : 1) - (b.house ? 0 : 1) || b.k - a.k);
+			let labour = (ix.farmers.get(zi) || 0) * 2, tenants = 0, zt = 0;
+			for (const p of plots) {
+				const work = Math.min(1, labour);
+				if (work <= 0) break;
+				labour -= work;
+				const y = p.k * work * R.q;
+				R.crop += y;
+				const house = p.house;
+				if (house) {
+					const t = p.o.holder === lord ? 0 : y * rate;
+					toLord(lord, t, z.region);
+					R.tax += t;
+					zt += t;
+					const own = Math.min(work, house.cap ?? (house.cap = hands(house) * 2));
+					house.cap -= own;
+					const keep = (y - t) * (1 - own / work) * TENANT_SHARE;
+					tenants += keep;
+					E.pantry[house.key] = (E.pantry[house.key] || 0) + y - t - keep;
+				} else {
+					const keep = y * TENANT_SHARE;
+					tenants += keep;
+					const t = p.o.holder === lord ? 0 : (y - keep) * rate;
+					toLord(lord, t, z.region);
+					R.tax += t;
+					zt += t;
+					toLord(p.o.holder, y - keep - t, z.region);
+					if (E.lords[p.o.holder]) E.lords[p.o.holder].taxIn -= y - keep - t;
+				}
+			}
+			for (const h of farms) delete h.cap;
+			if (tenants > 0 && farms.length) {
+				let tot = 0;
+				for (const h of farms) tot += hands(h);
+				for (const h of farms) {
+					const w = tot ? hands(h) / tot : 1 / farms.length;
+					if (w) E.pantry[h.key] = (E.pantry[h.key] || 0) + tenants * w;
+				}
+			}
+			if (lord && regLord && lord !== regLord && E.lords[lord]) {
+				const l = E.lords[lord], t = zt * TAX.zone;
+				l.granary -= t;
+				l.taxOut += t;
+				toLord(regLord, t, z.region);
+			}
+		}
+		rankLords(L);
+		for (const R of E.regions) {
+			R.crop = +R.crop.toFixed(1);
+			R.tax = +R.tax.toFixed(1);
+			const lord = L.regions[R.id].lord;
+			emit(L, "econ.harvest", {
+				region: R.id,
+				zone: L.regions[R.id].seat,
+				koku: R.crop,
+				tax: R.tax,
+				lord: lord ?? null,
+				q: R.q
+			});
+		}
+		for (const k in E.pantry) E.pantry[k] = r3(E.pantry[k]);
+		for (const id in E.lords) {
+			const l = E.lords[id];
+			l.granary = r2(l.granary);
+			l.taxIn = r2(l.taxIn);
+			l.taxOut = r2(l.taxOut);
+		}
+	}
+	function upkeep(L, cal) {
+		const E = L.sys.economy, ix = index(L);
+		if (cal.seasonIndex === 0) {
+			const keys = new Set(ix.hh.map((h) => h.key));
+			for (const k in E.pantry) if (!keys.has(k) && k !== L.player) delete E.pantry[k];
+		}
+		const rot = Math.pow(1 - GOOD.rice.rot, TIME.DAYS_PER_SEASON);
+		for (const k in E.pantry) E.pantry[k] *= rot;
+		for (const id in E.lords) E.lords[id].granary *= rot;
+		for (const t in E.banks) {
+			const [x, y] = t.split(",").map(Number), z = zoneAt(L, x, y), R = E.regions[z.region];
+			for (const id in E.banks[t]) {
+				const b = E.banks[t][id], fee = pay(b, worth(b) * BANK.perSeason);
+				R.guild += fee;
+				E.flow.fees += fee;
+			}
+		}
+		for (const R of E.regions) {
+			R.guild = Math.round(R.guild);
+			R.temple = Math.round(R.temple * 100) / 100;
+			R.pool.service = Math.round(R.pool.service * 100) / 100;
+			R.pool.guild = Math.round(R.pool.guild * 100) / 100;
+			R.buried = Math.round(R.buried);
+			for (let g = 0; g < R.stock.length; g++) {
+				R.stock[g] = r3(R.stock[g]);
+				R.price[g] = Math.round(R.price[g] * 10) / 10;
+				R.dem[g] = Math.round(R.dem[g] * 1e4) / 1e4;
+				R.fill[g] = r3(R.fill[g]);
+				R.made[g] = Math.round(R.made[g] * 1e4) / 1e4;
+				R.sold[g] = Math.round(R.sold[g] * 1e4) / 1e4;
+				R.owe[g] = r2(R.owe[g]);
+			}
+		}
+	}
+	//#endregion
+	//#region src/sim/economy/trade.js
+	const SVC = [
+		"innkeeper",
+		"carpenter",
+		"courier",
+		"healer"
+	].map((j) => JI[j]);
+	const caravanZone = (L, c) => {
+		const p = L.sys.economy.routes[c.route].path, i = Math.min(p.length - 1, c.step);
+		return p[c.dir > 0 ? i : p.length - 1 - i];
+	};
+	function economyTrade(L, cal, r) {
+		const E = L.sys.economy, ix = index(L), danger = routeDanger(L, ix), st = E.stats.year || (E.stats.year = {
+			sent: 0,
+			arrived: 0,
+			robbed: 0,
+			value: 0
+		});
+		for (let i = E.caravans.length - 1; i >= 0; i--) {
+			const c = E.caravans[i], path = E.routes[c.route].path;
+			c.step = Math.min(path.length - 1, c.step + CARAVAN.speed);
+			const dg = danger[c.route], camp = dg[c.dir > 0 ? c.step : dg.length - 1 - c.step];
+			if (camp >= 0 && r.chance(CARAVAN.rob * (c.guard ? CARAVAN.guarded : 1))) {
+				rob(L, c, camp, null);
+				E.caravans.splice(i, 1);
+				st.robbed++;
+				continue;
+			}
+			if (c.step >= path.length - 1) {
+				arrive(E, c);
+				E.caravans.splice(i, 1);
+				st.arrived++;
+			}
+		}
+		const active = new Array(E.regions.length).fill(0);
+		for (const c of E.caravans) active[c.from]++;
+		for (let ri = cal.day % CARAVAN.every; ri < E.routes.length; ri += CARAVAN.every) {
+			const rt = E.routes[ri];
+			for (const dir of [1, -1]) {
+				const from = dir > 0 ? rt.a : rt.b, to = dir > 0 ? rt.b : rt.a, A = E.regions[from], B = E.regions[to];
+				if (active[from] >= CARAVAN.max) continue;
+				const haul = 1 + CARAVAN.perZone * rt.path.length;
+				let best = -1, gain = CARAVAN.minGain;
+				for (let g = 0; g < G; g++) {
+					if (A.stock[g] < target(A, g) * .8 || B.stock[g] > target(B, g) * 1.5) continue;
+					const x = B.price[g] * .85 / (A.price[g] * haul) - 1;
+					if (x > gain) {
+						gain = x;
+						best = g;
+					}
+				}
+				if (best < 0) continue;
+				const qty = Math.min(CARAVAN.value / A.price[best], A.stock[best] - target(A, best) * .5);
+				if (qty <= 0) continue;
+				A.stock[best] -= qty;
+				const fee = qty * A.price[best] * (haul - 1);
+				if (SVC.some((j) => ix.jobs[from][j] > 0) && A.guild > fee) {
+					A.guild -= fee;
+					A.pool.service += fee;
+				}
+				const ms = ix.merchants[from], guard = ix.jobs[from][JI.ronin] > 0 && r.chance(.5);
+				E.caravans.push({
+					id: "cv" + (E.nextCaravan = (E.nextCaravan || 0) + 1),
+					route: ri,
+					dir,
+					step: 0,
+					from,
+					to,
+					g: GOODS[best],
+					qty: +qty.toFixed(3),
+					cost: Math.round(qty * A.price[best]),
+					owner: ms.length ? r.pick(ms) : null,
+					guard
+				});
+				active[from]++;
+				st.sent++;
+				st.value += Math.round(qty * A.price[best]);
+			}
+		}
+	}
+	function arrive(E, c) {
+		const A = E.regions[c.from], B = E.regions[c.to], g = GOODS.indexOf(c.g), v = Math.min(c.qty * B.price[g] * .85, Math.max(0, B.guild));
+		B.stock[g] += c.qty;
+		B.imp[g] += c.qty;
+		B.guild -= v;
+		A.guild += v;
+		A.exp[g] += v * .85;
+	}
+	function rob(L, c, campZi, by) {
+		const E = L.sys.economy, w = L.size.w, z = L.zones[campZi != null ? campZi : caravanZone(L, c)], R = E.regions[z.region], g = GOODS.indexOf(c.g);
+		const chief = by || z.holder || null, a = chief && L.actors[chief], v = a ? Math.min(c.qty * R.price[g] * .5, Math.max(0, R.guild)) : 0;
+		R.stock[g] += c.qty;
+		if (a) {
+			R.guild -= v;
+			a.money.mon += v;
+		}
+		const at = caravanZone(L, c);
+		emit(L, "econ.caravan.robbed", {
+			caravan: c.id,
+			zone: [at % w, Math.floor(at / w)],
+			region: L.zones[at].region,
+			from: c.from,
+			to: c.to,
+			good: c.g,
+			qty: c.qty,
+			value: c.cost,
+			by: chief,
+			owner: c.owner
+		});
+		return v;
+	}
+	//#endregion
+	//#region src/sim/economy/vault.js
+	const E_ = (L) => L.sys.economy;
+	const regionOfZone = (L, x, y) => {
+		const z = zoneAt(L, x, y);
+		return z ? z.region : -1;
+	};
+	function give(L, id, c, how = "loot") {
+		const a = L.actors[id], add = typeof c === "number" ? purse(c) : c, room = 20 - weightOf(a.money);
+		if (weightOf(add) > room) return false;
+		addTo(a.money, add);
+		const v = worth(add);
+		E_(L).flow[how === "loot" ? "loot" : "other"] += v;
+		return true;
+	}
+	function buy(L, id, region, good, qty) {
+		const R = E_(L).regions[region], g = GOODS.indexOf(good), a = L.actors[id], cost = qty * R.price[g];
+		if (R.stock[g] < qty || worth(a.money) < cost) return false;
+		pay(a.money, cost);
+		R.guild += cost;
+		R.stock[g] -= qty;
+		return cost;
+	}
+	const townKey = (x, y) => `${x},${y}`;
+	function isChanger(L, x, y) {
+		const z = zoneAt(L, x, y);
+		return !!z && z.kind === "town";
+	}
+	function deposit(L, id, x, y, c) {
+		if (!isChanger(L, x, y)) return false;
+		const a = L.actors[id];
+		if (!takeCoins(a.money, c)) return false;
+		const E = E_(L), R = E.regions[regionOfZone(L, x, y)], book = E.banks[townKey(x, y)] || (E.banks[townKey(x, y)] = {}), acct = book[id] || (book[id] = purse());
+		addTo(acct, c);
+		const fee = pay(acct, worth(c) * BANK.deposit);
+		R.guild += fee;
+		E.flow.fees += fee;
+		emit(L, "econ.deposit", {
+			actor: id,
+			zone: [x, y],
+			value: Math.round(worth(c))
+		});
+		return worth(acct);
+	}
+	function withdraw(L, id, x, y, c) {
+		const E = E_(L), acct = E.banks[townKey(x, y)] && E.banks[townKey(x, y)][id];
+		if (!acct || !takeCoins(acct, c)) return false;
+		if (weightOf(L.actors[id].money) + weightOf(c) > 20) {
+			addTo(acct, c);
+			return false;
+		}
+		addTo(L.actors[id].money, c);
+		emit(L, "econ.withdraw", {
+			actor: id,
+			zone: [x, y],
+			value: Math.round(worth(c))
+		});
+		return worth(acct);
+	}
+	function exchange(L, id, x, y, from, n, to) {
+		if (!isChanger(L, x, y)) return false;
+		const a = L.actors[id], give_ = { [from]: n };
+		const v = n * COIN[from].worth * (1 - BANK.exchange), out = Math.floor(v / COIN[to].worth);
+		if (out <= 0 || !takeCoins(a.money, give_)) return false;
+		const fee = n * COIN[from].worth * BANK.exchange, back = v - out * COIN[to].worth;
+		a.money[to] = (a.money[to] || 0) + out;
+		a.money.mon += back;
+		const E = E_(L);
+		E.regions[regionOfZone(L, x, y)].guild += fee;
+		E.flow.fees += fee;
+		return out;
+	}
+	const accounts = (L, id) => Object.entries(E_(L).banks).filter(([, b]) => b[id]).map(([t, b]) => ({
+		town: t.split(",").map(Number),
+		money: b[id],
+		worth: worth(b[id])
+	}));
+	system({
+		id: "economy",
+		order: 40,
+		init: (L) => initEconomy(L),
+		onDay: (L, cal, r) => {
+			economyDay(L, cal);
+			economyTrade(L, cal, r);
+		},
+		onSeason: (L, cal, r) => economySeason(L, cal, r),
+		onYear: (L, cal) => yearEnd(L, cal)
+	});
+	function yearEnd(L, cal) {
+		const E = L.sys.economy, m = moneySupply(L);
+		const y = {
+			year: cal.year - 1,
+			total: Math.round(m.total),
+			purses: Math.round(m.purses),
+			guild: Math.round(m.guild),
+			temple: Math.round(m.temple),
+			buried: Math.round(m.buried),
+			...Object.fromEntries(Object.entries(E.flow).map(([k, v]) => [k, Math.round(v)])),
+			caravans: E.stats.year || null,
+			rice: Math.round(E.regions.reduce((s, R) => s + R.price[0], 0) / E.regions.length)
+		};
+		E.years.push(y);
+		if (E.years.length > 20) E.years.shift();
+		for (const k in E.flow) E.flow[k] = 0;
+		E.stats.year = {
+			sent: 0,
+			arrived: 0,
+			robbed: 0,
+			value: 0
+		};
+		emit(L, "econ.year", {
+			year: y.year,
+			total: y.total,
+			mint: y.mint,
+			sinks: y.temple + y.buried
+		});
+	}
+	function war(L, region, days) {
+		const R = L.sys.economy.regions[region];
+		R.war = Math.max(R.war, L.hour + days * 24);
+		emit(L, "econ.war", {
+			region,
+			zone: L.regions[region].seat,
+			until: R.war
+		});
+	}
+	const atWar = (L, region) => L.sys.economy.regions[region].war > L.hour;
+	const GARMENTS = {
+		kimono: {
+			silk: 4,
+			work: 3e3
+		},
+		haori: {
+			silk: 2,
+			work: 1500
+		},
+		obi: {
+			silk: 1,
+			work: 600
+		}
+	};
+	const garmentPrice = (L, region, kind = "kimono") => {
+		const d = GARMENTS[kind];
+		return Math.round(d.silk * L.sys.economy.regions[region].price[GOODS.indexOf("silk")] + d.work);
+	};
+	const regionMarket = (L, region) => {
+		const R = L.sys.economy.regions[region];
+		return GOODS.map((g, i) => ({
+			good: g,
+			unit: GOOD[g].unit,
+			price: R.price[i],
+			base: GOOD[g].base,
+			stock: R.stock[i],
+			days: R.dem[i] > 0 ? R.stock[i] / R.dem[i] : Infinity,
+			made: R.made[i],
+			sold: R.sold[i]
+		}));
+	};
+	//#endregion
+	//#region prototypes-src/37-economy/main.js
+	const $ = (id) => document.getElementById(id);
+	const Z = 5;
+	const W = 100;
+	const HIST = 900;
+	const map = $("map");
+	const mg = map.getContext("2d");
+	const chart = $("chart");
+	const cg = chart.getContext("2d");
+	let L;
+	let E;
+	let sel = 0;
+	let good = 0;
+	let playing = false;
+	let hist = [];
+	let frame = 0;
+	let flash = [];
+	const cap = (s) => s[0].toUpperCase() + s.slice(1);
+	const col = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+	const C = {};
+	for (const k of [
+		"ink",
+		"muted",
+		"faint",
+		"rule",
+		"cyan",
+		"cheap",
+		"dear",
+		"bad",
+		"good",
+		"panel"
+	]) C[k] = col("--" + k);
+	for (const [i, g] of GOODS.entries()) $("good").insertAdjacentHTML("beforeend", `<option value="${i}">${g}</option>`);
+	function make(seed) {
+		L = generateWorld(seed, 0);
+		E = L.sys.economy;
+		hist = [];
+		flash = [];
+		const p = L.actors[L.player];
+		sel = zoneAt(L, ...p.at).region;
+		record();
+		for (let i = 0; i < 16; i++) step(7);
+		flash = [];
+		drawAll(true);
+	}
+	function record() {
+		const a = new Float32Array(E.regions.length * GOODS.length);
+		E.regions.forEach((R, r) => R.price.forEach((v, g) => a[r * GOODS.length + g] = v));
+		hist.push({
+			h: L.hour,
+			a
+		});
+		if (hist.length > HIST) hist.shift();
+	}
+	function step(days) {
+		const before = L.log.length ? L.log[L.log.length - 1] : null;
+		advance(L, days * TIME.HOURS_PER_DAY);
+		record();
+		for (let i = L.log.length - 1; i >= 0 && L.log[i] !== before; i--) if (L.log[i].type === "econ.caravan.robbed") flash.push({
+			z: L.log[i].zone,
+			t: 18
+		});
+	}
+	const hex = (h) => [
+		1,
+		3,
+		5
+	].map((i) => parseInt(h.slice(i, i + 2), 16));
+	const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
+	function priceColor(ratio) {
+		const t = Math.max(-1, Math.min(1, Math.log2(ratio) / 2)), mid = hex("#5d6664");
+		return t < 0 ? mix(mid, hex(C.cheap), -t) : mix(mid, hex(C.dear), t);
+	}
+	function drawMap() {
+		const img = mg.createImageData(500, 500), d = img.data, rc = E.regions.map((R) => priceColor(R.price[good] / GOOD[GOODS[good]].base)), sea = hex("#1a242b");
+		for (const z of L.zones) {
+			let c = z.region < 0 ? sea : rc[z.region];
+			if (z.road && z.region >= 0) c = mix(c, [
+				215,
+				196,
+				150
+			], .35);
+			for (let y = 0; y < Z; y++) for (let x = 0; x < Z; x++) {
+				const i = ((z.y * Z + y) * W * Z + z.x * Z + x) * 4;
+				d[i] = c[0];
+				d[i + 1] = c[1];
+				d[i + 2] = c[2];
+				d[i + 3] = 255;
+			}
+		}
+		mg.putImageData(img, 0, 0);
+		for (const z of L.zones) {
+			if (z.region < 0) continue;
+			for (const [dx, dy] of [
+				[1, 0],
+				[0, 1],
+				[-1, 0],
+				[0, -1]
+			]) {
+				const n = zoneAt(L, z.x + dx, z.y + dy);
+				if (n && n.region === z.region) continue;
+				const mine = z.region === sel;
+				if (!mine && (dx < 0 || dy < 0)) continue;
+				mg.fillStyle = mine ? "#ffffff" : "#0b0d0e88";
+				if (dx) mg.fillRect(z.x * Z + (dx > 0 ? 4 : 0), z.y * Z, 1, Z);
+				else mg.fillRect(z.x * Z, z.y * Z + (dy > 0 ? 4 : 0), Z, 1);
+			}
+		}
+		for (const g of L.regions) {
+			const R = E.regions[g.id], [x, y] = g.seat;
+			mg.fillStyle = "#0b0d0e";
+			mg.fillRect(x * Z - 1, y * Z - 1, 7, 7);
+			mg.fillStyle = R.famine ? C.bad : atWar(L, g.id) ? C.dear : "#f1ede2";
+			mg.fillRect(x * Z, y * Z, Z, Z);
+		}
+		mg.fillStyle = C.cyan;
+		for (const c of E.caravans) {
+			const zi = caravanZone(L, c);
+			mg.fillRect(zi % W * Z + 1, Math.floor(zi / W) * Z + 1, 3, 3);
+		}
+		flash = flash.filter((f) => f.t-- > 0);
+		for (const f of flash) {
+			mg.strokeStyle = C.bad;
+			mg.globalAlpha = f.t / 18;
+			mg.lineWidth = 1.5;
+			mg.beginPath();
+			mg.arc(f.z[0] * Z + 2.5, f.z[1] * Z + 2.5, 3 + (18 - f.t) * .5, 0, 7);
+			mg.stroke();
+		}
+		mg.globalAlpha = 1;
+		const p = L.actors[L.player];
+		mg.strokeStyle = C.cyan;
+		mg.lineWidth = 2;
+		mg.strokeRect(p.at[0] * Z - 3, p.at[1] * Z - 3, 11, 11);
+		$("legend").innerHTML = `<span>${cap(GOODS[good])}, against its base of ${fmt(GOOD[GOODS[good]].base)} a ${GOOD[GOODS[good]].unit}:</span><span>¼×</span><span class="ramp"></span><span>4×</span>
+    <span class="legend"><span class="sw" style="background:${C.cyan}"></span>caravan</span><span class="legend"><span class="sw" style="background:${C.bad}"></span>famine</span>
+    <span class="legend"><span class="sw" style="background:${C.dear}"></span>at war</span><span class="legend"><span class="sw" style="border:2px solid ${C.cyan}"></span>the ronin</span>`;
+	}
+	const num = (v, d = 0) => v >= 1e4 ? Math.round(v).toLocaleString() : v.toFixed(d);
+	function drawMarket() {
+		const reg = L.regions[sel], R = E.regions[sel], cult = L.cultures[reg.culture], m = regionMarket(L, sel);
+		$("rname").textContent = `${reg.name}, seat of ${zoneAt(L, ...reg.seat).name || "a camp"}`;
+		const tags = [
+			R.famine && "<span class=\"pill bad\">famine</span>",
+			atWar(L, sel) && "<span class=\"pill warn\">at war</span>",
+			R.unpaid && "<span class=\"pill warn\">soldiers unpaid</span>"
+		].filter(Boolean).join(" ");
+		$("rsub").innerHTML = `${cap(cult.name)}. ${R.pop} people; ${Math.round(R.hungry)} short of rice this fortnight. Last harvest ${R.crop ?? "–"} koku (weather ×${R.q}). Guild cash ${fmt(R.guild)}. ${tags}`;
+		$("market").innerHTML = `<thead><tr><th>Good</th><th>Price</th><th>vs base</th><th>Stock</th><th>Made a day</th><th>Sold a day</th></tr></thead><tbody>${m.map((r, i) => {
+			const t = Math.max(-1, Math.min(1, Math.log2(r.price / r.base) / 2)), w = Math.abs(t) * 50;
+			return `<tr class="${i === good ? "sel" : ""}" data-g="${i}"><td>${r.good} <span class="unit">/ ${r.unit}</span></td><td>${fmt(r.price)}</td>
+      <td><span class="cmp"><i style="${t < 0 ? `right:50%;width:${w}%;background:${C.cheap}` : `left:50%;width:${w}%;background:${C.dear}`}"></i></span> ${(r.price / r.base).toFixed(2)}×</td>
+      <td>${isFinite(r.days) ? `${Math.round(r.days)} d` : "–"}</td><td>${num(r.made, 2)}</td><td>${num(r.sold, 2)}</td></tr>`;
+		}).join("")}</tbody>`;
+		$("silknote").innerHTML = `Colour is rank: only royalty buy coloured silk. A coloured kimono here would cost <b>${fmt(garmentPrice(L, sel, "kimono"))}</b>, a coloured obi <b>${fmt(garmentPrice(L, sel, "obi"))}</b>.`;
+	}
+	$("market").addEventListener("click", (e) => {
+		const tr = e.target.closest("tr[data-g]");
+		if (!tr) return;
+		good = +tr.dataset.g;
+		$("good").value = good;
+		drawAll();
+	});
+	let chartPts = null;
+	function drawChart() {
+		const w = chart.width, h = chart.height, pad = {
+			l: 70,
+			r: 30,
+			t: 12,
+			b: 26
+		}, G = GOODS.length, base = GOOD[GOODS[good]].base;
+		cg.clearRect(0, 0, w, h);
+		$("ctitle").textContent = `${cap(GOODS[good])} in ${L.regions[sel].name}, mon a ${GOOD[GOODS[good]].unit}`;
+		if (hist.length < 2) {
+			chartPts = null;
+			return;
+		}
+		const mine = hist.map((s) => s.a[sel * G + good]), mean = hist.map((s) => {
+			let t = 0;
+			for (let r = 0; r < E.regions.length; r++) t += s.a[r * G + good];
+			return t / E.regions.length;
+		});
+		let hi = Math.max(base * 1.2, ...mine, ...mean), lo = 0;
+		const step = niceStep(hi / 4);
+		hi = Math.ceil(hi / step) * step;
+		const h0 = hist[0].h, h1 = hist[hist.length - 1].h, X = (t) => pad.l + (t - h0) / Math.max(1, h1 - h0) * (w - pad.l - pad.r), Y = (v) => pad.t + (1 - (v - lo) / (hi - lo)) * (h - pad.t - pad.b);
+		cg.font = "12px Figtree, system-ui, sans-serif";
+		cg.textBaseline = "middle";
+		for (let v = 0; v <= hi + 1e-9; v += step) {
+			cg.fillStyle = C.rule;
+			cg.fillRect(pad.l, Math.round(Y(v)), w - pad.l - pad.r, 1);
+			cg.fillStyle = C.muted;
+			cg.textAlign = "right";
+			cg.fillText(fmt(v), pad.l - 6, Y(v));
+		}
+		const per = h1 - h0 > TIME.HOURS_PER_DAY * 112 * 1.5 ? 112 : 28;
+		cg.textAlign = "center";
+		cg.textBaseline = "top";
+		for (let d = Math.ceil(h0 / 24 / per) * per; d * 24 <= h1; d += per) {
+			const c = calendar(d * 24);
+			cg.fillStyle = C.muted;
+			if (X(d * 24) > w - 24) continue;
+			cg.fillText(per === 112 ? `year ${c.year}` : `${c.season} ${c.year}`, X(d * 24), h - pad.b + 6);
+		}
+		cg.setLineDash([2, 3]);
+		cg.strokeStyle = C.faint;
+		cg.lineWidth = 1;
+		cg.beginPath();
+		cg.moveTo(pad.l, Y(base));
+		cg.lineTo(w - pad.r, Y(base));
+		cg.stroke();
+		cg.setLineDash([5, 4]);
+		line(mean, C.muted);
+		cg.setLineDash([]);
+		line(mine, C.cyan);
+		function line(arr, c) {
+			cg.strokeStyle = c;
+			cg.lineWidth = 2;
+			cg.lineJoin = "round";
+			cg.beginPath();
+			arr.forEach((v, i) => i ? cg.lineTo(X(hist[i].h), Y(v)) : cg.moveTo(X(hist[i].h), Y(v)));
+			cg.stroke();
+		}
+		const last = hist.length - 1;
+		cg.fillStyle = C.cyan;
+		cg.beginPath();
+		cg.arc(X(hist[last].h), Y(mine[last]), 3.5, 0, 7);
+		cg.fill();
+		chartPts = {
+			X,
+			Y,
+			mine,
+			mean,
+			pad,
+			w,
+			h
+		};
+		$("clegend").innerHTML = `<span class="legend"><span class="sw" style="background:${C.cyan}"></span>${L.regions[sel].name}</span><span class="legend"><span class="sw" style="background:${C.muted}"></span>mean of all regions</span><span class="legend"><span class="sw" style="border-top:2px dotted ${C.faint};height:0"></span>base price</span>`;
+	}
+	function niceStep(x) {
+		const p = Math.pow(10, Math.floor(Math.log10(x))), f = x / p;
+		return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p;
+	}
+	chart.addEventListener("mousemove", (e) => {
+		if (!chartPts) return;
+		const r = chart.getBoundingClientRect(), k = chart.width / r.width, x = (e.clientX - r.left) * k;
+		let i = 0, bd = 1e9;
+		hist.forEach((s, j) => {
+			const dx = Math.abs(chartPts.X(s.h) - x);
+			if (dx < bd) {
+				bd = dx;
+				i = j;
+			}
+		});
+		drawChart();
+		cg.fillStyle = C.faint;
+		cg.fillRect(Math.round(chartPts.X(hist[i].h)), chartPts.pad.t, 1, chartPts.h - chartPts.pad.t - chartPts.pad.b);
+		const c = calendar(hist[i].h), tip = $("ctip");
+		tip.innerHTML = `Day ${c.dayOfSeason} of ${c.season}, year ${c.year}<br><span style="color:${C.cyan}">■</span> ${L.regions[sel].name}: <b>${fmt(chartPts.mine[i])}</b><br><span style="color:${C.muted}">■</span> all regions: <b>${fmt(chartPts.mean[i])}</b>`;
+		tip.hidden = false;
+		tip.style.left = Math.min(chartPts.X(hist[i].h) / k + 12, r.width - 220) + "px";
+		tip.style.top = "8px";
+	});
+	chart.addEventListener("mouseleave", () => {
+		$("ctip").hidden = true;
+		drawChart();
+	});
+	function drawLord() {
+		const reg = L.regions[sel], a = reg.lord != null && L.actors[reg.lord], l = a && E.lords[a.id], R = E.regions[sel];
+		if (!a || !l) {
+			$("lord").innerHTML = `<p>No lord rules here: the seat is an outlaw camp. Nobody taxes the land; the camps rob the roads instead.</p>`;
+			return;
+		}
+		$("lord").innerHTML = `<dl><dt>Lord</dt><dd>${nameOf(a)}, ${a.cls}</dd><dt>Rank</dt><dd><b>${Math.round(l.koku).toLocaleString()} koku</b>, the yield of all his land</dd>
+    <dt>Tax this year</dt><dd>${l.taxIn.toFixed(1)} koku${l.taxOut ? `, ${l.taxOut.toFixed(1)} sent up` : ""}</dd><dt>Granary</dt><dd>${l.granary.toFixed(1)} koku, sold through the year</dd>
+    <dt>Purse</dt><dd>${fmt(worth(a.money))} (${Math.round(a.money.mon)} mon, ${a.money.ryo} ryō)</dd>
+    <dt>His men</dt><dd>${R.unpaid ? "<span class=\"pill warn\">paid short</span>" : "<span class=\"pill good\">paid</span>"}</dd>
+    <dt>Next harvest</dt><dd>in ${daysToHarvest(calendar(L.hour))} days</dd></dl>
+    <div class="bar"><button type="button" id="war">${atWar(L, sel) ? "At war" : "Declare war (60 days)"}</button></div>
+    <p class="note">War arms and feeds his men: weapons, horses and rice run short and dear.</p>`;
+		$("war").onclick = () => {
+			war(L, sel, 60);
+			drawAll();
+		};
+	}
+	function drawPurse() {
+		const p = L.actors[L.player], z = zoneAt(L, ...p.at), seat = L.regions[z.region].seat, B = burden(p.money), kg = weightOf(p.money), changer = isChanger(L, ...seat);
+		const ticks = LOAD.filter((t) => t.upto < 1e6).map((t) => `<span style="left:${t.upto / 20 * 100}%">${t.upto} kg</span>`).join("");
+		const acct = accounts(L, p.id);
+		$("purse").innerHTML = `<dl><dt>Carried</dt><dd><b>${Math.round(p.money.mon).toLocaleString()} mon</b> · ${p.money.silver} monme silver · ${p.money.ryo} ryō</dd><dt>Worth</dt><dd>${fmt(worth(p.money))}</dd>
+    <dt>Weight</dt><dd>${kg.toFixed(2)} kg: <span class="pill ${B.name === "light" ? "good" : B.name === "laden" ? "warn" : "bad"}">${B.name}</span> speed ×${B.speed}${B.dodge ? "" : ", no slide or jump"}</dd>
+    <dt>With the changer</dt><dd>${acct.length ? acct.map((x) => `${fmt(x.worth)} at ${zoneAt(L, ...x.town).name}`).join(", ") : "nothing"}</dd></dl>
+    <div class="weight" aria-label="Weight of coin carried"><i style="width:${Math.min(100, kg / 20 * 100)}%"></i>${LOAD.filter((t) => t.upto < 1e6).map((t) => `<b style="left:${t.upto / 20 * 100}%"></b>`).join("")}</div><div class="ticks">${ticks}</div>
+    <div class="bar"><button type="button" id="loot">Loot 800 mon</button><button type="button" id="rice">Buy a koku of rice</button>
+      <button type="button" id="chg" ${changer ? "" : "disabled"}>Change 1,000 mon for gold</button><button type="button" id="dep" ${changer ? "" : "disabled"}>Bank all copper</button><button type="button" id="wd" ${changer ? "" : "disabled"}>Take it back</button></div>
+    <p class="note" id="pnote">A string of 1,000 mon weighs 3.75 kg; the same worth in gold, 18 g. ${changer ? `The money-changer is in ${zoneAt(L, ...seat).name}: 2% to change coin, 1% to hold it and ½% a season.` : "No money-changer in this region: its seat is a camp."}</p>`;
+		const note = (t) => {
+			$("pnote").textContent = t;
+		};
+		$("loot").onclick = () => {
+			const ok = give(L, p.id, 800);
+			drawPurse();
+			drawBooks();
+			note(ok ? "Picked up 800 mon from the fallen: coin from outside the ledger, counted as loot." : "Too heavy: he cannot carry more coin.");
+		};
+		$("rice").onclick = () => {
+			const c = buy(L, p.id, z.region, "rice", 1);
+			drawPurse();
+			drawMarket();
+			note(c ? `Bought a koku of rice for ${fmt(c)}.` : "He cannot pay for it, or the market is out of rice.");
+		};
+		$("chg").onclick = () => {
+			const out = exchange(L, p.id, ...seat, "mon", 1e3, "ryo");
+			drawPurse();
+			note(out ? `Changed 1,000 mon of copper (3.75 kg) for ${out} ryō of gold (18 g); the changer kept 20 mon.` : "He needs 1,000 mon of copper to change.");
+		};
+		$("dep").onclick = () => {
+			const n = Math.floor(p.money.mon);
+			const v = n > 0 && deposit(L, p.id, ...seat, { mon: n });
+			drawPurse();
+			note(v ? `Banked ${n} mon; the changer took 1%.` : "No copper to bank.");
+		};
+		$("wd").onclick = () => {
+			const a = E.banks[seat.join(",")] && E.banks[seat.join(",")][p.id];
+			const c = a && {
+				mon: Math.floor(a.mon),
+				silver: a.silver,
+				ryo: a.ryo
+			};
+			const v = c && withdraw(L, p.id, ...seat, c);
+			drawPurse();
+			note(v === false || !c ? "Nothing to take back, or too heavy to carry." : "Took it all back.");
+		};
+	}
+	function drawBooks() {
+		const m = moneySupply(L), parts = [
+			[
+				"purses",
+				m.purses,
+				C.cyan
+			],
+			[
+				"guilds",
+				m.guild,
+				C.dear
+			],
+			[
+				"temples",
+				m.temple,
+				C.good
+			],
+			[
+				"pools owed to workers",
+				m.pools,
+				C.muted
+			]
+		];
+		const tot = parts.reduce((s, [, v]) => s + Math.max(0, v), 0), Y = E.years.slice(-4).reverse(), hungry = E.regions.reduce((s, R) => s + R.hungry, 0);
+		$("books").innerHTML = `<p>All the coin in the world: <b>${fmt(m.total)}</b>. ${E.caravans.length} caravans on the road; ${E.regions.filter((R) => R.famine).length} regions in famine; ${Math.round(hungry)} people short of rice.</p>
+    <div class="stack">${parts.map(([, v, c]) => `<i style="flex:${Math.max(0, v) / tot};background:${c}"></i>`).join("")}</div>
+    <div class="legend">${parts.map(([n, v, c]) => `<span class="legend"><span class="sw" style="background:${c}"></span>${n} ${fmt(v)}</span>`).join("")}</div>
+    ${Y.length ? `<div class="scroll"><table><thead><tr><th>Year</th><th>Minted</th><th>Looted</th><th>To the gods</th><th>Buried, lost</th><th>All money</th></tr></thead><tbody>${Y.map((y) => `<tr><td>${y.year}</td><td>${fmt(y.mint)}</td><td>${fmt(y.loot)}</td><td>${fmt(y.temple)}</td><td>${fmt(y.buried)}</td><td>${fmt(y.total)}</td></tr>`).join("")}</tbody></table></div>` : "<p class=\"note\">The first year's books close at the new year.</p>"}`;
+	}
+	function drawFeed() {
+		const rn = (r) => L.regions[r] ? L.regions[r].name : "?", ev = [];
+		for (let i = L.log.length - 1; i >= 0 && ev.length < 14; i--) {
+			const e = L.log[i];
+			if (!e.type.startsWith("econ.") || e.type === "econ.harvest") continue;
+			const c = calendar(e.h), t = {
+				"econ.famine": `Famine in ${rn(e.region)}: rice at ${fmt(e.price)} a koku`,
+				"econ.famine.end": `The famine in ${rn(e.region)} is over`,
+				"econ.drought": `Drought in ${rn(e.region)}: the harvest at ×${e.q}`,
+				"econ.war": `War in ${rn(e.region)}`,
+				"econ.unpaid": `The lord of ${rn(e.region)} can pay his men only ${Math.round(e.share * 100)}%`,
+				"econ.caravan.robbed": `A caravan of ${e.good} from ${rn(e.from)} robbed near ${rn(e.region)} (${fmt(e.value)})`,
+				"econ.year": `Year ${e.year} closed: ${fmt(e.total)} in the world`
+			}[e.type] || e.type;
+			ev.push(`<div><time>${c.season.slice(0, 3)} ${c.dayOfSeason}, y${c.year}</time><span>${t}</span></div>`);
+		}
+		$("feed").innerHTML = ev.join("") || "<p class=\"note\">Nothing yet. Press Play.</p>";
+	}
+	function drawWealth() {
+		const by = {};
+		for (const h of index(L).hh) {
+			let v = 0;
+			for (const a of h.m) if (a.alive) v += worth(a.money);
+			(by[h.head.cls] = by[h.head.cls] || []).push(v);
+		}
+		const rows = Object.entries(by).map(([k, l]) => {
+			l.sort((a, b) => a - b);
+			return {
+				k,
+				n: l.length,
+				mean: l.reduce((s, v) => s + v, 0) / l.length,
+				med: l[l.length >> 1],
+				poor: l.filter((v) => v < 20).length / l.length
+			};
+		}).sort((a, b) => b.mean - a.mean);
+		$("wealth").innerHTML = `<thead><tr><th>Head of household</th><th>Households</th><th>Mean</th><th>Median</th><th>Under 20 mon</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${r.k}</td><td>${r.n}</td><td>${fmt(r.mean)}</td><td>${fmt(r.med)}</td><td>${Math.round(r.poor * 100)}%</td></tr>`).join("")}</tbody>`;
+	}
+	function drawAll(full) {
+		const c = calendar(L.hour);
+		$("clock").textContent = `Day ${c.dayOfSeason} of ${c.season}, year ${c.year}`;
+		drawMap();
+		drawMarket();
+		drawChart();
+		drawLord();
+		drawPurse();
+		drawFeed();
+		drawBooks();
+		if (full || frame % 8 === 0) drawWealth();
+	}
+	const zoneFromEvent = (e) => {
+		const r = map.getBoundingClientRect(), k = map.width / r.width;
+		return [Math.floor((e.clientX - r.left) * k / Z), Math.floor((e.clientY - r.top) * k / Z)];
+	};
+	map.addEventListener("mousemove", (e) => {
+		const z = zoneAt(L, ...zoneFromEvent(e)), tip = $("tip");
+		if (!z || z.region < 0) {
+			tip.hidden = true;
+			return;
+		}
+		const R = E.regions[z.region], g = GOODS[good];
+		tip.innerHTML = `<b>${L.regions[z.region].name}</b>${z.name ? ` · ${z.name}` : ""}<br>${g}: ${fmt(R.price[good])} a ${GOOD[g].unit} (${(R.price[good] / GOOD[g].base).toFixed(2)}×)<br>rice: ${fmt(R.price[0])} a koku`;
+		tip.hidden = false;
+		const r = map.getBoundingClientRect();
+		tip.style.left = Math.min(e.clientX - r.left + 14, r.width - 240) + "px";
+		tip.style.top = Math.min(e.clientY - r.top + 14, r.height - 80) + "px";
+	});
+	map.addEventListener("mouseleave", () => $("tip").hidden = true);
+	map.addEventListener("click", (e) => {
+		const z = zoneAt(L, ...zoneFromEvent(e));
+		if (z && z.region >= 0) {
+			sel = z.region;
+			drawAll(true);
+		}
+	});
+	$("good").addEventListener("change", () => {
+		good = +$("good").value;
+		drawAll();
+	});
+	$("play").addEventListener("click", () => {
+		playing = !playing;
+		$("play").textContent = playing ? "Pause" : "Play";
+		$("play").classList.toggle("on", playing);
+		if (playing) requestAnimationFrame(loop);
+	});
+	$("year").addEventListener("click", () => {
+		for (let i = 0; i < 16; i++) step(7);
+		flash = flash.slice(-6);
+		drawAll(true);
+	});
+	$("gen").addEventListener("click", () => make(+$("seed").value || 1));
+	function loop() {
+		if (!playing) return;
+		frame++;
+		step(+$("speed").value);
+		drawAll();
+		requestAnimationFrame(loop);
+	}
+	make(+$("seed").value);
+	window.__world = () => L;
+	//#endregion
+})();
+
+</script>
