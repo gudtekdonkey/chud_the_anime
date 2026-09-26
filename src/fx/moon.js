@@ -23,10 +23,10 @@ export function updateMoons(dt) {
       // echoes: smaller see-through arcs peel off behind the sweep; motes stream off its white-hot front
       if ((m.echo -= dt) <= 0) { m.echo = .035; crescent(m.x - m.face * rr(5, 12), m.y + rr(-4, 4), m.face, rr(-.35, .35), 1, m.R * rr(.4, .65), 4, .03, .22, .5); }
       for (let i = 0; i < 3; i++) { const [x, y] = moonPt(m, A, m.R - rr(0, m.d)), life = rr(.25, .5);
-        frags.push({ x, y, w: 1 + (Math.random() * 2 | 0), col: i % 2 ? '#ffffff' : COL.fx2, vx: -m.face * rr(10, 40), vy: rr(-20, 4), life, max: life, jx: 0, on: true }); } }
+        frags.push({ x, y, w: 1 + (Math.random() * 2 | 0), col: i % 2 ? COL.core : COL.fx2, vx: -m.face * rr(10, 40), vy: rr(-20, 4), life, max: life, jx: 0, on: true }); } }
     if (!m.hit && sw >= .5) { m.hit = true; const before = new Set(P.struck); hit(m.twin ? 'cmT' : 'cm', m.x + m.face * m.R * .45, m.y, m.R * 1.05); m.struck = [...P.struck].filter(d => !before.has(d)); }
     if (m.age >= m.SW && m.age < m.SW + m.HOLD && Math.random() < .7) { const [x, y] = moonPt(m, rr(-1.6, 1.6), m.R - rr(0, 3)), life = rr(.3, .6);
-      frags.push({ x, y, w: 1, col: Math.random() < .5 ? COL.fx2 : '#ffffff', vx: m.face * rr(2, 10), vy: -rr(6, 16), life, max: life, jx: 0, on: true }); }
+      frags.push({ x, y, w: 1, col: Math.random() < .5 ? COL.fx2 : COL.core, vx: m.face * rr(2, 10), vy: -rr(6, 16), life, max: life, jx: 0, on: true }); }
     if (!m.shat && m.age >= m.SW + m.HOLD) { m.shat = true; shatter(m); } }
   for (let i = moons.length - 1; i >= 0; i--) if (moons[i].age > moons[i].SW + moons[i].HOLD + moons[i].GLOW) moons.splice(i, 1);
 }
@@ -35,8 +35,8 @@ function shatter(m) {
   for (let i = 0; i < 26 + 20 * m.k; i++) { const a = rr(-1.6, 1.6), [x, y] = moonPt(m, a, m.R - rr(0, m.d)), life = rr(.35, .8);
     frags.push({ x, y, w: 2 + (Math.random() * 4 | 0), col: FRAG_COLS[i % 3], vx: m.face * Math.cos(a) * rr(8, 40), vy: Math.sin(a) * rr(8, 26) - rr(0, 8), life, max: life, jx: 0, on: true }); }
   for (let i = 0; i < 16 + 12 * m.k; i++) { const a = rr(-1.6, 1.6), [x, y] = moonPt(m, a, m.R - rr(0, m.d));
-    spark(x, y, m.face * Math.cos(a) * rr(20, 70), Math.sin(a) * rr(10, 40) - rr(10, 30), rr(.4, .8), ['#ffffff', COL.fx2, COL.fx][i % 3], true, 90); }
-  ring(m.x + m.face * m.R * .4, m.fy + 1, m.R * .5, m.R * .16, .3, 1.2, '#ffffff');
+    spark(x, y, m.face * Math.cos(a) * rr(20, 70), Math.sin(a) * rr(10, 40) - rr(10, 30), rr(.4, .8), [COL.core, COL.fx2, COL.fx][i % 3], true, 90); }
+  ring(m.x + m.face * m.R * .4, m.fy + 1, m.R * .5, m.R * .16, .3, 1.2, COL.core);
   if (T('moon', 'shards')) { const before = new Set(P.struck); hit('cmS' + (m.twin ? 't' : ''), m.x + m.face * m.R * .45, m.fy - 6, m.R * .9); for (const d of P.struck) if (!before.has(d) && !m.struck.includes(d)) m.struck.push(d); }   // power II: the shatter cuts too
   if (m.struck.length) { S.hitstop = .06; S.shake = 2 / 60; for (const d of m.struck) burst(d, 1 + .5 * m.k); }
 }
@@ -59,7 +59,7 @@ export function drawMoon(m) {
   const put = (q, col, al) => { g.globalAlpha = al; g.fillStyle = col; for (let i = 0; i < q.length; i += 2) g.fillRect(q[i], q[i + 1], 1, 1); };
   const fade = 1 - gk;
   put(shim, COL.fx2, .35 * fade); put(body, COL.fx, .45 * fade); put(flow, COL.fx2, .6 * fade); put(trail, COL.fx2, .9 * fade);
-  put(edge, gk ? COL.fx : COL.eye, fade); put(core, gk ? COL.fx2 : '#ffffff', 1 - gk * .75); put(tip, '#ffffff', 1);
+  put(edge, gk ? COL.fx : COL.eye, fade); put(core, gk ? COL.fx2 : COL.core, 1 - gk * .75); put(tip, COL.core, 1);
   g.globalAlpha = 1;
 }
 // its light on the floor: a dithered pool under the arc and a flattened reflection of its rim, fading with the afterglow

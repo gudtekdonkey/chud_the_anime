@@ -1,6 +1,11 @@
 import { FW, FH, OX, OY } from '../config.js';
 import { g } from '../screen.js';
+import { RC } from '../config.js';
 import { rig } from '../rig/rig.js';
+import { port, DIRS } from '../rig/port.js';
+import { drawBody3d } from '../rig/body3d.js';
+import { solve } from '../wardrobe/skeleton.js';
+import { Raster, packPal } from '../wardrobe/raster.js';
 import { eyeDark } from './enemy-body.js';
 import { spriteTo, solid } from './sprite.js';
 
@@ -9,10 +14,21 @@ const PAL = { K: '#3a2e31', D: '#5a4a4e', E: '#ff5a4a', e: '#7a2d27', W: '#cfd4d
 const PAL_OUT = { ...PAL, E: '#2b2023' };   // the eye gone out
 const cv = document.createElement('canvas'); cv.width = FW; cv.height = FH;
 const cg = cv.getContext('2d'), sheet = { img: cv, fw: FW, fh: FH, n: 1, ox: OX, oy: OY };
+// off the side (e.view, set as he turns to the ronin), his pose runs through the port and rig v2's body draws it, bare-headed.
+// The dead stay side on: the fall, the thud and the pieces are built side on.
+const YAW = Object.fromEntries(DIRS.map(d => [d.id, d.yaw]));
+const R3 = new Raster(FW, FH, OX, OY, .3, packPal({ ...RC, ...PAL })), R3_OUT = new Raster(FW, FH, OX, OY, .3, packPal({ ...RC, ...PAL_OUT }));
+function frame(e) {
+  const p = e.body.out, out = eyeDark(e.body), yaw = e.alive && e.view && e.view !== 'E' ? YAW[e.view] : 0;
+  if (!yaw) { cg.clearRect(0, 0, FW, FH); rig(cg, 0, p, out ? PAL_OUT : PAL); return sheet; }
+  const R = out ? R3_OUT : R3; R.clear();
+  drawBody3d(R, solve(port(p), yaw), { bare: true, blink: false });
+  return { ...sheet, img: R.flush() };
+}
 
 export function drawEnemy(e) {
   if (e.alpha <= 0 || e.held || e.state === 'gone') return;
-  cg.clearRect(0, 0, FW, FH); rig(cg, 0, e.body.out, eyeDark(e.body) ? PAL_OUT : PAL);
+  const sheet = frame(e);
   const x = e.x + (e.shk > 0 ? ((e.shk * 60 | 0) % 2 ? 1 : -1) : 0);   // he shakes in the hit pause
   const down = e.body.out.hy >= 8;
   g.globalAlpha = e.alpha;

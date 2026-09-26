@@ -2,6 +2,8 @@ import { FW, FH, OX, OY, RC } from '../config.js';
 import { rig } from '../rig/rig.js';
 import { pz, ease } from '../rig/pose.js';
 import { rr } from '../fx/util.js';
+import { weapon } from '../weapons/weapons.js';
+import { EL, ec } from '../fx/element.js';
 
 // ---- Execution bodies: the rig drawn live from a pose (ronin or enemy), and the enemy cut into real pieces of his own pixels ----
 // the enemy samurai: his body, no hat or mantle, in a darker red-grey (from prototypes/14-executions-batch-1.html)
@@ -10,13 +12,15 @@ const ERC_OUT = { ...ERC, E: '#2b2023' };   // his eye gone out
 export const EYE_ON = 'rgb(255,90,74)', EYE_OFF = 'rgb(43,32,35)';
 const off = document.createElement('canvas'); off.width = FW; off.height = FH; const og = off.getContext('2d', { willReadFrequently: true });
 const tint = document.createElement('canvas'); tint.width = FW; tint.height = FH; const tg = tint.getContext('2d');
-function paint(pose, enemy, dark) { og.clearRect(0, 0, FW, FH); rig(og, 0, enemy ? { ...pose, bare: true } : pose, enemy ? dark ? ERC_OUT : ERC : RC); return off; }
+// the ronin carries his equipped weapon through the executions (katana poses, run through the weapon's adapt); enemies keep the katana
+function armed(pose) { const w = weapon(); if (w.id === 'katana') return pose; return { ...(w.adapt ? w.adapt(pose) : pose), wp: w.art }; }
+function paint(pose, enemy, dark) { og.clearRect(0, 0, FW, FH); rig(og, 0, enemy ? { ...pose, bare: true } : armed(pose), enemy ? dark ? ERC_OUT : ERC : RC); return off; }
 // R: { x, y, z, face, pose, enemy, dark (his eye out), col (solid tint), glitch (0..2: rows jump sideways) }
 export function figure(g, R, alpha = 1) {
   let img = paint(R.pose, R.enemy, R.dark);
-  if (R.col) { tg.clearRect(0, 0, FW, FH); tg.drawImage(img, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = R.col; tg.fillRect(0, 0, FW, FH); tg.globalCompositeOperation = 'source-over'; img = tint; }
+  if (R.col) { tg.clearRect(0, 0, FW, FH); tg.drawImage(img, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = ec(R.col); tg.fillRect(0, 0, FW, FH); tg.globalCompositeOperation = 'source-over'; img = tint; }
   g.save(); g.globalAlpha *= alpha; g.translate(Math.round(R.x), Math.round(R.y - (R.z || 0))); if (R.face < 0) g.scale(-1, 1);
-  if (R.glitch) { for (let y = 0; y < FH;) { const h = 1 + (Math.random() * 3 | 0), o = Math.random() < R.glitch ? Math.round(rr(-5, 5) * R.glitch) : 0; g.drawImage(img, 0, y, FW, h, -OX + o, y - OY, FW, h); y += h; } }
+  if (R.glitch && EL.cur.glitch) { for (let y = 0; y < FH;) { const h = 1 + (Math.random() * 3 | 0), o = Math.random() < R.glitch ? Math.round(rr(-5, 5) * R.glitch) : 0; g.drawImage(img, 0, y, FW, h, -OX + o, y - OY, FW, h); y += h; } }
   else g.drawImage(img, -OX, -OY);
   g.restore();
 }

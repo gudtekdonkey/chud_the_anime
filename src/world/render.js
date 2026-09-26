@@ -5,6 +5,8 @@ import { SHEETS } from '../anims/sheets.js';
 import { drawDebris } from '../fx/debris.js';
 import { drawFloorFx, drawFx } from '../fx/fx.js';
 import { sgn } from '../fx/util.js';
+import { cc } from '../fx/element.js';
+import { COL } from '../config.js';
 import { frameOf } from '../player/actions.js';
 import { drawPlayer, drawMirror } from '../player/draw.js';
 import { drawBloodFloor, drawDrops } from '../fx/blood.js';
@@ -34,14 +36,14 @@ export function render() {
   drawSmoke(true);   // a thinner haze in front of everyone
   drawFx(); drawDrops(); drawStagesTop(); drawPrompt(t);
   for (const q of parts) {
-    g.globalAlpha = Math.min(1, q.life / q.max * 1.6); g.fillStyle = q.col;
+    g.globalAlpha = Math.min(1, q.life / q.max * 1.6); g.fillStyle = cc(q.col);
     g.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);
     if (q.streak) g.fillRect(Math.round(q.x - q.vx * .012), Math.round(q.y - q.vy * .012), 1, 1);
   }
   g.globalAlpha = 1;
   g.restore();
   drawItemsOver();   // unshaken, like the HUD: the lock-on and prompt stay put while the world shakes
-  if (S.scr.t > 0) { g.globalAlpha = S.scr.a * S.scr.t / S.scr.max; g.fillStyle = '#e4fffb'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+  if (S.scr.t > 0) { g.globalAlpha = S.scr.a * S.scr.t / S.scr.max; g.fillStyle = COL.flash; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   if (S.impact > 0) impactFrame(S.impact === 1);
   drawHud();
   const chg = P.charge != null && !P.cv ? ` · charge <b>${Math.round(P.charge * 100)}%</b>` : P.cv ? ` · ${P.cv.name} at <b>${Math.round(P.pow * 100)}%</b>` : '';

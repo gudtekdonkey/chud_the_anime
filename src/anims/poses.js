@@ -2,6 +2,7 @@ import { pz, HILT, lin, keyed } from '../rig/pose.js';
 import { gaitFrames } from '../traits/bake.js';
 import { BASE } from '../traits/knobs.js';
 import { ITEM_POSES } from './item-poses.js';
+import { comboPoses } from './combo-poses.js';
 
 // ---- Poses, one per frame ----
 const run8 = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);
@@ -20,6 +21,15 @@ const J1_TAIL = [
   [.22, J1_FOLLOW],
   [.36, pz({ ...J1_FOLLOW, lean: .56, chest: .46 })],
   [.5, GUARD]];
+const J2_TOP = pz({ hx: 2, hy: 1, lean: -.2, chest: -.42, fl: [.9, .4], bl: [-.8, .2], fa: [2.88, -.1], sword: -1.82, ba: [2.55, .1], hat: 1 });
+// the katana's arms for J3 to J6: blade over the back shoulder, the level sweep with the free arm flung back, held low behind
+//   for the kick, trailing low in the crouch, straight up at the top of the launch, low at the hip to set, then laid out behind him on one knee
+const KATANA_ARMS = {
+  wind: { fa: [1.8, 1.5], ba: [.9, 1.4], sword: 2.9 }, sweep: { fa: [1.7, 0], ba: [-1.4, .2], sword: .1 },
+  kick: { fa: [.3, .6], ba: [-1.2, .3], sword: 2.6 }, crouch: { fa: [.3, .2], ba: [-.5, .3], sword: 2.2 },
+  top: { fa: [3.0, -.1], ba: [-1.2, .2], sword: -1.6 }, set: { fa: [.4, 1.2], ba: [-.1, .8], sword: 2.8 },
+  fin: { fa: [1.25, 0], ba: [-.9, .3], sword: 2.75 },
+};
 const LUNGE = pz({ hx: 3, hy: 2, lean: .55, fl: [1.0, .9], bl: [-.95, .1] });
 // O: blade raised high behind the head, feet planted wide; the release brings it all the way down through the front
 const MOON_HOLD = pz({ hx: -1, hy: 3, lean: -.08, chest: -.28, fl: [.6, 1.0], bl: [-.7, .45], fa: [2.75, .35], ba: [2.45, .55], sword: -2.25 });
@@ -65,6 +75,8 @@ export const POSES = {
     [.2, pz({ hx: 2, hy: 1, lean: -.22, chest: -.45, fl: [.9, .4], bl: [-.8, .2], fa: [2.9, -.1], sword: -1.85, ba: [2.6, .1], hat: 1, flutter: 1 })],
     [.34, pz({ hx: 2, hy: 1, lean: -.2, chest: -.42, fl: [.9, .4], bl: [-.8, .2], fa: [2.88, -.1], sword: -1.82, ba: [2.55, .1], hat: 1 })],
     [.5, GUARD]], 30),
+  // J3 to J6: four different attacks as his basic skill grows (anims/combo-poses.js, player/combo.js)
+  ...comboPoses(KATANA_ARMS, J2_TOP, GUARD),
   moonHold: [0, .3, .7, 1, 1, .7, .3, 0].map((b, i) => pz({ ...MOON_HOLD, breath: b, sword: MOON_HOLD.sword - b * .05, flutter: i === 3 || i === 4 ? 1 : 0 })),
   moon: keyed([[0, MOON_HOLD],
     [.05, pz({ hx: 2, hy: 4, lean: .5, chest: .4, fl: [1.0, 1.15], bl: [-1.0, .15], fa: [1.6, .05], sword: .1, ba: [1.1, .2], hat: 1, flutter: 1 }), lin],
@@ -134,4 +146,5 @@ export const POSES = {
   ],
 };
 // which frames get the baked slice glitch, and how hard
-export const GLF = { idleGlitch: { 2: .8, 3: 1, 4: .8, 5: .5 }, tele: { 1: .4, 2: 1.1, 3: 1.9, 4: 1.4, 5: .5 }, double: { 2: .8, 3: 1.7 }, death: { 8: 1.2, 9: 2.4 } };
+export const GLF = { idleGlitch: { 2: .8, 3: 1, 4: .8, 5: .5 }, tele: { 1: .4, 2: 1.1, 3: 1.9, 4: 1.4, 5: .5 }, double: { 2: .8, 3: 1.7 }, death: { 8: 1.2, 9: 2.4 },
+  slash6: { 3: 1.2, 4: 1.9 } };   // the flash step: he breaks into slices as he goes

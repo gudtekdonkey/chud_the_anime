@@ -3,15 +3,18 @@ import { g } from '../screen.js';
 import { voids } from '../state.js';
 import { rr } from './util.js';
 import { ease } from '../rig/pose.js';
+import { EL } from './element.js';
 
 // ---- Cross Rift's tear: a cut that opens into a jagged slit of void with crawling edges and star-specks inside ----
 export function tear(x0, y0, x1, y1, W) { const L = Math.hypot(x1 - x0, y1 - y0) || 1;
   const v = { x0, y0, x1, y1, W, L, age: 0, shut: null, life: 9, tick: 0, jag: [],
-    stars: Array.from({ length: 4 + (L / 12 | 0) }, () => ({ t: rr(.12, .88), s: rr(-.7, .7), vt: rr(-.12, .12), col: Math.random() < .7 ? COL.fx : '#ffffff' })) };
+    stars: Array.from({ length: 4 + (L / 12 | 0) }, () => ({ t: rr(.12, .88), s: rr(-.7, .7), vt: rr(-.12, .12), col: Math.random() < .7 ? COL.fx : COL.core })) };
   crawl(v); voids.push(v); return v; }
 function crawl(v) { v.jag = Array.from({ length: (v.L / 3 | 0) + 2 }, () => [rr(-1.4, 1.2), rr(-1.4, 1.2)]); } // each lip re-jags on its own, every 2-3 frames
 export function updateVoids(dt) {
   for (const v of voids) { v.age += dt; v.life -= dt; if (--v.tick <= 0) { crawl(v); v.tick = 2 + (Math.random() * 2 | 0); }
+    if (EL.cur.kit && v.shut == null && v.age > .1 && Math.random() < .6) { const t = rr(.15, .85), s = rr(-1, 1) * v.W * .8, dx = (v.x1 - v.x0) / v.L, dy = (v.y1 - v.y0) / v.L;
+      EL.cur.kit.trail(v.x0 + (v.x1 - v.x0) * t - dy * s, v.y0 + (v.y1 - v.y0) * t + dx * s); }   // the tear bleeds the element: fire, goo, spray, wind, motes
     for (const st of v.stars) { st.t += st.vt * dt; if (st.t < .1 || st.t > .9) st.vt *= -1; } }
   for (let i = voids.length - 1; i >= 0; i--) if (voids[i].life <= 0) voids.splice(i, 1);
 }
@@ -36,6 +39,6 @@ export function drawVoid(v) {
   // specks of far-off light drift inside the dark
   if (open > .4) for (const st of v.stars) { const w = open * v.W * Math.pow(Math.sin(Math.PI * st.t), .6) - 1.5; if (w < 1 || Math.random() < .2) continue;
     g.globalAlpha = .9; g.fillStyle = st.col; g.fillRect(Math.round(v.x0 + dx * st.t - uy * st.s * w), Math.round(v.y0 + dy * st.t + ux * st.s * w), 1, 1); }
-  put(lip, COL.eye, .95); put(glint, '#ffffff', 1); put(line0, '#ffffff', 1);
+  put(lip, COL.eye, .95); put(glint, COL.core, 1); put(line0, COL.core, 1);
   g.globalAlpha = 1;
 }

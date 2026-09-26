@@ -20,14 +20,15 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | File | Owns |
 |---|---|
 | `main.js` | Boot, the fixed 60 Hz update loop under `requestAnimationFrame`, the debug hook |
-| `config.js` | `W`/`H`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY`, `SQ` (floor squash) |
+| `config.js` | `W`/`H`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY` (96×64; the rig draws in its old 48×48 box, `RX`/`RY`, shifted by whole pixels), `SQ` (floor squash) |
 | `state.js` | ALL shared mutable state: the player `P`, what he wears (`wear`), `S` (`shake`, `hitstop`, `scr` screen flash, `roomClear`, `banner`, `smoke`: while the static bomb's smoke is up every enemy counts as isolated, `powerTest`: the page's power picker), the inventory `INV` (the HUD reads only this), `parts`, `pops` and every effect list |
 | `screen.js` | The `#game` canvas, its 2D context `g`, the `#hud` line |
 | `input.js` | Keyboard map, touch pad, `held`/`taps`, `readInput()`, the room-clear checkbox |
 | `rig/pose.js` | `pz()` (pose from REST), `HILT`, `lerpP`, `ease`/`lin`, `keyed()` (eased keyframes to frames) |
 | `rig/rig.js` | One side-view pose drawn pixel by pixel from joint angles: `rig(g, fx, p, pal)` onto a canvas with the painted hat and mantle (the samurai, execution pieces), `rigR(R, p)` into a depth raster, each part at its own depth (`Z`), the body only for the wardrobe. The weapon draws through `p.wp`'s hooks |
 | `rig/port.js` | `port(p)`: any side pose to a rig v2 pose (hips follow the stride, chest turns into the blade, head stays on target, hand reaches the hilt); `DIRS`, the eight facings as yaws |
-| `rig/body3d.js` | `drawBody3d`, `drawHat3d`: rig v2's body and hat from any facing, into the wardrobe's `Raster` |
+| `rig/body3d.js` | `drawBody3d`, `drawHat3d`: rig v2's body and hat from any facing, into the wardrobe's `Raster`; the weapon through its art's `d3` |
+| `weapons/art3d.js` | Each weapon from any facing (`KATANA_3D`, `YARI_3D`, `NODACHI_3D`, `TANTO_3D`): `carried`, `held`, `backHeld`, `sheathing`, `offHand`; hung on each art as `d3` |
 | `anims/anims.js` | `ANIMS` (frame count, fps, loop, the moveset "about" text), `GLITCHY` |
 | `anims/item-poses.js` | Poses for the item interactions (pray, take, cut seal, read), the quick-slot uses and Harvest |
 | `anims/poses.js` | `POSES` for every rig animation, the guard and counter stances, `GLF` (baked glitch frames) |
@@ -35,12 +36,14 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `anims/sheets.js` | Bakes every animation to a sheet at load (`SHEETS`, the equipped weapon's, in the default outfit, keeping each frame's pose and glitch), `sliceGlitch`, `dur()`, `rebake` |
 | `weapons/weapons.js` | `WEAPONS`, `weapon()`, `setWeapon(id)` (the API for pickups: bakes once, swaps `SHEETS`), `reach()`, `framesFor` (a weapon's poses, or the katana's run through its `adapt`) |
 | `weapons/katana.js` | `KATANA_ART`: the drawing hooks every weapon's art has (`far`, `stowed`, `held`, `backHeld`, `sheathing`, optional `offHand`, `front`/`sit` rows) |
-| `weapons/yari.js`, `nodachi.js`, `tanto.js` | Each weapon's art, its own poses (cuts, guard, the four side-on stances, what it does with the hilt hand), `reach` and `weight` |
+| `weapons/grip.js` | Shared by weapons: `grip` (two-handed poses from where the fists go), `twoHanded`, `breathe`, the draw and stow for weapons carried on the back (`slungDraw`/`slungStow`, `shoulderDraw`/`shoulderStow`), `runWith` |
+| `weapons/yari.js`, `nodachi.js`, `tanto.js`, `naginata.js`, `kanabo.js`, `kusarigama.js`, `tessen.js`, `bo.js` | Each weapon's art, its own poses (cuts, guard, the four side-on stances, what it does with the hilt hand), `reach` and `weight` |
 | `player/update.js` | The state machine: one `update(dt, inp)` step |
 | `player/actions.js` | `setState`, `once`, stance picking, the two-screen threat check, movement, `ghost`, `frameOf`, `inputDir` |
 | `player/skills.js` | Charging (`chargeUp`), Thousand Cuts (`TC`), Cross Rift (`RIFT`), the dash, `release`/`charged` |
 | `player/mirror.js` | Mirror Meditation: the mirror images' timeline |
 | `player/hits.js` | Hit tests against the enemies, `burst` (the sheath-click payoff) |
+| `player/combo.js` | The J combo ladder (`CUTS`, `comboMax()` from `INV.basic`, landed basic cuts) and Flow (six chained cuts let the next skill on cooldown cast) |
 | `player/cooldowns.js` | `CD` (every active's cooldown), `startCd`, `gate` (refuses a key on cooldown), `onAssassination` (K back in 0.2 s) |
 | `player/qi.js` | The Qi meter's gains (`qiAdd` from hits, `qiFill` from items, which never wakes the storm) and Storm Chain (`chainFrom`) |
 | `player/power.js` | The power tier's effects: `PW` stats (`pw`), each skill's I / II / III numbers (`TIERS`, `T`), `powerCast` (stone at II, ribbons of light at III) |
@@ -56,6 +59,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `traits/knobs.js` | `BASE`: the knobs a personality turns (lean, breath, hands, stride, bounce...), the plain ronin's values; `ARMS` hand targets |
 | `traits/fidgets.js` | `FIDGETS`: small idle actions (tug the hat, crack the neck...) |
 | `traits/traits.js` | `TRAITS`: 52 personality traits as plain data, `GROUPS`, `PRESETS` (ready-made characters) |
+| `traits/cultures.js` | `CULTURES`: each culture's shared trait mix and a pool of personal traits; `personOf(culture, seed)` gives one person's traits |
 | `traits/mix.js` | `mix()`: adds traits by strength into one set of knobs; `defineTrait()`; validates every trait at load |
 | `traits/bake.js` | `bake()`: knobs to idle / walk / run poses. No traits gives today's idle and run exactly |
 | `fx/fx.js` | `updateFx`, `drawFloorFx`, `drawFx`: the effect systems' per-frame update and draw |
@@ -65,6 +69,8 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `fx/debris.js` | Stone chips the storm slam gathers and flings, floor cracks |
 | `fx/moon.js` | The Crescent Moon: sweep, hang, shatter, its light on the floor |
 | `fx/void.js` | Cross Rift's tear in reality |
+| `fx/element.js` | `ELEMENTS` (palette + kit per element), `EL` (the current one), `setElement`, `cc`/`ec` (storm white and cyan to the element's tones) |
+| `fx/matter.js` | The non-lightning elements' matter (flames, goo, drops, gusts, motes), floor stains, the kits `FIRE`/`SLIME`/`WATER`/`WIND`/`PSYCHIC`, `qiFx` |
 | `fx/blood.js` | Blood drops, floor stains and pools |
 | `assassin/targets.js` | The one place K reads enemies from (the enemy API): `targets`, `faceOf`, `hold` (an execution takes one over), `roomFade` |
 | `assassin/markers.js` | Isolation bubbles, link lines, the kill line and the K prompt; `K.pick` (whom K would execute now), `K_RANGE` |
@@ -97,6 +103,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `ui/moveset.js` | The moveset table under the game (from `ANIMS` "about" rows + skill rows) |
 | `ui/personality.js` | The personality picker under the game (remembered in localStorage) |
 | `ui/weapon-picker.js` | The test weapon picker under the game |
+| `ui/element-picker.js` | The element buttons over the game, `[` / `]` to step through them |
 | `ui/strip-tester.js` | "Test a sprite strip": drop a PNG strip in place of any animation |
 | `ui/wardrobe.js` | The wardrobe under the game: one item per slot, outfit presets |
 | `styles.css` / `index.html` | The page; `index.html` holds markup only |
@@ -105,6 +112,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Keep files focused and under about 400 lines. Keep the compact style and the short WHY comments.
 - A weapon changes poses and art only: its frames match the katana's count for every move, so timing, hit beats and effects stay shared. Reach and weight (hit pause, shake) are per weapon, 1 for the katana. A new move needs a pose per weapon (or the weapon's `adapt` covers it).
 - Effects are drawn in world space, never baked into sheets, so they survive real art replacing a placeholder.
+- Effects take their colours from `COL` (never a literal cyan) and throw bolts, sparks and slivers through `zap`/`spark`/`residue`, so every element re-skins them. A new element is a row in `ELEMENTS` plus a kit in `fx/matter.js`.
 
 ## Design rules (from `docs/design-notes.md`)
 
@@ -119,15 +127,16 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, a darker red-grey.
 - Executions are short and brutal, show only the key frames (each leaning into the motion), and cut the enemy into real pieces.
 - Assassination markers: every enemy has an isolation bubble (empty glows cyan; overlapping ones go grey and are joined by a link line); a kill line runs to the nearest enemy he can dash to; the K prompt appears only when that enemy is in range AND outside every other enemy's bubble; lock-on brackets are reserved for big pickups.
-- Skills and keys: move WASD / arrows · hold V walk · J slash (again for the answer cut) · Shift or L slide · Space jump · K glitch teleport, or on a lone enemy in reach an execution · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing) · E tap: the locked-on item's verb, hold near the fallen: Harvest · 1-4 quick slots. Reserved by the design (not built yet): F counter, R Blade Recall, Q Lightning Chain; X becomes Time Slice and C Breath of Qi. Storm Chain is passive: 8 s whenever the Qi meter fills.
+- Skills and keys: move WASD / arrows · hold V walk · J slash (again in the follow-through for the next cut, up to six as landed cuts grow his basic skill) · Shift or L slide · Space jump · K glitch teleport, or on a lone enemy in reach an execution · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing) · E tap: the locked-on item's verb, hold near the fallen: Harvest · 1-4 quick slots. Reserved by the design (not built yet): F counter, R Blade Recall, Q Lightning Chain; X becomes Time Slice and C Breath of Qi. Storm Chain is passive: 8 s whenever the Qi meter fills.
 - Items and HUD (`prototypes/20-items.html`, built as displayed): big items are the only things with lock-on brackets; small pickups magnetise within about 22 px; relics go to the first empty charm slot. Qi from items fills the meter but only a landed hit wakes Storm Chain. Health and Qi are 0..1; Qi is notched in thirds. `INV.power` (1..3) is the I / II / III tier, from relics and upgrades (owner): 1 + shrine upgrades (OFFER 3 shards at a prayed shrine, two at most) + power relics worn, capped at III. Power raises every skill's tier AND scales stats (owner); the numbers live in `player/power.js`.
-- Facing (`P.view`, the port system): idle, walk, run and runArmed face the way he last moved: E, SE, S, NE or N; the west side mirrors the east with `P.face`. Harvest faces N. Every attack, skill and stance is still side on. Guard: the check's "eight facings" step.
+- Facing (`P.view`, the port system): idle, walk, run and runArmed face the way he last moved: E, SE, S, NE or N; the west side mirrors the east with `P.face`. Harvest faces N. Every attack, skill and stance is still side on. The samurai turn the same way toward the ronin (`e.view`, a beat late) while they guard, flinch and stagger; the dead stay side on. Guard: the check's "eight facings" step.
 - Cooldowns (`player/cooldowns.js`): K 3 s (none with no enemy near; 0.2 s after an assassination) · I 2 s, Thousand Cuts 8 s · O 10 s · P 12 s · N 14 s · U 8 s · slide 1 s. J and jump have none.
 
 ## Working conventions
 
 - Iterate on design as standalone pages in `prototypes/`, numbered in order (`34-…html` next). Never edit an old prototype; make a new one.
 - Record every decision the owner makes in `docs/design-notes.md`.
+- Every culture moves through the trait system: a character from a culture gets `setPersonality`/`bake(personOf(culture, seed))`, never hand-made idle or walk poses. A culture's mannerisms go in `CULTURES` (a new mannerism is a new trait or fidget).
 - Personality traits (`src/traits/`) never import player, enemy or clothing code, so any rig character can take them. A new trait is a new entry in `TRAITS`; a new knob goes in `BASE` with the plain ronin's value, so no-trait output never changes.
 - Every new move gets an `ANIMS` row with an `about` text (it fills the moveset table); a skill that plays on another move's frames gets a row in `ui/moveset.js` `SKILL_ROWS`.
 - Tuning numbers, colours and timings change only on purpose, never as a side effect of a refactor.

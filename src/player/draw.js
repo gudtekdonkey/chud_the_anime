@@ -9,6 +9,8 @@ import { DIRS } from '../rig/port.js';
 import { frameOf } from './actions.js';
 import { glowK } from './body.js';
 import { spriteTo, solid } from '../world/sprite.js';
+import { EL } from '../fx/element.js';
+import { dur } from '../anims/sheets.js';
 
 // ---- Drawing him: shadow, reflection, afterimages, the charge rim, the strike flash, the glitch slice; and his mirror images ----
 const buf = document.createElement('canvas'), bg2 = buf.getContext('2d');
@@ -53,9 +55,10 @@ function edged(sheet, f, cache) {
 }
 export function drawPlayer() {
   if (P.hidden) return;   // inside the static bomb's burst
+  if (P.hide > 0) return;   // he is goo right now; the stretch draws him
   let [sheet, f] = dressed(SHEETS[P.state], frameOf());
   if (INV.edge > 0 && !SHEETS[P.state].custom) { sheet = edged(sheet, f, sheet === SHEETS[P.state]); f = 0; }
-  const glitchy = (GLITCHY.has(P.state) && SHEETS[P.state].custom) || P.glitchNow > 0;
+  const glitchy = EL.cur.glitch && ((GLITCHY.has(P.state) && SHEETS[P.state].custom) || P.glitchNow > 0);
   // shadow and reflection
   g.fillStyle = 'rgba(20,24,24,.35)';
   const sw = Math.max(4, 12 - P.z / 4);
@@ -70,6 +73,11 @@ export function drawPlayer() {
   if (gk > 0) rim(sheet, f, px, P.y - P.z, P.face, gk);
   // strike frames: the whole body as a white silhouette for ~2 frames
   if (P.flash > 0) { spriteTo(g, solid(sheet, f, '#ffffff'), 0, px, P.y - P.z, P.face); return; }
+  // slime: before the teleport he sags into a puddle, going green from the feet; after it he is still slick for a moment
+  if (EL.cur.kit && EL.cur.kit.melt && P.state === 'tele' && !P.moved) { const k = Math.min(1, P.t / (dur('tele') * .45));
+    g.save(); g.translate(px, P.y - P.z); g.scale(1 + k * .5, 1 - k * .8); g.translate(-px, -(P.y - P.z)); // squash about his feet, not the screen corner
+    spriteTo(g, sheet, f, px, P.y - P.z, P.face, 1 - k * .6); spriteTo(g, solid(sheet, f, COL.fx), 0, px, P.y - P.z, P.face, k); g.restore(); return; }
+  if (P.goo > 0) { spriteTo(g, sheet, f, px, P.y - P.z, P.face); spriteTo(g, solid(sheet, f, COL.fx), 0, px, P.y - P.z, P.face, Math.min(1, P.goo * 2)); return; }
   // the sprite; dropped-in glitch animations get the engine's slice effect on top
   if (!glitchy) { spriteTo(g, sheet, f, px, P.y - P.z, P.face); return; }
   buf.width = sheet.fw; buf.height = sheet.fh;
@@ -91,6 +99,6 @@ export function drawMirror(m) {
   bg2.globalCompositeOperation = 'source-atop'; bg2.globalAlpha = .42; bg2.fillStyle = COL.fx; bg2.fillRect(0, 0, sh.fw, sh.fh);
   bg2.globalAlpha = 1; bg2.globalCompositeOperation = 'source-over';
   mcv.width = sh.fw; mcv.height = sh.fh; let y = 0;
-  while (y < sh.fh) { const h = 1 + (Math.random() * 3 | 0), off = Math.random() < .25 * m.glitch ? Math.round((Math.random() - .5) * 4 * m.glitch) : 0; mg.drawImage(buf, 0, y, sh.fw, h, off, y, sh.fw, h); y += h; }
+  while (y < sh.fh) { const h = 1 + (Math.random() * 3 | 0), off = EL.cur.glitch && Math.random() < .25 * m.glitch ? Math.round((Math.random() - .5) * 4 * m.glitch) : 0; mg.drawImage(buf, 0, y, sh.fw, h, off, y, sh.fw, h); y += h; }
   spriteTo(g, { img: mcv, fw: sh.fw, fh: sh.fh, ox: sh.ox, oy: sh.oy }, 0, m.x, m.y, m.face, a);
 }

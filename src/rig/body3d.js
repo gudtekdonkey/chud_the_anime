@@ -1,9 +1,10 @@
 import { V, UP, TAU } from '../wardrobe/skeleton.js';
 import { ring, bandLine } from '../wardrobe/raster.js';
+import { KATANA_3D } from '../weapons/art3d.js';
 
 // ---- The body from any facing: rig v2's body (prototypes/19), drawn from a solved skeleton into the wardrobe's Raster ----
 // The side view keeps the side rig (rig.js); every other facing comes here, its pose from port() (port.js).
-// st: { blink, bare (the samurai's scalp and topknot), hat (a hat is worn, so no hair), blade (the held blade's length, 0 for none) }
+// st: { blink, bare (the samurai's scalp and topknot), hat (a hat is worn, so no hair), art (the weapon's 3D art, weapons/art3d.js; the katana if none) }
 const KH = .05;   // the hat brim's flatter ellipse
 const SECT = [[0, 2, -2, 2.3], [4, 2.1, -2.2, 2.2], [7, 2.3, -2.4, 2.8], [8.2, 1.4, -1.6, 1.8]];
 function hull(P) {
@@ -14,9 +15,9 @@ function hull(P) {
   return lo.slice(0, -1).concat(up.slice(0, -1));
 }
 export function drawBody3d(S, J, st) {
-  const p = J.p, bl = st.blade ?? 13;
-  // scabbard at the left hip
-  { const tip = V.add(J.mouth, V.mul(J.sd, 12)); S.seg(J.mouth, tip, 1, 's'); const t = S.P(tip); S.dot(t[0], t[1], t[2], 1, 'S'); }
+  const p = J.p, W = st.art || KATANA_3D;
+  // what he carries it in: the scabbard at his hip, the sling or the saya on his back
+  W.carried(S, J, p, !J.swordR && !J.swordL && !p.sheathing);
   for (const k of ['r', 'l']) { const L = J.leg[k]; S.seg(L.hip, L.knee, 2, L.col); S.seg(L.knee, L.ank, 2, L.col); S.seg(L.ank, L.toe, 1, L.col); }
   // torso: two hulls (hips to waist, waist to neck) so the chest can bend and twist off the hips
   const zT = (J.pelvis[2] + J.neck[2]) / 2;
@@ -45,13 +46,10 @@ export function drawBody3d(S, J, st) {
   }
   // a HELD blade is never hidden by the body, sash or mantle (owner rule): the top layer, the gripping hand redrawn over its hilt
   const TOP = 50;
-  const blade = (A, d) => { const hand = A.hand; S.seg(hand, V.sub(hand, V.mul(d, 2.5)), 1, 'K', TOP);
-    S.seg(V.add(hand, d), V.add(hand, V.mul(d, bl)), 1, 'W', TOP); const h = S.P(hand), g = S.P(V.add(hand, V.mul(d, 1.2)));
-    S.dot(h[0], h[1], h[2] + TOP + 2, 2, A.col); S.dot(g[0], g[1], g[2] + TOP + 3, 1, 'S'); };
-  if (J.swordR) blade(J.arm.r, J.swordR);
-  if (J.swordL) blade(J.arm.l, J.swordL);
-  if (p.sheathing) S.seg(J.arm.r.hand, J.mouth, 1, 'W', .3);
-  else if (!J.swordR && !J.swordL && !p.empty) { const m = S.P(J.mouth); S.dot(m[0], m[1], m[2] + .2, 1, 'S'); S.seg(V.sub(J.mouth, J.sd), V.sub(J.mouth, V.mul(J.sd, 3.5)), 1, 'W', .2); }
+  if (J.swordR) W.held(S, J.arm.r, J.swordR, TOP);
+  if (J.swordL) (W.backHeld || W.held)(S, J.arm.l, J.swordL, TOP);
+  if (W.offHand) W.offHand(S, J, p, TOP);
+  if (p.sheathing) W.sheathing(S, J, J.arm.r.hand);
 }
 
 // a hat from any facing: a crown and a brim of stacked ellipses, tilted and turned with the head
