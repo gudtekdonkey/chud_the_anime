@@ -1,5 +1,5 @@
 import { COL } from '../config.js';
-import { P, S } from '../state.js';
+import { P, S, INV } from '../state.js';
 import { SHEETS } from '../anims/sheets.js';
 import { zap } from '../fx/bolts.js';
 import { rr, ring, after, spark } from '../fx/util.js';
@@ -8,11 +8,14 @@ import { silPts, bodyPt } from './body.js';
 import { DMG, living, damage } from '../world/enemies.js';
 import { qiFx } from '../fx/matter.js';
 import { EL } from '../fx/element.js';
+import { has } from '../items/inventory.js';
 
 // ---- Qi and the Storm Chain passive: hits fill it, a full meter wakes the storm for 8 s ----
 // the Qi each kind of hit feeds: bigger moves feed more (chain hits feed none, or the storm would never end)
 export const QI_GAIN = { slash: .1, d: .09, sw: .16, tc: .05, cm: .2, cr: .08, crB: .1, mi: .07 }, STORM_T = 8;
-export function qiAdd(v) { if (!v) return; P.qiIdle = 0; P.qi = Math.min(1, P.qi + v); if (P.qi >= 1) stormOn(); }
+export function qiAdd(v) { if (!v) return; P.qiIdle = 0; P.qi = Math.min(1, P.qi + v); INV.fx.qi = .06; if (P.qi >= 1) stormOn(); }
+// Qi from items and shrines fills the meter but never wakes the storm by itself: a full meter waits for the next landed hit
+export function qiFill(v, flash = true) { if (!v || P.storm > 0) return; P.qiIdle = 0; P.qi = Math.min(1, P.qi + v); if (flash) INV.fx.qi = .06; }
 function stormOn() { qiFx(stormBurst); }
 function stormBurst() {
   P.storm = STORM_T; P.qiPop = .5; P.flash = .05; P.shakeAmp = 2; S.shake = 2 / 60;
@@ -33,7 +36,7 @@ export function updateQi(dt) {
 export function chainFrom(d0) {
   const seen = new Set([d0]); let a = d0;
   ring(d0.x, d0.y - 2, 6, 3, .3, 3, COL.fx2);
-  for (let hop = 0; hop < 3; hop++) {
+  for (let hop = 0, hops = 3 + (has('bead') ? 1 : 0); hop < hops; hop++) {   // Thunder Bead: one more jump
     let b = null, best = 130;
     for (const d of living()) { const r = Math.hypot(d.x - a.x, (d.y - a.y) * 1.3); if (!seen.has(d) && r < best) { best = r; b = d; } }
     if (!b) break; seen.add(b);
@@ -43,5 +46,5 @@ export function chainFrom(d0) {
     a = b;
   }
 }
-function chainHit(d, fx) { if (!d.alive) return; d.zap = .35; P.struck.add(d); damage(d, DMG.chain, fx, d.y);
+export function chainHit(d, fx = P.x) { if (!d.alive) return; d.zap = .35; P.struck.add(d); damage(d, DMG.chain, fx, d.y);
   for (let i = 0; i < 9; i++) { const a = rr(0, 6.28); spark(d.x, d.y - 16, Math.cos(a) * rr(60, 130), Math.sin(a) * rr(40, 90), rr(.08, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); } }
