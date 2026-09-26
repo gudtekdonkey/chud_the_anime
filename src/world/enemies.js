@@ -11,14 +11,16 @@ import { collide } from './room.js';
 //   nearest(x, y, pred)  the nearest living enemy (in the squashed floor space the hits use), or null
 //   isolated(e, r)       no other living enemy within r px (ISOLATION to start): K may execute e
 //   damage(e, n, fx, fy) a blow of n from (fx, fy): flinch, stagger or death. Returns true if it killed him
-//   kill(e, o)           dead now, whatever his health: executions call this. o.dir: which way the blow carries him (+1 right, -1 left)
+//   kill(e, o)           dead now, whatever his health. o.dir: which way the blow carries him (+1 right, -1 left).
+//                        o.execution: gone at once, no death of ours and no dropped sword (the execution's pieces are the death)
+//   e.held = true        an execution owns him: we neither update nor draw him, and hits pass him by
 //   onKill(fn)           fn(e) after every death (K's cooldown reset hangs here)
 export const HP = 4, ISOLATION = 36;
 // damage per kind of hit (the same kinds as QI_GAIN): bigger moves hit harder
 export const DMG = { slash: 1, d: 1, sw: 2, tc: 2, cm: 3, cr: 1, crB: 2, mi: 1, chain: 1, burst: 1 };
 const SPAWNS = [[262, 170], [306, 196], [348, 178], [400, 192], [312, 118], [420, 244], [92, 208]];
 const fresh = (x, y) => ({ x, y, face: -1, hp: HP, maxHp: HP, alive: true, state: 'guard', t: 0, flash: 0, zap: 0, shk: 0, lastHit: -9, turnT: 0,
-  vx: 0, vy: 0, fd: -1, P0: GUARD, body: newBody(GUARD), pose: GUARD, alpha: 1 });
+  vx: 0, vy: 0, fd: -1, held: false, P0: GUARD, body: newBody(GUARD), pose: GUARD, alpha: 1 });
 export const ENEMIES = SPAWNS.map(([x, y]) => fresh(x, y));
 export const blades = [];   // swords dropped by the dead
 let clock = 0, emptyT = 0;
@@ -50,6 +52,7 @@ export function damage(e, n, fx, fy) {
 export function kill(e, o = {}) {
   if (!e.alive) return;
   const dir = o.dir || -e.face;
+  if (o.execution) { e.alive = false; e.hp = 0; e.state = 'gone'; e.held = false; for (const fn of kills) fn(e); return; }
   const shown = e.body.out;   // he dies from the pose he is seen in, not the one he was headed for
   e.alive = false; e.hp = 0; e.state = 'dead'; e.t = 0; e.fd = dir * e.face; e.P0 = shown; e.vx = o.vx != null ? o.vx : dir * 30; e.vy = 0;
   // his sword leaves his hands as he goes: it falls, turning, and lies where it lands
@@ -68,7 +71,7 @@ export function updateEnemies(dt, frozen) {
   for (const e of ENEMIES) { e.flash = Math.max(0, e.flash - dt); e.shk = Math.max(0, e.shk - dt); }
   if (frozen) return;
   clock += dt; updateBlood(dt);
-  for (const e of ENEMIES) {
+  for (const e of ENEMIES) { if (e.held || e.state === 'gone') continue;
     const t = (e.t += dt);
     if (e.state === 'guard') { e.pose = GUARD;
       // he turns to keep facing the ronin, a beat late
