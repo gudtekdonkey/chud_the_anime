@@ -26,6 +26,8 @@ Decisions made in the design sessions so far, newest last.
 - **Sword out:** after an attack he waits with the blade out in one of six stances, picked at random each time and never the same twice running: four side-on counter stances with the blade in his back hand pointing at the ground, and two opened to the camera.
 - **Skills:** hold I for Thousand Cuts; hold O for Crescent Moon, cast in place; P for Cross Rift, a tear in reality; N for Mirror Meditation, where mirror images attack the nearest enemies. Storm Chain is a passive that runs for 8 s whenever the Qi meter fills from landing hits.
 - **Executions, batch 1 (approved):** behind the back, through and past, rising launch, whirlwind, far behind, peek-a-boo, and peek-a-boo from behind (a neck snap).
+- **Executions, batch 2 (all approved):** standoff (amazing), hat throw, shadow step, bare hand, three of me, topknot (amazing), pommel, the bow, overload (great death, idea and execution), vault (perfect, creative).
+  - **Hat throw** needs him to be wearing a hat. Reworked: he glitches behind the enemy and the hat is left behind, hanging where his head was; it catches up through the enemy's neck and lands on his head, and the head falls on the click.
 - **Skills, round two** (`prototypes/18-skills-ideas.html`):
   - Approved as they are: Counter, Glitch Dodge, Static Trail, Lightning Chain, and Lingering Blades (its spectral blades turn to whichever enemy is nearest when they fire).
   - Iai Focus: approved, and its stance is the movement bar for every other skill and execution. As Focus builds he settles into the draw: hand to the hilt, rear foot slides back, body hunched over the sheath.
