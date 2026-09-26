@@ -2550,7 +2550,7 @@ section > h2 { font-size: 18px; margin-bottom: 8px; }
 		const S = ST(L), cen = census(L);
 		for (const g of L.regions) {
 			const o = g.occupier;
-			if (!o || L.hour - o.since < 5 * HOURS_PER_YEAR) continue;
+			if (!o || L.hour - o.since < 1 * HOURS_PER_YEAR) continue;
 			let heir = o.actor && alive(L, o.actor) ? o.actor : null;
 			if (!heir) {
 				const pool = L.cultures[o.culture].regions.flatMap((i) => cen.byRegion[i].nobles.concat(cen.byRegion[i].fighters)).filter((id) => alive(L, id) && actor(L, id).culture === o.culture && actor(L, id).lord == null);
@@ -2583,7 +2583,7 @@ section > h2 { font-size: 18px; margin-bottom: 8px; }
 				from,
 				culture: g.culture,
 				how: "occupation"
-			}, `5 years held by force, and now by law: ${who$1(L, heir)} is lord of ${g.name}${from !== g.culture ? `, and ${g.name} belongs to ${cultName(L, g.culture)}` : ""}. ${was ? `The house of ${who$1(L, was)} has only its grudge.` : ""}`.trim(), ["messenger", "bell"], [g.id, ...S.adj[g.id]]);
+			}, `A year held by force, and now by law: ${who$1(L, heir)} is lord of ${g.name}${from !== g.culture ? `, and ${g.name} belongs to ${cultName(L, g.culture)}` : ""}. ${was ? `The house of ${who$1(L, was)} has only its grudge.` : ""}`.trim(), ["messenger", "bell"], [g.id, ...S.adj[g.id]]);
 			setLord(L, g.id, heir, "by long occupation");
 		}
 	}
@@ -3088,7 +3088,7 @@ section > h2 { font-size: 18px; margin-bottom: 8px; }
 			why: w.why,
 			forever: !!w.forever,
 			effects: { danger: .3 }
-		}, `Manhunt: ${w.by != null ? who$1(L, w.by) : cultName(L, w.culture)} wants the ronin${w.why === "oathbreaker" ? " for breaking his oath" : ` (${w.why})`}. His likeness is at every gate${w.forever ? "; there will be no pardon" : ""}.`, ["board", "messenger"], w.regions);
+		}, `Manhunt: ${w.by == null ? cultName(L, w.culture) : alive(L, w.by) ? who$1(L, w.by) : `the house of the late ${who$1(L, w.by)}`} wants the ronin${w.why === "oathbreaker" ? " for breaking his oath" : ` (${w.why})`}. His likeness is at every gate${w.forever ? "; there will be no pardon" : ""}.`, ["board", "messenger"], w.regions);
 	}
 	function royalManhunt(L, q, seen) {
 		const c = q.culture, regions = [...L.cultures[c].regions, ...L.cultures.filter((o) => o.id !== c && L.cultures[c].relations[o.id] >= .3).flatMap((o) => o.regions)];

@@ -218,7 +218,7 @@ export function routeOf(L, [x0, y0], [x1, y1]) {
 // ---- a long occupation becomes title (owner, 2026-09-26: "long occupation can, sure") ----
 // After OCCUPATION_YEARS held by force, the deed follows the land: the occupier (or, after a war, a noble of the occupying culture)
 // becomes lord, the region joins the occupier's culture, and the dispossessed house keeps a grudge.
-export const OCCUPATION_YEARS = 5;
+export const OCCUPATION_YEARS = 1;   // owner (2026-09-26): one year
 function titleByOccupation(L, r) {
   const S = ST(L), cen = census(L);
   for (const g of L.regions) { const o = g.occupier; if (!o || L.hour - o.since < OCCUPATION_YEARS * HOURS_PER_YEAR) continue;
@@ -231,7 +231,7 @@ function titleByOccupation(L, r) {
     delete g.occupier; g.titled = { from: was, how: o.how, since: L.hour };
     if (was && alive(L, was)) S.grudges.push({ by: was, against: heir, why: 'stolen seat', d: today(L) });
     announce(L, 'event.titlePasses', { region: g.id, actor: heir, was, from, culture: g.culture, how: 'occupation' },
-      `${OCCUPATION_YEARS} years held by force, and now by law: ${who(L, heir)} is lord of ${g.name}${from !== g.culture ? `, and ${g.name} belongs to ${cultName(L, g.culture)}` : ''}. ${was ? `The house of ${who(L, was)} has only its grudge.` : ''}`.trim(), ['messenger', 'bell'], [g.id, ...S.adj[g.id]]);
+      `${OCCUPATION_YEARS === 1 ? "A year" : `${OCCUPATION_YEARS} years`} held by force, and now by law: ${who(L, heir)} is lord of ${g.name}${from !== g.culture ? `, and ${g.name} belongs to ${cultName(L, g.culture)}` : ''}. ${was ? `The house of ${who(L, was)} has only its grudge.` : ''}`.trim(), ['messenger', 'bell'], [g.id, ...S.adj[g.id]]);
     setLord(L, g.id, heir, 'by long occupation');
   }
 }

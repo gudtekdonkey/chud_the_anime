@@ -79,7 +79,7 @@ export function wanted(L, w) {
 }
 function manhunt(L, w) {
   announce(L, 'event.manhunt', { target: w.target, by: w.by ?? null, culture: w.culture, why: w.why, forever: !!w.forever, effects: { danger: .3 } },
-    `Manhunt: ${w.by != null ? who(L, w.by) : cultName(L, w.culture)} wants the ronin${w.why === 'oathbreaker' ? ' for breaking his oath' : ` (${w.why})`}. His likeness is at every gate${w.forever ? '; there will be no pardon' : ''}.`, ['board', 'messenger'], w.regions);
+    `Manhunt: ${w.by == null ? cultName(L, w.culture) : alive(L, w.by) ? who(L, w.by) : `the house of the late ${who(L, w.by)}`} wants the ronin${w.why === 'oathbreaker' ? ' for breaking his oath' : ` (${w.why})`}. His likeness is at every gate${w.forever ? '; there will be no pardon' : ''}.`, ['board', 'messenger'], w.regions);
 }
 // a royal procession robbed: the court and its allies hunt him (a theft nobody saw only starts a search)
 export function royalManhunt(L, q, seen) {
@@ -90,7 +90,7 @@ export function royalManhunt(L, q, seen) {
 // each year: the ones who want him say so again, and a rival or two takes the job
 export function wantedYear(L, cal, r) {
   const S = ST(L); if (!S.wanted) return;
-  S.wanted = S.wanted.filter(w => w.forever || today(L) - w.since < 224);   // forever means forever (owner); the rest lapse after two years
+  S.wanted = S.wanted.filter(w => w.forever || today(L) - w.since < 224);   // forever means forever: it outlives the lord, his heir keeps it (owner); the rest lapse after two years
   for (const w of S.wanted) { manhunt(L, w); emit(L, 'story.wanted', { ...w, renewed: true });
     const R = Object.values(S.rivals).find(x => x.creed !== 'honour' && alive(L, x.id)); if (R) R.grudge += 1; }
 }

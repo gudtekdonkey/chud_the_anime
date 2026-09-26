@@ -6,7 +6,7 @@ Everything below is Claude's proposal unless marked as the owner's. Every number
 
 ## Owner decisions (2026-09-26, answers to this lane's first questions)
 
-- **A long occupation passes the title** ("long occupation can, sure"). Built: after `OCCUPATION_YEARS` (5 game years, Claude's number) held by force, the occupier (a rebel leader, or a noble of the occupying culture) becomes lord, a conquered region joins the occupier's culture, and the dispossessed lord keeps a grudge (`event.titlePasses`).
+- **A long occupation passes the title** ("long occupation can, sure"). Built: after `OCCUPATION_YEARS` (1 game year, owner: shorter than the 5 first proposed) held by force, the occupier (a rebel leader, or a noble of the occupying culture) becomes lord, a conquered region joins the occupier's culture, and the dispossessed lord keeps a grudge (`event.titlePasses`).
 - **Rivals race him** for quests he has taken, not only the ones he ignores ("sure"). Built: each week before the due day, a rival nearby may finish a quest he has taken (8% a week), and the rival's grudge against him grows.
 - **Sworn service:** yes. **If he breaks the oath, that lord wants him forever, after a few warnings.** Built: the lord gives an order each season (`story.order`); an order let go, or done a way the lord did not want, is a warning; the third (`WARNINGS`) breaks the oath (`story.oathBroken`), and he is wanted in every region of that lord's culture forever (`story.wanted` with `forever: true`, a manhunt re-posted every year, never lapsing, never paid off). He can also break it himself (`breakOath`). A dead lord's oath passes to his heir in the seat.
 - **Robbing a royal procession raises a manhunt across the kingdom.** Built: robbing it openly makes him wanted by the court and every culture allied to it (relation .3+) for two years; stealing the silk unseen starts a search with no face (`event.manhunt`, no `story.wanted`).
@@ -154,7 +154,7 @@ Every event carries `text` (a line for a board), `heralds` (how people hear: `me
 | `event.banditArmy`, `event.villageTaken`, `event.armyBroken` | 2+ camps in a region at notoriety 10+, 20% a season, once in two years | taken: 1-4 dead, every plot of the village to the chief's possession |
 | `event.crackdown` | his standing with a culture at -.5 or worse, yearly | |
 | `event.manhunt` | he broke his oath (every year, forever), or robbed a royal procession (court and allies, two years); a search with no face for unseen theft | danger +.3 |
-| `event.titlePasses` | a region held by force for 5 years | sets `region.lord`, maybe `region.culture` |
+| `event.titlePasses` | a region held by force for 1 year | sets `region.lord`, maybe `region.culture` |
 
 Seasons and years are the core's: 28-day seasons, 112-day years.
 
@@ -194,6 +194,4 @@ Seasons and years are the core's: 28-day seasons, 112-day years.
 
 ## Open questions for the owner
 
-1. **Karma's scale.** Quests move karma by whole steps (-6..+3 each). Is that the right size next to the crime lane's karma? (not answered yet)
-2. **The heir of a grudge.** An oathbreaker is wanted forever by that lord. When the lord dies, his heir keeps the manhunt going (built that way, since "forever"). Right?
-3. **Occupation to title after 5 game years** (about 16 real days). Longer, shorter?
+None open. Answered (owner, 2026-09-26): the karma steps (-6..+3 a quest) are right; an oathbreaker's manhunt outlives the lord (his heir keeps it going); occupation becomes title after 1 game year.
