@@ -17,8 +17,8 @@ import { frames, poseOf, lenOf, bakeFor, figureFor, paint, place, faceTo } from 
 // once they attack; H does it for testing), say(text), partyDrawables() for the depth sort, drawPartyOver() for bars and prompts
 export const allies = [];
 export const PS = { note: '', noteT: 0, clock: 0, lastBy: null };   // the order's note over the HUD; lastBy: who struck the blow in hand
-const REACH = { katana: 15, yari: 24, nodachi: 21, tanto: 11 };
-const HIT_AT = { katana: .16, yari: .18, nodachi: .24, tanto: .1 };   // the slash's strike beat, as update.js times his
+const reachOf = a => Math.round(15 * WEAPONS.find(w => w.id === wid(a)).reach);   // his slash reach, scaled by the weapon
+const hitAt = a => ROLES[wid(a)].hit;   // the slash's strike beat, as update.js times his
 export const BLEED = 15, LIFT = .6;   // a downed companion lasts this long unless lifted; holding E beside them this long lifts them
 const KNEEL = POSES.death[5];
 const ATTACKS = new Set(['slash1', 'slash2']);
@@ -42,16 +42,16 @@ const wid = a => a.c.kit.weapon;
 const clip = (a, name) => frames(a.c, name);
 function setAnim(a, name) { if (a.anim !== name) { a.anim = name; a.t = 0; } }
 function cut(a) {
-  const second = a.anim === 'slash1' && a.t > HIT_AT[wid(a)] + .05;
+  const second = a.anim === 'slash1' && a.t > hitAt(a) + .05;
   setAnim(a, second ? 'slash2' : 'slash1'); a.t = 0; a.hitDone = false; a.armed = true; a.calm = 0;
 }
 function tryHit(a) {
-  const w = WEAPONS.find(v => v.id === wid(a)), r = REACH[w.id];
+  const w = WEAPONS.find(v => v.id === wid(a)), r = reachOf(a);
   let any = false;
   for (const e of living()) { if (e.held) continue;
     const dx = (e.x - a.x) * a.face, dy = Math.abs(e.y - a.y);
     if (dx > -3 && dx < r + 6 && dy < 9) {
-      const heavy = w.id === 'nodachi' || Math.random() < .08 * stat(a.c, 'edge');
+      const heavy = ROLES[w.id].kind === 'break' || Math.random() < .08 * stat(a.c, 'edge');
       PS.lastBy = a; damage(e, heavy ? DMG.sw : DMG.slash, a.x, a.y); PS.lastBy = null; any = true; } }
   if (!any) return;
   // a short pause and shake, weighted by the weapon, on some of their hits only: thirty of them must not stutter the room
@@ -62,9 +62,9 @@ function move(a, dx, dy) { [a.x, a.y] = collide(a.x + dx, a.y + dy); }
 function step(a, dt, mx, my, run) {
   a.t += dt; a.cd -= dt;
   if (busy(a)) {
-    const at = HIT_AT[wid(a)];
+    const at = hitAt(a);
     if (!a.hitDone && a.t >= at) { a.hitDone = true; tryHit(a); }
-    if (a.t < at + .06 && a.t > at - .05) move(a, a.face * (wid(a) === 'yari' ? 60 : 40) * dt, 0);   // the lunge
+    if (a.t < at + .06 && a.t > at - .05) move(a, a.face * (ROLES[wid(a)].kind === 'line' ? 60 : 40) * dt, 0);   // the lunge
     if (a.t >= lenOf(clip(a, a.anim))) setAnim(a, 'ready');
     return;
   }
@@ -86,20 +86,20 @@ function pickTarget(a, load) {
   const ox = a.anchor ? a.anchor[0] : P.x, oy = a.anchor ? a.anchor[1] : P.y, all = living().filter(e => !e.held);
   const pool = all.filter(e => Math.hypot(e.x - ox, (e.y - oy) * 1.4) < (a.anchor ? 60 : 130));
   if (!pool.length) return null;
-  const w = wid(a), crowd = e => all.filter(o => Math.hypot(o.x - e.x, o.y - e.y) < 40).length;
+  const w = ROLES[wid(a)].kind, crowd = e => all.filter(o => Math.hypot(o.x - e.x, o.y - e.y) < 40).length;
   let best = null, bs = 1e9;
   for (const e of pool) {   // closest first, but spread out: an enemy with others on him already is somebody else's
     let s = Math.hypot(e.x - a.x, e.y - a.y) + 40 * (load.get(e) || 0);
-    if (w === 'nodachi') s -= 18 * crowd(e);
-    if (w === 'tanto' || w === 'katana') s += .6 * Math.hypot(e.x - P.x, e.y - P.y);
+    if (w === 'break') s -= 18 * crowd(e);
+    if (w === 'flank' || w === 'duel') s += .6 * Math.hypot(e.x - P.x, e.y - P.y);
     if (s < bs) { bs = s; best = e; }
   }
   return best;
 }
 function spotFor(a, e, k) {
-  const w = wid(a), side = Math.sign(P.x - e.x) || 1, r = REACH[w] - 2, off = [0, -6, 6, -11, 11][k % 5];
-  if (w === 'tanto') return [e.x - side * r, e.y + off];   // round the far side, behind him
-  if (w === 'yari') return [e.x + side * r, e.y + off];    // your side, at spear length
+  const w = ROLES[wid(a)].kind, side = Math.sign(P.x - e.x) || 1, r = reachOf(a) - 2, off = [0, -6, 6, -11, 11][k % 5];
+  if (w === 'flank') return [e.x - side * r, e.y + off];   // round the far side, behind him
+  if (w === 'line') return [e.x + side * r, e.y + off];    // your side, at spear length
   const s = k % 2 ? -side : side; return [e.x + s * r, e.y + off];
 }
 function think(a, i, dt, load) {

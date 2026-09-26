@@ -2,7 +2,8 @@
 // angles in radians: limbs 0 = straight down, + swings forward; knee + folds the shin back; elbow + folds the forearm forward
 const REST = { hx: 0, hy: 0, lean: .04, chest: 0, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
   sword: null, bsword: null, sheathing: false, hat: 0, flutter: 0, bow: 0, dim: 0, neck: 0, bare: false, empty: false,
-  noHead: false, noUpper: false, headFlip: false };
+  noHead: false, noUpper: false, headFlip: false, spread: 0 };
+// spread: a folding weapon opened, 0..1 (the tessen)
 // bow: head dips forward; dim: eyes dimmed (meditation); neck: the head lolls (+ forward); bare: no hat or mantle (the samurai); empty: no sword at all
 // noHead, noUpper, headFlip: what an execution does to him (the head off, only the legs left, the head wrenched round)
 export const pz = o => ({ ...REST, ...o });

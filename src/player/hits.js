@@ -5,6 +5,7 @@ import { QI_GAIN, qiAdd, chainFrom } from './qi.js';
 import { ENEMIES, DMG, damage } from '../world/enemies.js';
 import { weapon } from '../weapons/weapons.js';
 import { has } from '../items/inventory.js';
+import { landCut } from './combo.js';
 
 // ---- Hits: each enemy once per kind per move; P.struck remembers them for the sheath-click burst ----
 export function hitOne(e, i, kind, fx = P.x, fy = P.y) {
@@ -20,6 +21,7 @@ export function hitOne(e, i, kind, fx = P.x, fy = P.y) {
   const away = Math.atan2(e.y - fy, e.x - fx), n = 6 + (Math.random() * 7 | 0);
   for (let i = 0; i < n; i++) { const a = i < n * .7 ? away + rr(-1.1, 1.1) : rr(0, Math.PI * 2), v = rr(110, 170);
     spark(e.x + rr(-2, 2), e.y - 16 + rr(-4, 4), Math.cos(a) * v, Math.sin(a) * v * .7, rr(.09, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
+  if (base === 'slash') landCut();   // basic skill and the Flow chain
   if (P.storm > 0) chainFrom(e); else qiAdd((QI_GAIN[base] || 0) * qiMul());
   damage(e, DMG[base] || 1, fx, fy);
 }

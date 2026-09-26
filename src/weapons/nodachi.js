@@ -1,27 +1,36 @@
-import { OY } from '../config.js';
+import { RY } from '../rig/rig.js';
+import { shoulderDraw, shoulderStow } from './grip.js';
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
+import { NODACHI_3D } from './art3d.js';
+import { comboPoses } from '../anims/combo-poses.js';
 
 // ---- The nodachi (the Grave Nodachi pickup): a greatsword worn on the back, hilt over the shoulder. Every cut is heavy, wound up far and followed through low ----
 const along = a => [Math.cos(a), Math.sin(a)];
 const stowed = p => p.sword === null && !p.sheathing && p.bsword == null;
-const LEN = 19;
-// the long blade, clipped at the floor: a point that would go under his feet is planted in it instead
-function blade(k, hand, a, len = LEN) { const d = along(a); let n = len;
-  while (n > 3 && hand[1] + d[1] * n > OY + 1) n--;
-  k.seg(hand, k.add(hand, d, -3.5), 1, 'K'); k.put(...hand, 'S'); k.put(...k.add(hand, d, 1), 'S'); k.seg(k.add(hand, d, 2), k.add(hand, d, n), 1, 'W'); }
+const LEN = 26;   // taller than he is (he is 26 px): it has to read as a field sword, not a long katana
+// the huge blade: a long wrapped grip, a heavy tsuba, a 2 px blade (edge and spine) tapering to the point. A point that would go
+// under his feet is planted in the floor instead
+function blade(k, hand, a, len = LEN) { const d = along(a), n = [-d[1], d[0]]; let e = len;
+  while (e > 4 && hand[1] + d[1] * e > RY + 1) e--;
+  k.seg(k.add(hand, d, -1), k.add(hand, d, -6), 1, 'K'); k.put(...k.add(hand, d, -3), 'D'); k.put(...k.add(hand, d, -5), 'D');
+  k.put(...hand, 'S'); k.put(...k.add(hand, d, 1), 'S'); k.put(...k.add(k.add(hand, d, 1), n, 1), 'S'); k.put(...k.add(k.add(hand, d, 1), n, -1), 'S');
+  k.seg(k.add(hand, d, 2), k.add(hand, d, e), 1, 'W'); k.seg(k.add(k.add(hand, d, 2), n, 1), k.add(k.add(hand, d, Math.min(e, len - 3)), n, 1), 1, 'S'); }
+const MOUTH = (k) => k.L(9.5, -3.4), END = (k) => k.L(-14, -8.6);
 const ART = {
-  // the long saya down his back, always there; its hilt pokes up behind the shoulder while the blade is home
-  far(k, p) { const m = k.L(8, -3.2), e = k.L(-9, -7.4);
-    k.seg(m, e, 1, 's'); k.put(...e, 'S');
-    if (stowed(p)) { k.put(...m, 'S'); k.seg(k.L(8.8, -3), k.L(12, -2.3), 1, 'W'); } },
+  d3: NODACHI_3D,   // the same weapon from any other facing (art3d.js)
+  // the long saya slung down his back to his calves, always there; the long hilt stands up past his hat while the blade is home
+  far(k, p) { const m = MOUTH(k), e = END(k), d = [(e[0] - m[0]), (e[1] - m[1])], l = Math.hypot(...d), u = [d[0] / l, d[1] / l];
+    k.seg(m, e, 2, 's'); k.put(...e, 'S');
+    if (stowed(p)) { k.put(...m, 'S'); k.put(...k.add(m, u, -1), 'S'); k.seg(k.add(m, u, -2), k.add(m, u, -8), 1, 'K'); k.put(...k.add(m, u, -4), 'D'); k.put(...k.add(m, u, -6), 'D'); } },
   stowed() {},
   held(k, hand, a) { blade(k, hand, a); },
   backHeld(k, bh, a) { k.blob(bh[0], bh[1], 2, 'D'); blade(k, bh, a); },
   // slid home over the shoulder: the blade runs from the hand into the saya's mouth behind his neck
-  sheathing(k, hand) { const m = k.L(8, -3.2), dx = hand[0] - m[0], dy = hand[1] - m[1], l = Math.hypot(dx, dy) || 1;
-    k.seg(hand, m, 1, 'W'); k.put(...hand, 'S'); k.seg(hand, k.add(hand, [dx / l, dy / l], 3), 1, 'K'); },
-  front: [[7, 15, 'S'], [6, 16, 'S'], ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => [5 - i, 17 + i, 'W'])],
-  sit: [[11, 17, 'K'], [12, 17, 'K'], [13, 17, 'S'], ...Array.from({ length: 18 }, (_, i) => [14 + i, 17, 'W'])],
+  sheathing(k, hand) { const m = MOUTH(k), dx = hand[0] - m[0], dy = hand[1] - m[1], l = Math.hypot(dx, dy) || 1;
+    k.seg(hand, m, 1, 'W'); k.put(...hand, 'S'); k.seg(hand, k.add(hand, [dx / l, dy / l], 6), 1, 'K'); },
+  // opened to the camera: the blade laid back over his shoulder, towering past his hat
+  front: [[8, 16, 'K'], [9, 17, 'K'], [7, 15, 'S'], [6, 15, 'S'], [7, 14, 'S'], ...Array.from({ length: 16 }, (_, i) => [6 - Math.round(i * .45), 13 - i, 'W'])],
+  sit: [[4, 17, 'K'], [5, 17, 'D'], [6, 17, 'K'], [7, 17, 'D'], [8, 17, 'K'], [9, 17, 'S'], [9, 16, 'S'], ...Array.from({ length: 24 }, (_, i) => [10 + i, 17, i < 21 ? 'W' : 'S'])],
 };
 // hasso: the blade upright beside his head, hands at the shoulder
 const GUARD = pz({ hy: 3, lean: .08, chest: .04, fl: [.6, 1.0], bl: [-.65, .4], fa: [.9, 1.75], ba: [.6, 1.9], sword: -1.72 });
@@ -31,6 +40,14 @@ const TAIL = [
   [.16, pz({ hx: 2, hy: 4, lean: .5, chest: .4, fl: [1.05, 1.15], bl: [-1.05, .1], fa: [1.7, .05], ba: [1.3, .2], sword: .15, hat: 1, flutter: 1 }), lin],
   [.22, FOLLOW], [.36, pz({ ...FOLLOW, lean: .74, chest: .5 })], [.5, GUARD]];
 const OVER = pz({ hx: 2, hy: 2, lean: -.25, chest: -.5, fl: [.95, .5], bl: [-.85, .2], fa: [2.95, -.1], ba: [2.65, .1], sword: -1.95, hat: 1 });
+// J3 to J6 (anims/combo-poses.js): the greatsword over the back, a wide level wheel, rested on the shoulder for the kick,
+//   up overhead for the launch, and the flash step ends with it laid out behind him
+const ARMS = {
+  wind: { fa: [1.6, 1.5], ba: [1.1, 1.6], sword: 3.0 }, sweep: { fa: [1.5, 0], ba: [1.3, .2], sword: 0 },
+  kick: { fa: [1.3, 1.6], ba: [-.6, .3], sword: -2.75 }, crouch: { fa: [.3, .3], ba: [.1, .4], sword: 2.4 },
+  top: { fa: [2.9, 0], ba: [2.6, .1], sword: -1.5 }, set: { fa: [.5, 1.1], ba: [.3, 1.2], sword: 2.7 },
+  fin: { fa: [1.3, 0], ba: [1.0, .3], sword: 2.8 },
+};
 const STANCES = [
   // resting on the shoulder, the blade pointing back
   pz({ hy: 2, lean: .02, chest: .08, fl: [.45, .55], bl: [-.4, .45], fa: [1.3, 1.6], ba: [-.2, .3], sword: -2.75 }),
@@ -47,30 +64,15 @@ export const NODACHI = { id: 'nodachi', name: 'Nodachi', about: 'A greatsword wo
   poses: {
     ...Object.fromEntries(STANCES.map((q, k) => ['ready' + k, BREATH.map((b, i) => pz({ ...q, breath: b, flutter: i === 5 || i === 13 ? 1 : 0 }))])),
     ready: BREATH.map((b, i) => pz({ ...GUARD, breath: b, sword: GUARD.sword - b * .03, flutter: i === 5 || i === 13 ? 1 : 0 })),
-    // J: the draw over the shoulder is the wind-up; the blade comes down through the front and nearly into the floor
-    // shoulder angles past pi keep the arm going over the top between keys, and a blade angle below -pi keeps it turning
-    //   over his back (not down through the front)
-    // J from the back: the hand over the shoulder on the hilt, the blade drawn up out of the saya (point still down behind him),
-    //   then turned over his back into the wind-up
-    slash1: keyed([[0, pz({ fa: [3.6, .4], ba: [-.1, .6] })],
-      [.045, pz({ hy: 1, lean: -.06, chest: -.1, fa: [3.3, .25], ba: [-.1, .6], sword: -4.38, flutter: 1 })],
-      [.09, WIND], ...TAIL], 30),
-    // the stow, on the katana's beats: a flick down at his side, a beat, the blade raised overhead, slid down into the saya
-    //   behind his neck, the click with his hand on the hilt, then the hand drops away
-    sheathe: keyed([[0, GUARD],
-      [.12, pz({ hy: 3, lean: .12, chest: .05, fl: [.55, .9], bl: [-.6, .4], fa: [.9, .3], ba: [-.4, .3], sword: 1.25 }), lin],
-      [.3, pz({ hy: 3, lean: .12, chest: .05, fl: [.55, .9], bl: [-.6, .4], fa: [.92, .3], ba: [-.4, .3], sword: 1.28 })],
-      [.38, pz({ hy: 2, lean: .04, fl: [.4, .6], bl: [-.45, .3], fa: [2.9, .2], ba: [-.3, .3], sword: -1.5 })],
-      [.45, pz({ hy: 1, lean: .02, fl: [.3, .4], bl: [-.3, .2], fa: [3.2, .2], ba: [-.2, .3], sheathing: true })],
-      [.75, pz({ hy: 1, lean: .02, fl: [.25, .35], bl: [-.25, .2], fa: [3.6, .7], ba: [-.2, .3], sheathing: true })],
-      [.82, pz({ hy: 1, lean: .04, fl: [.2, .3], bl: [-.25, .15], fa: [3.6, .5], ba: [-.15, .3] })],
-      [1.0, pz({ hy: 1, lean: .04, fl: [.2, .3], bl: [-.25, .15], fa: [5.88, .8], ba: [-.1, .3] })],
-      [1.2, pz({ fa: [6.48, .3] })]], 15),
+    // J: the draw up out of the saya over the shoulder is the wind-up; the blade comes down through the front nearly into the floor
+    slash1: keyed([...shoulderDraw(WIND), ...TAIL], 30),
+    sheathe: shoulderStow(GUARD),
     slash1r: keyed([[0, GUARD], [.09, WIND], ...TAIL], 30),
     slash2: keyed([[0, FOLLOW],
       [.08, pz({ hx: 1, hy: 6, lean: .55, chest: .3, fl: [.85, 1.4], bl: [-.85, .4], fa: [.4, .3], ba: [.2, .5], sword: 2.5 })],
       [.14, pz({ hx: 2, hy: 3, lean: -.05, chest: -.25, fl: [.9, .6], bl: [-.8, .2], fa: [2.4, 0], ba: [2.0, .2], sword: -1.0, hat: 1, flutter: 1 }), lin],
       [.2, OVER], [.34, pz({ ...OVER, sword: -1.92 })], [.5, GUARD]], 30),
+    ...comboPoses(ARMS, pz({ ...OVER, sword: -1.92 }), GUARD),
     runArmed: POSES_RUN_ARMED(),
   },
   // elsewhere: the hand that would wait on a hip hilt reaches up for the one over his shoulder

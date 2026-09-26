@@ -19,7 +19,7 @@ export const HP = 4, ISOLATION = 36;
 // damage per kind of hit (the same kinds as QI_GAIN): bigger moves hit harder
 export const DMG = { slash: 1, d: 1, sw: 2, tc: 2, cm: 3, cr: 1, crB: 2, mi: 1, chain: 1, burst: 1 };
 const SPAWNS = [[262, 170], [306, 196], [348, 178], [400, 192], [312, 118], [420, 244], [92, 208]];
-const fresh = (x, y) => ({ x, y, face: -1, hp: HP, maxHp: HP, alive: true, state: 'guard', t: 0, flash: 0, zap: 0, shk: 0, lastHit: -9, turnT: 0,
+const fresh = (x, y) => ({ x, y, face: -1, view: 'E', hp: HP, maxHp: HP, alive: true, state: 'guard', t: 0, flash: 0, zap: 0, shk: 0, lastHit: -9, turnT: 0,
   vx: 0, vy: 0, fd: -1, held: false, P0: GUARD, body: newBody(GUARD), pose: GUARD, alpha: 1 });
 export const ENEMIES = SPAWNS.map(([x, y]) => fresh(x, y));
 export const blades = [];   // swords dropped by the dead
@@ -67,6 +67,13 @@ function thud(e) {
   pool(e.x + e.fd * e.face * 6 + rr(-2, 2), e.y + 1, rr(3.5, 5.5));
 }
 // frozen: the hit pause. Bodies hold still (and shake, drawn), timers that belong to the hit keep running
+// the facing that points him along (dx, dy) on the floor: E side on, SE / NE three-quarters, S / N straight at or away from
+// the camera. Only the east half: the west mirrors it with e.face, as the ronin does.
+export function viewTo(dx, dy) {
+  const ax = Math.abs(dx), ay = Math.abs(dy) * 1.4;   // the floor is squashed, so a step in y is worth more
+  if (ay < ax * .41) return 'E';
+  return ay > ax * 2.4 ? (dy > 0 ? 'S' : 'N') : (dy > 0 ? 'SE' : 'NE');
+}
 export function updateEnemies(dt, frozen) {
   for (const e of ENEMIES) { e.flash = Math.max(0, e.flash - dt); e.shk = Math.max(0, e.shk - dt); }
   if (frozen) return;
@@ -74,9 +81,9 @@ export function updateEnemies(dt, frozen) {
   for (const e of ENEMIES) { if (e.held || e.state === 'gone') continue;
     const t = (e.t += dt);
     if (e.state === 'guard') { e.pose = GUARD;
-      // he turns to keep facing the ronin, a beat late
-      const want = Math.sign(P.x - e.x) || e.face;
-      if (want !== e.face && P.state !== 'death') { if ((e.turnT += dt) > .35) { e.face = want; e.turnT = 0; kick(e.body, -1, .3); } } else e.turnT = 0; }
+      // he turns to keep facing the ronin, a beat late: left or right, and toward or away from the camera (the port's facings)
+      const want = Math.sign(P.x - e.x) || e.face, view = viewTo(P.x - e.x, P.y - e.y);
+      if ((want !== e.face || view !== e.view) && P.state !== 'death') { if ((e.turnT += dt) > .35) { if (want !== e.face) kick(e.body, -1, .3); e.face = want; e.view = view; e.turnT = 0; } } else e.turnT = 0; }
     else if (e.state === 'flinch') { e.pose = FLINCH; if (t >= FLINCH_T) { e.state = 'guard'; e.t = 0; } }
     else if (e.state === 'stagger') { e.pose = staggerPose(t); if (t >= STAGGER_T) { e.state = 'guard'; e.t = 0; } }
     else if (e.state === 'dead') { e.pose = deathPose(e.P0, e.fd, t); if (e.body.thudT == null && t >= THUD_T) { e.vx = 0; thud(e); } }

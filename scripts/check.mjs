@@ -79,6 +79,8 @@ try {
     await until('the Old master\'s slower walk', () => window.__game.P.gait.walk < 40);
     await page.locator('#game').click(); await kb.down('v'); await kb.down('a'); await reach(/^walk$/); await sleep(300); await shot('01c-old-master');
     await kb.up('a'); await kb.up('v'); await reach(/^idle$/);
+    await page.selectOption('#pz-preset', 'culture:shinobi');
+    await until('a shadow villager\'s traits', () => (window.__game.P.personality || []).some(([id]) => id === 'shadow'));
     await page.selectOption('#pz-preset', 'The ronin (as he is)'); await until('his own walk again', () => window.__game.P.gait.walk === 40);
     await page.locator('#game').click(); });
   await run('J, J: slash 1 flows into slash 2', async () => {
@@ -101,14 +103,20 @@ try {
     if (e.alive) fail(`the samurai is still standing after 10 cuts (hp ${e.hp}, states ${e.log.join(' > ')})`);
     for (const st of ['flinch', 'stagger', 'dead']) if (!e.log.includes(st)) fail(`the samurai never went through ${st} (states ${e.log.join(' > ')})`);
     await until('him hitting the floor', () => window.__game.E[0].body.thudT != null); await sleep(600); await shot('08-samurai-down'); });
-  await run('K on a lone samurai in reach: the kill line and K prompt, an execution, K ready 0.2 s after', async () => {
+  await run('K on a lone samurai in reach: the kill line and K prompt, an execution, blade kept out with others near, K ready 0.2 s after', async () => {
     await sleep(200); await shot('09-k-prompt');
     await kb.press('k'); await reach(/^exec$/); await page.evaluate(() => { window.__st = window.__game.P.exec; });
     await sleep(700); await shot('10-execution');
-    await reach(/^idle$/, 4000);
+    // other samurai are near, so he keeps the blade out in a stance for the next K (unless that execution never drew it)
+    await reach(/^(idle|ready\d)$/, 4000);
+    const end = await page.evaluate(() => ({ s: window.__game.P.state, armed: window.__game.P.armed, bare: !!window.__st.ex.bare }));
+    if (!end.bare && !(/^ready\d$/.test(end.s) && end.armed)) fail(`he sheathed after "${await page.evaluate(() => window.__st.ex.name)}" with samurai still near (${JSON.stringify(end)})`);
+    // with the blade kept out he is free before the execution has played out: let it finish first
+    await until('the execution to play out', () => window.__st.clock >= window.__st.ex.dur, undefined, 3000);
     // the deaths pass: the blade landed on him (knockback, blood) and his body moved on its springs
-    const d = await page.evaluate(() => { const E = window.__st.E; return { name: window.__st.ex.name, hit: E.hitAt != null, t: E.body.t }; });
-    if (!d.hit || !(d.t > .5)) fail(`"${d.name}": the deaths pass never ran on the executed body (${JSON.stringify(d)})`);
+    const d = await page.evaluate(() => { const E = window.__st.E; return { name: window.__st.ex.name, hit: E.hitAt != null, t: E.body.t, bare: !!window.__st.ex.bare }; });
+    // (peek-a-boo from behind never draws, so no blade lands: only the body's springs are asked of it)
+    if ((!d.hit && !d.bare) || !(d.t > .5)) fail(`"${d.name}": the deaths pass never ran on the executed body (${JSON.stringify(d)})`);
     const cd = await page.evaluate(() => ({ t: window.__game.P.cd.tele, max: window.__game.P.cdMax.tele }));
     if (!(cd.max <= .2 + 1e-9)) fail(`K was not reset to 0.2 s after the kill (${JSON.stringify(cd)})`);
     await until('K ready again', () => !(window.__game.P.cd.tele > 0), undefined, 1000); await sleep(500); await shot('11-after'); });
@@ -116,7 +124,7 @@ try {
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
   await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
     // out of every samurai's reach first (the top-left corner), so K is the plain teleport, not an assassination
-    await kb.down('a'); await kb.down('w'); await sleep(4200); await kb.up('a'); await kb.up('w'); await reach(FREE);
+    await kb.down('a'); await kb.down('w'); await sleep(5500); await kb.up("a"); await kb.up("w"); await reach(FREE);
     await kb.press('k'); await reach(/^tele$/); await reach(FREE);
     await until('K on cooldown', () => window.__game.P.cd.tele > 0);
     await kb.press('k'); await until('the refused press', () => window.__game.P.cdDeny.tele > 0);
@@ -156,7 +164,7 @@ try {
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });
   await run('every weapon (the picker) slashes, stands in a stance and sheathes', async () => {
-    for (const id of ['yari', 'nodachi', 'tanto', 'katana']) {
+    for (const id of ['yari', 'nodachi', 'tanto', 'naginata', 'kanabo', 'kusarigama', 'tessen', 'bo', 'katana']) {
       await page.selectOption('#weapon', id); await until(`weapon ${id}`, w => window.__game.P.weapon === w, id);
       await kb.press('j'); await reach(/^slash1$/); await sleep(200); await shot(`08-${id}-slash`);
       await reach(/^ready\d$/); await reach(/^idle$/, 5000); } });
@@ -171,6 +179,31 @@ try {
     await kb.up('a'); await reach(/^idle$/);
     await page.locator('[data-outfit="Default"]').click();
     if (!await has('mantle') || await has('coat')) fail('the default outfit did not come back'); });
+  await run('basic skill 6: J chains six cuts; six landed cuts earn Flow, and a skill on cooldown casts anyway', async () => {
+    await page.selectOption('#basic', '450'); await until('a six-cut combo', () => window.__game.INV.basic >= 450); await page.locator('#game').click();
+    await page.evaluate(() => { window.__log = []; });
+    for (let i = 0; i < 40 && !await page.evaluate(() => window.__game.P.flow > 0); i++) {
+      const e = await page.evaluate(() => { const P = window.__game.P, L = window.__game.E.filter(e => e.alive);
+        L.sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y)); return L[0] && { x: L[0].x, y: L[0].y }; });
+      if (!e) { await sleep(500); continue; }
+      if (await page.evaluate(q => Math.abs(window.__game.P.y - q.y) > 4 || Math.abs(window.__game.P.x - q.x) > 30, e)) await walkTo(e.x - 16, e.y);
+      await page.evaluate(() => { window.__game.P.face = 1; });
+      await kb.press('d'); await reach(FREE);
+      // J in each cut's follow-through, as a player would, until the chain ends
+      await kb.press('j'); await reach(/^slash/);
+      for (let k = 0; k < 5; k++) { const s0 = await state(); if (!/^slash[1-5]/.test(s0)) break;
+        await until(`${s0} follow-through`, () => window.__game.P.t > .17 || !/^slash/.test(window.__game.P.state));
+        await kb.press('j'); await until('the next cut', q => window.__game.P.state !== q, s0); }
+      await reach(FREE); }
+    const log = await page.evaluate(() => window.__log);
+    if (!log.includes('slash6')) fail(`the chain never reached slash 6 (${log.filter(s => s.startsWith('slash')).join(' > ')})`);
+    if (!await page.evaluate(() => window.__game.P.flow > 0)) fail('six landed cuts did not earn Flow');
+    await shot('15-flow');
+    await kb.press('i'); await reach(/^double$/); await reach(FREE);
+    if (!(await page.evaluate(() => window.__game.P.cd.double > 0))) fail('I is not cooling down');
+    await kb.press('i'); await reach(/^double$/);
+    if (await page.evaluate(() => window.__game.P.flow > 0)) fail('casting through the cooldown did not spend Flow');
+    await reach(FREE); });
   await run('] and [: switch elements; slime slides and charges the moon, then back to storm', async () => {
     const el = () => page.evaluate(() => document.querySelector('#elements [aria-pressed=true]')?.dataset.el);
     await kb.press(']'); if (await el() !== 'fire') fail(`] picked ${await el()}, not fire`);
