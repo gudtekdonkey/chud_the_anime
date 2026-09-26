@@ -57,9 +57,10 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `assassin/markers.js` | Isolation bubbles, link lines, the kill line and the K prompt; `K.pick` (whom K would execute now), `K_RANGE` |
 | `assassin/assassinate.js` | K on a lone enemy: the execution stage (both bodies, pieces, effects, mirrored when he faces right), handing the ronin back, `onAssassination` |
 | `assassin/executions.js` | `EXECS`: the approved batch 1 executions, ported from prototype 14 |
-| `assassin/enemy-poses.js` | The enemy's guard and reaction poses the executions share, `at` (pose at time t), `quickSheathe` |
+| `assassin/enemy-poses.js` | The enemy's guard and reaction poses the executions share, `at` (pose at time t), `smoothAt` (the same keys as smooth curves), `lying`, `quickSheathe` |
 | `assassin/pieces.js` | The rig drawn live (`figure`, `withShadow`), the enemy cut into pieces of his own pixels, `dropSword`, `sever`, `shatter` |
-| `assassin/stage-fx.js` | An execution's own effects (`F`: sparks, slivers, cuts, crescents, bolts, ghosts, cracks) |
+| `assassin/stage-fx.js` | An execution's own effects (`F`: sparks, slivers, cuts, crescents, bolts, ghosts, cracks); `F.hit` lands the blow (knockback, blood, impact frames); `wx` (stage x to world x) |
+| `assassin/stage-body.js` | The deaths pass on the stage enemy: his keys read smooth, his spring body, the thud, twitches and eye going out; pieces landing with dust and blood |
 | `world/room.js` | Floor bounds, pillars, the baked background, `collide` |
 | `world/enemies.js` | The samurai and the enemy API: `ENEMIES`, `living`, `nearest`, `isolated`, `damage`, `kill`, `onKill`; `DMG`, health, reactions, respawn |
 | `world/enemy-body.js` | The samurai's poses (guard, flinch, stagger, death) and the deaths pass's spring joints, floor thud, twitch, eye going out |
