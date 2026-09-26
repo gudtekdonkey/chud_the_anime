@@ -9,7 +9,9 @@ import { F } from './stage-fx.js';
 // side: where he lands (+1 behind the enemy, -1 in front), gap: how far from him, dur: until the enemy has come to rest,
 // free: when the ronin has sheathed and the player has him back. run(S, t, R, E) poses both bodies at time t.
 // S.tail(t0, from): how he ends from pose `from` at t0: sheathed if nobody is left near, else the blade stays out for the next K.
-// bare: he never draws, so he never has to sheathe.
+// bare: he never draws, so he never has to sheathe. unseen: the cuts were made before we saw them, so no blow lands (no knockback).
+// end: where the player gets him back, x from the enemy in this frame ('start' = back where he flashed from). K reads it to
+// pick an execution that leaves him in reach of another lone enemy.
 const CY = '#6ff3e4', CY2 = '#b8fff6', WH = '#ffffff';
 const head = (S, E, pose, vx, vz, va) => S.pieces.push(...toPieces(partOf(E, pose, { noHead: true }), [], E.y, P => { P.vz = vz; P.vx = vx; P.va = va; }));
 export const EXECS = [
@@ -36,7 +38,7 @@ export const EXECS = [
       if (t >= SLICE && t < 1.1 && Math.random() < .3) F.spark(S, E.x + rr(-1, 1), E.y - 17, rr(-15, 15), -rr(10, 30), .2, Math.random() < .5 ? CY2 : WH);
       S.once('click', t >= 1.3, () => F.slivers(S, E.x, E.y, 6));
     } },
-  { name: 'Through and past', side: -1, gap: 22, dur: 1.4, free: 1.02,
+  { name: 'Through and past', side: -1, gap: 22, end: 28, dur: 1.4, free: 1.02,
     run(S, t, R, E) {
       const crouch = pz({ hy: 4, lean: .6, chest: .15, fl: [.85, 1.45], bl: [-.85, .5], fa: HILT, ba: [-.05, .8] });
       const past = pz({ hx: 2, hy: 6, lean: .85, chest: .5, fl: [1.4, 1.6], bl: [-1.35, .05], fa: [1.5, -.05], sword: .25, ba: [-1.85, 0], hat: 1, flutter: 1 });
@@ -74,7 +76,7 @@ export const EXECS = [
       S.once('down', t >= .68, () => { S.shake = .15; F.dust(S, R.x, R.y, 14); F.ring(S, R.x, R.y, 5, 2, .25, 20); F.crack(S, R.x + 4, R.y); });
       S.once('click', t >= 1.24, () => { for (const P of S.pieces) P.rest = 1, P.life = Math.min(P.life, .4); F.slivers(S, E.x, E.y + 4, 10); });
     } },
-  { name: 'Whirlwind', side: -1, gap: 12, dur: 1.5, free: 1.35,
+  { name: 'Whirlwind', side: -1, gap: 12, end: -14, dur: 1.5, free: 1.35,
     run(S, t, R, E) {
       const steps = [
         { t: 0,   dx: -11, dy: 2,  f: 1,  p: pz({ hy: 6, lean: .55, chest: .3, fl: [1.35, 1.6], bl: [-.45, 2.1], fa: [1.45, 0], sword: .4, ba: [-1.3, .2], flutter: 1 }), rot: .5 },
@@ -127,7 +129,7 @@ export const EXECS = [
         sever(S, E, [x - 9, E.y - 21, x + 9, E.y - 7], P => { P.x0 = P.x; P.z0 = P.z; P.script = slideOff(-1, .78); });
         F.cut(S, x - 9, E.y - 21, x + 9, E.y - 7, .5); F.burst(S, x, E.y - 13, 8); });
     } },
-  { name: 'Peek-a-boo', side: -1, gap: 9, dur: 1.8, free: .9, stay: true,
+  { name: 'Peek-a-boo', side: -1, gap: 9, dur: 1.8, free: .9, stay: true, end: 'start', unseen: true,
     run(S, t, R, E) {
       const beside = pz({ fa: [.2, .25], lean: .02 });
       const home = pz({ hy: 2, lean: .2, fa: [1.45, .05], sword: 1.2, ba: [-.4, .3] });
@@ -147,7 +149,7 @@ export const EXECS = [
         shatter(S, E, [[x - 10, y - 20, x + 10, y], [x + 10, y - 20, x - 10, y], [x - 12, y - 12, x + 12, y - 8], [x - 3, y - 22, x + 2, y + 2]], (P, cx) => { P.vx = (cx - x) * 2.2; P.vz = rr(-25, -5); P.va = (cx - x) * .35 + rr(-1, 1); });
         S.shake = .08; F.burst(S, x, y - 10, 12); });
     } },
-  { name: 'Peek-a-boo, from behind', side: +1, gap: 6, dur: 1.9, free: .6, stay: true, bare: true,
+  { name: 'Peek-a-boo, from behind', side: +1, gap: 6, dur: 1.9, free: .6, stay: true, end: 'start', bare: true,
     run(S, t, R, E) {
       const reach = pz({ hy: 1, lean: .12, fl: [.3, .3], bl: [-.35, .3], fa: [2.0, .9], ba: [1.8, 1.0] });
       const grip = pz({ hy: 2, lean: .2, chest: .1, fl: [.4, .5], bl: [-.45, .4], fa: [2.25, 1.15], ba: [2.05, 1.25] });

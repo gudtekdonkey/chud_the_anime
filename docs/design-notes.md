@@ -59,6 +59,7 @@ Decisions made in the design sessions so far, newest last.
   - **The counter window (agreed):** tap F. A blow landing within 0.2 s of the press is countered; an earlier press is only a block (pushed back, no counter). Four indicators prototyped; recommended A, the glint running up the enemy's blade and a star on the point while the window is open, with B, a closing ring, as an assist option. Not yet picked.
 - **Nothing left to fight:** if no enemy is within two screens (960 px) when an attack or execution ends, he skips the blade-out stance and sheathes at once, unbothered.
 - **Chaining K** (owner 2026-09-26): he does not sheathe between executions. With an enemy still near, an execution ends with the blade out in a counter stance, ready for the next K; he sheathes only when nobody is left (the rule above), or after the usual ~2 s of calm.
+- **K keeps the chain open** (owner 2026-09-26): executions land him in different spots (back where he was, behind the enemy, in between). K foresees each one's landing spot and picks one that leaves another lone enemy in reach (within 120 px, outside every other bubble). Only when none does is the pick random. It is never the same execution twice running, unless that one is the only one that keeps the chain going.
 
 ## Personality traits (`prototypes/26-personalities.html`, approved)
 
