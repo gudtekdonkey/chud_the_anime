@@ -13,6 +13,9 @@ Decisions that everything else builds on. Owner answers are marked with the date
 - **Story: 90% from the world.** Only the structure is written by hand; everything else comes out of the ledger (quests, rivals, events).
 - **Glitch storms are in**, and there is **no true story behind the glitch powers**: they are a fact of this world, not a mystery to solve.
 - **World events, and random events while travelling**: ambushes on the road, merchants and pilgrims met on the way, a wounded man asking for help, weather that turns, a glitch storm crossing the road.
+- **Karma is shown to the player** (owner, 2026-09-26).
+- **Raids can take land, but not the legal title** (owner, 2026-09-26): what is held (possession) and what is owned on paper (title) are separate. A raid can seize possession; the title stays with its holder until it passes by some other mechanic, still to be discussed with the owner.
+- **Platform: the browser.** Steam or phone would be cool later; for now, build the experience in the browser, with no multiplayer.
 
 ## The world (owner, 2026-09-26)
 
@@ -61,9 +64,7 @@ Plot holder → zone lord (all of one zone) → domain (merged zones) → kingdo
 - NPCs commit crimes too, and have their own karma and bounties.
 
 ### Still open
-- Karma: hidden, shaping consequences only, or shown and steered toward good or evil?
-- Can land be lost in raids?
-- Platforms: browser, desktop (Steam), phone, gamepad.
+- How a legal title passes (sale, grant, inheritance, a court, forgery?): the mechanic behind possession vs title.
 - Answered above: single-player, real time while away, death and heirs.
 
 ## Wealth (proposed, for the owner to confirm)
