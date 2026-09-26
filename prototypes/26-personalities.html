@@ -1,0 +1,657 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body { margin: 0; }</style>
+<title>Ronin Personalities</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; margin: 0; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-inline: 16px; padding-block: 32px 64px; display: grid; gap: 26px; }
+  header { display: grid; gap: 8px; max-width: 72ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 19px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  h3 { font: 700 16px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  h2.group { text-transform: capitalize; color: var(--cyan); margin-top: 8px; }
+  p { margin: 0; color: var(--muted); }
+  p b { color: var(--ink); font-weight: 600; }
+  canvas { image-rendering: pixelated; display: block; width: 100%; }
+  .panel { background: var(--panel); border: 1px solid var(--rule); padding: 16px; display: grid; gap: 14px; }
+  .stage { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stage figure { margin: 0; display: grid; gap: 4px; }
+  .stage figcaption { font: 500 12px/1 "Pixelify Sans", monospace; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .form { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; }
+  .form label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+  select, button { font: 15px Figtree, system-ui, sans-serif; background: var(--ground); color: var(--ink); border: 1px solid var(--rule); height: 36px; padding-inline: 8px; }
+  button { font: 500 14px "Pixelify Sans", monospace; cursor: pointer; }
+  button.primary { background: var(--cyan); color: #0c1413; border: 0; padding-inline: 14px; }
+  .slot { display: grid; gap: 4px; }
+  .slot span { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+  input[type=range] { accent-color: var(--cyan); width: 110px; }
+  code, pre { font: 12.5px/1.45 ui-monospace, Menlo, monospace; color: var(--ink); }
+  pre { white-space: pre-wrap; word-break: break-word; margin: 6px 0 0; color: var(--muted); }
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .modes button[aria-pressed=true] { border-color: var(--cyan); color: var(--cyan); }
+  .modes label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 14px; margin-left: 10px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--rule); display: grid; align-content: start; }
+  .card canvas { border-bottom: 1px solid var(--rule); }
+  .card .body { padding: 10px 12px 12px; display: grid; gap: 6px; }
+  .card p { font-size: 13.5px; }
+  .card .fid { font-size: 12.5px; }
+  .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: space-between; }
+  .tag { font: 500 11px/1 "Pixelify Sans", monospace; letter-spacing: .1em; text-transform: uppercase; padding: 4px 6px 3px; border: 1px solid #2c5a55; color: var(--cyan); }
+  .card button { height: 30px; font-size: 13px; }
+  summary { cursor: pointer; color: var(--muted); font-size: 13px; }
+  details { flex-basis: 100%; }
+  .ask { background: var(--panel); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 10px; max-width: 72ch; }
+  .ask ol { margin: 0; padding-left: 22px; color: var(--muted); display: grid; gap: 4px; }
+  @media (max-width: 560px) { .stage { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Personality · movement traits</div>
+    <h1>Fifty-two ways to stand and walk</h1>
+    <p>A personality is a short list of traits, each with a strength. A trait is only data: a few nudges to how he leans, breathes, holds his hands, strides and bounces, plus the small things he does when he stands still (the fidgets). Traits add together, so any two or three mix into a new character, and <b>0.5</b> of a trait is half as much of it. The same traits will fit the samurai, since they share his rig. With no traits he is exactly the ronin in the game today.</p>
+  </header>
+
+  <section class="panel" id="mixer">
+    <div class="row"><h2>Mix a character</h2><div class="form"><select id="preset" aria-label="Characters"></select><button class="primary" id="random">Random mix</button></div></div>
+    <div class="stage">
+      <figure><canvas id="m-idle"></canvas><figcaption>Idle</figcaption></figure>
+      <figure><canvas id="m-walk"></canvas><figcaption>Walk</figcaption></figure>
+      <figure><canvas id="m-run"></canvas><figcaption>Run</figcaption></figure>
+    </div>
+    <div class="form">
+      <div class="slot"><select id="t0" aria-label="Trait 1"></select><span><input type="range" id="k0" min="0" max="1.5" step=".1" value="1" aria-label="Strength 1"><output id="v0">1.0</output></span></div>
+      <div class="slot"><select id="t1" aria-label="Trait 2"></select><span><input type="range" id="k1" min="0" max="1.5" step=".1" value="1" aria-label="Strength 2"><output id="v1">1.0</output></span></div>
+      <div class="slot"><select id="t2" aria-label="Trait 3"></select><span><input type="range" id="k2" min="0" max="1.5" step=".1" value="1" aria-label="Strength 3"><output id="v2">1.0</output></span></div>
+    </div>
+    <p id="mixAbout"></p>
+    <p id="mixFidgets"></p>
+    <p>As code: <code id="code"></code></p>
+  </section>
+
+  <div class="modes" role="group" aria-label="What the cards show">
+    <button data-m="idle" aria-pressed="true">Idle</button><button data-m="walk" aria-pressed="false">Walk</button><button data-m="run" aria-pressed="false">Run</button>
+    <label for="slow"><input type="checkbox" id="slow"> Half speed</label>
+  </div>
+  <div id="grid" style="display: grid; gap: 14px"></div>
+
+  <div class="ask">
+    <h2>Your call</h2>
+    <ol>
+      <li><b>Keep, tweak or cut</b> any trait. Each one is a few numbers, so a tweak is quick.</li>
+      <li><b>Pick the ronin's own personality</b> (or leave him as he is).</li>
+      <li><b>More fidgets or traits?</b> New ones slot in without touching the rest.</li>
+    </ol>
+  </div>
+</div>
+
+<script>
+// Snapshot of src/config.js, src/rig/, src/traits/ at the time of this prototype, so the page stands on its own.
+// ---- src/config.js
+// ---- Constants: the screen, the palette, the rig's frame ----
+const W = 480, H = 270;
+const COL = { body: '#15181c', mid: '#262b31', eye: '#6ff3e4', blade: '#f2f2f2', fx: '#52e8d6', fx2: '#b8fff6' };
+// one rig frame: 48x48, his feet at (OX, OY)
+const FW = 48, FH = 48, OX = 24, OY = 40;
+// the rig's palette: one letter per colour, shared by the rig and the hand-drawn rows
+const RC = { K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', H: '#2a2f37', G: '#3b424c', B: '#1a1d24',
+  E: '#6ff3e4', e: '#2e6a64', W: '#e9eeee', S: '#7d868e', s: '#2c3037' };
+const SQ = .8; // SQ flattens circles into the top-down floor plane
+// ---- src/rig/pose.js
+// ---- Pose helpers: a pose is a flat object of joint angles; keyframes are eased between them ----
+// angles in radians: limbs 0 = straight down, + swings forward; knee + folds the shin back; elbow + folds the forearm forward
+const REST = { hx: 0, hy: 0, lean: .04, chest: 0, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
+  sword: null, bsword: null, sheathing: false, hat: 0, flutter: 0, bow: 0, dim: 0 };   // bow: head dips forward; dim: eyes dimmed (meditation)
+const pz = o => ({ ...REST, ...o });
+const HILT = [.42, 1.0];          // front hand resting on the hilt at the hip
+const lerpP = (a, b, k) => { const o = {}; for (const key in a) {
+  const x = a[key], y = b[key];
+  o[key] = Array.isArray(x) ? x.map((v, i) => v + (y[i] - v) * k) : typeof x === 'number' && typeof y === 'number' ? x + (y - x) * k : k < .5 ? x : y; }
+  return o; };
+const ease = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, lin = k => k;
+// sample eased keyframes [time, pose, easing?] into frames
+function keyed(keys, fps) {
+  const n = Math.round(keys[keys.length - 1][0] * fps) + 1;
+  return Array.from({ length: n }, (_, i) => { const t = i / fps; let j = 0;
+    while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+    const [t0, a] = keys[j], [t1, b, e] = keys[j + 1];
+    return lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0))))); });
+}
+// ---- src/rig/rig.js
+
+// ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
+const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
+function rig(g, fx, p) {
+  const put = (x, y, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
+  const blob = (x, y, w, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
+  const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
+    for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
+  const poly = (pts, c) => {
+    const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+    for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++)
+      for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+        let inside = false;
+        for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+          const [xi, yi] = pts[i], [xj, yj] = pts[j];
+          if ((yi > y + .5) !== (yj > y + .5) && x + .5 < (xj - xi) * (y + .5 - yi) / (yj - yi) + xi) inside = !inside;
+        }
+        if (inside) put(x, y, c);
+      }
+  };
+  const hip = [OX + p.hx, OY - 11 + p.hy];
+  const up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
+  // breath lifts the chest, shoulders and head but not the hips, so it reads as breathing, not bobbing
+  // the chest pivots at the waist (u = 4), so a cut can be driven by the hips and then the chest
+  const up2 = [Math.sin(p.lean + p.chest), -Math.cos(p.lean + p.chest)], fw2 = [Math.cos(p.lean + p.chest), Math.sin(p.lean + p.chest)];
+  const L = (u, v) => { const b = u > 4 ? p.breath * Math.min(1, (u - 4) / 3) : 0;
+    if (u <= 4) return [hip[0] + up[0] * u + fw[0] * v, hip[1] + up[1] * u + fw[1] * v];
+    const w = [hip[0] + up[0] * 4, hip[1] + up[1] * 4];
+    return [w[0] + up2[0] * (u - 4) + fw2[0] * v, w[1] + up2[1] * (u - 4) + fw2[1] * v - b]; };
+  const dir = a => [Math.sin(a), Math.cos(a)];
+  const add = (a, d, k) => [a[0] + d[0] * k, a[1] + d[1] * k];
+  const leg = ([th, kn], c, off) => { const h = L(0, off), k = add(h, dir(th), 5), f = add(k, dir(th - kn), 6);
+    seg(h, k, 2, c); seg(k, f, 2, c); seg(f, [f[0] + 2, f[1]], 1, c); };
+  const arm = ([sh, el], c) => { const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
+    seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
+  const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
+
+  // far side first: scabbard, far arm, far leg
+  seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
+  // the back hand can carry the blade too, for the counter stances
+  const bh = arm(p.ba, 'D');
+  leg(p.bl, 'D', -.5);
+  // torso, near leg
+  poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
+  for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
+  leg(p.fl, 'K', .5);
+  // head and hat
+  const hc = L(10 - p.bow * .7, .6 + p.bow * 1.1);
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
+  put(hc[0] + 1.5, hc[1], p.dim ? 'e' : 'E');
+  const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
+  HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x - fx + fx, hy0 + y, ch); }));
+  // mantle over the shoulders, its back tip lifting a hair with the flutter
+  const f = p.flutter;
+  // it drapes flat down the back instead of standing off it, so it no longer reads as a hump
+  poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M');
+  seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
+  if (f > .5) put(...L(2.6, -3.4), 'M');
+  // the back hand's blade is drawn over the body and the sash, so it is never lost behind them
+  if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; blob(bh[0], bh[1], 2, 'D'); seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
+  // near arm and the sword
+  const hand = arm(p.fa, 'K');
+  if (p.sword === null && !p.sheathing && p.bsword == null) {                    // sheathed: hilt pokes forward-up out of the scabbard
+    put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W');
+  } else if (p.sheathing) {                                  // sliding home: blade runs from the hand into the scabbard mouth
+    seg(hand, mouth, 1, 'W'); put(...hand, 'S'); put(...add(hand, [hand[0] - mouth[0], hand[1] - mouth[1]].map(v => v / (Math.hypot(hand[0] - mouth[0], hand[1] - mouth[1]) || 1)), 2), 'K');
+  } else if (p.sword !== null) {
+    const d = [Math.cos(p.sword), Math.sin(p.sword)];
+    seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S');
+    seg(add(hand, d, 1), add(hand, d, 13), 1, 'W');
+  }
+}
+// ---- src/traits/knobs.js
+
+// ---- The knobs a personality turns. BASE is the plain ronin as he is today; a trait only nudges these numbers ----
+// Every character on the rig (the ronin, and later the samurai) gets its idle, walk and run from BASE plus its traits.
+// Angles are the rig's radians (see rig/pose.js); hx / hy / hat are pixels.
+const BASE = {
+  idle: {
+    lean: .04, chest: 0, hx: 0, hy: 0, bow: 0, hat: 0, dim: 0,
+    legs: 1,          // stance width: 1 is his feet a hair apart, 3 is a wide planted stance
+    knee: 0,          // sinks into the knees; the feet stay planted, so the hips drop
+    fa: [.12, .18], ba: [-.08, .12],
+    breath: 1,        // how deep each breath lifts the chest
+    armBreath: .03,   // how far the hands drift with it
+    period: 16 / 6,   // one breath, in seconds
+    fps: 6,
+    bob: 0,           // the hips dip with each breath, px
+    sway: 0,          // the hips drift forward and back over two breaths, px
+    swayLean: 0,      // ...and the body tilts with them
+    jitter: 0,        // small restless shifts, px
+    flutter: 1,       // how much the mantle stirs
+    every: 2,         // breaths between fidgets
+    f: {}, b: {},     // front and back hand targets (see ARMS), by weight
+  },
+  // one stride cycle is 8 frames; fps sets the cadence and speed how fast he covers ground, px/s
+  walk: {
+    lean: .08, chest: 0, hx: 0, hy: 0, bow: 0, hat: 0, dim: 0,
+    stride: .5, knee0: .12, lift: .55, swing: .25, fa0: .1, faEl: .3, ba0: -.1, baEl: .25,
+    bounce: .6,       // the hips dip on each footfall
+    heavy: 0,         // a harder drop on each footfall
+    rock: 0,          // the body rocks back and forth with each step (swagger)
+    limp: 0,          // favours the near leg: shorter, stiffer step and a dip onto the good one
+    wobble: 0,        // drifts and tilts over two strides (drunk)
+    fps: 8, speed: 40, flutter: .5,
+    f: { hilt: .6 }, b: {},
+  },
+  run: {
+    lean: .32, chest: 0, hx: 0, hy: 0, bow: 0, hat: 0, dim: 0,
+    stride: .95, knee0: .3, lift: 1.1, swing: .7, fa0: .3, faEl: .9, ba0: -.5, baEl: .5,
+    bounce: 1, heavy: 0, rock: 0, limp: 0, wobble: 0,
+    fps: 14, speed: 78, flutter: 1,
+    f: {}, b: {},
+  },
+};
+// these multiply (a trait's 0.8 is "20% slower"); every other number adds
+const MUL = new Set(['period', 'fps', 'speed']);
+const MODES = ['idle', 'walk', 'run'];
+
+// ---- Where a hand can rest: [shoulder, elbow] ----
+const ARMS = {
+  hilt: HILT,              // resting on the hilt at the hip
+  scabbard: [.35, .6],     // holding the scabbard just below the hilt
+  behind: [-.5, -1.0],     // clasped behind the back
+  cross: [.15, 1.45],      // arms folded across the chest
+  sleeves: [.25, 1.35],    // hands tucked into the opposite sleeves
+  folded: [.3, .85],       // hands folded low in front
+  pray: [.55, 2.15],       // palms together at the chest
+  chin: [1.0, 2.35],       // hand at the chin, thinking
+  hip: [-.6, 1.3],         // fist on the hip, elbow out
+  clutch: [.15, 1.2],      // pressed to the side, holding a wound
+  fists: [.5, 2.2],        // fists up
+  dangle: [.02, .04],      // hanging dead straight
+  trail: [-1.35, .1],      // swept straight back (the shinobi run)
+};
+// ---- src/traits/fidgets.js
+
+// ---- Fidgets: small idle actions a trait can add, played now and then between breaths ----
+// at(u) takes the fidget's progress 0..1 and returns { f, b } hand targets with their weight w, plus add: numbers added
+// to the pose (arrays add per joint). Every fidget eases in and back out, so it drops back into the breath cleanly.
+const env = (u, a = .2, b = .25) => u < a ? ease(u / a) : u > 1 - b ? ease((1 - u) / b) : 1;
+const hump = u => Math.sin(Math.PI * Math.min(1, Math.max(0, u)));
+const FIDGETS = {
+  hatTip: { dur: 1.6, about: 'reaches up and tugs the brim of his hat down', at: u => ({ f: [2.4, .6], w: env(u, .25, .3),
+    add: { hat: u > .4 && u < .75 ? 1 : 0, bow: .35 * env(u) } }) },
+  hiltCheck: { dur: 1.8, about: 'rests a hand on the hilt and glances down at it', at: u => ({ f: HILT, w: env(u),
+    add: { bow: .6 * env(u, .3, .3), lean: .05 * env(u) } }) },
+  hiltThumb: { dur: 1.4, about: 'thumbs the guard of his sword, restless', at: u => ({ f: [HILT[0] + .1 * Math.max(0, Math.sin(u * 28)), HILT[1]], w: env(u, .15, .2), add: {} }) },
+  neckCrack: { dur: 1.3, about: 'tips his head over, then snaps it back', at: u => ({ w: 0,
+    add: { bow: u < .45 ? 1.1 * ease(u / .45) : u < .55 ? 1.1 - 1.7 * (u - .45) / .1 : -.6 * env(u, 0, .45), chest: -.06 * env(u) } }) },
+  shoulderRoll: { dur: 1.6, about: 'rolls his shoulders up and back', at: u => ({ w: 0,
+    add: { breath: .9 * hump(u), chest: -.12 * Math.sin(Math.PI * 2 * u) * env(u) } }) },
+  footTap: { dur: 1.6, about: 'taps his front foot three times', at: u => { const t = Math.max(0, Math.sin(u * 6 * Math.PI)) * env(u, .1, .1);
+    return { w: 0, add: { fl: [.2 * t, .5 * t] } }; } },
+  weightShift: { dur: 1.8, about: 'shifts his weight onto the back foot and back again', at: u => ({ w: 0,
+    add: { hx: -1.5 * env(u, .3, .3), lean: -.05 * env(u, .3, .3), fl: [.12 * env(u, .3, .3), 0] } }) },
+  stretch: { dur: 2.2, about: 'stretches both arms up over his head', at: u => ({ f: [2.95, .15], b: [2.8, .25], w: env(u, .3, .3),
+    add: { breath: 1 * env(u, .3, .3), lean: -.08 * env(u), chest: -.14 * env(u), bow: -.4 * env(u) } }) },
+  sigh: { dur: 2.4, about: 'a long sigh: the chest lifts, then everything sags', at: u => ({ w: 0,
+    add: { breath: 1.2 * hump(u / .55), bow: .7 * env(u, .5, .2) * (u > .45 ? 1 : 0), fa: [-.06 * env(u, .5, .2), 0], ba: [.06 * env(u, .5, .2), 0] } }) },
+  glance: { dur: 1.5, about: 'glances up and back over his shoulder', at: u => ({ w: 0,
+    add: { bow: -.45 * env(u, .15, .3), hx: -1 * env(u, .15, .3), chest: -.1 * env(u, .15, .3), hat: -1 * (u > .15 && u < .7 ? 1 : 0) } }) },
+  nod: { dur: 1.4, about: 'two slow nods', at: u => ({ w: 0, add: { bow: .8 * Math.pow(Math.sin(Math.PI * 2 * u), 2) } }) },
+  lookDown: { dur: 2, about: 'lowers his head and stares at the floor', at: u => ({ w: 0, add: { bow: 1.2 * env(u, .3, .3), lean: .06 * env(u, .3, .3) } }) },
+  scratch: { dur: 1.6, about: 'scratches the back of his head under the hat', at: u => ({ f: [2.2, 1.45 + .12 * Math.sin(u * 40)], w: env(u, .25, .25),
+    add: { bow: .3 * env(u), hat: u > .3 && u < .7 ? -1 : 0 } }) },
+  knuckles: { dur: 1.5, about: 'brings his hands together and cracks his knuckles', at: u => ({ f: [.7, 1.6], b: [.65, 1.7], w: env(u, .25, .25),
+    add: { chest: u > .5 && u < .6 ? .08 : 0, bow: .2 * env(u) } }) },
+  dustOff: { dur: 1.6, about: 'brushes dust off his far shoulder', at: u => ({ f: [1.25, 2.3 + .15 * Math.sin(u * 22)], w: env(u, .25, .25),
+    add: { bow: .3 * env(u), chest: .06 * env(u) } }) },
+  yawn: { dur: 2.2, about: 'a slow yawn behind one hand', at: u => ({ f: [1.6, 2.1], w: env(u, .3, .3),
+    add: { breath: 1.3 * env(u, .3, .3), bow: -.5 * env(u, .3, .3), chest: -.1 * env(u) } }) },
+  stumble: { dur: 1.6, about: 'loses his footing for a moment and catches himself', at: u => { const e = env(u, .1, .55);
+    return { b: [-1.4, .2], f: [1.3, .2], w: e, add: { hx: -2.5 * e, lean: -.25 * e, bl: [-.3 * e, 0], fl: [.3 * e, .2 * e], hat: e > .5 ? -1 : 0 } }; } },
+  flexHand: { dur: 1.3, about: 'shakes out his sword hand', at: u => ({ f: [.6, .4 + .5 * Math.max(0, Math.sin(u * 30))], w: env(u), add: {} }) },
+  fixMantle: { dur: 1.7, about: 'straightens his mantle at the collar', at: u => ({ f: [1.6, 2.3], w: env(u, .25, .3),
+    add: { chest: -.05 * env(u), bow: .25 * env(u), flutter: u > .4 && u < .7 ? 1 : 0 } }) },
+  toes: { dur: 1.3, about: 'rocks up onto his toes and back', at: u => ({ w: 0, add: { hy: -Math.round(hump(u * 2 % 1) * env(u, .1, .1)) } }) },
+};
+// ---- src/traits/traits.js
+// ---- Personality traits: each is only data, nudging the knobs in knobs.js ----
+// all: applies to idle, walk and run (only where the knob exists); idle / walk / run: that mode only.
+// Numbers add to BASE (period, fps and speed multiply). f / b: hand targets from ARMS, by weight.
+// fidgets: idle actions from fidgets.js. like: starts from another trait and adds these nudges on top.
+// A character mixes traits with strengths, e.g. [['proud', 1], ['elder', .5]]; see mix.js.
+const TRAITS = {
+  // -- bearing: how he carries himself
+  stoic: { name: 'Stoic', group: 'bearing', about: 'Barely moves. A shallow breath, a rare glance at his blade, an even, quiet step.',
+    idle: { breath: -.4, every: 4 }, walk: { bounce: -.42, swing: -.14 }, run: { swing: -.21 }, fidgets: ['hiltCheck'] },
+  proud: { name: 'Proud', group: 'bearing', about: 'Chest out, chin up, hands clasped behind him. Long, unhurried strides.',
+    all: { lean: -.16, chest: -.14, bow: -.52 }, idle: { legs: .6, b: { behind: 1 } }, walk: { stride: .24, fps: .84, swing: -.21, b: { behind: 1 } }, fidgets: ['glance'] },
+  humble: { name: 'Humble', group: 'bearing', about: 'Head dipped, hands folded low in front of him. Small, polite steps.',
+    all: { bow: .75, lean: .1 }, idle: { f: { folded: 1 }, b: { folded: 1 } }, walk: { stride: -.19, fps: .84, swing: -.21, f: { folded: .7 } }, fidgets: ['nod'] },
+  regal: { name: 'Regal', group: 'bearing', about: 'Upright and still, both hands behind his back. A slow, level walk with no bounce at all.',
+    all: { lean: -.12, chest: -.07, bow: -.3 }, idle: { breath: -.3, f: { behind: 1 }, b: { behind: 1 } },
+    walk: { fps: .68, stride: .16, bounce: -.84, f: { behind: 1 }, b: { behind: 1 } }, run: { fps: .87 }, fidgets: ['nod'] },
+  hunched: { name: 'Hunched', group: 'bearing', about: 'Rounded over, head low, as if under a weight. Short steps.',
+    all: { lean: .44, chest: .22, bow: .9 }, idle: { fa: [.1, .2], ba: [.1, .2] }, walk: { stride: -.16, lift: -.2 }, run: { lean: .16 } },
+  coiled: { name: 'Coiled', group: 'bearing', about: 'Always half a breath from drawing: knees bent, feet wide, hand on the hilt. Stalks rather than walks.',
+    all: { lean: .24 }, idle: { knee: 1.12, legs: 2, breath: -.3, f: { hilt: 1 } }, walk: { knee0: .56, bounce: -.56, stride: .16, fps: .76, f: { hilt: 1 } },
+    run: { lean: .2, f: { hilt: .8 } }, fidgets: ['hiltThumb'] },
+  slouch: { name: 'Slouched', group: 'bearing', about: 'Hips pushed forward, shoulders back, arms hanging. Scuffs along.',
+    all: { lean: -.2, chest: .32, bow: .52, hx: 1 }, idle: { f: { dangle: .6 }, b: { dangle: .6 } }, walk: { swing: -.14, lift: -.26, bounce: -.28 }, fidgets: ['sigh'] },
+  soldier: { name: 'Soldier', group: 'bearing', about: 'Drilled: feet together, still as a post, then a crisp march with the arms swinging high.',
+    all: { lean: -.04, chest: -.07 }, idle: { breath: -.5, legs: -.5, every: 6 }, walk: { swing: .49, lift: .33, fps: 1.16, faEl: -.2, baEl: -.2, bounce: .28, f: { hilt: -.6 } },
+    run: { swing: .14 } },
+
+  // -- energy: how much he has left
+  lazy: { name: 'Lazy', group: 'energy', about: 'Arms dead at his sides, slow deep breaths, a yawn now and then. Drags his feet.',
+    all: { bow: .45, lean: -.08 }, idle: { period: 1.35, breath: .3, hx: 1, f: { dangle: 1 }, b: { dangle: 1 } },
+    walk: { fps: .52, lift: -.45, stride: -.16, swing: -.21, bounce: -.42, speed: .8 }, run: { fps: .76, lift: -.39, speed: .9 }, fidgets: ['yawn'] },
+  restless: { name: 'Restless', group: 'energy', about: 'Can\'t stand still: sways, taps his foot, shifts his weight, and fidgets every breath.',
+    idle: { sway: 1.3, jitter: .48, every: -1 }, walk: { fps: 1.16 }, fidgets: ['footTap', 'weightShift'] },
+  twitchy: { name: 'Twitchy', group: 'energy', about: 'Quick shallow breaths and little jerks. Glances round, shakes out his hand.',
+    idle: { jitter: 1.44, period: .8, every: -1 }, walk: { fps: 1.32, wobble: .2 }, run: { fps: 1.16 }, fidgets: ['glance', 'flexHand'] },
+  bouncy: { name: 'Bouncy', group: 'energy', about: 'Springs on his knees with each breath and bounds when he walks.',
+    idle: { bob: 1, period: .8, knee: .28 }, walk: { bounce: 1.96, lift: .39, fps: 1.16 }, run: { bounce: 1.4 }, fidgets: ['toes'] },
+  weary: { name: 'Weary', group: 'energy', about: 'Bone tired: heavy breaths, head down, arms hanging. Every footfall lands hard.',
+    all: { bow: .9, lean: .24, chest: .14 }, idle: { breath: .8, period: 1.2, knee: .21, f: { dangle: .7 }, b: { dangle: .7 } },
+    walk: { fps: .6, stride: -.19, lift: -.39, swing: -.21, heavy: 1.04, speed: .75 }, run: { fps: .76, speed: .85, lift: -.39 }, fidgets: ['sigh'] },
+  eager: { name: 'Eager', group: 'energy', about: 'Leaning in, up on the balls of his feet, quick to go.',
+    all: { lean: .2, bow: -.22 }, idle: { bob: .5, period: .85, knee: .21 }, walk: { fps: 1.32, stride: .16, speed: 1.15 },
+    run: { speed: 1.1, lean: .16, fps: 1.08 }, fidgets: ['toes'] },
+  heavy: { name: 'Heavy', group: 'energy', about: 'Wide and solid. Rolls his shoulders; every step thuds.',
+    all: { lean: .06 }, idle: { legs: 1.5, knee: .28, breath: .3 }, walk: { heavy: 1.95, fps: .68, stride: .08, speed: .85 },
+    run: { heavy: 1.56, fps: .76 }, fidgets: ['shoulderRoll'] },
+  lightFooted: { name: 'Light-footed', group: 'energy', about: 'Barely touches the floor: no bounce, high quick feet.',
+    idle: { knee: .14 }, walk: { bounce: -.7, lift: .26, fps: 1.16 }, run: { bounce: -.56, lift: .26, speed: 1.08 }, fidgets: ['toes'] },
+
+  // -- mood: what he feels
+  calm: { name: 'Calm', group: 'mood', about: 'Slow, even breathing, few fidgets, a gentle unhurried walk.',
+    idle: { period: 1.3, breath: -.2, every: 2 }, walk: { fps: .84, bounce: -.28 } },
+  nervous: { name: 'Nervous', group: 'mood', about: 'Hand never leaves the hilt. Shrinks a little, glances round, quick short steps.',
+    all: { bow: .3, lean: .12 }, idle: { jitter: .6, every: -1, knee: .28, legs: -.3, f: { hilt: .9 } },
+    walk: { fps: 1.24, stride: -.16, f: { hilt: 1 } }, fidgets: ['glance', 'hiltThumb'] },
+  cocky: { name: 'Cocky', group: 'mood', about: 'Fist on his hip, hat pushed back, a swagger in every step.',
+    all: { lean: -.16, chest: -.11, bow: -.3, hat: -1 }, idle: { legs: 1.5, sway: .78, b: { hip: 1 } },
+    walk: { rock: 1.6, fps: .84, stride: .16, bounce: .42, b: { hip: 1 } }, run: { rock: .8 }, fidgets: ['dustOff', 'neckCrack'] },
+  brooding: { name: 'Brooding', group: 'mood', about: 'Arms folded, head sunk, staring at nothing.',
+    all: { bow: 1.2, lean: .04 }, idle: { breath: -.2, f: { cross: 1 }, b: { cross: 1 } }, walk: { fps: .68, stride: -.13, f: { cross: 1 }, b: { cross: 1 } }, fidgets: ['lookDown'] },
+  cheerful: { name: 'Cheerful', group: 'mood', about: 'Chin up, a little sway, a springy walk with big arm swings.',
+    all: { bow: -.38 }, idle: { bob: .6, sway: 1.04 }, walk: { bounce: 1.12, swing: .35, fps: 1.16, f: { hilt: -.6 } }, run: { swing: .14, bounce: .56 }, fidgets: ['toes', 'stretch'] },
+  grim: { name: 'Grim', group: 'mood', about: 'Feet set, hand on the hilt, jaw down. A heavy, deliberate walk.',
+    all: { bow: .45, lean: .08 }, idle: { breath: -.4, every: 2, legs: .6, f: { hilt: 1 } }, walk: { heavy: .78, fps: .76, swing: -.21, f: { hilt: 1 } }, fidgets: ['hiltCheck'] },
+  wary: { name: 'Wary', group: 'mood', about: 'Half crouched, weight ready, checking behind him.',
+    all: { lean: .12 }, idle: { knee: .49, legs: 1.2, f: { hilt: .7 } }, walk: { knee0: .32, fps: .84, bounce: -.42, f: { hilt: .8 } }, fidgets: ['glance', 'weightShift'] },
+  melancholy: { name: 'Melancholy', group: 'mood', about: 'Long sighs, eyes on the floor, a slow and heavy walk.',
+    all: { bow: 1.05, lean: .06 }, idle: { period: 1.4, breath: .4, f: { dangle: .5 }, b: { dangle: .5 } },
+    walk: { fps: .6, speed: .8, swing: -.28, stride: -.16 }, run: { fps: .84, speed: .9 }, fidgets: ['sigh', 'lookDown'] },
+  menacing: { name: 'Menacing', group: 'mood', about: 'Leans in, arms still, cracks his neck and knuckles. Slow, long, heavy strides.',
+    all: { lean: .2, chest: .11, bow: .38 }, idle: { breath: -.3, legs: 1, knee: .28 },
+    walk: { fps: .52, stride: .32, bounce: -.42, swing: -.35, speed: .85, heavy: .52 }, fidgets: ['neckCrack', 'knuckles'] },
+  serene: { name: 'Serene', group: 'mood', about: 'Hands tucked into his sleeves, deep slow breaths, a glide of a walk.',
+    all: { bow: .3 }, idle: { period: 1.5, breath: .2, every: 2, f: { sleeves: 1 }, b: { sleeves: 1 } },
+    walk: { fps: .68, bounce: -.56, swing: -.28, f: { sleeves: 1 }, b: { sleeves: 1 } }, fidgets: ['nod'] },
+
+  // -- quirks: one habit each, to layer on anything
+  hatTipper: { name: 'Hat tipper', group: 'quirk', about: 'Keeps tugging the brim of his hat down.', idle: { every: -.5 }, fidgets: ['hatTip'] },
+  hiltFiddler: { name: 'Hilt fiddler', group: 'quirk', about: 'His hand keeps drifting to the sword: thumbing the guard, checking it\'s there.',
+    idle: { f: { hilt: .4 } }, fidgets: ['hiltThumb', 'hiltCheck'] },
+  neckCracker: { name: 'Neck cracker', group: 'quirk', about: 'Tips his head over and snaps it back.', fidgets: ['neckCrack'] },
+  shoulderRoller: { name: 'Shoulder roller', group: 'quirk', about: 'Rolls the stiffness out of his shoulders.', fidgets: ['shoulderRoll'] },
+  footTapper: { name: 'Foot tapper', group: 'quirk', about: 'Taps his front foot, impatient.', fidgets: ['footTap'] },
+  stretcher: { name: 'Stretcher', group: 'quirk', about: 'Stretches his arms up over his head.', fidgets: ['stretch'] },
+  sigher: { name: 'Sigher', group: 'quirk', about: 'Lets out long sighs.', fidgets: ['sigh'] },
+  glancer: { name: 'Glancer', group: 'quirk', about: 'Keeps looking back over his shoulder.', idle: { every: -1 }, fidgets: ['glance'] },
+  hummer: { name: 'Hummer', group: 'quirk', about: 'Sways to a tune only he can hear, and walks to its beat.',
+    idle: { sway: 1.56, swayLean: .05, bob: .4 }, walk: { rock: .96, bounce: .42 } },
+  knuckleCracker: { name: 'Knuckle cracker', group: 'quirk', about: 'Brings his hands together and cracks his knuckles.', fidgets: ['knuckles'] },
+  vain: { name: 'Vain', group: 'quirk', about: 'Always tidying: straightens the mantle, brushes off a shoulder, sets the hat.',
+    all: { chest: -.07 }, idle: { every: -1 }, fidgets: ['fixMantle', 'dustOff', 'hatTip'] },
+  scratcher: { name: 'Head scratcher', group: 'quirk', about: 'Scratches the back of his head, puzzled.', fidgets: ['scratch'] },
+
+  // -- body: age, injury, build
+  limping: { name: 'Limping', group: 'body', about: 'Favours his near leg: a short stiff step, then a dip onto the good one.',
+    idle: { lean: -.04, legs: .5 }, walk: { limp: 1, fps: .76, speed: .8 }, run: { limp: .6, speed: .85 } },
+  elder: { name: 'Elder', group: 'body', about: 'Stooped, hands behind the back, short careful steps.',
+    all: { lean: .36, bow: .52, chest: .18 }, idle: { knee: .35, period: 1.2, b: { behind: 1 } },
+    walk: { stride: -.32, lift: -.39, fps: .68, speed: .7, swing: -.28, b: { behind: 1 } }, run: { speed: .8, fps: .76, lift: -.52 }, fidgets: ['nod'] },
+  drunk: { name: 'Drunk', group: 'body', about: 'Sways, lurches, loses his footing and catches it. Weaves as he walks.',
+    idle: { sway: 2.6, swayLean: .1, jitter: .72 }, walk: { wobble: 1, fps: .84, speed: .85 }, run: { wobble: .6 }, fidgets: ['stumble'] },
+  lumbering: { name: 'Lumbering', group: 'body', about: 'A big man\'s weight: planted wide, arms held off the body, a slow rolling gait.',
+    all: { lean: .12, chest: .07 }, idle: { legs: 2.5, knee: .42, breath: .4, period: 1.2, fa: [.15, 0], ba: [-.15, 0] },
+    walk: { stride: .32, fps: .52, heavy: 1.56, rock: .96, speed: .9, swing: .14 }, run: { fps: .68, heavy: 1.3 } },
+  nimble: { name: 'Nimble', group: 'body', about: 'Wiry and quick, light on bent knees, flexing his hand.',
+    idle: { knee: .35, bob: .4, period: .85 }, walk: { fps: 1.32, stride: -.13, lift: .33, bounce: -.28 }, run: { fps: 1.16, speed: 1.1, lean: .12 }, fidgets: ['toes', 'flexHand'] },
+  wounded: { name: 'Wounded', group: 'body', about: 'Clutches his side, breathes fast and shallow, limps.',
+    all: { bow: .6, lean: .2 }, idle: { breath: .5, period: .8, knee: .28, f: { clutch: 1 } },
+    walk: { limp: .5, fps: .68, speed: .75, heavy: .65, f: { clutch: 1 } }, run: { limp: .4, speed: .85, f: { clutch: .8 } }, fidgets: ['sigh'] },
+
+  // -- discipline: how he was trained
+  shinobi: { name: 'Shinobi', group: 'discipline', about: 'Low and silent, hand on the hilt. Runs bent double with both arms swept back.',
+    all: { lean: .3, bow: .3 }, idle: { knee: .98, legs: 1, f: { hilt: 1 } }, walk: { knee0: .72, bounce: -.7, fps: .84, speed: .9, f: { hilt: 1 }, b: { behind: .4 } },
+    run: { lean: .7, swing: -.7, f: { trail: 1 }, b: { trail: 1 } } },
+  duelist: { name: 'Duelist', group: 'discipline', about: 'One hand on the hilt, the other on the scabbard, side-on and measured.',
+    all: { lean: .04 }, idle: { legs: 1.2, knee: .28, f: { hilt: 1 }, b: { scabbard: 1 } }, walk: { fps: .84, bounce: -.28, f: { hilt: 1 }, b: { scabbard: 1 } },
+    run: { f: { hilt: .8 } }, fidgets: ['hiltCheck'] },
+  monk: { name: 'Monk', group: 'discipline', about: 'Palms together, a slow breath, a quiet walk in prayer.',
+    all: { bow: .45 }, idle: { breath: -.2, period: 1.3, f: { pray: 1 }, b: { pray: 1 } }, walk: { fps: .76, bounce: -.42, f: { pray: .8 }, b: { pray: .8 } }, fidgets: ['nod'] },
+  brawler: { name: 'Brawler', group: 'discipline', about: 'Fists up, bouncing on his toes, rolling his shoulders.',
+    all: { lean: .2, bow: .22 }, idle: { bob: .8, period: .7, knee: .42, legs: 1.5, f: { fists: 1 }, b: { fists: 1 } },
+    walk: { rock: 1.28, bounce: .56, f: { fists: .7 }, b: { fists: .7 } }, fidgets: ['shoulderRoll', 'knuckles'] },
+  wanderer: { name: 'Wanderer', group: 'discipline', about: 'Arms tucked in his sleeves, an easy sway, a long road ahead.',
+    all: { lean: .04 }, idle: { sway: .65, f: { sleeves: 1 }, b: { sleeves: 1 } }, walk: { fps: .76, bounce: .14, f: { sleeves: 1 }, b: { sleeves: 1 } }, fidgets: ['glance'] },
+  shadow: { name: 'Shadow', group: 'discipline', about: 'Sunk low and dead still; glides with no bob at all.',
+    all: { lean: .16 }, idle: { knee: .56, breath: -.5, every: 4 }, walk: { bounce: -1.4, lift: -.13, knee0: .48, fps: .84 }, run: { bounce: -1.4, lean: .12 } },
+  scholar: { name: 'Scholar', group: 'discipline', about: 'Hand at his chin, lost in thought. Walks with his hands behind him, head bent.',
+    all: { bow: .45 }, idle: { f: { chin: 1 } }, walk: { fps: .76, bow: .15, f: { behind: 1 }, b: { behind: 1 } }, fidgets: ['nod', 'scratch'] },
+  veteran: { like: 'grim', name: 'Veteran', group: 'discipline', about: 'Grim, plus an old wound: the same set jaw and hand on the hilt, with a slight limp.',
+    walk: { limp: .35 }, fidgets: ['shoulderRoll'] },
+};
+const GROUPS = ['bearing', 'energy', 'mood', 'quirk', 'body', 'discipline'];
+
+// ---- Characters: ready-made mixes, and a record of the ones we like ----
+const PRESETS = {
+  'The ronin (as he is)': [],
+  'Old master': [['elder', 1], ['serene', .6], ['hatTipper', 1]],
+  'Drunken master': [['drunk', 1], ['cheerful', .6]],
+  'Bandit captain': [['cocky', 1], ['heavy', .7], ['neckCracker', 1]],
+  'Hunted man': [['nervous', 1], ['wounded', .5]],
+  'Bodyguard': [['grim', 1], ['soldier', .5], ['knuckleCracker', 1]],
+  'Ghost of the road': [['shadow', 1], ['wanderer', .7]],
+  'Young hothead': [['eager', 1], ['cocky', .6], ['footTapper', 1]],
+};
+// ---- src/traits/mix.js
+
+// ---- Mixing: a personality is a list of [trait id, strength]; the result is one set of knobs per mode ----
+// Strength scales a trait: .5 is half as proud, 1.5 prouder still. Mixing is plain addition, so order never matters.
+const clone = o => JSON.parse(JSON.stringify(o));
+// add a trait of your own (or replace one) at runtime; `like` works the same as in traits.js
+function defineTrait(id, spec) { check(id, spec); TRAITS[id] = spec; }
+// a trait with `like` expands into its parent first, at the same strength
+const expand = (id, k, seen = new Set()) => {
+  const t = TRAITS[id]; if (!t) throw new Error(`unknown trait "${id}"`);
+  if (seen.has(id)) throw new Error(`trait "${id}" is its own ancestor`); seen.add(id);
+  return [...(t.like ? expand(t.like, k, seen) : []), [t, k]];
+};
+function nudge(m, key, v, k) {
+  if (key === 'f' || key === 'b') { for (const a in v) m[key][a] = (m[key][a] || 0) + v[a] * k; return; }
+  if (!(key in m)) return;                           // an `all` knob this mode doesn't have
+  if (Array.isArray(m[key])) m[key] = m[key].map((x, i) => x + v[i] * k);
+  else if (MUL.has(key)) m[key] *= Math.pow(v, k);
+  else m[key] += v * k;
+}
+function mix(list = [], extra) {
+  const out = clone(BASE); out.fidgets = [];
+  for (const [id, k] of list) for (const [t, kk] of expand(id, k)) {
+    for (const mode of MODES) for (const blk of [t.all, t[mode]]) if (blk) for (const key in blk) nudge(out[mode], key, blk[key], kk);
+    if (kk > .25) for (const f of t.fidgets || []) if (!out.fidgets.includes(f)) out.fidgets.push(f);
+  }
+  // hand-tuning on top of the traits: { walk: { speed: 1.2 } } in the same shape as a trait
+  if (extra) for (const mode of MODES) for (const blk of [extra.all, extra[mode]]) if (blk) for (const key in blk) nudge(out[mode], key, blk[key], 1);
+  out.fidgets = out.fidgets.slice(0, 4);             // keeps the idle loop a sensible length
+  return out;
+}
+
+// ---- Validation: a typo in a trait fails loudly at load instead of silently doing nothing ----
+function check(id, t) {
+  const bad = m => { throw new Error(`trait "${id}": ${m}`); };
+  if (!t.name || !t.about) bad('needs a name and an about');
+  if (t.like && !TRAITS[t.like]) bad(`like "${t.like}" is not a trait`);
+  for (const mode of ['all', ...MODES]) for (const key in t[mode] || {}) {
+    if (key === 'f' || key === 'b') { for (const a in t[mode][key]) if (!ARMS[a]) bad(`no hand target "${a}"`); continue; }
+    if (!MODES.some(m => key in BASE[m]) || (mode !== 'all' && !(key in BASE[mode]))) bad(`${mode} has no knob "${key}"`);
+  }
+  for (const f of t.fidgets || []) if (!FIDGETS[f]) bad(`no fidget "${f}"`);
+}
+for (const id in TRAITS) check(id, TRAITS[id]);
+// ---- src/traits/bake.js
+
+// ---- Baking a personality into rig poses: idle, walk and run, one pose per frame ----
+// With no traits this gives back exactly today's idle and run, pose for pose.
+const TAU = Math.PI * 2;
+// the calm breath and the mantle's stir, one breath long (the same tables the plain idle was drawn from)
+const BREATH_T = [0, 0, 0, .15, .45, .75, .95, 1, 1, 1, .85, .6, .3, .1, 0, 0];
+const FLUT_T = [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0];
+const table = (tb, u) => { let x = (u % 1 + 1) % 1 * tb.length; if (Math.abs(x - Math.round(x)) < 1e-6) x = Math.round(x) % tb.length;
+  const i = Math.floor(x), f = x - i; return tb[i] + (tb[(i + 1) % tb.length] - tb[i]) * f; };
+const toward = (a, t, w) => { w = Math.min(1, Math.max(0, w)); return a.map((v, i) => v + (t[i] - v) * w); };
+function hands(q, m) { for (const a in m.f) q.fa = toward(q.fa, ARMS[a], m.f[a]); for (const a in m.b) q.ba = toward(q.ba, ARMS[a], m.b[a]); }
+// both feet on the floor: the hips drop to the longer leg's reach (whole pixels) and the other knee opens to meet the floor
+const reach = ([th, kn]) => 5 * Math.cos(th) + 6 * Math.cos(th - kn);
+function meet([th, kn], R) {
+  const x = Math.min(1, Math.max(-1, (R - 5 * Math.cos(th)) / 6)), a = Math.acos(x);
+  const shin = Math.abs(a - (th - kn)) < Math.abs(-a - (th - kn)) ? a : -a;   // keep the knee bending the way it already does
+  return [th, th - shin];
+}
+function plant(q) {
+  const drop = Math.round(11 - Math.max(reach(q.fl), reach(q.bl))), R = 11 - drop;
+  q.hy += drop;
+  if (Math.abs(reach(q.fl) - R) > .4) q.fl = meet(q.fl, R);
+  if (Math.abs(reach(q.bl) - R) > .4) q.bl = meet(q.bl, R);
+}
+function addTo(q, add) { for (const k in add) q[k] = Array.isArray(add[k]) ? q[k].map((v, i) => v + add[k][i]) : k === 'flutter' ? Math.max(q[k], add[k]) : q[k] + add[k]; }
+
+// idle: breaths, with the fidgets spaced through the loop, each one finishing as its stretch of breaths ends
+function idleFrames(m, fidgets = []) {
+  const n1 = Math.max(4, Math.round(m.period * m.fps)), every = Math.max(1, Math.round(m.every));
+  let breaths = fidgets.length ? every * fidgets.length : 1;
+  if ((m.sway || m.swayLean || m.jitter) && breaths % 2) breaths *= 2;   // the sway takes two breaths, so the loop must too
+  const n = n1 * breaths, seg = n1 * every, out = [];
+  for (let i = 0; i < n; i++) {
+    const u = i / n1, b = table(BREATH_T, u) * m.breath, slow = Math.sin(TAU * i / (2 * n1));
+    const jit = m.jitter * (.6 * Math.sin(TAU * 3 * i / n) + .4 * Math.sin(TAU * 7 * i / n + 1));
+    const q = pz({ lean: m.lean + m.swayLean * slow, chest: m.chest, hx: m.hx + m.sway * slow + jit, hy: m.hy + m.bob * b, bow: m.bow, hat: m.hat, dim: m.dim, breath: b,
+      fl: [.1 * m.legs + .45 * m.knee, .08 + m.knee], bl: [-.1 * m.legs - .2 * m.knee, .04 + .7 * m.knee],
+      fa: [m.fa[0] + b * m.armBreath, m.fa[1]], ba: [m.ba[0] - b * m.armBreath, m.ba[1]], flutter: FLUT_T[Math.floor(u * 16 + 1e-6) % 16] * m.flutter });
+    hands(q, m); plant(q);
+    const fd = fidgets.length && FIDGETS[fidgets[Math.floor(i / seg) % fidgets.length]];
+    if (fd) { const len = Math.min(seg, Math.max(4, Math.round(fd.dur * m.fps))), at = i % seg - (seg - len);
+      if (at >= 0) { const r = fd.at(at / len); if (r.f) q.fa = toward(q.fa, r.f, r.w); if (r.b) q.ba = toward(q.ba, r.b, r.w); addTo(q, r.add); } }
+    q.hx = Math.round(q.hx); q.hy = Math.round(q.hy);
+    out.push(q);
+  }
+  return out;
+}
+
+// walk and run: 8 frames a stride (16 when he wobbles, which takes two)
+function gaitFrames(m) {
+  const cycles = m.wobble ? 2 : 1, out = [];
+  const stride = Math.max(0, m.stride), lift = Math.max(0, m.lift), swing = Math.max(0, m.swing);
+  const lf = 1 - m.limp * .4, lk = 1 - m.limp * .6;          // the near leg, when he limps: a shorter, stiffer step
+  for (let i = 0; i < 8 * cycles; i++) {
+    const T = i / 8, ph = T % 1, slow = Math.sin(TAU * T / cycles);
+    const a = TAU * (ph + m.limp * .06 * Math.sin(TAU * ph)), s = Math.sin(a), c = Math.cos(a), dip = .5 - .5 * Math.cos(2 * a);
+    const q = pz({ hx: Math.round(m.hx + m.wobble * 2 * slow),
+      hy: Math.round(m.hy + m.bounce * dip + m.heavy * 1.5 * dip ** 3 + m.limp * 1.5 * Math.max(0, -s)),
+      lean: m.lean + m.rock * .06 * Math.cos(2 * a) + m.wobble * .1 * slow, chest: m.chest, bow: m.bow, hat: m.hat, dim: m.dim,
+      fl: [stride * lf * s, m.knee0 + lift * lk * Math.max(0, c)], bl: [-stride * s, m.knee0 + lift * Math.max(0, -c)],
+      fa: [-swing * s + m.fa0, m.faEl], ba: [swing * s + m.ba0, m.baEl], flutter: m.flutter * (i % 4) / 2 });
+    hands(q, m); out.push(q);
+  }
+  return out;
+}
+
+// a whole personality: [[trait, strength], ...] plus optional hand-tuning -> poses, frame rates and speeds
+function bake(list, extra) {
+  const m = mix(list, extra), idleFps = m.fidgets.length ? Math.max(m.idle.fps, 12) : m.idle.fps;   // fidgets need more than 6 fps to read
+  return { idle: { poses: idleFrames({ ...m.idle, fps: idleFps }, m.fidgets), fps: idleFps },
+    walk: { poses: gaitFrames(m.walk), fps: m.walk.fps }, run: { poses: gaitFrames(m.run), fps: m.run.fps },
+    speed: { walk: m.walk.speed, run: m.run.speed }, fidgets: m.fidgets, knobs: m };
+}
+// ---- The page: a mixer on top, every trait below, each drawn from the same rig and the same baker as the game ----
+const FLOOR = '#474c4a', CW = 72, CH = 50, MW = 96;
+const sheetCache = new Map();
+// bake a personality to three strips of frames, once
+function sheetsFor(key, list) {
+  if (sheetCache.has(key)) return sheetCache.get(key);
+  const b = bake(list), out = { speed: b.speed, fidgets: b.fidgets };
+  for (const mode of ['idle', 'walk', 'run']) {
+    const { poses, fps } = b[mode], c = document.createElement('canvas'); c.width = FW * poses.length; c.height = FH;
+    const g = c.getContext('2d'); poses.forEach((p, i) => rig(g, i * FW, p));
+    out[mode] = { img: c, n: poses.length, fps };
+  }
+  sheetCache.set(key, out); return out;
+}
+// one character on a strip of floor: standing in the middle for idle, crossing and wrapping for walk and run
+function drawChar(g, w, h, sh, mode, t, speed) {
+  g.fillStyle = FLOOR; g.fillRect(0, 0, w, h);
+  g.fillStyle = 'rgba(255,255,255,.035)'; g.fillRect(0, h - 9, w, 1);
+  const s = sh[mode], f = Math.floor(t * s.fps) % s.n;
+  const x = mode === 'idle' ? w / 2 : ((t * speed[mode] * slowK) % (w + 30)) - 15, y = h - 7;
+  g.fillStyle = 'rgba(20,24,24,.35)'; g.fillRect(Math.round(x - 6), y, 12, 2);
+  g.drawImage(s.img, f * FW, 0, FW, FH, Math.round(x) - OX, y - OY, FW, FH);
+}
+let slowK = 1;
+const T0 = performance.now(), now = () => (performance.now() - T0) / 1000 * slowK;
+
+// ---- The mixer ----
+const slots = [0, 1, 2].map(i => ({ sel: document.getElementById('t' + i), k: document.getElementById('k' + i), out: document.getElementById('v' + i) }));
+const opts = '<option value="">none</option>' + GROUPS.map(gr => `<optgroup label="${gr}">` +
+  Object.entries(TRAITS).filter(([, t]) => t.group === gr).map(([id, t]) => `<option value="${id}">${t.name}</option>`).join('') + '</optgroup>').join('');
+slots.forEach(s => { s.sel.innerHTML = opts; s.sel.onchange = s.k.oninput = () => { presetSel.value = ''; refreshMix(); }; });
+const presetSel = document.getElementById('preset');
+presetSel.innerHTML = '<option value="">pick a character</option>' + Object.keys(PRESETS).map(p => `<option>${p}</option>`).join('');
+presetSel.onchange = () => { const pr = PRESETS[presetSel.value]; if (!pr) return; setMix(pr); };
+function setMix(list) { slots.forEach((s, i) => { s.sel.value = list[i] ? list[i][0] : ''; s.k.value = list[i] ? list[i][1] : 1; }); refreshMix(); }
+function currentMix() { return slots.filter(s => s.sel.value).map(s => [s.sel.value, +s.k.value]); }
+document.getElementById('random').onclick = () => { const ids = Object.keys(TRAITS), pick = [];
+  const n = 1 + (Math.random() * 3 | 0);
+  while (pick.length < n) { const id = ids[Math.random() * ids.length | 0]; if (!pick.some(p => p[0] === id)) pick.push([id, Math.round((.5 + Math.random()) * 10) / 10]); }
+  presetSel.value = ''; setMix(pick); };
+let mixSheets = null;
+function refreshMix() {
+  const list = currentMix();
+  slots.forEach(s => s.out.textContent = (+s.k.value).toFixed(1));
+  mixSheets = sheetsFor(JSON.stringify(list), list);
+  document.getElementById('code').textContent = JSON.stringify(list).replace(/\],\[/g, '], [').replace(/,/g, ', ').replace(/,  /g, ', ');
+  const about = list.map(([id]) => `<b>${TRAITS[id].name}.</b> ${TRAITS[id].about}`).join(' ');
+  document.getElementById('mixAbout').innerHTML = about || 'The ronin as he is in the game today: no traits.';
+  document.getElementById('mixFidgets').textContent = mixSheets.fidgets.length ? 'Idle fidgets: ' + mixSheets.fidgets.map(f => FIDGETS[f].about).join('; ') + '.' : 'No idle fidgets.';
+}
+const mixCv = ['idle', 'walk', 'run'].map(m => { const c = document.getElementById('m-' + m); c.width = MW; c.height = CH; return [m, c.getContext('2d')]; });
+
+// ---- The gallery ----
+const grid = document.getElementById('grid');
+let mode = 'idle';
+const cards = [];
+const io = new IntersectionObserver(es => es.forEach(e => e.target._card.vis = e.isIntersecting), { rootMargin: '200px' });
+for (const gr of GROUPS) {
+  const h = document.createElement('h2'); h.className = 'group'; h.textContent = gr; grid.appendChild(h);
+  const wrap = document.createElement('div'); wrap.className = 'cards'; grid.appendChild(wrap);
+  for (const [id, t] of Object.entries(TRAITS).filter(([, t]) => t.group === gr)) {
+    const el = document.createElement('div'); el.className = 'card';
+    const fid = (t.fidgets || []).map(f => FIDGETS[f].about);
+    el.innerHTML = `<canvas width="${CW}" height="${CH}"></canvas><div class="body"><div class="row"><h3>${t.name}</h3><span class="tag">${gr}</span></div>
+      <p>${t.about}</p>${fid.length ? `<p class="fid">Fidgets: ${fid.join('; ')}.</p>` : ''}
+      <div class="row"><button class="mixit">Add to mix</button><details><summary>Data</summary><pre>${JSON.stringify(t, null, 1).replace(/\n\s*/g, ' ')}</pre></details></div></div>`;
+    wrap.appendChild(el);
+    const c = el.querySelector('canvas'), card = { id, g: c.getContext('2d'), vis: false, sh: null };
+    el.querySelector('.mixit').onclick = () => { const list = currentMix().filter(p => p[0] !== id); if (list.length >= 3) list.shift(); list.push([id, 1]);
+      presetSel.value = ''; setMix(list); document.getElementById('mixer').scrollIntoView({ behavior: 'smooth' }); };
+    cards.push(card); c._card = card; io.observe(c);
+  }
+}
+document.querySelectorAll('.modes button').forEach(b => b.onclick = () => { mode = b.dataset.m;
+  document.querySelectorAll('.modes button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
+document.getElementById('slow').onchange = e => slowK = e.target.checked ? .5 : 1;
+
+function loop() {
+  const t = now();
+  if (mixSheets) for (const [m, g] of mixCv) drawChar(g, MW, CH, mixSheets, m, t, mixSheets.speed);
+  // bake lazily, a couple of cards a frame, only the ones on screen
+  let baked = 0;
+  for (const c of cards) { if (!c.vis) continue;
+    if (!c.sh) { if (baked++ > 1) continue; c.sh = sheetsFor(c.id, [[c.id, 1]]); }
+    drawChar(c.g, CW, CH, c.sh, mode, t, c.sh.speed); }
+  requestAnimationFrame(loop);
+}
+setMix([]);
+requestAnimationFrame(loop);
+</script>

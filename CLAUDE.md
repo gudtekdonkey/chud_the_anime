@@ -37,7 +37,13 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `player/hits.js` | Hit tests against the dummies, `burst` (the sheath-click payoff) |
 | `player/qi.js` | The Qi meter's gains and Storm Chain (`chainFrom`) |
 | `player/body.js` | His silhouette points (sparks and bolts land on his body), `motes`, `glowK` |
+| `player/personality.js` | `setPersonality()`: bakes a trait mix into his idle, walk and run and their speeds (`P.gait`) |
 | `player/draw.js` | Drawing him (shadow, reflection, afterimages, charge rim, white flash, glitch slice) and the mirror images |
+| `traits/knobs.js` | `BASE`: the knobs a personality turns (lean, breath, hands, stride, bounce...), the plain ronin's values; `ARMS` hand targets |
+| `traits/fidgets.js` | `FIDGETS`: small idle actions (tug the hat, crack the neck...) |
+| `traits/traits.js` | `TRAITS`: 52 personality traits as plain data, `GROUPS`, `PRESETS` (ready-made characters) |
+| `traits/mix.js` | `mix()`: adds traits by strength into one set of knobs; `defineTrait()`; validates every trait at load |
+| `traits/bake.js` | `bake()`: knobs to idle / walk / run poses. No traits gives today's idle and run exactly |
 | `fx/fx.js` | `updateFx`, `drawFloorFx`, `drawFx`: the effect systems' per-frame update and draw |
 | `fx/util.js` | `rr`, `sgn`, `residue`, `ring`, `after`, `spark`, `dust`, `scrFlash` |
 | `fx/slash.js` | Crescents, cut lines, `strike` |
@@ -51,6 +57,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `world/render.js` | `render()`: depth sort by feet, effects, particles, screen flash, Qi meter, HUD text |
 | `ui/qi-meter.js` | The pixel-font Qi meter, bottom left |
 | `ui/moveset.js` | The moveset table under the game (from `ANIMS` "about" rows + skill rows) |
+| `ui/personality.js` | The personality picker under the game (remembered in localStorage) |
 | `ui/strip-tester.js` | "Test a sprite strip": drop a PNG strip in place of any animation |
 | `styles.css` / `index.html` | The page; `index.html` holds markup only |
 
@@ -71,12 +78,13 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, a darker red-grey.
 - Executions are short and brutal, show only the key frames (each leaning into the motion), and cut the enemy into real pieces.
 - Assassination markers: every enemy has an isolation bubble (empty glows cyan; overlapping ones go grey and are joined by a link line); a kill line runs to the nearest enemy he can dash to; the K prompt appears only when that enemy is in range AND outside every other enemy's bubble; lock-on brackets are reserved for big pickups.
-- Skills and keys: move WASD / arrows · J slash (again for the answer cut) · Shift or L slide · Space jump · K glitch teleport · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing). Storm Chain is passive: 8 s whenever the Qi meter fills.
+- Skills and keys: move WASD / arrows · hold V walk · J slash (again for the answer cut) · Shift or L slide · Space jump · K glitch teleport · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing). Storm Chain is passive: 8 s whenever the Qi meter fills.
 
 ## Working conventions
 
-- Iterate on design as standalone pages in `prototypes/`, numbered in order (`17-…html` next). Never edit an old prototype; make a new one.
+- Iterate on design as standalone pages in `prototypes/`, numbered in order (`27-…html` next). Never edit an old prototype; make a new one.
 - Record every decision the owner makes in `docs/design-notes.md`.
+- Personality traits (`src/traits/`) never import player, enemy or clothing code, so any rig character can take them. A new trait is a new entry in `TRAITS`; a new knob goes in `BASE` with the plain ronin's value, so no-trait output never changes.
 - Every new move gets an `ANIMS` row with an `about` text (it fills the moveset table); a skill that plays on another move's frames gets a row in `ui/moveset.js` `SKILL_ROWS`.
 - Tuning numbers, colours and timings change only on purpose, never as a side effect of a refactor.
 - Run `npm run check` before pushing. Add a step to `scripts/check.mjs` for a new key or state.

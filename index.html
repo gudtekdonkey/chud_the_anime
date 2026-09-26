@@ -19,6 +19,7 @@
     <div class="hud" id="hud"></div>
     <div class="keys">
       <span><kbd>WASD</kbd> / <kbd>←↑↓→</kbd> move</span>
+      <span>Hold <kbd>V</kbd> to walk</span>
       <span><kbd>J</kbd> slash (press twice to combo)</span>
       <span><kbd>Space</kbd> jump</span>
       <span><kbd>Shift</kbd> / <kbd>L</kbd> ground slide</span>
@@ -36,11 +37,25 @@
     <div class="pad" aria-label="Touch controls">
       <button data-k="left" aria-label="Move left">←</button><button data-k="up" aria-label="Move up">↑</button>
       <button data-k="down" aria-label="Move down">↓</button><button data-k="right" aria-label="Move right">→</button>
-      <button data-k="slash" class="act">Slash</button><button data-k="jump" class="act">Jump</button>
+      <button data-k="walk" class="act">Walk (hold)</button><button data-k="slash" class="act">Slash</button><button data-k="jump" class="act">Jump</button>
       <button data-k="slide" class="act">Slide</button><button data-k="tele" class="act">Glitch</button>
       <button data-k="double" class="act">Double (hold)</button><button data-k="sweep" class="act">Sweep</button>
       <button data-k="moon" class="act">Moon (hold)</button><button data-k="rift" class="act">Rift (hold)</button>
       <button data-k="mirror" class="act">Mirror</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Personality</h2>
+    <div class="drop">
+      <p>How he stands, walks and runs comes from up to three personality traits, each with a strength (0.5 is half as much). There are 52 to pick from; <a href="prototypes/26-personalities.html">prototype 26</a> shows them all side by side. Your mix is remembered in this browser.</p>
+      <div class="form">
+        <label for="pz-preset">Character<select id="pz-preset"></select></label>
+        <label for="pz-t0">Trait 1<select id="pz-t0"></select><span class="k"><input type="range" id="pz-k0" min="0" max="1.5" step=".1" value="1" aria-label="Trait 1 strength"><output id="pz-v0">1.0</output></span></label>
+        <label for="pz-t1">Trait 2<select id="pz-t1"></select><span class="k"><input type="range" id="pz-k1" min="0" max="1.5" step=".1" value="1" aria-label="Trait 2 strength"><output id="pz-v1">1.0</output></span></label>
+        <label for="pz-t2">Trait 3<select id="pz-t2"></select><span class="k"><input type="range" id="pz-k2" min="0" max="1.5" step=".1" value="1" aria-label="Trait 3 strength"><output id="pz-v2">1.0</output></span></label>
+      </div>
+      <p class="loaded" id="pz-about"></p>
     </div>
   </section>
 

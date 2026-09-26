@@ -43,3 +43,5 @@ for (const k in POSES) if (ANIMS[k]) ANIMS[k].n = POSES[k].length;   // keyframe
 export const SHEETS = {};
 for (const k in ANIMS) SHEETS[k] = placeholderSheet(k);
 export const dur = k => ANIMS[k].n / ANIMS[k].fps;
+// after a move's poses change (a new personality): bake its sheet again, unless a dropped-in strip has replaced it
+export function rebake(k) { ANIMS[k].n = POSES[k].length; if (!SHEETS[k].custom) SHEETS[k] = placeholderSheet(k); }

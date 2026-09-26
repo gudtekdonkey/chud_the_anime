@@ -41,6 +41,14 @@ Decisions made in the design sessions so far, newest last.
 - **Counters by attack** (`prototypes/23-counters.html`): the enemy has several attacks, each with a readable tell (a glint running up the blade, the eye flashing, plus the wind-up itself). A blow that lands while he holds F plays the counter that answers that attack: overhead chop → receive and flow; horizontal sweep → under the sweep; thrust → along the blade; diagonal cut → disarm; low rising cut → pin the blade; charge → matador; leaping strike → under the leap; three-cut flurry → break the rhythm.
 - **Nothing left to fight:** if no enemy is within two screens (960 px) when an attack or execution ends, he skips the blade-out stance and sheathes at once, unbothered.
 
+## Personality traits (`prototypes/26-personalities.html`, awaiting the owner's review)
+
+- The owner asked for a personality trait system, for movement first (idle, walking and so on, later other things), with at least 40 variations, reusable and modifiable.
+- Built: 52 traits in six groups (bearing, energy, mood, quirk, body, discipline) and 20 idle fidgets. A trait is only data: nudges to lean, breath, hands, stride, bounce, cadence and speed, plus fidgets. A character is up to three traits with strengths (0.5 is half as much); traits add, so they mix freely. A trait can start from another (`like`).
+- Only idle, walk and run take the personality; attacks, skills and stances stay as drawn. With no traits he is exactly the ronin as before.
+- In the game: a picker under the screen, and hold **V** to walk (new). The samurai can take the same traits, since they share his rig.
+- Open: which traits to keep, tweak or cut, and whether the ronin gets a personality of his own.
+
 ## Next
 
 2. **K assassinations:**
