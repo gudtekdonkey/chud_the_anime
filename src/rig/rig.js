@@ -14,6 +14,8 @@ export const RX = 24, RY = 40;
 const DX = OX - RX, DY = OY - RY;
 const Z = { scab: -3.5, farArm: -3, offHand: -2.9, farLeg: -2.5, body: 0, obi: .01, nearLeg: 1.2, head: 2.5, eye: 2.51, hat: 3, mantle: 3.5, bblade: 40, nearArm: 45, blade: 50 };
 export const NEAR_ARM_Z = Z.nearArm;
+// from his left, the sword hand on the hilt: its forearm comes round the front of the belly, over the body (the skeleton's sleeves follow)
+export const onHilt = p => p.sword == null && Math.abs(p.fa[0] - HILT[0]) + Math.abs(p.fa[1] - HILT[1]) < .12, HILT_FORE_Z = Z.nearLeg + .2;
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
 // pal swaps the colours (the samurai's red-grey); p.bare drops the hat and mantle for a bare head and topknot
 export function rig(g, fx, p, pal = RC) {
@@ -100,8 +102,7 @@ function draw(out, p, clothed, left = false) {
   z = Z.bblade; if (p.bsword != null) wp.backHeld(kit, bh, p.bsword);
   // near arm and the weapon: stowed, sliding home, or in the hand
   // from his left the sword arm is the far one; on the hilt, its forearm comes round the front of the belly to the near hip
-  const onHilt = left && p.sword == null && Math.abs(p.fa[0] - HILT[0]) + Math.abs(p.fa[1] - HILT[1]) < .12;
-  z = left ? Z.farArm : Z.nearArm; const hand = arm(p.fa, near, onHilt ? Z.nearLeg + .2 : z);
+  z = left ? Z.farArm : Z.nearArm; const hand = arm(p.fa, near, left && onHilt(p) ? HILT_FORE_Z : z);
   z = Z.blade;
   if (p.sword === null && !p.sheathing && p.bsword == null && !p.empty) wp.stowed(kit, p, mouth, sd);
   else if (p.sheathing) wp.sheathing(kit, hand, mouth);

@@ -10,7 +10,7 @@ import { port } from '../rig/port.js';
 export const makeFigure = (items = ['straw', 'mantle']) => ({ outfit: new Set(items), cloth: new Map(), t: 0, vel: [0, 0], side: 1 });
 // how W (yaw 180°) is drawn, his true left side either way: the side rig seen from his left ('side'), his own E pixels with the
 // near and far sides swapped, so W is to SW and NW what E is to SE and NE, and a cut facing west (the side rig mirrored) only
-// swaps near and far; or rig v2's body like every other facing off the side ('3d'). prototypes/36 shows both; the owner picks.
+// swaps near and far (owner's pick, 2026-09-26: "True left the side rig from his left"); or rig v2's body like every other facing off the side ('3d').
 export const WEST = { mode: 'side' };
 const isWest = yaw => Math.abs(yaw - Math.PI) < 1e-6;
 // dt > 0 steps the cloth; dt 0 draws it where it last was (or where it hangs, the first time).

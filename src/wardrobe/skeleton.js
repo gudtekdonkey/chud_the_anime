@@ -1,4 +1,4 @@
-import { NEAR_ARM_Z } from '../rig/rig.js';
+import { NEAR_ARM_Z, onHilt, HILT_FORE_Z } from '../rig/rig.js';
 
 // ---- The skeleton clothing hangs from: joints in 3D (x right, y up, z toward the camera), from rig v2 (prototypes/19) ----
 // From the side the wardrobe solves fromSide(p) flat at yaw 0, on the side rig's pixels. Every other facing solves
@@ -62,7 +62,9 @@ export function solve(p, yaw = 0, flat = false, left = false) {
     if (!flat && ik && ik[3] > .001) { const T = ik[4] > .5 ? Lc(ik[1], ik[0], ik[2]) : Lh(ik[1], ik[0], ik[2]);
       const pole = V.add(V.add(V.mul(Cy.F, -1), V.mul(Cy.R, s * .9)), [0, -.4, 0]);
       const [e2, h2] = ik2(sh, T, 4, 4, pole); e = V.lerp(e, e2, ik[3]); h = V.lerp(h, h2, ik[3]); }
-    J.arm[k] = { s, sh, el: e, hand: h, dz: flat ? (s * m > 0 ? NEAR_ARM_Z : -SHW) : 0, col: Cy.R[2] * s < -.35 ? 'D' : 'K' };
+    const dz = flat ? (s * m > 0 ? NEAR_ARM_Z : -SHW) : 0;
+    // fdz: the forearm's depth, the arm's own except from his left with the sword hand on the hilt, where it comes round the belly
+    J.arm[k] = { s, sh, el: e, hand: h, dz, fdz: flat && left && s > 0 && onHilt(p) ? HILT_FORE_Z : dz, col: Cy.R[2] * s < -.35 ? 'D' : 'K' };
     const [lt, kn, lsp, toe = .3] = p[k + 'l'];
     const hip = Lh(0, 0, s * 1.2), knee = V.add(hip, V.mul(limbDir(Hy, lt, lsp, s), 5)), ank = V.add(knee, V.mul(limbDir(Hy, lt - kn, lsp, s), 6));
     const fd = V.add(V.mul(Hy.F, Math.cos(toe)), V.mul(Hy.R, s * Math.sin(toe)));
