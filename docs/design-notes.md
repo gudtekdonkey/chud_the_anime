@@ -26,6 +26,13 @@ Decisions made in the design sessions so far, newest last.
 - **Sword out:** after an attack he waits with the blade out in one of six stances, picked at random each time and never the same twice running: four side-on counter stances with the blade in his back hand pointing at the ground, and two opened to the camera.
 - **Skills:** hold I for Thousand Cuts; hold O for Crescent Moon, cast in place; P for Cross Rift, a tear in reality; N for Mirror Meditation, where mirror images attack the nearest enemies. Storm Chain is a passive that runs for 8 s whenever the Qi meter fills from landing hits.
 - **Executions, batch 1 (approved):** behind the back, through and past, rising launch, whirlwind, far behind, peek-a-boo, and peek-a-boo from behind (a neck snap).
+- **Skills, round two** (`prototypes/18-skills-ideas.html`):
+  - Approved as they are: Counter, Glitch Dodge, Static Trail, Lightning Chain, and Lingering Blades (its spectral blades turn to whichever enemy is nearest when they fire).
+  - Iai Focus: approved. As Focus builds he settles into the draw: hand to the hilt, rear foot slides back, body hunched over the sheath.
+  - Decoy: cut.
+  - Blade Recall: never spins. The blade flies point-first, turns slowly to point back at him, and hangs still, drifting a pixel at a time. Three takes to pick from: A home to the sheath, B the catch, C the anchor.
+  - Time Slice: takes every enemy inside a zone round him, however many. The pass takes as long as it needs (a step of 0.016–0.06 s per enemy) and the zone grows with power.
+  - Breath of Qi is a major skill, with five takes: seiza, standing kata, lotus, harvest, storm breath. Each comes in three power tiers: I a dense stream of motes; II adds matter lifting off the floor; III adds ribbons and a floor sigil. No droplets over his head.
 - **Nothing left to fight:** if no enemy is within two screens (960 px) when an attack or execution ends, he skips the blade-out stance and sheathes at once, unbothered.
 
 ## Next

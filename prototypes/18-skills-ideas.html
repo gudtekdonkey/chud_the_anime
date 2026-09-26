@@ -1,8 +1,8 @@
 <!doctype html>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>body { margin: 0; }</style>
-<title>Ronin Skills, Ten Ideas</title>
+<title>Ronin Skills, Round Two</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
 <style>
   :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
@@ -12,12 +12,18 @@
   .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
   h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
   h2 { font: 700 19px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  h2 .vr { color: var(--muted); font-weight: 500; }
+  .sec { display: grid; gap: 14px; padding-top: 8px; }
+  .sec > .lead { display: grid; gap: 6px; max-width: 72ch; border-top: 1px solid var(--rule); padding-top: 18px; }
+  .sec > .lead h2 { font-size: 23px; }
   p { margin: 0; color: var(--muted); }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 18px; }
   @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
   .card { background: var(--panel); border: 1px solid var(--rule); display: grid; align-content: start; }
-  .card canvas { width: 100%; aspect-ratio: 200 / 100; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--rule); }
+  .card.wide { grid-column: 1 / -1; }
+  .card canvas { width: 100%; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--rule); }
   .card .body { padding: 14px 16px 16px; display: grid; gap: 8px; }
+  .card.wide .body { max-width: 80ch; }
   .row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .num { font: 700 13px/1 "Pixelify Sans", monospace; color: var(--cyan); letter-spacing: .06em; }
   .tag { font: 500 11px/1 "Pixelify Sans", monospace; letter-spacing: .1em; padding: 4px 6px 3px; border: 1px solid var(--rule); color: var(--muted); }
@@ -31,23 +37,27 @@
   .bar input { accent-color: var(--cyan); width: 16px; height: 16px; }
   .ask { background: var(--panel); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 10px; max-width: 72ch; }
   .ask b { color: var(--ink); font-weight: 600; }
-  .ask ol { margin: 0; padding-left: 22px; color: var(--muted); columns: 2; column-gap: 28px; }
-  @media (max-width: 480px) { .ask ol { columns: 1; } }
-  .ask li { break-inside: avoid; }
+  .ask ol { margin: 0; padding-left: 22px; color: var(--muted); display: grid; gap: 4px; }
 </style>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Skills · ten new ideas</div>
-    <h1>Ten new ways to fight</h1>
-    <p>Ten skills to sit beside the ones he already has: five actives, four passives and one ultimate. Each one loops below as a short scene against bare-headed samurai built on his own rig. Every action shows only its key frames: a short wind-up, a pose that leans into the motion, the hit with its flash and pause, the follow-through, and the resheathe. The enemies react to everything done to them, and when they die they fall with the momentum they had.</p>
+    <div class="eyebrow">Skills · round two</div>
+    <h1>Your notes, applied</h1>
+    <p>Decoy is cut. Blade Recall has three new takes, and in none of them does the blade spin: it flies point-first, turns slowly to point back at him, and hangs still, drifting a pixel at a time. Time Slice takes everyone inside its zone however many there are, the pass is quick enough for a hundred, and the zone grows with your power. Iai Focus now sinks him into the draw as it builds. Breath of Qi has five takes, and each one loops through power I, II and III: far more particles at each step, matter lifting off the floor from II, ribbons and a sigil at III, and no droplets over his head.</p>
     <div class="bar"><label for="slow"><input type="checkbox" id="slow"> Half speed</label></div>
   </header>
-  <div class="grid" id="grid"></div>
+  <section class="sec" id="sec-new"><div class="lead"><h2>Reworked</h2><p>Blade Recall three ways, the new Time Slice, and Iai Focus with its stance.</p></div><div class="grid"></div></section>
+  <section class="sec" id="sec-qi"><div class="lead"><h2>Breath of Qi, five takes</h2><p>Each card loops power I, then II, then III; the tag under the meters shows which. I: a dense stream of motes. II adds stone and dust lifting off the floor and dissolving into Qi. III adds two ribbons of light wound round him and a sigil turning on the floor.</p></div><div class="grid"></div></section>
+  <section class="sec" id="sec-ok"><div class="lead"><h2>Approved as they are</h2><p>Unchanged, here for reference. Lingering Blades already turns each spectral blade to whichever enemy is nearest when it fires, wherever they stand.</p></div><div class="grid"></div></section>
   <div class="ask">
     <h2>Your call</h2>
-    <p><b>Keep, tweak or cut</b> each one. A word per skill is enough; anything you keep goes into the engine next.</p>
-    <ol id="calls"></ol>
+    <ol>
+      <li><b>Blade Recall:</b> A, B or C?</li>
+      <li><b>Time Slice:</b> is the pass fast enough, and are the three zone sizes right?</li>
+      <li><b>Iai Focus:</b> is the stance deep enough?</li>
+      <li><b>Breath of Qi:</b> which take, and do the power layers read?</li>
+    </ol>
   </div>
 </div>
 
@@ -178,7 +188,7 @@ function figure(g, R, alpha = 1, img) {
 }
 const ronin = figure;   // the effects code draws ghosts through this name
 function withShadow(g, R) {
-  const a = R.alpha == null ? 1 : R.alpha, img = paint(R.pose, R.enemy);
+  const a = R.alpha == null ? 1 : R.alpha, img = R.img || paint(R.pose, R.enemy);
   if (!R.outline) {
     g.save(); g.globalAlpha = .17 * a; g.translate(0, 2 * R.y + 1); g.scale(1, -1); figure(g, { ...R, z: -(R.z || 0), glitch: 0, col: R.flash ? null : R.col }, 1, img); g.restore();
     g.fillStyle = `rgba(18,22,22,${.4 * a})`; g.fillRect(Math.round(R.x) - 5, Math.round(R.y) + 1, 10, 1);
@@ -327,7 +337,9 @@ function drawBlade(g, hx, hy, ang, blade = WH, grip = RC.K, len = 13, alpha = 1)
   g.globalAlpha = alpha; dots(g, a, grip); g.fillStyle = RC.S; g.fillRect(Math.round(hx), Math.round(hy), 1, 1); dots(g, b, blade); g.globalAlpha = 1;
 }
 // a tiny 3x5 pixel font for the meters
-const GLYPH = { H: '101101111101101', P: '110101110100100', Q: '010101101110011', I: '111010010010111', F: '111100110100100', O: '010101101101010', C: '011100100100011', U: '101101101101111', S: '011100010001110', '+': '000010111010000' };
+const GLYPH = { H: '101101111101101', P: '110101110100100', Q: '010101101110011', I: '111010010010111', F: '111100110100100', O: '010101101101010', C: '011100100100011', U: '101101101101111', S: '011100010001110', '+': '000010111010000', ' ': '000000000000000',
+  W: '101101101111101', E: '111100110100111', R: '110101110101101', T: '111010010010010', 0: '111101101101111', 1: '010110010010111', 2: '111001111100111',
+  3: '111001111001111', 4: '101101111001001', 5: '111100111001111', 6: '111100111101111', 7: '111001010010010', 8: '111101111101111', 9: '111101111001111' };
 function ptext(g, s, x, y, col) { g.fillStyle = col; let cx = x; for (const ch of s) { const m = GLYPH[ch]; if (m) for (let i = 0; i < 15; i++) if (m[i] === '1') g.fillRect(cx + i % 3, y + (i / 3 | 0), 1, 1); cx += 4; } }
 function meter(g, x, y, w, frac, col, ghost = 0, ghostCol = WH) {   // a 2px bar with a dark well
   g.fillStyle = '#1c2022'; g.fillRect(x - 1, y - 1, w + 2, 4); g.fillStyle = '#2b3133'; g.fillRect(x, y, w, 2);
@@ -369,159 +381,328 @@ const click = t0 => t0 + .34;   // the sheath click of quickSheathe(t0)
 const mkE = (x, y, o = {}) => ({ x, y, face: -1, pose: EG, enemy: true, flashUntil: -1, jit: 0, ...o });
 const segHits = (L, E) => { for (let k = 0; k <= 40; k++) { const x = L[0] + (L[2] - L[0]) * k / 40, y = L[1] + (L[3] - L[1]) * k / 40;
   if (x > E.x - 8 && x < E.x + 8 && y > E.y - 26 && y < E.y - 2) return true; } return false; };
+// ---------- shared bits for the reworked skills ----------
+const bake = pose => { const c = document.createElement('canvas'); c.width = c.height = 48; c.getContext('2d').drawImage(paint(pose, true), 0, 0); return c; };
+const angd = (a, b) => { let d = a - b; while (d > Math.PI) d -= 2 * Math.PI; while (d < -Math.PI) d += 2 * Math.PI; return d; };
+const drift = (t, s = 0) => [Math.round(Math.sin(t * 1.6 + s) * 1.3), Math.round(Math.sin(t * 2.1 + 1 + s) * 1.3)];   // a pixel up, down, left and right, slowly
+const ROMAN = ['I', 'II', 'III'];
+// a katana from its guard point along a; blade pixels further than `clip` along it are inside the scabbard and not drawn
+function blade2(g, x, y, a, o = {}) {
+  const d = [Math.cos(a), Math.sin(a)], len = o.len || 13, clip = o.clip == null ? 99 : o.clip, hilt = [], bl = [];
+  line(hilt, x - d[0] * 3, y - d[1] * 3, x - d[0], y - d[1]); line(bl, x + d[0], y + d[1], x + d[0] * len, y + d[1] * len);
+  g.globalAlpha = o.alpha == null ? 1 : o.alpha;
+  dots(g, hilt, RC.K); g.fillStyle = RC.S; g.fillRect(Math.round(x), Math.round(y), 1, 1);
+  g.fillStyle = o.col || WH; for (let i = 0; i < bl.length; i += 2) if ((bl[i] - x) * d[0] + (bl[i + 1] - y) * d[1] <= clip) g.fillRect(bl[i], bl[i + 1], 1, 1);
+  g.globalAlpha = 1;
+}
+// the crowd's run cycle, baked once so a hundred of them cost a hundred copies, not a hundred rigs
+const RUNP = 2 * Math.PI / 15, CR_POSE = [...Array(8)].map((_, k) => erun(k / 8 * RUNP)), CR_IMG = CR_POSE.map(bake);
+const IMG_FLINCH = bake(E_FLINCH), IMG_GUARD = bake(EG);
 
-// ---------- the ten skills ----------
-// each: rx, ry (where he stands), dur, setup(S), run(S, t), and optional actors(S, t) and draw(S, g, layer, t)
+// ---------- Blade Recall: the throw and the hang, shared by the three takes ----------
+const BR_WIND = pz({ hx: -2, hy: 3, lean: -.2, chest: -.4, fl: [.7, .9], bl: [-.75, .45], fa: [-1.7, .5], sword: -2.7, ba: [1.2, .5] });
+const BR_THROW = pz({ hx: 2, hy: 3, lean: .55, chest: .5, fl: [1.05, 1.15], bl: [-1.05, .1], fa: [1.9, -.1], ba: [-1.3, .3], empty: true, hat: 1, flutter: 1 });
+const BR_WAIT = pz({ hy: 2, lean: .04, fl: [.45, .5], bl: [-.45, .4], fa: HILT, ba: [.2, .5], empty: true });
+const BR_CATCH = pz({ hx: -3, hy: 4, lean: -.3, chest: -.35, fl: [.85, 1.1], bl: [-.8, .5], fa: [-1.35, .25], sword: 3.05, ba: [.9, .4], flutter: 1, hat: -1 });
+const BR_FLICK = pz({ hy: 3, lean: .2, chest: .15, fl: [.8, .9], bl: [-.8, .35], fa: [1.3, .2], sword: 1.25, ba: [-.8, .3] });
+const BR_DASH = pz({ hx: 2, hy: 4, lean: .7, chest: .3, fl: [1.2, 1.4], bl: [-1.2, .1], fa: [1.3, .3], ba: [-1.6, .1], empty: true, hat: 1, flutter: 1 });
+const brOpen = t => at([[0, IDLE], [.14, IDLE], [.24, pz({ ...CROUCH, lean: .25 })], [.28, BR_WIND, hold], [.34, BR_THROW, hold],
+  [.62, pz({ ...BR_THROW, lean: .4, chest: .3, flutter: 0 })], [1.0, BR_WAIT]], t);
+function brSetup(S, rx, ry, top, hc, aB) { const v = S.v; v.h0 = joints({ x: rx, y: ry, face: 1, pose: BR_THROW }).hand;
+  v.top = top; v.hc = hc; v.aB = aB; v.aO = Math.atan2(top[1] - v.h0[1], top[0] - v.h0[0]); v.hit = []; v.line = []; }
+// point-first out to `top`; then it turns, tip up and over, never spinning, until it points along aB, settling at `hc`, and hangs there drifting
+function brFlight(v, t, REL = .34, STOP = .6, SET = 1.12) {
+  if (t < REL) return null;
+  if (t < STOP) { const k = eOut(kk(t, REL, STOP)), s = [v.h0[0] + Math.cos(v.aO) * 5, v.h0[1] + Math.sin(v.aO) * 5];
+    return { c: [s[0] + (v.top[0] - s[0]) * k, s[1] + (v.top[1] - s[1]) * k], a: v.aO, fly: 1 - k }; }
+  let dl = v.aB - v.aO; while (dl > 0) dl -= 2 * Math.PI; while (dl < -2 * Math.PI) dl += 2 * Math.PI;
+  const k = ease(kk(t, STOP + .04, SET)), dr = drift(t), w = kk(t, SET - .1, SET + .3);
+  return { c: [v.top[0] + (v.hc[0] - v.top[0]) * k + dr[0] * w, v.top[1] + (v.hc[1] - v.top[1]) * k + dr[1] * w], a: v.aO + dl * k, fly: 0 };
+}
+function brDraw(g, b, t, o = {}) {
+  const d = [Math.cos(b.a), Math.sin(b.a)], G = [b.c[0] - d[0] * 5, b.c[1] - d[1] * 5];
+  if (b.from) { const pts = []; line(pts, b.from[0], b.from[1], G[0], G[1]); g.globalAlpha = .6; dots(g, pts, CY2); g.globalAlpha = 1; }
+  if (b.fly > .05) { const tr = []; line(tr, G[0], G[1], G[0] - d[0] * 16 * b.fly, G[1] - d[1] * 16 * b.fly); g.globalAlpha = .55; dots(g, tr, CY2); g.globalAlpha = 1; }
+  if (!b.fly && !b.from && Math.random() < .25) { const s = rr(2, 12); g.fillStyle = CY2; g.fillRect(Math.round(G[0] + d[0] * s), Math.round(G[1] + d[1] * s - 1), 1, 1); }   // a faint hum along the edge
+  blade2(g, G[0], G[1], b.a, o);
+  return { G, tip: [G[0] + d[0] * 14, G[1] + d[1] * 14] };
+}
+function thread(g, t, a, b, fade = 1) { const pts = []; line(pts, a[0], a[1], b[0], b[1]);
+  g.globalAlpha = (.28 + .2 * Math.random()) * fade; g.fillStyle = CY;
+  for (let i = 0; i < pts.length; i += 2) if ((i / 2 + (t * 30 | 0)) % 3 === 0) g.fillRect(pts[i], pts[i + 1], 1, 1); g.globalAlpha = 1; }
+// the two samurai: duck as it flies over, turn to watch it hang, then turn back on the empty-handed ronin
+function brWatch(E, t, i) {
+  if (t < .4) { E.pose = egB(t + i); return true; }
+  if (t < .66) { E.pose = pz({ ...E_FLINCH, hy: 4, lean: -.32, chest: -.45 }); return true; }
+  if (t < 1.22) { E.face = 1; E.pose = egB(t + i, { lean: -.1, chest: -.2 }); return true; }
+  E.face = -1; return false;
+}
+
+// ---------- Breath of Qi: the particle layers every take shares ----------
+// Power I: a dense stream of motes. II adds matter lifting off the floor and dissolving into Qi. III adds two ribbons of light wound round him.
+const QI_RATE = [6, 10, 16];
+function qiInit(S) { S.v.tier = S.loop % 3; S.v.motes = []; S.v.chips = []; }
+function qiMotes(S, t, n, tx, ty, o = {}) { const cx = o.cx == null ? tx : o.cx, cy = o.cy == null ? ty : o.cy;
+  for (let i = 0; i < n; i++) { const a = rr(0, 6.28), r = rr(o.r0 || 22, o.r1 || 62);
+    S.v.motes.push({ sx: cx + Math.cos(a) * r, sy: cy + Math.sin(a) * r * (o.sq || .6), tx, ty, t0: t, dur: rr(.35, .7) * (o.slow || 1), curl: rr(-14, 14) }); } }
+function qiFrom(S, t, sx, sy, tx, ty, dur = rr(.35, .6)) { S.v.motes.push({ sx, sy, tx, ty, t0: t, dur, curl: rr(-10, 10) }); }
+function qiChips(S, t, n, cx, fy, tx, ty, r = 36) { for (let i = 0; i < n; i++) { const a = rr(0, 6.28), d = rr(6, r);
+  S.v.chips.push({ x: cx + Math.cos(a) * d, y: fy + Math.sin(a) * d * .4, t0: t, rise: rr(8, 22), dur: rr(1.0, 1.5), tx, ty, w: Math.random() < .45 ? 2 : 1,
+    col: ['#5d6361', '#3b403e', '#6b716f', '#2e3331'][Math.random() * 4 | 0], wob: rr(0, 6), curl: rr(-10, 10) }); } }
+function qiUpdate(S, t) { S.v.motes = S.v.motes.filter(m => t - m.t0 < m.dur); S.v.chips = S.v.chips.filter(c => t - c.t0 < c.dur); }
+function qiPath(sx, sy, tx, ty, k, curl) { const dx = tx - sx, dy = ty - sy, L = Math.hypot(dx, dy) || 1;
+  return [sx + dx * k + (-dy / L) * Math.sin(k * Math.PI) * curl, sy + dy * k + (dx / L) * Math.sin(k * Math.PI) * curl, dx / L, dy / L]; }
+function qiDraw(g, S, t, layer, rib) {
+  const v = S.v;
+  if (layer === 'floor') for (const c of v.chips) { const k = (t - c.t0) / c.dur; if (k < .55) { g.globalAlpha = .5; g.fillStyle = '#343938'; g.fillRect(Math.round(c.x), Math.round(c.y), 1, 1); } }   // where each piece tore loose
+  if (rib) ribbons(g, t, layer, rib);
+  if (layer !== 'top') return;
+  for (const c of v.chips) { const k = (t - c.t0) / c.dur;
+    if (k < .6) { const q = eOut(k / .6), x = c.x + Math.sin(t * 3 + c.wob) * .8, y = c.y - c.rise * q;   // lifting off the floor, turning slowly
+      g.globalAlpha = Math.min(1, k * 8); g.fillStyle = c.col; g.fillRect(Math.round(x), Math.round(y), c.w, 1);
+      if (k > .38 && (t * 20 + c.wob | 0) % 2) { g.fillStyle = CY; g.fillRect(Math.round(x), Math.round(y) - 1, 1, 1); } }
+    else { const q = eIn((k - .6) / .4), [x, y, ux, uy] = qiPath(c.x, c.y - c.rise, c.tx, c.ty, q, c.curl);   // dissolved into Qi and drawn in
+      g.globalAlpha = 1; g.fillStyle = q > .6 ? WH : CY2; g.fillRect(Math.round(x), Math.round(y), 1, 1);
+      g.fillStyle = CY; g.globalAlpha = .6; g.fillRect(Math.round(x - ux * 2), Math.round(y - uy * 2), 1, 1); } }
+  for (const m of v.motes) { const k = eIn(kk(t, m.t0, m.t0 + m.dur)), [px, py, ux, uy] = qiPath(m.sx, m.sy, m.tx, m.ty, k, m.curl);
+    g.globalAlpha = Math.min(1, kk(t, m.t0, m.t0 + .1) * 1.2); g.fillStyle = k > .7 ? WH : k > .35 ? CY2 : CY; g.fillRect(Math.round(px), Math.round(py), 1, 1);
+    if (k > .15) { g.fillStyle = CY; g.globalAlpha *= .7; g.fillRect(Math.round(px - ux * 1.5), Math.round(py - uy * 1.5), 1, 1); g.globalAlpha *= .6; g.fillRect(Math.round(px - ux * 3), Math.round(py - uy * 3), 1, 1); } }
+  g.globalAlpha = 1;
+}
+// two strands of light wound round him from the floor to above his head; the half behind him is drawn under him
+function ribbons(g, t, layer, o) { const a0 = o.a == null ? 1 : o.a; if (a0 <= 0) return;
+  for (let k = 0; k < 2; k++) for (let s = 0; s <= 1; s += 1 / 56) {
+    const ang = t * 4.2 + s * 10 + k * Math.PI, rad = (o.r || 11) - 4 * s, front = Math.sin(ang) > 0;
+    if ((layer === 'top') !== front) continue; if (layer !== 'top' && layer !== 'floor') continue;
+    const x = o.cx + Math.cos(ang) * rad, y = o.fy - (o.z || 0) - s * o.h + Math.sin(ang) * rad * .35;
+    g.globalAlpha = Math.sin(s * Math.PI) * .85 * a0 * (front ? 1 : .5); g.fillStyle = ((s * 56 + t * 40) | 0) % 6 ? CY : WH; g.fillRect(Math.round(x), Math.round(y), 1, 1); }
+  g.globalAlpha = 1;
+}
+// a sigil on the floor: two dotted rings turning against each other, ticks on the outer
+function sigil(g, t, cx, cy, r, a) { if (a <= 0) return; g.globalAlpha = a;
+  for (const [rx, n, sp] of [[r * .62, 16, 1.1], [r, 26, -.7]]) for (let i = 0; i < n; i++) { const q = i / n * 6.28 + t * sp; g.fillStyle = i % 4 ? CY3 : CY2;
+    g.fillRect(Math.round(cx + Math.cos(q) * rx), Math.round(cy + Math.sin(q) * rx * .38), 1, 1); }
+  for (let i = 0; i < 8; i++) { const q = i / 8 * 6.28 - t * .7; g.fillStyle = CY; for (const e of [1.08, 1.16]) g.fillRect(Math.round(cx + Math.cos(q) * r * e), Math.round(cy + Math.sin(q) * r * e * .38), 1, 1); }
+  g.globalAlpha = 1; }
+function qiHud(g, t, S, hp, qi, hpTo = 0, qiGhost = 0, qiIdle = false) {
+  const low = hp < .35 && (t * 4 | 0) % 2;
+  ptext(g, 'HP', 6, 83, low ? '#ff5a4a' : '#8c9592'); meter(g, 16, 84, 40, hp, low ? '#ff5a4a' : '#e9eeee', hpTo, CY2);
+  ptext(g, 'QI', 6, 90, qiIdle ? '#8c9592' : qi > .01 ? CY : '#8c9592'); meter(g, 16, 91, 40, qi, qiIdle ? '#6c7573' : CY, qiGhost, WH);
+  powerTag(g, S.v.tier, 150, 88); }
+function powerTag(g, tier, x, y) { ptext(g, 'POWER', x, y, '#8c9592'); for (let i = 0; i < 3; i++) { g.fillStyle = i <= tier ? CY : '#2b3133'; g.fillRect(x + 22 + i * 5, y + 1, 4, 3); } }
+const SEIZA = pz({ hy: 9, lean: .1, chest: .12, fl: [1.45, 2.9], bl: [1.3, 2.9], fa: [.45, 1.0], ba: [.35, 1.05], hat: 1 });
+const SUPINE = pz({ hy: 9, hx: -3, lean: -1.45, fl: [1.5, .1], bl: [1.45, .3], fa: [-.6, .3], ba: [.4, .2], sword: 1.3 });
+const E_SITUP = pz({ hy: 7, hx: -1, lean: .35, chest: .2, fl: [1.3, 2.3], bl: [-.1, 2.3], fa: [.9, .6], ba: [.7, .7], sword: .8 });
+
+// ---------- the skills ----------
 const SKILLS = [
-  { name: 'Counter', tag: 'ACTIVE', key: 'Hold <kbd>F</kbd>',
-    note: 'While the key is held he stands in the counter stance: blade in his back hand, point down, lead shoulder turned to the enemy so he is as thin as he can be. When a blow comes in there is one white frame, the enemy\'s blade is knocked away over his shoulder, and the answer is already there: a rising cut from the back hand that turns his hips through. The enemy reels back, clutching, his knees going, and on the sheath click he falls apart backward.',
-    rx: 62, ry: 66, dur: 2.5,
-    setup(S) { S.E = [mkE(142, 64)]; },
+  { name: 'Blade Recall', vr: 'A · Home to the sheath', sec: 'new', tag: 'ACTIVE', key: '<kbd>R</kbd> to throw · <kbd>R</kbd> again to call it home',
+    note: 'He throws the katana point-first. It flies straight over their heads, stops in the air and turns slowly, tip up and over, until it points back at him: at the mouth of his scabbard. Then it hangs there, still, drifting a pixel up, down, left and right, a faint thread running from its tip to his hip. The two samurai see him empty-handed and come for him. He puts his hand on the empty scabbard and calls: the blade comes home point-first along the thread, through both of them, and slides into the sheath with the click. They fall on the click.',
+    rx: 30, ry: 68, dur: 3.2, REC: 1.9, TR: .1,
+    CALL: pz({ hx: -1, hy: 3, lean: -.08, chest: -.12, fl: [.6, .7], bl: [-.65, .45], fa: HILT, ba: [1.5, -.15], empty: true, flutter: 1 }),
+    setup(S) { const sk = this, v = S.v, j = joints({ x: sk.rx, y: sk.ry, face: 1, pose: sk.CALL }), D = (150 - j.mouth[0]) / -j.sd[0];
+      S.E = [mkE(96, 68), mkE(126, 68)]; v.M = j.mouth; v.sd = j.sd;
+      brSetup(S, sk.rx, sk.ry, [142, 14], [j.mouth[0] - j.sd[0] * D, j.mouth[1] - j.sd[1] * D], Math.atan2(j.sd[1], j.sd[0])); },
+    blade(S, t) { const sk = this, v = S.v, ARR = sk.REC + sk.TR;
+      if (t < sk.REC) return brFlight(v, t); if (t >= ARR) return null;
+      const s = brFlight(v, sk.REC).c, d = v.sd, e = [v.M[0] + d[0] * 5, v.M[1] + d[1] * 5], k = eIn(kk(t, sk.REC, ARR));
+      const c = [s[0] + (e[0] - s[0]) * k, s[1] + (e[1] - s[1]) * k], G = [c[0] - d[0] * 5, c[1] - d[1] * 5];
+      return { c, a: v.aB, fly: 0, from: s, clip: (v.M[0] - G[0]) * d[0] + (v.M[1] - G[1]) * d[1] }; },
     run(S, t) {
-      const R = S.R, E = S.E[0];
-      const PARRY = pz({ ...STANCE, hx: -1, lean: -.04, chest: .1, ba: [.6, .95], bsword: -1.05, flutter: 1 });
-      const ANSWER = pz({ hx: 3, hy: 4, lean: .38, chest: .12, fl: [1.1, 1.2], bl: [-1.1, .1], fa: [.9, .9], ba: [2.2, -.2], bsword: -1.05, hat: 1, flutter: 1 });
-      const P1 = 1.03, A1 = 1.08, SH = 1.42;
-      if (t < .3) R.pose = idleB(t);
-      else if (t < .36) R.pose = pz({ ...CROUCH, lean: .25 });
-      else if (t < P1) R.pose = pz({ ...STANCE, breath: .5 - .5 * Math.cos((t - .36) * 7) });
-      else if (t < A1) R.pose = PARRY;
-      else R.pose = at([[A1, ANSWER], [SH, pz({ ...ANSWER, lean: .32, chest: .08, flutter: 0 })], ...quickSheathe(SH, ANSWER).slice(1)], t);
-      S.once('draw', t >= .36, () => { F.slivers(S, R.x - 6, R.y + 2, 3, 3); });
-      // the enemy: walks in, raises, swings; is knocked away, cut, reels backward and his knees go
-      if (t < .85) { E.x = 142 - 56 * (t / .85); E.pose = ewalk(t); }
-      else if (t < 1.0) { E.x = 86; E.pose = E_RAISE; }
-      else if (t < P1) { E.x = 85; E.pose = E_MID; }
-      else { const k = ease(kk(t, P1, 1.7)); E.x = 86 + 7 * k;
-        E.pose = at([[P1, E_KNOCK], [A1 + .02, E_KNOCK, hold], [A1 + .03, pz({ ...E_STAG, lean: -.35, chest: .1 })], [1.4, E_STAG], [1.72, E_BUCKLE]], t); }
-      S.once('parry', t >= P1, () => { S.white = 1; F.hit(S, E, .09, .05); F.flashR(S);
-        const cx = R.x + 12, cy = R.y - 21; F.burst(S, cx, cy, 12, 170); for (let k = 0; k < 4; k++) F.spark(S, cx, cy, rr(20, 90), -rr(40, 110), .16, WH, true); });
-      S.once('answer', t >= A1, () => { F.hit(S, E, .08, .07); F.ghost(S, { x: R.x, y: R.y, face: 1, pose: PARRY }, CY, .14);
-        F.cres(S, R.x + 13, R.y - 15, 1, 14, -1.0, 1, .18); F.cut(S, E.x - 9, E.y - 7, E.x + 9, E.y - 21, .9); F.burst(S, E.x - 2, E.y - 14, 10, 130); });
-      S.once('click', t >= click(SH), () => { die(S, E, [[E.x - 9, E.y - 7, E.x + 9, E.y - 21]], { dir: 1, vx: 14 }); F.burst(S, E.x, E.y - 13, 10); });
-    } },
-
-  { name: 'Glitch Dodge', tag: 'PASSIVE', key: 'Triggers when a blow is about to land · <b>8 s</b> cooldown',
-    note: 'He does nothing. The enemy charges and brings his blade down, and at the last instant he is simply a step to the side, leaning away from where he was. What the blade passes through is a flickering cyan hologram of him, which stutters for a beat and shatters into slivers along the line of the cut. The enemy, overcommitted, stumbles through the swing, looks round for him and turns to find him.',
-    rx: 70, ry: 62, dur: 2.2,
-    setup(S) { S.E = [mkE(168, 62)]; },
-    run(S, t) {
-      const R = S.R, E = S.E[0], D = .72;
-      const SIDE = pz({ hx: -2, hy: 4, lean: -.34, chest: -.2, fl: [.95, 1.1], bl: [-.95, .25], fa: HILT, ba: [.95, .5], hat: -1, flutter: 1 });
-      const SIDE2 = pz({ hx: -1, hy: 3, lean: -.1, chest: -.05, fl: [.75, 1.0], bl: [-.7, .35], fa: HILT, ba: [.3, .6] });
-      if (t < D) R.pose = idleB(t);
-      else { R.x = 54; R.y = 78; R.pose = at([[D, SIDE], [D + .14, SIDE], [D + .34, SIDE2], [D + .6, READY], [D + 1.1, READY], [D + 1.4, IDLE]], t);
-        R.glitch = t < D + .06 ? (D + .06 - t) * 22 : 0; }
-      S.once('dodge', t >= D, () => { F.speed(S, 70, 54, 74, 6); F.ghost(S, { x: 62, y: 70, face: 1, pose: lerpP(IDLE, SIDE, .5) }, CY2, .1); F.slivers(S, 54, 78, 4, 4); });
-      S.once('pass', t >= D + .03, () => { F.cut(S, 78, 36, 63, 62, .16); F.cres(S, 76, 50, -1, 13, .9, 1, .14); });
-      S.once('shatter', t >= D + .15, () => { F.holoBurst(S, { x: 70, y: 62, face: 1, pose: idleB(D) }, -70, 2); F.slivers(S, 70, 62, 8); F.ring(S, 70, 50, 5, 5, .18, 8, CY2); });
-      // the enemy: charge, raise, swing through nothing, stumble, look back, find him
-      if (t < .6) { E.x = 168 - 78 * (t / .6); E.pose = erun(t); }
-      else if (t < D) { E.x = 90; E.pose = E_RAISE; }
-      else if (t < D + .03) { E.x = 88; E.pose = E_MID; }
-      else { E.x = 88 - 7 * eOut(kk(t, D + .03, D + .4));
-        E.pose = at([[D + .03, E_CHOP], [D + .28, E_OVER], [D + .55, pz({ ...EG, lean: .2, chest: .15 })], [D + .75, EG]], t);
-        if (t > D + .7 && t < D + 1.0) E.face = 1;      // looks behind him
-        if (t >= D + 1.0) { E.face = -1; E.pose = at([[D + 1.0, pz({ ...E_FLINCH })], [D + 1.25, EG]], t); } }
+      const R = S.R, sk = this, v = S.v, ARR = sk.REC + sk.TR, CL = ARR + .24;
+      R.pose = t < 1.0 ? brOpen(t) : at([[1.0, BR_WAIT], [sk.REC - .14, BR_WAIT], [sk.REC, sk.CALL], [ARR, sk.CALL, hold],
+        [ARR + .001, pz({ ...sk.CALL, hy: 4, lean: -.16, ba: [1.1, .3], empty: false }), hold], [ARR + .35, pz({ ...sk.CALL, ba: [.35, .5], empty: false, flutter: 0 })], [ARR + .9, IDLE]], t);
+      if (t < .24 || (t > 1.0 && t < sk.REC - .14)) R.pose = pz({ ...R.pose, breath: Math.sin(t * 3) * .5 + .5 });
+      S.once('throw', t >= .34, () => { F.ghost(S, { x: R.x, y: R.y, face: 1, pose: BR_WIND }, CY, .12); F.speed(S, R.x + 4, R.x + 26, R.y - 10, 4); });
+      S.once('stop', t >= .6, () => F.ring(S, v.top[0], v.top[1], 2, 2, .25, 7, CY2));
+      S.once('call', t >= sk.REC, () => F.ring(S, v.M[0], v.M[1], 1, 1, .2, 5, CY2));
+      S.once('home', t >= ARR, () => { S.stop = .07; S.shake = .05; F.flashR(S); F.ring(S, v.M[0], v.M[1], 2, 2, .2, 8, WH); F.burst(S, v.M[0], v.M[1], 6, 90); F.dust(S, R.x - 2, R.y, 5); });
+      const b = sk.blade(S, t), m = v.sd[1] / v.sd[0];
+      S.E.forEach((E, i) => {
+        const x0 = i ? 126 : 96, x1 = i ? 88 : 62, yL = v.M[1] + (E.x - v.M[0]) * m;
+        if (t >= sk.REC && v.hit[i] == null && (t >= ARR || (b && b.c[0] + v.sd[0] * 8 <= E.x + 1))) { v.hit[i] = t; F.hit(S, E, .05, .05);
+          v.line[i] = [E.x - 12, yL - 12 * m, E.x + 12, yL + 12 * m]; F.cut(S, ...v.line[i], .7); F.burst(S, E.x, yL, 10, 150); }
+        if (brWatch(E, t, i)) return;
+        if (v.hit[i] == null) { const t0 = 1.3 + i * .08, k = ease(kk(t, t0, sk.REC - .08)); E.x = x0 + (x1 - x0) * k;
+          E.pose = t < t0 ? egB(t) : k < 1 ? ewalk(t + i * .3) : i ? egB(t) : E_RAISE; }
+        else { E.x = x1 - 4 * eOut(kk(t, v.hit[i], v.hit[i] + .35));
+          E.pose = at([[v.hit[i], pz({ ...E_STAG, lean: .4, chest: .5 })], [v.hit[i] + .3, pz({ ...E_STAG, lean: .3, chest: .55 })], [CL, pz({ ...E_BUCKLE, lean: .3 })]], t); }
+        S.once('die' + i, t >= CL && v.line[i], () => die(S, E, [v.line[i]], { dir: -1, vx: -12 }));
+      });
     },
-    actors(S, t) { const D = .72; if (t < D || t >= D + .15) return [];
-      return [{ x: 70, y: 62, face: 1, pose: idleB(D), col: Math.random() < .5 ? CY : CY2, alpha: .45 + .4 * Math.random(), glitch: t > D + .03 ? .9 : .35 }]; } },
+    draw(S, g, layer, t) { if (layer !== 'top') return; const sk = this, v = S.v, b = sk.blade(S, t); if (!b) return;
+      const d = [Math.cos(b.a), Math.sin(b.a)], tip = [b.c[0] + d[0] * 9, b.c[1] + d[1] * 9];
+      if (t > 1.05 && t < sk.REC) thread(g, t, tip, v.M, kk(t, 1.05, 1.35));
+      brDraw(g, b, t, { clip: b.clip }); } },
 
-  { name: 'Blade Recall', tag: 'ACTIVE', key: '<kbd>R</kbd> to throw · <kbd>R</kbd> again to recall',
-    note: 'He draws and throws the katana in one motion, arm whipping through. It spins over the enemies\' heads leaving a crescent of light, then hangs spinning in the air beyond them while they turn to watch it. He raises an open hand. The blade rips back to him in a straight line, hilt first, through both of them at chest height, and he catches it, rocking back on his heels, flicks it and sheathes. On the click they fall.',
-    rx: 34, ry: 66, dur: 2.7,
-    setup(S) { S.E = [mkE(94, 64), mkE(124, 65)];
-      S.v.h0 = joints({ x: 34, y: 66, face: 1, pose: this.THROW }).hand; S.v.h1 = joints({ x: 34, y: 66, face: 1, pose: this.RAISE }).hand; },
-    WIND: pz({ hx: -2, hy: 3, lean: -.2, chest: -.4, fl: [.7, .9], bl: [-.75, .45], fa: [-1.7, .5], sword: -2.7, ba: [1.2, .5] }),
-    THROW: pz({ hx: 2, hy: 3, lean: .55, chest: .5, fl: [1.05, 1.15], bl: [-1.05, .1], fa: [1.65, -.05], ba: [-1.3, .3], empty: true, hat: 1, flutter: 1 }),
-    RAISE: pz({ hx: 0, hy: 3, lean: .14, chest: .12, fl: [.7, .9], bl: [-.7, .4], fa: [1.75, -.3], ba: [-.6, .3], empty: true }),
-    CATCH: pz({ hx: -2, hy: 4, lean: -.22, chest: -.25, fl: [.8, 1.0], bl: [-.75, .5], fa: [1.2, .45], sword: -.1, ba: [-.9, .3], flutter: 1 }),
-    blade(S, t) {   // where the blade is: [x, y, angle, spinning]
-      const v = S.v, hover = [160, 54];
-      if (t < .36) return null;
-      if (t < .8) { const k = eOut(kk(t, .36, .8)), q = 1 - k, c = [100, 14];
-        return [q * q * v.h0[0] + 2 * q * k * c[0] + k * k * hover[0], q * q * v.h0[1] + 2 * q * k * c[1] + k * k * hover[1], t * 30, 1]; }
-      if (t < 1.36) return [hover[0], hover[1] + Math.round(Math.sin(t * 9)), .8 * 30 + (t - .8) * 24, 1];
-      if (t < 1.46) { const k = kk(t, 1.36, 1.46); return [hover[0] + (v.h1[0] - hover[0]) * k, hover[1] + (v.h1[1] - hover[1]) * k, 0, 0]; }
-      return null; },
+  { name: 'Blade Recall', vr: 'B · The catch', sec: 'new', tag: 'ACTIVE', key: '<kbd>R</kbd> to throw · <kbd>R</kbd> again to call it back',
+    note: 'The same throw, point-first over their heads. It stops, turns tip up and over, and sinks to chest height pointing straight back at him, and hangs there, still, drifting a pixel at a time. The far samurai edges up to it and reaches out to take it. He opens his hand and calls: the blade leaves the samurai\'s fingers and runs both of them through at the chest, and he turns side-on to let it pass and snatches the grip as it goes by. Its weight swings his arm back and slides him a step. He flicks it clean and sheathes, and on the click they fall.',
+    rx: 36, ry: 68, dur: 3.4, REC: 1.85, TR: .12,
+    CALL: pz({ hx: -1, hy: 3, lean: -.14, chest: -.25, fl: [.6, .75], bl: [-.65, .45], fa: [.9, .5], ba: [-.6, .4], empty: true }),
+    REACH: pz({ ...EG, hx: 1, lean: .2, chest: .15, ba: [1.9, 0], fa: [.5, .4], sword: 1.0 }),
+    setup(S) { const sk = this, j = joints({ x: sk.rx, y: sk.ry, face: 1, pose: BR_CATCH }); S.v.ch = j.hand; S.E = [mkE(92, 68), mkE(120, 68)];
+      brSetup(S, sk.rx, sk.ry, [150, 20], [158, j.hand[1]], Math.PI); },
+    blade(S, t) { const sk = this, v = S.v, ARR = sk.REC + sk.TR; if (t < sk.REC) return brFlight(v, t); if (t >= ARR) return null;
+      const s = brFlight(v, sk.REC).c, e = [v.ch[0] - 5, v.ch[1]], k = eIn(kk(t, sk.REC, ARR));
+      return { c: [s[0] + (e[0] - s[0]) * k, s[1] + (e[1] - s[1]) * k], a: Math.PI, fly: 0, from: s }; },
     run(S, t) {
-      const R = S.R, [E1, E2] = S.E, sk = this, SH = 1.66;
-      R.pose = at([[0, IDLE], [.16, IDLE], [.28, pz({ ...CROUCH, lean: .25 })], [.3, sk.WIND, hold], [.36, sk.THROW, hold], [.6, pz({ ...sk.THROW, lean: .4, chest: .3, flutter: 0 })],
-        [1.05, pz({ ...READY, fa: [.5, .6], empty: true })], [1.16, sk.RAISE], [1.46, sk.CATCH, hold], [1.66, pz({ ...sk.CATCH, lean: -.1, flutter: 0 })], ...quickSheathe(SH, sk.CATCH).slice(1)], t);
-      if (t < .3) R.pose = pz({ ...R.pose, breath: Math.sin(t * 3) * .5 + .5 });
-      S.once('throw', t >= .36, () => { F.ghost(S, { x: R.x, y: R.y, face: 1, pose: sk.WIND }, CY, .12); F.speed(S, R.x, R.x + 20, R.y - 8, 4); });
-      const b = sk.blade(S, t);
-      // the enemies: guard, flinch and look up as it passes over, the far one turns to watch it hang, both hit by the return
-      for (const [i, E] of [[0, E1], [1, E2]]) {
-        const hitT = i ? 1.385 : 1.415;
-        if (t < .46) E.pose = egB(t + i);
-        else if (t < .62) E.pose = pz({ ...E_FLINCH, lean: -.3, chest: -.35 });
-        else if (t < hitT) { E.pose = egB(t + i, { lean: -.05, chest: -.12 }); if (i === 1 && t > .9) E.face = 1; if (i === 0 && t > 1.0) E.pose = egB(t, { fa: [1.5, .7], sword: -1.1 }); }
-        else { const k = kk(t, hitT, hitT + .5); E.x = (i ? 124 : 94) - 6 * eOut(k);
-          E.pose = at([[hitT, pz({ ...E_STAG, lean: .3, chest: .45 })], [hitT + .35, pz({ ...E_STAG, lean: .15, chest: .5 })], [click(SH), pz({ ...E_BUCKLE, lean: .2 })]], t); }
-        S.once('hit' + i, t >= hitT, () => { F.hit(S, E, .05, .04); F.cut(S, E.x - 10, E.y - 12, E.x + 10, E.y - 12, .7); F.burst(S, E.x - 4, E.y - 12, 8, 150); F.speed(S, E.x + 20, E.x - 20, E.y - 2, 3); });
-        S.once('die' + i, t >= click(SH), () => die(S, E, [[E.x - 12, E.y - 12, E.x + 12, E.y - 12.5]], { dir: -1, vx: -10 }));
+      const R = S.R, sk = this, v = S.v, ARR = sk.REC + sk.TR, FL = ARR + .5, CL = click(FL + .08);
+      R.pose = t < 1.0 ? brOpen(t) : at([[1.0, BR_WAIT], [sk.REC - .12, BR_WAIT], [sk.REC, sk.CALL], [ARR, sk.CALL, hold], [ARR + .001, BR_CATCH, hold],
+        [ARR + .3, pz({ ...BR_CATCH, lean: -.2, chest: -.25, flutter: 0 })], [FL - .1, pz({ ...BR_CATCH, lean: -.15, chest: -.2, flutter: 0 })], [FL, BR_FLICK, eIn], ...quickSheathe(FL + .08, BR_FLICK)], t);
+      if (t < .24 || (t > 1.0 && t < sk.REC - .12)) R.pose = pz({ ...R.pose, breath: Math.sin(t * 3) * .5 + .5 });
+      if (t >= ARR) R.x = sk.rx - 7 * eOut(kk(t, ARR, ARR + .3));
+      S.once('throw', t >= .34, () => { F.ghost(S, { x: R.x, y: R.y, face: 1, pose: BR_WIND }, CY, .12); F.speed(S, R.x + 4, R.x + 26, R.y - 10, 4); });
+      S.once('stop', t >= .6, () => F.ring(S, v.top[0], v.top[1], 2, 2, .25, 7, CY2));
+      S.once('catch', t >= ARR, () => { S.stop = .08; S.shake = .06; F.flashR(S); F.ring(S, v.ch[0], v.ch[1], 2, 2, .18, 8, WH); F.burst(S, v.ch[0], v.ch[1], 8, 110); F.dust(S, R.x - 2, R.y, 8); });
+      S.once('flick', t >= FL, () => { const j = joints(R); for (let k = 0; k < 4; k++) F.spark(S, j.hand[0] + 6, j.hand[1] + 4, rr(30, 70), rr(10, 50), .18, CY2, true); });
+      const b = sk.blade(S, t), y = v.ch[1];
+      S.E.forEach((E, i) => {
+        if (t >= sk.REC && v.hit[i] == null && (t >= ARR || (b && b.c[0] - 8 <= E.x + 1))) { v.hit[i] = t; F.hit(S, E, .05, .05);
+          v.line[i] = [E.x - 12, y, E.x + 12, y + .5]; F.cut(S, ...v.line[i], .7); F.burst(S, E.x, y, 10, 150); }
+        const h = v.hit[i];
+        if (h != null) { E.x -= 0; const x1 = i ? 142 : 92; E.x = x1 - (i ? 5 : 4) * eOut(kk(t, h, h + .35));
+          E.pose = i ? at([[h, pz({ ...E_STAG, lean: -.4, chest: .1 })], [h + .35, pz({ ...E_STAG, lean: -.25, chest: .45 })], [CL, pz({ ...E_BUCKLE, lean: -.2 })]], t)
+                     : at([[h, pz({ ...E_STAG, lean: .4, chest: .5 })], [h + .3, pz({ ...E_STAG, lean: .3, chest: .55 })], [CL, pz({ ...E_BUCKLE, lean: .3 })]], t);
+          E.face = i ? 1 : -1; }
+        else if (brWatch(E, t, i)) return;
+        else if (i === 0) E.pose = egB(t, { fa: [1.5, .7], sword: -1.1 });
+        else { E.face = 1; const k = ease(kk(t, 1.25, sk.REC - .18)); E.x = 120 + 22 * k; E.pose = k < 1 ? ewalk(t * .7) : sk.REACH; }
+        S.once('die' + i, t >= CL && v.line[i], () => die(S, E, [v.line[i]], { dir: -1, vx: -12 }));
+      });
+    },
+    draw(S, g, layer, t) { if (layer !== 'top') return; const b = this.blade(S, t); if (b) brDraw(g, b, t); } },
+
+  { name: 'Blade Recall', vr: 'C · The anchor', sec: 'new', tag: 'ACTIVE', key: '<kbd>R</kbd> to throw · <kbd>R</kbd> again to go to it',
+    note: 'He throws it and it hangs beyond them the same way, still and drifting, pointing back at him, with a thread of light from its tip to his open hand. They see him unarmed and rush him. As the first one swings he calls, and instead of the blade coming to him he goes to the blade: a flash along the thread, through both of them, and he is standing past it with the grip already in his hand and the blade over his shoulder, pointing back at them. He does not turn round. He flicks it, sheathes, and on the click they fall.',
+    rx: 30, ry: 68, dur: 3.3, REC: 1.8,
+    OPEN: pz({ ...BR_WAIT, lean: -.04, ba: [1.45, -.05] }),
+    setup(S) { const sk = this, j = joints({ x: 0, y: 68, face: 1, pose: BR_CATCH }), hc = [164, j.hand[1]];
+      S.v.ax = hc[0] + 5 - j.hand[0]; S.E = [mkE(84, 68), mkE(112, 68)]; brSetup(S, sk.rx, sk.ry, [150, 20], hc, Math.PI); },
+    run(S, t) {
+      const R = S.R, sk = this, v = S.v, AR = sk.REC + .1, FL = AR + .55, CL = click(FL + .08);
+      if (t < sk.REC) { R.pose = t < 1.0 ? brOpen(t) : at([[1.0, BR_WAIT], [sk.REC - .3, BR_WAIT], [sk.REC - .12, sk.OPEN]], t);
+        if (t < .24 || (t > 1.0 && t < sk.REC - .3)) R.pose = pz({ ...R.pose, breath: Math.sin(t * 3) * .5 + .5 }); }
+      else if (t < AR) R.hidden = true;
+      else { R.x = v.ax; R.glitch = t < AR + .06 ? (AR + .06 - t) * 15 : 0;
+        R.pose = at([[AR, BR_CATCH, hold], [AR + .3, pz({ ...BR_CATCH, lean: -.2, chest: -.25, flutter: 0 })], [FL - .1, pz({ ...BR_CATCH, lean: -.15, chest: -.2, flutter: 0 })], [FL, BR_FLICK, eIn], ...quickSheathe(FL + .08, BR_FLICK)], t); }
+      S.once('throw', t >= .34, () => { F.ghost(S, { x: R.x, y: R.y, face: 1, pose: BR_WIND }, CY, .12); F.speed(S, R.x + 4, R.x + 26, R.y - 10, 4); });
+      S.once('stop', t >= .6, () => F.ring(S, v.top[0], v.top[1], 2, 2, .25, 7, CY2));
+      S.once('go', t >= sk.REC, () => { const y = v.hc[1], h = joints({ x: sk.rx, y: sk.ry, face: 1, pose: sk.OPEN }).bh;
+        F.cut(S, h[0], h[1], v.hc[0], y, .3); F.speed(S, sk.rx, v.ax, y + 12, 16); F.slivers(S, sk.rx, sk.ry, 6);
+        for (let k = 0; k < 4; k++) F.ghost(S, { x: sk.rx + (v.ax - sk.rx) * (k + 1) / 5, y: sk.ry, face: 1, pose: BR_DASH }, k % 2 ? CY2 : WH, .12 + k * .04);
+        S.E.forEach((E, i) => { v.hit[i] = t + i * .02; F.hit(S, E, .07, .06); v.line[i] = [E.x - 12, y, E.x + 12, y + .5]; F.cut(S, ...v.line[i], .8); F.burst(S, E.x, y, 12, 160); }); });
+      S.once('arrive', t >= AR, () => { S.stop = .07; F.flashR(S); const j = joints({ ...R, pose: BR_CATCH }); F.ring(S, j.hand[0], j.hand[1], 2, 2, .18, 8, WH); F.dust(S, R.x - 3, R.y, 8); F.slivers(S, R.x, R.y, 5); });
+      S.once('flick', t >= FL, () => { const j = joints(R); for (let k = 0; k < 4; k++) F.spark(S, j.hand[0] + 6, j.hand[1] + 4, rr(30, 70), rr(10, 50), .18, CY2, true); });
+      S.E.forEach((E, i) => {
+        const x0 = i ? 112 : 84, x1 = i ? 78 : 54, h = v.hit[i];
+        if (h != null) { E.x = x1 + 4 * eOut(kk(t, h, h + .35));
+          E.pose = i ? at([[h, pz({ ...E_STAG, lean: -.35, chest: .15 })], [h + .35, pz({ ...E_STAG, lean: -.25, chest: .45 })], [CL, pz({ ...E_BUCKLE, lean: -.2 })]], t)
+                     : at([[h, E_CHOP], [h + .12, E_OVER], [h + .45, pz({ ...E_STAG, lean: .35, chest: .5 })], [CL, pz({ ...E_BUCKLE, lean: .3 })]], t); }
+        else if (brWatch(E, t, i)) return;
+        else { const k = ease(kk(t, 1.28, sk.REC - .22)); E.x = x0 + (x1 - x0) * k;
+          E.pose = k < 1 ? erun(t + i * .2) : i ? egB(t) : at([[sk.REC - .22, EG], [sk.REC - .08, E_RAISE]], t); }
+        S.once('die' + i, t >= CL && v.line[i], () => die(S, E, [v.line[i]], { dir: 1, vx: 10 }));
+      });
+    },
+    draw(S, g, layer, t) { if (layer !== 'top') return; const sk = this, v = S.v, AR = sk.REC + .1; if (t >= AR) return;
+      const b = brFlight(v, t); if (!b) return;
+      if (t > 1.05 && t < sk.REC) { const tip = [b.c[0] - 9, b.c[1]]; thread(g, t, tip, joints(S.R).bh, kk(t, 1.05, 1.35) * (t > sk.REC - .3 ? 1.6 : 1)); }
+      brDraw(g, b, t); } },
+
+  { name: 'Time Slice', sec: 'new', tag: 'ULTIMATE', key: '<kbd>X</kbd> · needs a full Qi meter · the zone grows with your power',
+    note: 'He drops into the iai crouch and a zone opens round him; the world drains of colour and all but stops. Everyone inside the zone is taken, however many there are: he flickers from one to the next along the shortest path, one cut each, and the pass takes as long as it needs and no longer, a few frames for a handful, about a second and a half for a hundred. Then he is back where he started, kneeling, sliding the blade home. On the click colour snaps back and every cut fires at once. Those outside the zone flinch and hold. The loop steps through power I, II and III, and the zone grows with each.',
+    W: 400, H: 140, wide: true, rx: 200, ry: 92, dur: 99, ZONE: [48, 96, 178],
+    POSES: [
+      pz({ hx: 2, hy: 5, lean: .72, chest: .5, fl: [1.3, 1.45], bl: [-1.25, .1], fa: [1.35, .05], sword: .95, ba: [-1.7, .05], hat: 1, flutter: 1 }),
+      pz({ hy: 3, lean: .75, chest: .45, fl: [1.1, 1.2], bl: [-1.0, .15], fa: [1.15, 0], sword: 1.15, ba: [-1.5, 0], hat: 1, flutter: 1 }),
+      pz({ hx: 2, hy: 4, lean: .6, chest: .3, fl: [1.2, 1.3], bl: [-1.2, .1], fa: [1.6, 0], sword: 0, ba: [-1.8, 0], flutter: 1 }),
+      pz({ hy: 6, lean: .55, chest: .3, fl: [1.35, 1.6], bl: [-.45, 2.1], fa: [1.45, 0], sword: .4, ba: [-1.3, .2], flutter: 1 }),
+      pz({ hy: 1, lean: -.25, chest: -.45, fl: [.85, .35], bl: [-.85, .2], fa: [2.75, 0], sword: -1.35, ba: [2.2, .2], hat: 1 })],
+    setup(S) { const v = S.v, sk = this; v.L = S.loop % 3; v.rz = sk.ZONE[v.L]; v.cuts = []; v.trail = []; v.done = -1; v.pos = []; S.dur = 99;
+      const E = []; let tries = 0;
+      while (E.length < 124 && tries++ < 8000) { const x = rr(8, 392), y = rr(40, 137);
+        if (((x - 200) / 30) ** 2 + ((y - 92) / 15) ** 2 < 1) continue;
+        if (E.some(q => Math.abs(q.x - x) < 8 && Math.abs(q.y - y) < 5)) continue;
+        const d = Math.hypot(200 - x, 92 - y);
+        E.push(mkE(x, y, { face: x < 200 ? 1 : -1, x0: x, y0: y, ux: (200 - x) / d, uy: (92 - y) / d, ph: rr(0, 1), spd: rr(10, 15) })); }
+      S.E = E; },
+    run(S, t) {
+      const R = S.R, v = S.v, sk = this, ON = .42, T0 = .7, SLOW = .04, clk = v.CLK || 1e9;
+      const wt = t < ON ? t : t < clk ? ON + (t - ON) * SLOW : ON + (clk - ON) * SLOW + (t - clk);   // world time
+      v.desat = t < ON ? 0 : t < clk ? kk(t, ON, ON + .08) : 1 - kk(t, clk, clk + .12);
+      S.once('on', t >= ON, () => {
+        const ry = v.rz * .42, inside = S.E.filter(E => ((E.x - 200) / v.rz) ** 2 + ((E.y - 92) / ry) ** 2 <= 1);
+        inside.forEach(E => { E.tag = Math.hypot((E.x - 200) / v.rz, (E.y - 92) / ry); });
+        const tour = []; let px = 200, py = 92, left = inside.slice();   // nearest first, then always the nearest from there
+        while (left.length) { let bi = 0, bd = 1e9; left.forEach((E, i) => { const d = Math.hypot(E.x - px, (E.y - py) * 1.6); if (d < bd) { bd = d; bi = i; } });
+          const E = left.splice(bi, 1)[0]; tour.push(E); px = E.x; py = E.y; }
+        v.tg = tour; const n = tour.length; v.step = cl(.5 / Math.max(1, n), .016, .06);
+        v.T1 = T0 + n * v.step; v.BACK = v.T1 + .06; v.CLK = v.BACK + .5; S.dur = v.CLK + 1.7;
+        F.ring(S, 200, 80, 8, 8, .4, 60, CY2); F.flashR(S, .03); });
+      // the crowd: charging in, frozen while it lasts, then those left flinch and hold
+      const halt = v.CLK ? ON + (v.CLK - ON) * SLOW + .06 : 1e9;
+      for (const E of S.E) { if (E.gone) continue; const m = Math.min(wt, halt);
+        E.x = E.x0 + E.ux * E.spd * m; E.y = E.y0 + E.uy * E.spd * m * .6;
+        if (t < clk + .06) { const fi = ((wt / RUNP + E.ph) * 8 | 0) % 8; E.pose = CR_POSE[fi]; E.img = CR_IMG[fi]; }
+        else { const k = t - clk - .06; E.face = E.x < 200 ? 1 : -1; E.x -= E.ux * 5 * eOut(cl(k / .3)); E.pose = k < .55 ? E_FLINCH : EG; E.img = k < .55 ? IMG_FLINCH : IMG_GUARD; } }
+      // the pass: one target a step, as many a frame as the step allows
+      const KNEEL = pz({ hy: 6, lean: .5, chest: .1, fl: [1.25, 1.95], bl: [-.15, 2.4], fa: [1.2, .3], sword: .6, ba: [-.7, .4] });
+      const SLOWSH = pz({ hy: 6, lean: .4, fl: [1.25, 1.95], bl: [-.15, 2.4], fa: [1.0, .6], sheathing: true, ba: [.45, 1.1] });
+      const DONE = pz({ hy: 6, lean: .35, fl: [1.25, 1.95], bl: [-.15, 2.4], fa: HILT, ba: [.3, 1.0] });
+      if (v.tg && t >= T0) { const n = v.tg.length, cur = Math.min(n - 1, Math.floor((t - T0) / v.step));
+        for (let i = v.done + 1; i <= cur; i++) { v.done = i; const E = v.tg[i], prev = i ? v.pos[i - 1] : [200, 92];
+          const f = Math.sign(E.x - prev[0]) || 1, P = sk.POSES[i % 5]; v.pos[i] = [E.x - f * 10, E.y + .5, f];
+          F.ghost(S, { x: v.pos[i][0], y: v.pos[i][1], face: f, pose: P }, i % 2 ? CY : WH, .2);
+          const a = rr(-.7, .7) + (Math.random() < .3 ? 1.1 * sgn() : 0), cx = E.x, cy = E.y - 14 + rr(-4, 3);
+          E.cut = [cx - Math.cos(a) * 11, cy - Math.sin(a) * 11, cx + Math.cos(a) * 11, cy + Math.sin(a) * 11];
+          const pts = []; line(pts, ...E.cut); v.cuts.push({ pts, t0: t }); v.trail.push({ x: v.pos[i][0], y: v.pos[i][1] - 12, t0: t });
+          F.spark(S, cx, cy, rr(-40, 40), -rr(10, 40), .12, WH, true); }
+        if (t < v.BACK) { const p = v.pos[Math.max(0, v.done)]; R.x = p[0]; R.y = p[1]; R.face = p[2]; R.pose = sk.POSES[Math.max(0, v.done) % 5]; R.glitch = .25; }
       }
-      S.once('catch', t >= 1.46, () => { F.ring(S, S.v.h1[0], S.v.h1[1], 2, 2, .16, 7, CY2); F.dust(S, R.x - 3, R.y, 6); S.shake = .05; F.burst(S, S.v.h1[0], S.v.h1[1], 5, 80); });
-      S.once('call', t >= 1.36, () => { F.speed(S, 160, 44, 52, 10); });
+      if (t < ON - .06) R.pose = idleB(t);
+      else if (t < T0 || !v.tg) R.pose = IAI;
+      else if (t >= v.BACK) R.pose = at([[v.BACK, KNEEL], [v.BACK + .12, KNEEL], [v.CLK - .1, SLOWSH], [v.CLK, DONE, hold], [v.CLK + .5, DONE], [v.CLK + .8, IDLE]], t);
+      else if (!v.tg.length) R.pose = IAI;
+      S.once('back', v.BACK && t >= v.BACK, () => { F.slivers(S, 200, 92, 8); v.trail.push({ x: 200, y: 80, t0: t }); });
+      S.once('fire', v.CLK && t >= v.CLK, () => { S.white = 2; S.stop = .14; S.shake = .22;
+        v.tg.forEach((E, i) => { const d = Math.sign(E.x - 200) || 1; E.flashUntil = S.clock + .035;
+          if (i % 3 === 0) F.burst(S, E.x, E.y - 14, 4, 120);
+          die(S, E, [E.cut], { dir: d, vx: d * rr(15, 35), throw: 1.2 }); }); });
     },
     draw(S, g, layer, t) {
-      if (layer !== 'top') return; const b = this.blade(S, t); if (!b) return;
-      const [x, y, a, spin] = b;
-      if (t >= 1.16 && t < 1.36) {   // the pull: a flickering tether from his open hand
-        const pts = []; line(pts, S.v.h1[0], S.v.h1[1], x, y); g.globalAlpha = .35 + .3 * Math.random(); g.fillStyle = CY;
-        for (let i = 0; i < pts.length; i += 2) if ((i / 2 + (t * 60 | 0)) % 4 === 0) g.fillRect(pts[i], pts[i + 1], 1, 1); g.globalAlpha = 1; }
-      if (spin) {   // the crescent it leaves: the last few angles of its tip, fading
-        for (let k = 1; k <= 12; k++) { const aa = a - k * .16; g.globalAlpha = (1 - k / 13) * .85;
-          for (const r of [4, 5, 6, 7]) { g.fillStyle = k < 4 && r > 5 ? WH : r > 5 ? CY2 : CY; g.fillRect(Math.round(x + Math.cos(aa) * r), Math.round(y + Math.sin(aa) * r * .8), 1, 1); } }
-        g.globalAlpha = 1; const d = [Math.cos(a), Math.sin(a)]; drawBlade(g, x - d[0] * 6, y - d[1] * 6 * .8, a, WH, RC.K, 13);
-      } else { drawBlade(g, x - 2, y, 0, WH, RC.K, 13); const pts = []; line(pts, x + 12, y, x + 40, y); g.globalAlpha = .6; dots(g, pts, CY2); g.globalAlpha = 1; }
+      const v = S.v, ON = .42;
+      if (layer === 'mid' && v.desat > 0) { g.save(); g.globalAlpha = v.desat; g.globalCompositeOperation = 'saturation'; g.fillStyle = '#808080'; g.fillRect(-4, -4, S.W + 8, S.H + 8);
+        g.globalCompositeOperation = 'source-over'; g.globalAlpha = .28 * v.desat; g.fillStyle = '#0a1418'; g.fillRect(-4, -4, S.W + 8, S.H + 8); g.restore(); }
+      if (layer === 'top') {
+        if (t >= ON) { const k = eOut(kk(t, ON, ON + .22)), rx = v.rz * k, ry = rx * .42, fade = v.CLK ? 1 - kk(t, v.CLK, v.CLK + .35) : 1;   // the zone's edge, marching
+          if (fade > 0) { g.globalAlpha = fade; g.fillStyle = CY;
+            for (let a = 0; a < 6.283; a += .6 / Math.max(8, rx)) if (((a * rx / 3 + t * 8) | 0) % 2 === 0) g.fillRect(Math.round(200 + Math.cos(a) * rx), Math.round(92 + Math.sin(a) * ry), 1, 1);
+            g.globalAlpha = 1; } }
+        if (v.tg && (!v.CLK || t < v.CLK)) for (const E of v.tg) if (!E.cut && t >= ON + .22 * E.tag && (t * 8 | 0) % 2) { g.fillStyle = CY; g.fillRect(Math.round(E.x), Math.round(E.y - 31), 1, 2); }   // marked
+        for (let i = 1; i < v.trail.length; i++) { const a = v.trail[i - 1], b = v.trail[i], k = kk(t, b.t0, b.t0 + .3); if (k >= 1) continue;   // the path he took
+          const pts = []; line(pts, a.x, a.y, b.x, b.y); g.globalAlpha = (1 - k) * .8; dots(g, pts, k < .3 ? WH : CY2); } g.globalAlpha = 1;
+        for (const c of v.cuts) { if (!v.CLK || t < v.CLK) { const grow = kk(t, c.t0, c.t0 + .04), n = c.pts.length / 2;
+            for (let j = 0; j < n * grow; j++) { g.fillStyle = (j + (t * 20 | 0)) % 4 ? CY2 : WH; g.fillRect(c.pts[j * 2], c.pts[j * 2 + 1], 1, 1); } }
+          else { const k = kk(t, v.CLK, v.CLK + .35); if (k >= 1) continue; g.globalAlpha = 1 - k; g.fillStyle = WH;
+            for (let j = 0; j < c.pts.length; j += 2) g.fillRect(c.pts[j], c.pts[j + 1] - (k < .3 ? 1 : 0), 1, k < .3 ? 3 : 1); g.globalAlpha = 1; } }
+      }
+      if (layer === 'hud') { powerTag(g, v.L, 6, 130);
+        if (v.tg) { ptext(g, 'CUT ' + String(Math.max(0, v.done + 1)), 52, 130, v.done + 1 >= v.tg.length ? WH : CY); } }
     } },
 
-  { name: 'Decoy', tag: 'ACTIVE', key: '<kbd>E</kbd>',
-    note: 'A glitch, and there are two of him: a decoy standing in his idle pose, breathing, and the real one almost invisible, only a faint shimmer of his outline slipping round behind the enemy. The enemy walks up and cuts the decoy down; it bursts into slivers under the blade. He hears something behind him and starts to turn, and the ronin is already there, solid again, cutting across his back. The enemy staggers forward, knees going, and falls apart on the click.',
-    rx: 66, ry: 64, dur: 2.6,
-    setup(S) { S.E = [mkE(160, 62)]; },
-    run(S, t) {
-      const R = S.R, E = S.E[0], G = .22, HIT = 1.04, IN = 1.12, CUT = 1.2, SH = 1.52;
-      const BACKCUT = pz({ hx: 2, hy: 4, lean: .62, chest: .5, fl: [1.15, 1.25], bl: [-1.1, .1], fa: [1.5, 0], sword: .15, ba: [-1.7, .1], hat: 1, flutter: 1 });
-      if (t < G) R.pose = idleB(t);
-      else if (t < IN) {   // the shimmer: his outline, sneaking round behind
-        const p = path([[G, 66, 64], [.5, 84, 50], [.84, 112, 52], [1.02, 112, 62]], t, lin); R.x = p[0]; R.y = p[1];
-        R.pose = pz({ ...lerpP(IDLE, IAI, .5), hy: 3, lean: .45, fl: [.6 * Math.sin(t * 18), .6], bl: [-.6 * Math.sin(t * 18), .6] });
-        R.face = t < .98 ? 1 : -1; R.outline = true; R.col = Math.random() < .5 ? CY : CY2; R.alpha = .22 + .25 * Math.random(); R.glitch = .4;
-      } else { R.x = 112; R.y = 62; R.face = -1;
-        R.pose = at([[IN, IAI], [CUT, IAI, hold], [CUT + .001, BACKCUT, hold], [SH, pz({ ...BACKCUT, lean: .55, chest: .42, flutter: 0 })], ...quickSheathe(SH, BACKCUT).slice(1)], t);
-        R.glitch = t < IN + .06 ? (IN + .06 - t) * 20 : 0; }
-      S.once('split', t >= G, () => { F.slivers(S, 66, 64, 8); for (let k = 0; k < 4; k++) F.zap(S, 66 + rr(-6, 6), 64 - rr(4, 24), 66 + rr(-8, 8), 64 - rr(4, 24), .08, 1.5, [CY, CY2, WH][k % 3]); });
-      S.once('in', t >= IN, () => { F.slivers(S, 112, 62, 8); F.ring(S, 112, 62, 6, 2, .2, 8, CY2); });
-      S.once('cut', t >= CUT, () => { F.hit(S, E, .09, .06); F.cres(S, E.x + 4, E.y - 13, -1, 14, .4, -1, .18); F.cut(S, E.x + 9, E.y - 22, E.x - 9, E.y - 6, .8); F.burst(S, E.x, E.y - 14, 12);
-        F.ghost(S, { x: 112, y: 62, face: -1, pose: IAI }, WH, .1); });
-      S.once('click', t >= click(SH), () => die(S, E, [[E.x + 9, E.y - 22, E.x - 9, E.y - 6]], { dir: -1, vx: -12 }));
-      // the enemy: walks up, cuts the decoy, overcommits, hears him and starts to turn, is cut, stumbles forward and his knees go
-      if (t < .8) { E.x = 160 - 68 * (t / .8); E.pose = ewalk(t); }
-      else if (t < 1.0) { E.x = 92; E.pose = E_RAISE; }
-      else if (t < HIT) { E.x = 91; E.pose = E_MID; }
-      else if (t < CUT) { E.x = 89; E.pose = at([[HIT, E_CHOP], [1.12, E_OVER]], t); if (t > 1.14) { E.pose = pz({ ...E_OVER, lean: .35, chest: -.1 }); } }
-      else { E.x = 89 - 8 * eOut(kk(t, CUT, 1.8)); E.pose = at([[CUT, pz({ ...E_STAG, lean: .5, chest: .45, fa: [.3, .5] })], [1.55, pz({ ...E_STAG, lean: .4, chest: .6 })], [click(SH), pz({ ...E_BUCKLE, lean: .35 })]], t); }
-      S.once('decoyhit', t >= HIT, () => { S.v.burst = true; F.holoBurst(S, { x: 66, y: 64, face: 1, pose: idleB(HIT) }, -60, 2);
-        F.slivers(S, 66, 64, 10); F.cut(S, 76, 38, 60, 62, .14); for (let k = 0; k < 5; k++) F.zap(S, 66, 52, 66 + rr(-12, 12), 64 - rr(0, 26), .1, 2, [CY, WH][k % 2]); S.stop = .05; });
-    },
-    actors(S, t) { if (t < .22 || S.v.burst) return [];
-      const a = { x: 66, y: 64, face: 1, pose: idleB(t) }; const r = Math.random();
-      if (t > .98 && t < 1.04) return [{ ...a, flash: true }];
-      return [r < .12 ? { ...a, col: CY, alpha: .8, glitch: .6 } : r < .2 ? { ...a, glitch: .5 } : a]; } },
-
-  { name: 'Iai Focus', tag: 'PASSIVE', key: 'Stand still, blade sheathed · full in <b>1.5 s</b>',
-    note: 'Standing still with the blade sheathed builds Focus. A thin cyan line of light gathers slowly up the scabbard from its tip, reaches the hilt and lights it, and his eyes brighten; the meter fills. The first strike from full Focus is a guaranteed critical: he is across the enemy before the frame changes, with a bigger flash, a much longer hit pause, and a thin white line drawn across the whole screen at the height of the cut. The enemy takes one more step before his knees go.',
+  { name: 'Iai Focus', vr: 'the stance', sec: 'new', tag: 'PASSIVE', key: 'Stand still, blade sheathed · full in <b>1.5 s</b>',
+    note: 'Standing still with the blade sheathed builds Focus, and he settles into the draw as it builds: his hand finds the hilt and the other closes on the scabbard, his rear foot slides back along the floor, and he sinks and hunches over the sheath, hat low. A thin cyan line of light gathers slowly up the scabbard from its tip, reaches the hilt and lights it, and his eyes brighten; the meter fills. The first strike from full Focus is a guaranteed critical: he is across the enemy before the frame changes, with a bigger flash, a much longer hit pause, and a thin white line drawn across the whole screen at the height of the cut. The enemy takes one more step before his knees go.',
     rx: 46, ry: 66, dur: 3.2,
     setup(S) { S.E = [mkE(190, 64)]; },
+    F1: pz({ hy: 2, lean: .12, fl: [.3, .3], bl: [-.3, .25], fa: HILT, ba: [.25, 1.0] }),
+    F2: pz({ hy: 4, lean: .3, chest: .12, fl: [.6, .95], bl: [-.8, .05], fa: [0, 1.4], ba: [.15, 1.4] }),
+    F3: pz({ hx: 1, hy: 6, lean: .55, chest: .42, fl: [.95, 1.6], bl: [-1.05, .05], fa: [-.2, 1.6], ba: [.1, 1.5], hat: 1 }),
     focus(t) { return t < 1.95 ? ease(kk(t, .15, 1.55)) : 0; },
     run(S, t) {
       const R = S.R, E = S.E[0], ST = 2.0, SH = 2.5;
-      if (t < 1.94) R.pose = pz({ ...idleB(t), hat: t > 1.5 ? 0 : 0 });
-      else if (t < ST) { R.pose = IAI; }
+      if (t < ST) R.pose = pz({ ...at([[.15, idleB(.15)], [.45, this.F1], [.95, this.F2], [1.55, this.F3]], t), breath: t > 1.55 ? .25 + .25 * Math.sin(t * 4) : 0 });
       else { R.x = 134; R.pose = at([[ST, PAST], [ST + .06, PAST, hold], [ST + .2, PAST_SET], [SH, PAST_SET], ...quickSheathe(SH, PAST_SET).slice(1)], t); }
+      S.once('slide', t >= .62, () => { F.dust(S, R.x - 8, R.y, 4); for (let k = 0; k < 3; k++) F.spark(S, R.x - 6 - k * 2, R.y, -rr(10, 30), -rr(2, 6), .25, '#8f9692'); });
       S.once('full', t >= 1.55, () => { const j = joints(R); F.ring(S, j.mouth[0], j.mouth[1], 2, 2, .3, 9, CY2); F.flashR(S, .03); });
       S.once('strike', t >= ST, () => { S.white = 2; F.hit(S, E, .32, .12); S.v.crit = ST;
         for (let k = 0; k < 3; k++) F.ghost(S, { x: 46 + (134 - 46) * (k + 1) / 4, y: 66, face: 1, pose: lerpP(IAI, PAST, (k + 1) / 3) }, k % 2 ? CY2 : WH, .16 + k * .03);
@@ -553,7 +734,221 @@ const SKILLS = [
         ptext(g, 'FOCUS', 6, 88, full ? (blink ? WH : CY) : '#8c9592'); meter(g, 28, 89, 36, f, full && blink ? WH : CY); }
     } },
 
-  { name: 'Static Trail', tag: 'PASSIVE', key: 'Every dash or teleport',
+  { name: 'Breath of Qi', vr: 'A · Seiza', sec: 'qi', tag: 'ACTIVE', key: 'Hold <kbd>C</kbd> · spends Qi',
+    note: 'He kneels, hands on his thighs, head bowed, and takes three slow breaths. Each in-breath pulls a stream of Qi in from the air round him into his chest; each out-breath sends a ring across the floor and heals a third. Kneeling heals the most per breath, but he is rooted until he stands.',
+    rx: 96, ry: 70, dur: 3.4, B0: .7, BP: .78,
+    setup(S) { qiInit(S); },
+    breaths(t) { let n = 0; for (let i = 0; i < 3; i++) if (t >= this.B0 + i * this.BP + .45) n++; return n; },
+    run(S, t) {
+      const R = S.R, sk = this, v = S.v, T = v.tier, GET = 2.95;
+      let br = 0, inb = false;
+      for (let i = 0; i < 3; i++) { const b = sk.B0 + i * sk.BP; if (t >= b && t < b + .45) { br = ease(kk(t, b, b + .45)); inb = true; } else if (t >= b + .45 && t < b + .75) br = 1 - ease(kk(t, b + .45, b + .75)); }
+      R.pose = t < GET ? at([[0, idleB(t)], [.22, IDLE], [.36, pz({ ...CROUCH, hy: 5, lean: .3, fl: [1.1, 1.8], bl: [-.1, 2.0] })], [.55, SEIZA]], t) : at([[GET, SEIZA], [GET + .12, pz({ ...CROUCH, hy: 5, fl: [1.1, 1.8], bl: [-.1, 2.0] })], [GET + .3, READY], [GET + .45, IDLE]], t);
+      if (t >= .55 && t < GET) R.pose = pz({ ...SEIZA, breath: br, hat: br > .6 ? 0 : 1 });
+      const tx = R.x + 1, ty = R.y - 14;
+      if (inb) { qiMotes(S, t, QI_RATE[T], tx, ty, { r0: 18, r1: 70 }); if (T >= 1) qiChips(S, t, T, R.x, R.y, tx, ty, 40); }
+      else if (t > .55 && t < GET) qiMotes(S, t, T, tx, ty, { r0: 20, r1: 50, slow: 1.4 });   // a thin drift between breaths
+      for (let i = 0; i < 3; i++) S.once('pulse' + i, t >= sk.B0 + i * sk.BP + .45, () => {
+        F.ring(S, R.x, R.y + 1, 6, 3, .45, 22 + T * 8, CY2); if (T >= 1) F.ring(S, R.x, R.y + 1, 4, 2, .6, 34 + T * 8, CY3); if (T >= 2) F.ring(S, R.x, R.y + 1, 8, 3, .3, 50, WH); });
+      S.once('rise', t >= GET + .3, () => { F.ring(S, R.x, R.y + 1, 8, 3, .4, 26, WH); F.flashR(S, .03); });
+      qiUpdate(S, t);
+    },
+    draw(S, g, layer, t) { const R = S.R, sk = this, v = S.v;
+      if (layer === 'floor' && v.tier >= 2) sigil(g, t, R.x, R.y + 1, 24, kk(t, .5, .8) * (1 - kk(t, 2.9, 3.2)));
+      qiDraw(g, S, t, layer, v.tier >= 2 ? { cx: R.x, fy: R.y, h: 30, a: kk(t, .55, .9) * (1 - kk(t, 2.85, 3.1)) } : null);
+      if (layer === 'hud') { const n = sk.breaths(t), last = n ? sk.B0 + (n - 1) * sk.BP + .45 : -9, e = ease(kk(t, last, last + .25));
+        const hpPrev = .28 + .235 * Math.max(0, n - 1), hpNow = .28 + .235 * n, hp = n ? hpPrev + (hpNow - hpPrev) * e : .28;
+        const qiPrev = 1 - Math.max(0, n - 1) / 3, qiNow = 1 - n / 3, qi = n ? qiPrev + (qiNow - qiPrev) * e : 1;
+        qiHud(g, t, S, hp, qi, n && t - last < .3 ? hpNow : 0, n && t - last < .45 ? qiPrev : qi); } } },
+
+  { name: 'Breath of Qi', vr: 'B · Standing kata', sec: 'qi', tag: 'ACTIVE', key: 'Hold <kbd>C</kbd> · spends Qi',
+    note: 'He stays on his feet in a low horse stance. On each in-breath his arms rise slowly overhead and Qi rises to his hands in columns from the floor round him; on each out-breath he presses his palms down in front of his belly, the Qi sinks to a point of light there, and a ring rolls out across the floor. Three breaths. It heals a little less than kneeling, but he is standing, so letting go of the key puts him straight back into a fight.',
+    rx: 96, ry: 72, dur: 3.9, B0: .5, BP: 1.0,
+    STAND: pz({ hy: 3, lean: .02, fl: [.45, .45], bl: [-.45, .45], fa: [.35, .9], ba: [.3, .95] }),
+    RAISE: pz({ hy: 1, lean: -.06, chest: -.12, breath: 1, fl: [.35, .3], bl: [-.35, .3], fa: [2.9, .15], ba: [2.75, .25] }),
+    PRESS: pz({ hy: 4, lean: .08, chest: .1, fl: [.55, .7], bl: [-.55, .6], fa: [.75, 1.3], ba: [.65, 1.4], hat: 1 }),
+    setup(S) { qiInit(S); },
+    breaths(t) { let n = 0; for (let i = 0; i < 3; i++) if (t >= this.B0 + i * this.BP + .9) n++; return n; },
+    run(S, t) {
+      const R = S.R, sk = this, v = S.v, T = v.tier, keys = [[0, idleB(t)], [.25, IDLE], [.5, sk.STAND]];
+      for (let i = 0; i < 3; i++) { const b = sk.B0 + i * sk.BP; keys.push([b + .55, sk.RAISE], [b + .9, sk.PRESS]); }
+      keys.push([3.55, sk.STAND], [3.8, IDLE]); R.pose = at(keys, t);
+      const hands = joints({ ...R, pose: sk.RAISE }), up = [(hands.hand[0] + hands.bh[0]) / 2, (hands.hand[1] + hands.bh[1]) / 2 - 2];
+      for (let i = 0; i < 3; i++) { const b = sk.B0 + i * sk.BP;
+        if (t >= b && t < b + .5) {   // in: columns of Qi rise from the floor to his hands
+          for (let k = 0; k < QI_RATE[T]; k++) { const a = rr(0, 6.28), r = rr(10, 34), sx = R.x + Math.cos(a) * r, sy = R.y + Math.sin(a) * r * .4;
+            v.motes.push({ sx, sy, tx: up[0], ty: up[1], t0: t, dur: rr(.4, .7), curl: rr(-6, 6) }); }
+          if (T >= 1) qiChips(S, t, T, R.x, R.y, up[0], up[1], 34); }
+        if (t >= b + .55 && t < b + .85) qiMotes(S, t, Math.ceil(QI_RATE[T] / 3), R.x + 1, R.y - 9, { cx: up[0], cy: up[1], r0: 2, r1: 8, sq: 1 });   // out: sinking to the belly
+        S.once('pulse' + i, t >= b + .9, () => { F.ring(S, R.x, R.y + 1, 6, 3, .45, 24 + T * 8, CY2); F.ring(S, R.x + 1, R.y - 9, 2, 2, .25, 6, WH); if (T >= 1) F.ring(S, R.x, R.y + 1, 4, 2, .6, 36 + T * 8, CY3); }); }
+      qiUpdate(S, t);
+    },
+    draw(S, g, layer, t) { const R = S.R, sk = this, v = S.v;
+      if (layer === 'floor' && v.tier >= 2) sigil(g, t, R.x, R.y + 1, 26, kk(t, .4, .7) * (1 - kk(t, 3.4, 3.7)));
+      qiDraw(g, S, t, layer, v.tier >= 2 ? { cx: R.x, fy: R.y, h: 40, a: kk(t, .5, .8) * (1 - kk(t, 3.4, 3.7)) } : null);
+      if (layer === 'top') { let glow = 0; for (let i = 0; i < 3; i++) { const b = sk.B0 + i * sk.BP; glow = Math.max(glow, kk(t, b + .55, b + .85) * (1 - kk(t, b + .9, b + 1.2))); }
+        if (glow > 0) { const x = Math.round(R.x + 1), y = Math.round(R.y - 9); g.globalAlpha = glow; g.fillStyle = WH; g.fillRect(x, y, 1, 1); g.fillStyle = CY2;
+          for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) g.fillRect(x + dx, y + dy, 1, 1); g.globalAlpha = 1; } }
+      if (layer === 'hud') { const n = sk.breaths(t), last = n ? sk.B0 + (n - 1) * sk.BP + .9 : -9, e = ease(kk(t, last, last + .25));
+        const hpPrev = .3 + .2 * Math.max(0, n - 1), hpNow = .3 + .2 * n, hp = n ? hpPrev + (hpNow - hpPrev) * e : .3;
+        const qiPrev = 1 - Math.max(0, n - 1) / 3, qiNow = 1 - n / 3, qi = n ? qiPrev + (qiNow - qiPrev) * e : 1;
+        qiHud(g, t, S, hp, qi, n && t - last < .3 ? hpNow : 0, n && t - last < .45 ? qiPrev : qi); } } },
+
+  { name: 'Breath of Qi', vr: 'C · Lotus', sec: 'qi', tag: 'ACTIVE', key: 'Hold <kbd>C</kbd> · spends Qi · a hit breaks it',
+    note: 'He sits cross-legged and slowly lifts a few pixels off the floor, turning gently in the air, while a ring of Qi circles him, passing in front and behind, and a sigil turns on the floor beneath. It is one long breath rather than three: health rises smoothly the whole time and the meter drains smoothly with it, and it heals everything. It is the longest of the five and he cannot move, so a hit breaks it.',
+    rx: 96, ry: 72, dur: 4.0,
+    SIT: pz({ hy: 10, lean: .02, chest: .05, fl: [1.5, 2.85], bl: [1.35, 2.95], fa: [.8, .75], ba: [.7, .8], hat: 1 }),
+    setup(S) { qiInit(S); },
+    z(t) { return t < .7 ? 0 : t < 3.2 ? 6 * eOut(kk(t, .7, 1.2)) + Math.round(Math.sin((t - .7) * 2.4)) * kk(t, 1.1, 1.4) : 6 * (1 - ease(kk(t, 3.2, 3.45))); },
+    run(S, t) {
+      const R = S.R, sk = this, v = S.v, T = v.tier;
+      R.pose = at([[0, idleB(t)], [.25, IDLE], [.42, pz({ ...CROUCH, hy: 6, lean: .2, fl: [1.2, 2.0], bl: [.2, 2.2] })], [.62, sk.SIT], [3.45, sk.SIT], [3.62, pz({ ...CROUCH, hy: 5, fl: [1.1, 1.8], bl: [-.1, 2.0] })], [3.8, IDLE]], t);
+      if (t > .62 && t < 3.45) R.pose = pz({ ...R.pose, breath: Math.sin(t * 2.2) * .5 + .5 });
+      R.z = sk.z(t);
+      const tx = R.x + 1, ty = R.y - 14 - R.z, on = t > .8 && t < 3.2;
+      if (on) { qiMotes(S, t, Math.ceil(QI_RATE[T] * .6), tx, ty, { r0: 20, r1: 66 }); if (T >= 1 && Math.random() < .3 + T * .3) qiChips(S, t, 1, R.x, R.y, tx, ty, 30); }
+      for (let i = 0; i < 4; i++) S.once('p' + i, t >= 1.1 + i * .55, () => { F.ring(S, R.x, R.y + 1, 6, 2.5, .6, 26 + T * 8, CY2); if (T >= 1) F.ring(S, R.x, R.y + 1, 4, 2, .7, 38 + T * 8, CY3); });
+      qiUpdate(S, t);
+    },
+    draw(S, g, layer, t) { const R = S.R, sk = this, v = S.v, z = sk.z(t), a = kk(t, .7, 1.1) * (1 - kk(t, 3.2, 3.5));
+      if (layer === 'floor') { sigil(g, t, R.x, R.y + 1, 18 + v.tier * 4, a * .9); if (v.tier >= 2) sigil(g, -t * 1.3, R.x, R.y + 1, 36, a * .6); }
+      qiDraw(g, S, t, layer, v.tier >= 2 ? { cx: R.x, fy: R.y, z, h: 34, r: 13, a } : null);
+      if ((layer === 'floor' || layer === 'top') && a > 0) {   // the ring of Qi round him: the half behind him goes under him
+        const n = 10 + v.tier * 6, cy = R.y - 13 - z;
+        for (let i = 0; i < n; i++) { const q = t * 2 + i / n * 6.283, front = Math.sin(q) > 0; if ((layer === 'top') !== front) continue;
+          const x = R.x + Math.cos(q) * 15, y = cy + Math.sin(q) * 5; g.globalAlpha = a * (front ? 1 : .5); g.fillStyle = i % 3 ? CY2 : WH; g.fillRect(Math.round(x), Math.round(y), 1, 1);
+          g.fillStyle = CY; g.globalAlpha *= .5; g.fillRect(Math.round(R.x + Math.cos(q - .12) * 15), Math.round(cy + Math.sin(q - .12) * 5), 1, 1); }
+        g.globalAlpha = 1; }
+      if (layer === 'hud') { const k = ease(kk(t, 1.0, 3.2)); qiHud(g, t, S, .22 + .78 * k, 1 - k); } } },
+
+  { name: 'Breath of Qi', vr: 'D · Harvest', sec: 'qi', tag: 'ACTIVE', key: 'Hold <kbd>C</kbd> near the fallen · costs no Qi',
+    note: 'He kneels among the samurai he has cut down and holds out an open hand to each in turn. Their remains come apart pixel by pixel into Qi that streams across the floor into him, until nothing is left of them. It costs no Qi at all, only bodies: each fallen enemy heals once, then is gone. A reason to fight near where you have already killed.',
+    rx: 96, ry: 70, dur: 3.9, BOD: [[58, 62, -1], [140, 60, 1], [124, 88, 1]], H0: [.65, 1.4, 2.15],
+    setup(S) { const sk = this; qiInit(S);
+      sk.BOD.forEach(([x, y, f], k) => { const E = mkE(x, y, { face: f < 0 ? 1 : -1, pose: E_STAG }), i0 = S.pieces.length;
+        die(S, E, [[x - 12, y - 13, x + 12, y - 14]], { dir: sgn(), vx: 0 }); S.pieces.slice(i0).forEach(P => P.body = k);
+        const C = S.corpses[S.corpses.length - 1]; C.t0 = -5; C.body = k; C.alpha = 1; });
+      for (let i = 0; i < 150; i++) updatePieces(S, 1 / 60);
+      S.fx = FX(); S.E = []; },
+    DRAW: pz({ hy: 8, lean: .15, chest: .1, fl: [1.35, 2.7], bl: [1.2, 2.8], fa: [1.45, .1], ba: [.4, 1.0], hat: 1 }),
+    run(S, t) {
+      const R = S.R, sk = this, v = S.v, T = v.tier, KN = pz({ ...sk.DRAW, fa: [.45, 1.0] });
+      let k = -1; sk.H0.forEach((h, i) => { if (t >= h - .12 && t < h + .7) k = i; });
+      R.face = t < sk.H0[1] - .12 ? (t < .55 ? 1 : -1) : 1;
+      R.pose = t < .5 ? at([[0, idleB(t)], [.2, IDLE], [.5, KN]], t) : t > 2.95 ? at([[2.95, KN], [3.12, pz({ ...CROUCH, hy: 5, fl: [1.1, 1.8], bl: [-.1, 2.0] })], [3.3, READY], [3.5, IDLE]], t) : k >= 0 ? sk.DRAW : KN;
+      const tx = R.x + 1, ty = R.y - 13;
+      if (k >= 0 && t >= sk.H0[k]) {   // the body comes apart into Qi
+        const ps = S.pieces.filter(P => P.body === k && P.pts.length), total = ps.reduce((s, P) => s + P.pts.length, 0), take = Math.ceil(total * kk(t, sk.H0[k], sk.H0[k] + .55) ** .5 * .12 + (T + 1) * 2);
+        for (let q = 0; q < take && ps.length; q++) { const P = ps[Math.random() * ps.length | 0]; if (!P.pts.length) continue;
+          const [dx, dy] = P.pts.splice(Math.random() * P.pts.length | 0, 1)[0], ca = Math.cos(P.a), sa = Math.sin(P.a);
+          qiFrom(S, t, P.x + dx * ca - dy * sa, P.fy - P.z + dx * sa + dy * ca, tx, ty, rr(.35, .6)); }
+        const C = S.corpses.find(c => c.body === k); if (C) { C.alpha = 1 - kk(t, sk.H0[k], sk.H0[k] + .55);
+          for (let q = 0; q < 2 + T * 2 && C.alpha > 0; q++) qiFrom(S, t, C.x + rr(-8, 8), C.y - rr(0, 5), tx, ty); }
+        if (T >= 1) qiChips(S, t, T, sk.BOD[k][0], sk.BOD[k][1], tx, ty, 16);
+      }
+      if (t > .5 && t < 2.95) qiMotes(S, t, T + 1, tx, ty, { r0: 20, r1: 50, slow: 1.3 });
+      S.pieces = S.pieces.filter(P => P.pts.length);
+      qiUpdate(S, t);
+    },
+    draw(S, g, layer, t) { const R = S.R, sk = this, v = S.v;
+      if (layer === 'floor' && v.tier >= 2) sigil(g, t, R.x, R.y + 1, 22, kk(t, .45, .75) * (1 - kk(t, 2.9, 3.2)));
+      qiDraw(g, S, t, layer, v.tier >= 2 ? { cx: R.x, fy: R.y, h: 28, a: kk(t, .5, .8) * (1 - kk(t, 2.9, 3.2)) } : null);
+      if (layer === 'top') sk.H0.forEach((h, i) => { if (t >= h - .12 && t < h + .7) { const j = joints(R); if (Math.random() < .7) { g.fillStyle = Math.random() < .5 ? WH : CY2; g.fillRect(Math.round(j.hand[0] + R.face), Math.round(j.hand[1]), 1, 1); } } });
+      if (layer === 'hud') { let hp = .2; sk.H0.forEach(h => hp += .27 * ease(kk(t, h + .1, h + .75))); qiHud(g, t, S, hp, .35, 0, 0, true); } } },
+
+  { name: 'Breath of Qi', vr: 'E · Storm breath', sec: 'qi', tag: 'ACTIVE', key: 'Tap <kbd>C</kbd> · spends the whole meter',
+    note: 'One breath, taken all at once. He plants his feet and throws his arms back, and every scrap of Qi on the screen rushes into him while the room darkens. A held beat, eyes blazing. Then he exhales, palms driving forward, and a shockwave rolls out across the floor that heals him by a big step and throws everyone near him off their feet. They land on their backs and take a moment to get up. The whole meter in one go: a heal and an escape.',
+    rx: 98, ry: 70, dur: 3.9, IN0: .55, IN1: 1.35, EX: 1.6,
+    INHALE: pz({ hy: 3, lean: -.14, chest: -.32, breath: 1, fl: [.6, .6], bl: [-.6, .6], fa: [-1.25, .35], ba: [-1.0, .35], hat: -1 }),
+    EXHALE: pz({ hx: 2, hy: 5, lean: .32, chest: .25, fl: [1.1, 1.2], bl: [-1.0, .15], fa: [1.55, -.05], ba: [1.4, .05], flutter: 1, hat: 1 }),
+    setup(S) { qiInit(S); S.E = [mkE(160, 64), mkE(38, 74, { face: 1 }), mkE(150, 84)]; },
+    run(S, t) {
+      const R = S.R, sk = this, v = S.v, T = v.tier;
+      R.pose = at([[0, idleB(t)], [.35, READY], [sk.IN0, pz({ ...READY, hy: 4, lean: .1 })], [sk.IN1, sk.INHALE], [sk.EX, pz({ ...sk.INHALE, chest: -.38 })], [sk.EX + .001, sk.EXHALE, hold],
+        [sk.EX + .5, pz({ ...sk.EXHALE, lean: .2, chest: .1, flutter: 0 })], [sk.EX + .9, READY], [3.2, READY], [3.5, IDLE]], t);
+      if (t > sk.IN1 && t < sk.EX) R.jit = Math.random() < .3 ? sgn() : 0;
+      const tx = R.x + 1, ty = R.y - 15;
+      if (t >= sk.IN0 && t < sk.IN1) { for (let q = 0; q < QI_RATE[T] + 4; q++) qiFrom(S, t, rr(-4, 204), rr(-4, 104), tx, ty, rr(.3, .5));   // from the whole screen
+        if (T >= 1) qiChips(S, t, T * 2, R.x, R.y, tx, ty, 70); }
+      S.once('ex', t >= sk.EX, () => { S.white = 1; S.stop = .08; S.shake = .22; F.flashR(S, .04);
+        F.ring(S, R.x, R.y + 1, 8, 3, .55, 110 + T * 30, WH); F.ring(S, R.x, R.y + 1, 6, 2, .7, 80 + T * 20, CY2); F.ring(S, R.x, R.y - 14, 4, 4, .3, 30, CY2);
+        if (T >= 1) F.ring(S, R.x, R.y + 1, 4, 2, .9, 60 + T * 20, CY3);
+        F.dust(S, R.x, R.y, 14); F.burst(S, R.x, R.y - 14, 16, 200);
+        if (T >= 2) for (let k = 0; k < 10; k++) { const a = k / 10 * 6.28; F.zap(S, R.x + Math.cos(a) * 8, R.y + Math.sin(a) * 3, R.x + Math.cos(a) * 46, R.y + Math.sin(a) * 18, .2, 3, [CY, WH][k % 2]); }
+        for (let k = 0; k < 40 + T * 30; k++) { const a = rr(0, 6.28), sp = rr(80, 200); F.spark(S, R.x, R.y - 12, Math.cos(a) * sp, Math.sin(a) * sp * .5, rr(.2, .45), [CY, CY2, WH][k % 3], true); } });
+      // the samurai: close in, brace as the air is pulled past them, get thrown, land on their backs, get up slowly
+      S.E.forEach((E, i) => {
+        const x0 = [160, 38, 150][i], x1 = [128, 66, 124][i], y0 = E.y, d = Math.sign(x1 - R.x), fly = sk.EX + .02 + i * .03;
+        if (t < fly) { const k = ease(kk(t, .1, 1.3)); E.x = x0 + (x1 - x0) * k; E.pose = t < 1.3 ? ewalk(t + i * .3) : pz({ ...E_FLINCH, lean: .25, chest: .3 });
+          if (t > sk.IN0 && t < sk.IN1) E.jit = Math.random() < .25 ? -d : 0; }
+        else { const k = kk(t, fly, fly + .5), far = 46 + T * 12; E.x = x1 + d * far * eOut(k); E.z = Math.sin(k * Math.PI) * (9 + T * 2) * (1 - k * .3);
+          E.pose = k < 1 ? E_KNOCK : at([[fly + .5, SUPINE], [3.0 + i * .1, SUPINE], [3.3 + i * .1, E_SITUP], [3.65 + i * .1, EG]], t); }
+        S.once('hit' + i, t >= fly, () => F.hit(S, E, .02, .1));
+        S.once('land' + i, t >= fly + .5, () => { F.dust(S, E.x, E.y, 8); S.shake = Math.max(S.shake, .04); });
+      });
+      qiUpdate(S, t);
+    },
+    draw(S, g, layer, t) { const R = S.R, sk = this, v = S.v;
+      if (layer === 'mid') { const a = .32 * kk(t, sk.IN0, sk.IN1) * (1 - kk(t, sk.EX, sk.EX + .1)); if (a > 0) { g.fillStyle = `rgba(6,10,12,${a})`; g.fillRect(-4, -4, S.W + 8, S.H + 8); } }
+      qiDraw(g, S, t, layer, v.tier >= 2 ? { cx: R.x, fy: R.y, h: 38, r: 13, a: kk(t, sk.IN0, sk.IN0 + .3) * (1 - kk(t, sk.EX, sk.EX + .05)) } : null);
+      if (layer === 'top' && t > sk.IN1 && t < sk.EX) { const j = joints(R), x = Math.round(j.hc[0] + 1.5 * j.f), y = Math.round(j.hc[1]); g.fillStyle = (t * 30 | 0) % 2 ? WH : CY2; g.fillRect(x, y, 1, 1); g.fillRect(x + j.f, y, 1, 1); }
+      if (layer === 'hud') { const e = ease(kk(t, sk.EX, sk.EX + .25)); qiHud(g, t, S, .3 + .4 * e, 1 - e, t >= sk.EX && t < sk.EX + .3 ? .7 : 0, t >= sk.EX && t < sk.EX + .45 ? 1 : 0); } } },
+
+  { name: 'Counter', sec: 'ok', tag: 'ACTIVE', key: 'Hold <kbd>F</kbd>',
+    note: 'While the key is held he stands in the counter stance: blade in his back hand, point down, lead shoulder turned to the enemy so he is as thin as he can be. When a blow comes in there is one white frame, the enemy\'s blade is knocked away over his shoulder, and the answer is already there: a rising cut from the back hand that turns his hips through. The enemy reels back, clutching, his knees going, and on the sheath click he falls apart backward.',
+    rx: 62, ry: 66, dur: 2.5,
+    setup(S) { S.E = [mkE(142, 64)]; },
+    run(S, t) {
+      const R = S.R, E = S.E[0];
+      const PARRY = pz({ ...STANCE, hx: -1, lean: -.04, chest: .1, ba: [.6, .95], bsword: -1.05, flutter: 1 });
+      const ANSWER = pz({ hx: 3, hy: 4, lean: .38, chest: .12, fl: [1.1, 1.2], bl: [-1.1, .1], fa: [.9, .9], ba: [2.2, -.2], bsword: -1.05, hat: 1, flutter: 1 });
+      const P1 = 1.03, A1 = 1.08, SH = 1.42;
+      if (t < .3) R.pose = idleB(t);
+      else if (t < .36) R.pose = pz({ ...CROUCH, lean: .25 });
+      else if (t < P1) R.pose = pz({ ...STANCE, breath: .5 - .5 * Math.cos((t - .36) * 7) });
+      else if (t < A1) R.pose = PARRY;
+      else R.pose = at([[A1, ANSWER], [SH, pz({ ...ANSWER, lean: .32, chest: .08, flutter: 0 })], ...quickSheathe(SH, ANSWER).slice(1)], t);
+      S.once('draw', t >= .36, () => { F.slivers(S, R.x - 6, R.y + 2, 3, 3); });
+      // the enemy: walks in, raises, swings; is knocked away, cut, reels backward and his knees go
+      if (t < .85) { E.x = 142 - 56 * (t / .85); E.pose = ewalk(t); }
+      else if (t < 1.0) { E.x = 86; E.pose = E_RAISE; }
+      else if (t < P1) { E.x = 85; E.pose = E_MID; }
+      else { const k = ease(kk(t, P1, 1.7)); E.x = 86 + 7 * k;
+        E.pose = at([[P1, E_KNOCK], [A1 + .02, E_KNOCK, hold], [A1 + .03, pz({ ...E_STAG, lean: -.35, chest: .1 })], [1.4, E_STAG], [1.72, E_BUCKLE]], t); }
+      S.once('parry', t >= P1, () => { S.white = 1; F.hit(S, E, .09, .05); F.flashR(S);
+        const cx = R.x + 12, cy = R.y - 21; F.burst(S, cx, cy, 12, 170); for (let k = 0; k < 4; k++) F.spark(S, cx, cy, rr(20, 90), -rr(40, 110), .16, WH, true); });
+      S.once('answer', t >= A1, () => { F.hit(S, E, .08, .07); F.ghost(S, { x: R.x, y: R.y, face: 1, pose: PARRY }, CY, .14);
+        F.cres(S, R.x + 13, R.y - 15, 1, 14, -1.0, 1, .18); F.cut(S, E.x - 9, E.y - 7, E.x + 9, E.y - 21, .9); F.burst(S, E.x - 2, E.y - 14, 10, 130); });
+      S.once('click', t >= click(SH), () => { die(S, E, [[E.x - 9, E.y - 7, E.x + 9, E.y - 21]], { dir: 1, vx: 14 }); F.burst(S, E.x, E.y - 13, 10); });
+    } },
+
+  { name: 'Glitch Dodge', sec: 'ok', tag: 'PASSIVE', key: 'Triggers when a blow is about to land · <b>8 s</b> cooldown',
+    note: 'He does nothing. The enemy charges and brings his blade down, and at the last instant he is simply a step to the side, leaning away from where he was. What the blade passes through is a flickering cyan hologram of him, which stutters for a beat and shatters into slivers along the line of the cut. The enemy, overcommitted, stumbles through the swing, looks round for him and turns to find him.',
+    rx: 70, ry: 62, dur: 2.2,
+    setup(S) { S.E = [mkE(168, 62)]; },
+    run(S, t) {
+      const R = S.R, E = S.E[0], D = .72;
+      const SIDE = pz({ hx: -2, hy: 4, lean: -.34, chest: -.2, fl: [.95, 1.1], bl: [-.95, .25], fa: HILT, ba: [.95, .5], hat: -1, flutter: 1 });
+      const SIDE2 = pz({ hx: -1, hy: 3, lean: -.1, chest: -.05, fl: [.75, 1.0], bl: [-.7, .35], fa: HILT, ba: [.3, .6] });
+      if (t < D) R.pose = idleB(t);
+      else { R.x = 54; R.y = 78; R.pose = at([[D, SIDE], [D + .14, SIDE], [D + .34, SIDE2], [D + .6, READY], [D + 1.1, READY], [D + 1.4, IDLE]], t);
+        R.glitch = t < D + .06 ? (D + .06 - t) * 22 : 0; }
+      S.once('dodge', t >= D, () => { F.speed(S, 70, 54, 74, 6); F.ghost(S, { x: 62, y: 70, face: 1, pose: lerpP(IDLE, SIDE, .5) }, CY2, .1); F.slivers(S, 54, 78, 4, 4); });
+      S.once('pass', t >= D + .03, () => { F.cut(S, 78, 36, 63, 62, .16); F.cres(S, 76, 50, -1, 13, .9, 1, .14); });
+      S.once('shatter', t >= D + .15, () => { F.holoBurst(S, { x: 70, y: 62, face: 1, pose: idleB(D) }, -70, 2); F.slivers(S, 70, 62, 8); F.ring(S, 70, 50, 5, 5, .18, 8, CY2); });
+      // the enemy: charge, raise, swing through nothing, stumble, look back, find him
+      if (t < .6) { E.x = 168 - 78 * (t / .6); E.pose = erun(t); }
+      else if (t < D) { E.x = 90; E.pose = E_RAISE; }
+      else if (t < D + .03) { E.x = 88; E.pose = E_MID; }
+      else { E.x = 88 - 7 * eOut(kk(t, D + .03, D + .4));
+        E.pose = at([[D + .03, E_CHOP], [D + .28, E_OVER], [D + .55, pz({ ...EG, lean: .2, chest: .15 })], [D + .75, EG]], t);
+        if (t > D + .7 && t < D + 1.0) E.face = 1;      // looks behind him
+        if (t >= D + 1.0) { E.face = -1; E.pose = at([[D + 1.0, pz({ ...E_FLINCH })], [D + 1.25, EG]], t); } }
+    },
+    actors(S, t) { const D = .72; if (t < D || t >= D + .15) return [];
+      return [{ x: 70, y: 62, face: 1, pose: idleB(D), col: Math.random() < .5 ? CY : CY2, alpha: .45 + .4 * Math.random(), glitch: t > D + .03 ? .9 : .35 }]; } },
+
+  { name: 'Static Trail', sec: 'ok', tag: 'PASSIVE', key: 'Every dash or teleport',
     note: 'Every dash or teleport leaves a line of crackling static on the floor that lives for about two seconds. Here he dashes back out of reach and the two enemies chase him straight across it: bolts jump up their legs, they seize and jitter in place, swords wavering. He dashes back through both of them, which lays a fresh line and makes the static flare, and on the sheath click they drop.',
     rx: 104, ry: 64, dur: 3.0,
     setup(S) { S.E = [mkE(142, 54), mkE(152, 74)]; S.v.trails = []; S.v.shock = [0, 0]; },
@@ -599,7 +994,7 @@ const SKILLS = [
       }
     } },
 
-  { name: 'Lightning Chain', tag: 'ACTIVE', key: '<kbd>Q</kbd>',
+  { name: 'Lightning Chain', sec: 'ok', tag: 'ACTIVE', key: '<kbd>Q</kbd>',
     note: 'He draws his free hand back and throws it open at the enemy, and a jagged chain of lightning leaps from his palm and hooks him round the chest. The enemy jolts and plants his feet to resist; he leans back and yanks. The enemy is torn off his feet and dragged across the floor, and while the chain pulls he has drawn with the other hand. The enemy arrives straight onto the blade: flash, pause, and his top half keeps flying past behind him on its own momentum while the legs tumble.',
     rx: 44, ry: 66, dur: 2.3,
     setup(S) { S.E = [mkE(152, 64)]; },
@@ -634,59 +1029,7 @@ const SKILLS = [
       if (k >= 1) { g.fillStyle = WH; for (const [dx, dy] of [[0, -3], [1, -3], [2, -2], [2, -1], [2, 0], [1, 1], [0, 1]]) g.fillRect(Math.round(end[0] + dx), Math.round(end[1] + dy), 1, 1); }  // the hook
     } },
 
-  { name: 'Time Slice', tag: 'ULTIMATE', key: '<kbd>X</kbd> · needs a full Qi meter',
-    note: 'He drops to the iai crouch and the world drains of colour and slows almost to a stop, the charging enemies caught mid-stride. He blinks between them and traces up to five glowing cut lines through the group one by one, a flicker of him in a different pose at the end of each. Then he is back where he started, kneeling, sliding the blade home slowly. On the click colour snaps back and every line fires at once: one white flash, and everyone the lines touch comes apart, still carrying their charge.',
-    rx: 34, ry: 70, dur: 3.3,
-    LINES: [[94, 26, 134, 58], [166, 28, 128, 72], [98, 63, 178, 65], [148, 42, 174, 94], [90, 39, 172, 45]],
-    POSES: [
-      { dx: 4, dy: 12, f: 1, p: pz({ hx: 2, hy: 5, lean: .72, chest: .5, fl: [1.3, 1.45], bl: [-1.25, .1], fa: [1.35, .05], sword: .95, ba: [-1.7, .05], hat: 1, flutter: 1 }) },
-      { dx: -2, dy: 4, f: -1, p: pz({ hy: 3, lean: .75, chest: .45, fl: [1.1, 1.2], bl: [-1.0, .15], fa: [1.15, 0], sword: 1.15, ba: [-1.5, 0], hat: 1, flutter: 1 }) },
-      { dx: 6, dy: 8, f: 1, p: pz({ hx: 2, hy: 4, lean: .6, chest: .3, fl: [1.2, 1.3], bl: [-1.2, .1], fa: [1.6, 0], sword: 0, ba: [-1.8, 0], flutter: 1 }) },
-      { dx: 3, dy: 2, f: 1, p: pz({ hy: 6, lean: .55, chest: .3, fl: [1.35, 1.6], bl: [-.45, 2.1], fa: [1.45, 0], sword: .4, ba: [-1.3, .2], flutter: 1 }) },
-      { dx: 4, dy: 14, f: 1, p: pz({ hy: 1, lean: -.25, chest: -.45, fl: [.85, .35], bl: [-.85, .2], fa: [2.75, 0], sword: -1.35, ba: [2.2, .2], hat: 1 }) }],
-    setup(S) { S.E = [mkE(118, 52), mkE(150, 58), mkE(124, 76), mkE(162, 80)]; S.v.desat = 0; },
-    run(S, t) {
-      const R = S.R, sk = this, ON = .42, L0 = .62, STEP = .17, BACK = L0 + 5 * STEP + .06, CLK = 2.2;
-      const slow = t < ON ? t : t < CLK ? ON + (t - ON) * .06 : ON + (CLK - ON) * .06 + (t - CLK);   // world time
-      S.v.desat = t < ON ? 0 : t < CLK ? kk(t, ON, ON + .1) : 0;
-      S.E.forEach((E, i) => { if (E.gone) return; const x0 = [118, 150, 124, 162][i]; E.x = x0 + 10 - 26 * Math.min(slow, 1.2) * .9; E.pose = erun(slow + i * .21); });
-      const KNEEL = pz({ hy: 6, lean: .5, chest: .1, fl: [1.25, 1.95], bl: [-.15, 2.4], fa: [1.2, .3], sword: .6, ba: [-.7, .4] });
-      const SLOWSH = pz({ hy: 6, lean: .4, fl: [1.25, 1.95], bl: [-.15, 2.4], fa: [1.0, .6], sheathing: true, ba: [.45, 1.1] });
-      const DONE = pz({ hy: 6, lean: .35, fl: [1.25, 1.95], bl: [-.15, 2.4], fa: HILT, ba: [.3, 1.0] });
-      if (t < ON - .06) R.pose = idleB(t);
-      else if (t < L0) R.pose = IAI;
-      else if (t < BACK) { const i = Math.min(4, (t - L0) / STEP | 0), L = sk.LINES[i], P = sk.POSES[i];
-        R.x = L[2] + P.dx; R.y = Math.min(94, L[3] + P.dy); R.face = P.f; R.pose = P.p; R.glitch = (t - L0) % STEP < .03 ? .8 : 0; }
-      else R.pose = at([[BACK, KNEEL], [BACK + .15, KNEEL], [CLK - .1, SLOWSH], [CLK, DONE, hold], [CLK + .5, DONE], [CLK + .8, IDLE]], t);
-      S.once('on', t >= ON, () => { F.ring(S, R.x, R.y - 12, 8, 8, .4, 60, CY2); F.flashR(S, .03); });
-      for (let i = 0; i < 5; i++) S.once('L' + i, t >= L0 + i * STEP, () => {
-        if (i) { const q = sk.LINES[i - 1], P = sk.POSES[i - 1]; F.ghost(S, { x: q[2] + P.dx, y: Math.min(94, q[3] + P.dy), face: P.f, pose: P.p }, i % 2 ? CY : WH, .5); }
-        else F.ghost(S, { x: 34, y: 70, face: 1, pose: IAI }, WH, .3);
-        F.slivers(S, sk.LINES[i][2], sk.LINES[i][3], 4, 4); });
-      S.once('back', t >= BACK, () => { const q = sk.LINES[4], P = sk.POSES[4]; F.ghost(S, { x: q[2] + P.dx, y: Math.min(94, q[3] + P.dy), face: P.f, pose: P.p }, CY, .4); F.slivers(S, 34, 70, 6); });
-      S.once('fire', t >= CLK, () => { S.white = 2; S.stop = .14; S.shake = .2;
-        S.E.forEach(E => { const Ls = sk.LINES.filter(L => segHits(L, E)); if (!Ls.length) return; E.flashUntil = S.clock + .035;
-          F.burst(S, E.x, E.y - 14, 10, 160); die(S, E, Ls, { dir: -1, vx: -30, throw: 1.3, spin: 1.2 }); }); });
-    },
-    draw(S, g, layer, t) {
-      const sk = this, L0 = .62, STEP = .17, CLK = 2.2;
-      if (layer === 'mid' && S.v.desat > 0) {   // the world drains and cools
-        g.save(); g.globalAlpha = S.v.desat; g.globalCompositeOperation = 'saturation'; g.fillStyle = '#808080'; g.fillRect(-4, -4, 208, 108);
-        g.globalCompositeOperation = 'source-over'; g.globalAlpha = .28 * S.v.desat; g.fillStyle = '#0a1418'; g.fillRect(-4, -4, 208, 108); g.restore(); }
-      if (layer !== 'top') return;
-      sk.LINES.forEach((L, i) => { const t0 = L0 + i * STEP; if (t < t0) return;
-        const pts = []; line(pts, L[0], L[1], L[2], L[3]); const n = pts.length / 2;
-        if (t < CLK) { const grow = kk(t, t0, t0 + .08), pulse = (Math.sin(t * 14 + i) + 1) / 2;
-          for (let j = 0; j < n * grow; j++) { const x = pts[j * 2], y = pts[j * 2 + 1], head = j > n * grow - 3 && grow < 1;
-            g.fillStyle = head ? WH : CY; g.globalAlpha = .55; g.fillRect(x, y - 1, 1, 1); g.fillRect(x, y + 1, 1, 1);
-            g.globalAlpha = 1; g.fillStyle = head || pulse > .5 ? WH : CY2; g.fillRect(x, y, 1, 1); }
-          g.globalAlpha = 1; }
-        else { const k = kk(t, CLK, CLK + .35); if (k >= 1) return; g.globalAlpha = 1 - k; g.fillStyle = WH;
-          for (let j = 0; j < n; j++) { const x = pts[j * 2], y = pts[j * 2 + 1]; g.fillRect(x, y - (k < .3 ? 1 : 0), 1, k < .3 ? 3 : 1); } g.globalAlpha = 1; }
-      });
-    } },
-
-  { name: 'Lingering Blades', tag: 'PASSIVE', key: 'Every third slash',
+  { name: 'Lingering Blades', sec: 'ok', tag: 'PASSIVE', key: 'Every third slash',
     note: 'Every third slash leaves a spectral copy of the blade hanging in the air exactly where the cut ended, humming faintly; three pips at his feet count the slashes. Here the near enemy blocks all six cuts, giving ground, and two spectral blades are left hanging. After a beat each one turns to the nearest enemy, draws back a hair and fires. Each enemy is run through and staggers the way the blade was travelling, and on the sheath click both come apart.',
     rx: 56, ry: 66, dur: 3.0,
     SL: [   // six slashes: [time, wind, follow]
@@ -745,99 +1088,72 @@ const SKILLS = [
       if (layer === 'hud') { const R = S.R, n = sk.rx0(t), shown = n === 0 ? 0 : ((n - 1) % 3) + 1, fresh = n && t - sk.SL[n - 1][0] < .12, done = t > 1.5;
         if (!done) for (let i = 0; i < 3; i++) { g.fillStyle = i < shown ? (shown === 3 && fresh ? WH : CY) : '#2b3133'; g.fillRect(Math.round(R.x) - 5 + i * 4, Math.round(R.y) + 4, 3, 1); } }
     } },
-
-  { name: 'Breath of Qi', tag: 'ACTIVE', key: 'Hold <kbd>C</kbd> · spends Qi',
-    note: 'He kneels, hands on his thighs, head bowed, and breathes. On each in-breath motes of cyan Qi drift in from the air around him and spiral into his chest; on each out-breath a small ring pulses out across the floor, a sliver of health comes back, and the Qi meter drains by a third. Three breaths take him from low health to nearly full and empty the meter, and he rises, hand back on the hilt.',
-    rx: 96, ry: 70, dur: 3.4,
-    B0: .7, BP: .78,
-    setup(S) { S.E = []; S.v.motes = []; },
-    breaths(t) { let n = 0; for (let i = 0; i < 3; i++) if (t >= this.B0 + i * this.BP + .45) n++; return n; },
-    run(S, t) {
-      const R = S.R, sk = this, SEIZA = pz({ hy: 9, lean: .1, chest: .12, fl: [1.45, 2.9], bl: [1.3, 2.9], fa: [.45, 1.0], ba: [.35, 1.05], hat: 1 });
-      const GET = 2.95;
-      let br = 0;
-      for (let i = 0; i < 3; i++) { const b = sk.B0 + i * sk.BP; if (t >= b && t < b + .45) br = ease(kk(t, b, b + .45)); else if (t >= b + .45 && t < b + .75) br = 1 - ease(kk(t, b + .45, b + .75)); }
-      R.pose = t < GET ? at([[0, idleB(t)], [.22, IDLE], [.36, pz({ ...CROUCH, hy: 5, lean: .3, fl: [1.1, 1.8], bl: [-.1, 2.0] })], [.55, SEIZA]], t) : at([[GET, SEIZA], [GET + .12, pz({ ...CROUCH, hy: 5, fl: [1.1, 1.8], bl: [-.1, 2.0] })], [GET + .3, READY], [GET + .45, IDLE]], t);
-      if (t >= .55 && t < GET) R.pose = pz({ ...SEIZA, breath: br, hat: br > .6 ? 0 : 1 });
-      for (let i = 0; i < 3; i++) S.once('pulse' + i, t >= sk.B0 + i * sk.BP + .45, () => {
-        F.ring(S, R.x, R.y + 1, 6, 3, .45, 22, CY2); F.ring(S, R.x, R.y - 11, 3, 3, .25, 6, WH);
-        S.fx.frags.push({ x: R.x - 1, y: R.y - 30, w: 3, col: CY2, vx: 0, vy: -14, life: .5, max: .5 }, { x: R.x, y: R.y - 31, w: 1, col: CY2, vx: 0, vy: -14, life: .5, max: .5 }, { x: R.x, y: R.y - 29, w: 1, col: CY2, vx: 0, vy: -14, life: .5, max: .5 }); });
-      S.once('rise', t >= GET + .3, () => { F.ring(S, R.x, R.y + 1, 8, 3, .4, 26, WH); F.flashR(S, .03); });
-      // motes: drawn in from all around on each in-breath
-      for (let i = 0; i < 3; i++) { const b = sk.B0 + i * sk.BP - .05; if (t >= b && t < b + .4) for (let k = 0; k < 3; k++) {
-        const a = rr(0, 6.28), r = rr(26, 48); S.v.motes.push({ sx: R.x + Math.cos(a) * r, sy: R.y - 12 + Math.sin(a) * r * .6, t0: t, dur: rr(.35, .55), curl: rr(-12, 12) }); } }
-      S.v.motes = S.v.motes.filter(m => t - m.t0 < m.dur);
-    },
-    draw(S, g, layer, t) {
-      const R = S.R, sk = this;
-      if (layer === 'top') for (const m of S.v.motes) { const k = eIn(kk(t, m.t0, m.t0 + m.dur)), tx = R.x + 1, ty = R.y - 14, dx = tx - m.sx, dy = ty - m.sy, L = Math.hypot(dx, dy) || 1;
-        const px = m.sx + dx * k + (-dy / L) * Math.sin(k * Math.PI) * m.curl, py = m.sy + dy * k + (dx / L) * Math.sin(k * Math.PI) * m.curl;
-        g.globalAlpha = Math.min(1, kk(t, m.t0, m.t0 + .1) * 1.2); g.fillStyle = k > .7 ? WH : k > .35 ? CY2 : CY; g.fillRect(Math.round(px), Math.round(py), 1, 1);
-        if (k > .15) { g.fillStyle = CY; g.globalAlpha *= .7; g.fillRect(Math.round(px - dx / L * 1.5), Math.round(py - dy / L * 1.5), 1, 1); g.globalAlpha *= .6; g.fillRect(Math.round(px - dx / L * 3), Math.round(py - dy / L * 3), 1, 1); } g.globalAlpha = 1; }
-      if (layer === 'hud') {
-        const n = sk.breaths(t), last = n ? sk.B0 + (n - 1) * sk.BP + .45 : -9, e = ease(kk(t, last, last + .25));
-        const hpPrev = .28 + .235 * Math.max(0, n - 1), hpNow = .28 + .235 * n, hp = n ? hpPrev + (hpNow - hpPrev) * e : .28;
-        const qiPrev = 1 - Math.max(0, n - 1) / 3, qiNow = 1 - n / 3, qi = n ? qiPrev + (qiNow - qiPrev) * e : 1, qiGhost = n && t - last < .45 ? qiPrev : qi;
-        const low = hp < .35 && (t * 4 | 0) % 2;
-        ptext(g, 'HP', 6, 83, low ? '#ff5a4a' : '#8c9592'); meter(g, 16, 84, 40, hp, low ? '#ff5a4a' : '#e9eeee', n && t - last < .3 ? hpNow : 0, CY2);
-        ptext(g, 'QI', 6, 90, qi > .01 ? CY : '#8c9592'); meter(g, 16, 91, 40, qi, CY, qiGhost, WH);
-      }
-    } },
 ];
 
 // ---------- scenes ----------
-const W = 200, H = 100, PAUSE = .9;
-function floor(seed) { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); let r = seed;
+const PAUSE = .9;
+function floor(seed, W, H) { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); let r = seed;
   const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
   g.fillStyle = '#474c4a'; g.fillRect(0, 0, W, H);
   for (let i = 0; i < W * H / 40; i++) { g.fillStyle = rnd() < .5 ? '#434846' : '#4b504e'; g.fillRect(rnd() * W | 0, rnd() * H | 0, 2, 1); } return c; }
-function reset(S) { S.clock = 0; S.stop = 0; S.shake = 0; S.white = 0; S.rfu = -1; S.ev.clear(); S.fx = FX(); S.pieces = []; S.corpses = []; S.v = {}; S.E = []; S.sk.setup(S); }
+function reset(S) { S.loop = (S.loop == null ? -1 : S.loop) + 1; S.clock = 0; S.stop = 0; S.shake = 0; S.white = 0; S.rfu = -1; S.ev.clear();
+  S.fx = FX(); S.pieces = []; S.corpses = []; S.v = {}; S.E = []; S.dur = null; S.sk.setup(S); }
+let num = 0;
 const scenes = SKILLS.map((sk, i) => {
-  const card = document.createElement('section'); card.className = 'card';
-  card.innerHTML = `<canvas width="${W}" height="${H}" role="img" aria-label="Skill ${i + 1}: ${sk.name}, looping"></canvas><div class="body"><div class="row"><span class="num">${String(i + 1).padStart(2, '0')}</span><span class="tag ${sk.tag.toLowerCase()}">${sk.tag}</span></div><h2>${sk.name}</h2><p>${sk.note}</p><div class="key">Key: ${sk.key}</div></div>`;
-  document.getElementById('grid').append(card);
-  const li = document.createElement('li'); li.textContent = sk.name + ': keep, tweak or cut'; document.getElementById('calls').append(li);
-  const S = { g: card.querySelector('canvas').getContext('2d'), sk, floor: floor(19 + i * 41), ev: new Set(), frame: 0 };
+  const W = sk.W || 200, H = sk.H || 100, card = document.createElement('section'); card.className = 'card' + (sk.wide ? ' wide' : '');
+  const n = String(++num).padStart(2, '0'), title = sk.name + (sk.vr ? `, ${sk.vr}` : '');
+  card.innerHTML = `<canvas width="${W}" height="${H}" style="aspect-ratio: ${W} / ${H}" role="img" aria-label="${n}: ${title}, looping"></canvas><div class="body"><div class="row"><span class="num">${n}</span><span class="tag ${sk.tag.toLowerCase()}">${sk.tag}</span></div><h2>${sk.name}${sk.vr ? ` <span class="vr">· ${sk.vr}</span>` : ''}</h2><p>${sk.note}</p><div class="key">Key: ${sk.key}</div></div>`;
+  document.querySelector(`#sec-${sk.sec} .grid`).append(card);
+  const S = { g: card.querySelector('canvas').getContext('2d'), sk, W, H, floor: floor(19 + i * 41, W, H), ev: new Set(), frame: 0, seen: false };
   S.once = (k, cond, fn) => { if (cond && !S.ev.has(k)) { S.ev.add(k); fn(); } };
-  reset(S); S.clock = -i * .23; return S;
+  reset(S); S.clock = -(i % 4) * .23;
+  return S;
 });
+// only the scenes on screen run; the rest hold their last frame
+const io = new IntersectionObserver(es => es.forEach(e => { const S = scenes.find(q => q.g.canvas === e.target); if (S) S.seen = e.isIntersecting; }), { rootMargin: '100px' });
+scenes.forEach(S => io.observe(S.g.canvas));
 let slow = false, last = performance.now();
 document.getElementById('slow').addEventListener('change', e => slow = e.target.checked);
 const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function step(S, dt) {
+  const { g, sk, W, H } = S; S.frame++;
+  updateFx(S, dt); updatePieces(S, dt); S.shake = Math.max(0, S.shake - dt);
+  if (S.stop > 0) S.stop -= dt; else S.clock += dt;
+  const dur = S.dur || sk.dur;
+  if (S.clock > dur + PAUSE) reset(S);
+  const t = Math.max(0, S.clock);
+  for (const E of S.E) { E.jit = 0; E.z = 0; }
+  S.R = { x: sk.rx, y: sk.ry, face: 1, pose: IDLE };
+  sk.run.call(sk, S, t);
+  const R = S.R;
+  g.save();
+  if (S.shake > 0) g.translate(sgn() * 2, sgn());
+  g.drawImage(S.floor, 0, 0);
+  drawFx(g, S, 'floor'); if (sk.draw) sk.draw(S, g, 'floor', t);
+  const items = [];
+  for (const E of S.E) if (!E.gone) items.push({ y: E.y, d: () => withShadow(g, { ...E, x: E.x + (E.jit || 0), flash: E.flashUntil > S.clock }) });
+  if (sk.actors) for (const A of sk.actors(S, t)) items.push({ y: A.y - .1, d: () => withShadow(g, A) });
+  if (!R.hidden) items.push({ y: R.y + .1, d: () => withShadow(g, { ...R, x: R.x + (R.jit || 0), flash: S.rfu > S.clock }) });
+  for (const P of S.pieces) items.push({ y: P.fy + .5, d: () => drawPiece(g, P) });
+  for (const C of S.corpses) { if (C.alpha != null && C.alpha <= 0) continue; const k = Math.max(0, S.clock - C.t0);
+    if (k > .6 && !C.img) C.img = bake(corpsePose(C, S.clock));   // settled: from here on a baked copy
+    items.push({ y: C.y - .2, d: () => withShadow(g, { x: C.x + C.vx * (1 - Math.exp(-k * 5)) / 5, y: C.y, face: C.face, enemy: true, pose: C.img ? null : corpsePose(C, S.clock), img: C.img, alpha: C.alpha }) }); }
+  items.sort((a, b) => a.y - b.y).forEach(i => i.d());
+  if (sk.draw) sk.draw(S, g, 'mid', t);
+  drawFx(g, S, 'top');
+  if (sk.draw) sk.draw(S, g, 'top', t);
+  if (S.white > 0) { g.fillStyle = 'rgba(255,255,255,.72)'; g.fillRect(-4, -4, W + 8, H + 8); if (dt > 0) S.white--; }
+  g.restore();
+  if (sk.draw) sk.draw(S, g, 'hud', t);
+  // a short dip between loops so the restart never jumps
+  const fade = S.clock > dur + PAUSE - .2 ? kk(S.clock, dur + PAUSE - .2, dur + PAUSE) : S.clock < .15 ? 1 - kk(S.clock, 0, .15) : 0;
+  if (fade > 0) { g.fillStyle = `rgba(18,20,22,${.85 * fade})`; g.fillRect(0, 0, W, H); }
+}
 function frame(now) {
   let dt = Math.min(.05, (now - last) / 1000); last = now; if (slow) dt /= 2; if (still) dt = 0;
-  for (const S of scenes) {
-    const { g, sk } = S; S.frame++;
-    updateFx(S, dt); updatePieces(S, dt); S.shake = Math.max(0, S.shake - dt);
-    if (S.stop > 0) S.stop -= dt; else S.clock += dt;
-    if (S.clock > sk.dur + PAUSE) reset(S);
-    const t = Math.max(0, S.clock);
-    for (const E of S.E) { E.jit = 0; E.z = 0; }
-    S.R = { x: sk.rx, y: sk.ry, face: 1, pose: IDLE };
-    sk.run.call(sk, S, t);
-    const R = S.R;
-    g.save();
-    if (S.shake > 0) g.translate(sgn() * 2, sgn());
-    g.drawImage(S.floor, 0, 0);
-    drawFx(g, S, 'floor'); if (sk.draw) sk.draw(S, g, 'floor', t);
-    const items = [];
-    for (const E of S.E) if (!E.gone) items.push({ y: E.y, d: () => withShadow(g, { ...E, x: E.x + (E.jit || 0), flash: E.flashUntil > S.clock }) });
-    if (sk.actors) for (const A of sk.actors(S, t)) items.push({ y: A.y - .1, d: () => withShadow(g, A) });
-    if (!R.hidden) items.push({ y: R.y + .1, d: () => withShadow(g, { ...R, flash: S.rfu > S.clock }) });
-    for (const P of S.pieces) items.push({ y: P.fy + .5, d: () => drawPiece(g, P) });
-    for (const C of S.corpses) { const k = Math.max(0, S.clock - C.t0); items.push({ y: C.y - .2, d: () => withShadow(g, { x: C.x + C.vx * (1 - Math.exp(-k * 5)) / 5, y: C.y, face: C.face, enemy: true, pose: corpsePose(C, S.clock) }) }); }
-    items.sort((a, b) => a.y - b.y).forEach(i => i.d());
-    if (sk.draw) sk.draw(S, g, 'mid', t);
-    drawFx(g, S, 'top');
-    if (sk.draw) sk.draw(S, g, 'top', t);
-    if (S.white > 0) { g.fillStyle = 'rgba(255,255,255,.72)'; g.fillRect(-4, -4, W + 8, H + 8); if (dt > 0) S.white--; }
-    g.restore();
-    if (sk.draw) sk.draw(S, g, 'hud', t);
-    // a short dip between loops so the restart never jumps
-    const fade = S.clock > sk.dur + PAUSE - .2 ? kk(S.clock, sk.dur + PAUSE - .2, sk.dur + PAUSE) : S.clock < .15 ? 1 - kk(S.clock, 0, .15) : 0;
-    if (fade > 0) { g.fillStyle = `rgba(18,20,22,${.85 * fade})`; g.fillRect(0, 0, W, H); }
-  }
+  for (const S of scenes) if (S.seen || S.frame === 0) step(S, dt);
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
+
 </script>
