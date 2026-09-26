@@ -99,9 +99,12 @@ try {
     await reach(/^(idle|ready\d)$/, 4000);
     const end = await page.evaluate(() => ({ s: window.__game.P.state, armed: window.__game.P.armed, bare: !!window.__st.ex.bare }));
     if (!end.bare && !(/^ready\d$/.test(end.s) && end.armed)) fail(`he sheathed after "${await page.evaluate(() => window.__st.ex.name)}" with samurai still near (${JSON.stringify(end)})`);
+    // with the blade kept out he is free before the execution has played out: let it finish first
+    await until('the execution to play out', () => window.__st.clock >= window.__st.ex.dur, undefined, 3000);
     // the deaths pass: the blade landed on him (knockback, blood) and his body moved on its springs
-    const d = await page.evaluate(() => { const E = window.__st.E; return { name: window.__st.ex.name, hit: E.hitAt != null, t: E.body.t }; });
-    if (!d.hit || !(d.t > .5)) fail(`"${d.name}": the deaths pass never ran on the executed body (${JSON.stringify(d)})`);
+    const d = await page.evaluate(() => { const E = window.__st.E; return { name: window.__st.ex.name, hit: E.hitAt != null, t: E.body.t, bare: !!window.__st.ex.bare }; });
+    // (peek-a-boo from behind never draws, so no blade lands: only the body's springs are asked of it)
+    if ((!d.hit && !d.bare) || !(d.t > .5)) fail(`"${d.name}": the deaths pass never ran on the executed body (${JSON.stringify(d)})`);
     const cd = await page.evaluate(() => ({ t: window.__game.P.cd.tele, max: window.__game.P.cdMax.tele }));
     if (!(cd.max <= .2 + 1e-9)) fail(`K was not reset to 0.2 s after the kill (${JSON.stringify(cd)})`);
     await until('K ready again', () => !(window.__game.P.cd.tele > 0), undefined, 1000); await sleep(500); await shot('11-after'); });
@@ -109,7 +112,7 @@ try {
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
   await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
     // out of every samurai's reach first (the top-left corner), so K is the plain teleport, not an assassination
-    await kb.down('a'); await kb.down('w'); await sleep(4200); await kb.up('a'); await kb.up('w'); await reach(FREE);
+    await kb.down('a'); await kb.down('w'); await sleep(5500); await kb.up("a"); await kb.up("w"); await reach(FREE);
     await kb.press('k'); await reach(/^tele$/); await reach(FREE);
     await until('K on cooldown', () => window.__game.P.cd.tele > 0);
     await kb.press('k'); await until('the refused press', () => window.__game.P.cdDeny.tele > 0);
