@@ -1,4 +1,4 @@
-import { COL, FW, FH, OX, OY } from '../config.js';
+import { COL, FW, FH, OX, OY, PX } from '../config.js';
 import { g } from '../screen.js';
 import { P, S, wear, INV } from '../state.js';
 import { GLITCHY } from '../anims/anims.js';
@@ -36,12 +36,12 @@ function dressed(sheet, f) {
   if (!p) return [sheet, f, P.face];   // a dropped-in strip or a hand-drawn row: side on, as it was drawn
   const cv = dress(R, wear, p, dt, fc.yaw, fc.flip);
   if (sheet.glf[f]) sliceGlitch(R.g, 0, sheet.glf[f], glitchSeed(sheet.name, f));
-  return [{ img: cv, fw: FW, fh: FH, ox: OX, oy: OY }, 0, fc.flip];
+  return [{ img: cv, fw: FW, fh: FH, ox: OX, oy: OY, s: PX }, 0, fc.flip];
 }
 // a frame in a facing off the side, copied out so it keeps: an afterimage made while he faced the camera stays that way
 const RG = new Raster(FW, FH, OX, OY);
 function snap(pose, yaw) { const c = document.createElement('canvas'); c.width = FW; c.height = FH;
-  c.getContext('2d').drawImage(dress(RG, wear, pose, 0, yaw), 0, 0); return { img: c, fw: FW, fh: FH, ox: OX, oy: OY }; }
+  c.getContext('2d').drawImage(dress(RG, wear, pose, 0, yaw), 0, 0); return { img: c, fw: FW, fh: FH, ox: OX, oy: OY, s: PX }; }
 function ghostSheet(gh) {
   if (!gh.yaw) return [SHEETS[gh.state], gh.f, gh.face];
   const sh = SHEETS[gh.state], p = !sh.custom && sh.poses && sh.poses[gh.f];
@@ -59,7 +59,7 @@ function edged(sheet, f, cache) {
     const d = cg.getImageData(0, 0, sheet.fw, sheet.fh);
     for (let i = 0; i < d.data.length; i += 4) if (d.data[i] === BLADE_RGB[0] && d.data[i + 1] === BLADE_RGB[1] && d.data[i + 2] === BLADE_RGB[2]) [d.data[i], d.data[i + 1], d.data[i + 2]] = EDGE_RGB;
     cg.putImageData(d, 0, 0); if (m) m.set(f, c); }
-  return { img: c, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy };
+  return { img: c, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy, s: sheet.s };
 }
 export function drawPlayer() {
   if (P.hidden) return;   // inside the static bomb's burst
@@ -93,7 +93,7 @@ export function drawPlayer() {
   const sl = document.createElement('canvas'); sl.width = sheet.fw; sl.height = sheet.fh;
   const sg = sl.getContext('2d'); let y = 0;
   while (y < sheet.fh) { const h = 1 + (Math.random() * 3 | 0), off = Math.random() < .35 ? Math.round((Math.random() - .5) * 8) : 0; sg.drawImage(buf, 0, y, sheet.fw, h, off, y, sheet.fw, h); y += h; }
-  spriteTo(g, { img: sl, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy }, 0, P.x, P.y - P.z, fl);
+  spriteTo(g, { img: sl, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy, s: sheet.s }, 0, P.x, P.y - P.z, fl);
 }
 // a mirror image: a pale 1px rim, then his frame tinted cyan and sliced into rows that jump sideways (glitchy edges)
 const mcv = document.createElement('canvas'), mg = mcv.getContext('2d'), RM = new Raster(FW, FH, OX, OY);
@@ -108,7 +108,7 @@ function mirrorFrame(m, sh, f) {
   let yaw, fl = 1;
   if (m.st === 'run') yaw = turnTo(m.T, trueView(m.view, m.face), m.face, dt).yaw;
   else [yaw, fl] = sideOn(m.T, m.face);   // the dash and the cut side on, facing left from his true left
-  return [{ img: dress(RM, F, p, dt, yaw, fl), fw: FW, fh: FH, ox: OX, oy: OY }, 0, fl];
+  return [{ img: dress(RM, F, p, dt, yaw, fl), fw: FW, fh: FH, ox: OX, oy: OY, s: PX }, 0, fl];
 }
 export function drawMirror(m) {
   const a = m.a * .8; if (a <= 0) return;
@@ -122,5 +122,5 @@ export function drawMirror(m) {
   bg2.globalAlpha = 1; bg2.globalCompositeOperation = 'source-over';
   mcv.width = sh.fw; mcv.height = sh.fh; let y = 0;
   while (y < sh.fh) { const h = 1 + (Math.random() * 3 | 0), off = EL.cur.glitch && Math.random() < .25 * m.glitch ? Math.round((Math.random() - .5) * 4 * m.glitch) : 0; mg.drawImage(buf, 0, y, sh.fw, h, off, y, sh.fw, h); y += h; }
-  spriteTo(g, { img: mcv, fw: sh.fw, fh: sh.fh, ox: sh.ox, oy: sh.oy }, 0, m.x, m.y, fl, a);
+  spriteTo(g, { img: mcv, fw: sh.fw, fh: sh.fh, ox: sh.ox, oy: sh.oy, s: sh.s }, 0, m.x, m.y, fl, a);
 }

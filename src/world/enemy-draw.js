@@ -1,8 +1,8 @@
-import { FW, FH, OX, OY } from '../config.js';
+import { FW, FH, OX, OY, PX } from '../config.js';
 import { g } from '../screen.js';
 import { RC } from '../config.js';
 import { S } from '../state.js';
-import { rig, rigR } from '../rig/rig.js';
+import { rig, rigR, HD } from '../rig/rig.js';
 import { port } from '../rig/port.js';
 import { turner, turnTo, trueView, sideOn } from '../rig/turn.js';
 import { WEST } from '../wardrobe/dress.js';
@@ -13,10 +13,10 @@ import { eyeDark } from './enemy-body.js';
 import { spriteTo, solid } from './sprite.js';
 
 // ---- Drawing the samurai: built like him, bare-headed with a topknot, in a darker red-grey, with a red eye ----
-const PAL = { K: '#3a2e31', D: '#5a4a4e', E: '#ff5a4a', e: '#7a2d27', W: '#cfd4d6', S: '#7d868e', s: '#3a3033' };
+const PAL = { K: '#3a2e31', D: '#5a4a4e', E: '#ff5a4a', e: '#7a2d27', W: '#cfd4d6', S: '#7d868e', s: '#3a3033', r: '#4a3b3f', o: '#2e2427', q: '#4e3f43' };
 const PAL_OUT = { ...PAL, E: '#2b2023' };   // the eye gone out
 const cv = document.createElement('canvas'); cv.width = FW; cv.height = FH;
-const cg = cv.getContext('2d'), sheet = { img: cv, fw: FW, fh: FH, n: 1, ox: OX, oy: OY };
+const cg = cv.getContext('2d'), sheet = { img: cv, fw: FW, fh: FH, n: 1, ox: OX, oy: OY, s: PX };
 // alive, he faces the ronin in his true facing (e.view, e.face: rig/turn.js), turning through the facings between, the west side
 // as itself: his sword stays in his right hand. Off the side his pose runs through the port and rig v2's body draws it, bare-headed.
 // The dead stay side on: the fall, the thud and the pieces are built side on; facing left, from his true left (the side rig from
@@ -29,8 +29,8 @@ function frame(e) {
   const yaw = e.alive ? turnTo(e.turn, want, e.face, dt).yaw : sideOn(e.turn, e.face)[0], fl = 1;
   if (!yaw) { cg.clearRect(0, 0, FW, FH); rig(cg, 0, p, out ? PAL_OUT : PAL); return [sheet, fl]; }
   const R = out ? R3_OUT : R3; R.clear();
-  if (Math.abs(yaw - Math.PI) < 1e-6 && WEST.mode === 'side') { rigR(R, p, true); return [{ ...sheet, img: R.flush(true) }, 1]; }   // the side rig from his left
-  drawBody3d(R, solve(port(p), yaw), { bare: true, blink: false });
+  if (Math.abs(yaw - Math.PI) < 1e-6 && WEST.mode === 'side') { rigR(R, p, true); if (HD) R.rim(); return [{ ...sheet, img: R.flush(true) }, 1]; }   // the side rig from his left
+  drawBody3d(R, solve(port(p), yaw), { bare: true, blink: false }); if (HD) R.rim();
   return [{ ...sheet, img: R.flush() }, 1];
 }
 

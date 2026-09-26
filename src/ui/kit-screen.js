@@ -1,4 +1,4 @@
-import { OX, OY, FW, FH, W, H } from '../config.js';
+import { OX, OY, FW, FH, W, H, PX } from '../config.js';
 import { g, game } from '../screen.js';
 import { wear } from '../state.js';
 import { held, taps } from '../input.js';
@@ -101,8 +101,8 @@ function previewPose(c) {
 function figureAt(c, pose, dt, x, y, sc = 1, crop) {
   const cv = paint(figOf(c), pose, dt, c.id === 'hero' ? 'hero' : 'ally');
   g.save(); g.imageSmoothingEnabled = false;
-  if (crop) g.drawImage(cv, OX - crop[0] / 2, OY - crop[1] + 2, crop[0], crop[1], x - crop[0] / 2, y - crop[1] + 2, crop[0], crop[1]);
-  else g.drawImage(cv, 0, 0, FW, FH, Math.round(x - OX * sc), Math.round(y - OY * sc), FW * sc, FH * sc);
+  if (crop) g.drawImage(cv, OX - crop[0] * PX / 2, OY - (crop[1] - 2) * PX, crop[0] * PX, crop[1] * PX, x - crop[0] / 2, y - crop[1] + 2, crop[0], crop[1]);
+  else g.drawImage(cv, 0, 0, FW, FH, Math.round(x - OX / PX * sc), Math.round(y - OY / PX * sc), FW / PX * sc, FH / PX * sc);
   g.restore();
 }
 function tabs() {

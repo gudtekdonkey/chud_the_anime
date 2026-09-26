@@ -4,6 +4,7 @@ import { BY_ID, drawPart } from './items.js';
 import { fromSide, solve } from './skeleton.js';
 import { drawBody3d } from '../rig/body3d.js';
 import { port } from '../rig/port.js';
+import { HD } from '../rig/rig.js';
 
 // ---- Dressing a figure: the rig's pose and everything it wears, into one depth raster ----
 // a figure: the item ids it wears, the cloth state of each loose part, its clock and its velocity (px/s on the screen)
@@ -16,12 +17,13 @@ const isWest = yaw => Math.abs(yaw - Math.PI) < 1e-6;
 // dt > 0 steps the cloth; dt 0 draws it where it last was (or where it hangs, the first time).
 // yaw: the true facing (port.js DIRS, rig/turn.js), never mirrored. 0 is the side view, drawn by the side rig on the pixels it
 // always had; any other facing runs the pose through port() and draws rig v2's body (body3d.js). The clothes hang from the same
-// bones either way. flip -1: the caller draws the result mirrored (a side-on move facing left), so the cloth lives mirrored too.
+// bones either way. A pose may carry its own yaw (the moves drawn turned, anims/turned-poses.js) and rig v2 knobs
+// for the port (p.v2). flip -1: the caller draws the result mirrored (a side-on move facing left), so the cloth lives mirrored too.
 export function dress(R, F, p, dt = 0, yaw = 0, flip = 1) {
-  R.clear(); let J, m = 1;
+  R.clear(); let J, m = 1; yaw = p.yaw ?? yaw;
   const side = !yaw || (isWest(yaw) && WEST.mode === 'side');
-  if (side) { m = yaw ? -1 : 1; const { hc } = rigR(R, p, m < 0); J = solve(fromSide(p), 0, true, m < 0); J.hc = hc; }
-  else { J = solve(port(p), yaw);
+  if (side) { m = yaw ? -1 : 1; const { hc, hcR } = rigR(R, p, m < 0); J = solve(fromSide(p), 0, true, m < 0); J.hc = hc; J.hcR = hcR; }
+  else { J = solve(port(p, p.v2), yaw);
     drawBody3d(R, J, { blink: p.dim > .5, hat: [...F.outfit].some(id => BY_ID[id] && BY_ID[id].slot === 'head'), art: p.wp && p.wp.d3 }); }
   // the cloth lives in the raster's space, mirrored from the screen's when the caller flips it or the side rig draws his left;
   // when that changes, mirror the cloth with it, so on the screen it stays where it was and swings round instead of snapping
@@ -40,6 +42,7 @@ export function dress(R, F, p, dt = 0, yaw = 0, flip = 1) {
       drawCloth(R, C, part, J);
     }); }
   for (const k of F.cloth.keys()) if (!live.has(k)) F.cloth.delete(k);   // taken off: its cloth starts fresh next time
+  if (HD) R.rim();
   return R.flush(m < 0);
 }
 function mirrorCloth(F) {

@@ -3,6 +3,7 @@ import { gaitFrames } from '../traits/bake.js';
 import { BASE } from '../traits/knobs.js';
 import { ITEM_POSES } from './item-poses.js';
 import { comboPoses } from './combo-poses.js';
+import { TURNED } from './turned-poses.js';
 
 // ---- Poses, one per frame ----
 const run8 = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);
@@ -45,7 +46,7 @@ const STANCE_BREATH = [0, 0, .3, .7, 1, 1, 1, .7, .3, 0, 0, 0, .2, .5, .2, 0];
 export const POSES = {
   ...ITEM_POSES,
   ...Object.fromEntries(STANCE_POSES.map((q, k) => ['ready' + k, STANCE_BREATH.map((b, i) => pz({ ...q, breath: b, bsword: q.bsword + b * .03, flutter: i === 5 || i === 13 ? 1 : 0 }))])),
-  ready4: Array(8).fill(null), ready5: Array(8).fill(null),
+  ...TURNED,   // the two open stances and the monk sit, turned on the rig
   idle: idle16,
   idleGlitch: idle16.filter((_, i) => i % 2 === 0),
   run: run8,
