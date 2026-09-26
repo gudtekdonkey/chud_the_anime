@@ -3,13 +3,16 @@ import { P, S, cuts } from '../state.js';
 import { rr, residue, spark } from '../fx/util.js';
 import { QI_GAIN, qiAdd, chainFrom } from './qi.js';
 import { ENEMIES, DMG, damage } from '../world/enemies.js';
+import { weapon } from '../weapons/weapons.js';
 
 // ---- Hits: each enemy once per kind per move; P.struck remembers them for the sheath-click burst ----
 export function hitOne(e, i, kind, fx = P.x, fy = P.y) {
   if (!e.alive || e.held) return;   // the fallen are not cut again, nor one an execution holds
   P.hitDone[kind + i] = true; P.struck.add(e);
   // short on purpose: a 3-frame white flash (damage() sets it), a 3-frame freeze, ONE shaken frame
-  S.hitstop = Math.max(S.hitstop, .05); S.shake = Math.max(S.shake, 1 / 60);
+  // a heavier weapon holds the freeze and the shake longer (weight: 1 for the katana)
+  const wt = weapon().weight;
+  S.hitstop = Math.max(S.hitstop, .05 * wt.stop); S.shake = Math.max(S.shake, wt.shake / 60);
   if (kind === 'sw') e.zap = .25;
   const base = kind.match(/^[a-zA-Z]+/)[0];
   // 6-12 short streaks, mostly thrown away from whoever cut it

@@ -71,6 +71,7 @@ Decisions made in the design sessions so far, newest last.
 
 - **Skill bar, like League of Legends:** bottom centre. The Storm Chain passive on the left (the Qi fills its icon; during the storm its 8 s drain as a sweep), then I, O, P, N and U, then K (the flash) and slide as the two summoner-style slots. Each slot shows its cooldown as a dark clockwise sweep with the seconds left, whole seconds then tenths under one.
 - **Cooldowns on every active.** The flash (K) is recastable after an assassination: its cooldown drops to 0.2 s. Starting values, to tune: K 3 s, I 2 s (Thousand Cuts 8 s), O 10 s, P 12 s, N 14 s, U 8 s, slide 1 s. K keeps the old rule that with no enemy near you can spam it.
+- **Weapons:** his attacks depend on the equipped weapon. Every move works with every weapon, on the same timing and hits, but each weapon has its own poses. First set, in review: katana (as before), yari (thrusts, slung on the back), nodachi (the Grave Nodachi pickup: heavy cuts, worn on the back, hilt over the shoulder, longer reach, a longer hit pause and more shake), twin tanto (short blades at the obi, the back hand in a reverse grip). In play a weapon comes from a pickup; a picker under the game switches for testing.
 
 ## Next
 ## Deaths pass (prototypes 29 to 31, was 23 to 25, waiting on the owner)

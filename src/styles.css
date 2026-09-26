@@ -23,6 +23,8 @@ p { margin: 0; color: var(--muted); }
 .keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 18px; color: var(--muted); font-size: 14px; }
 kbd { font: 500 13px/1 "Pixelify Sans", monospace; background: var(--panel); border: 1px solid var(--rule); padding: 3px 6px; color: var(--ink); }
 .clear { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; cursor: pointer; }
+.clear + .clear { margin-left: 16px; }
+.clear select { font: inherit; background: var(--panel, #1b1e21); color: inherit; border: 1px solid #30353a; }
 .clear input { accent-color: var(--cyan); width: 16px; height: 16px; }
 .pad { display: flex; flex-wrap: wrap; gap: 8px; }
 .pad button { font: 500 15px/1 "Pixelify Sans", monospace; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); min-width: 48px; height: 44px; padding-inline: 12px; touch-action: none; user-select: none; }

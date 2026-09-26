@@ -7,6 +7,7 @@ import { readInput } from './input.js';
 import { fillMoveset } from './ui/moveset.js';
 import { initStripTester } from './ui/strip-tester.js';
 import { initPersonality } from './ui/personality.js';
+import { initWeaponPicker } from './ui/weapon-picker.js';
 
 let last = performance.now(), acc = 0;
 function frame(now) {
@@ -20,6 +21,7 @@ requestAnimationFrame(frame);
 fillMoveset();
 initStripTester();
 initPersonality();
+initWeaponPicker();
 
 // a read-only debug hook for `npm run check`: in dev, or in any build opened with ?test
 if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) window.__game = { P, E: ENEMIES };

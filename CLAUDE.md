@@ -29,7 +29,10 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `anims/anims.js` | `ANIMS` (frame count, fps, loop, the moveset "about" text), `GLITCHY` |
 | `anims/poses.js` | `POSES` for every rig animation, the guard and counter stances, `GLF` (baked glitch frames) |
 | `anims/hand-drawn.js` | Hand-drawn rows the rig can't pose: the two open stances (front view) and sit / sit down / stand up (back view) |
-| `anims/sheets.js` | Bakes every animation to a sheet at load (`SHEETS`), `dur()` |
+| `anims/sheets.js` | Bakes every animation to a sheet at load (`SHEETS`, the equipped weapon's), `dur()` |
+| `weapons/weapons.js` | `WEAPONS`, `weapon()`, `setWeapon(id)` (the API for pickups: bakes once, swaps `SHEETS`), `reach()`, `framesFor` (a weapon's poses, or the katana's run through its `adapt`) |
+| `weapons/katana.js` | `KATANA_ART`: the drawing hooks every weapon's art has (`far`, `stowed`, `held`, `backHeld`, `sheathing`, optional `offHand`, `front`/`sit` rows) |
+| `weapons/yari.js`, `nodachi.js`, `tanto.js` | Each weapon's art, its own poses (cuts, guard, the four side-on stances, what it does with the hilt hand), `reach` and `weight` |
 | `player/update.js` | The state machine: one `update(dt, inp)` step |
 | `player/actions.js` | `setState`, `once`, stance picking, the two-screen threat check, movement, `ghost`, `frameOf`, `inputDir` |
 | `player/skills.js` | Charging (`chargeUp`), Thousand Cuts (`TC`), Cross Rift (`RIFT`), the dash, `release`/`charged` |
@@ -71,11 +74,13 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `ui/pixfont.js` | The 5-row pixel font the HUD draws with (`pixText`, `textW`) |
 | `ui/moveset.js` | The moveset table under the game (from `ANIMS` "about" rows + skill rows) |
 | `ui/personality.js` | The personality picker under the game (remembered in localStorage) |
+| `ui/weapon-picker.js` | The test weapon picker under the game |
 | `ui/strip-tester.js` | "Test a sprite strip": drop a PNG strip in place of any animation |
 | `styles.css` / `index.html` | The page; `index.html` holds markup only |
 
 - Shared state lives in `state.js` and is imported, never copied. A value other modules reassign goes on `S`, because an imported `let` cannot be reassigned.
 - Keep files focused and under about 400 lines. Keep the compact style and the short WHY comments.
+- A weapon changes poses and art only: its frames match the katana's count for every move, so timing, hit beats and effects stay shared. Reach and weight (hit pause, shake) are per weapon, 1 for the katana. A new move needs a pose per weapon (or the weapon's `adapt` covers it).
 - Effects are drawn in world space, never baked into sheets, so they survive real art replacing a placeholder.
 
 ## Design rules (from `docs/design-notes.md`)

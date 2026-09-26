@@ -17,6 +17,7 @@ import { gate, startCd, updateCds } from './cooldowns.js';
 import { updateEnemies } from '../world/enemies.js';
 import { assassinate, tickStages, updateStages } from '../assassin/assassinate.js';
 import { K, updateMarkers } from '../assassin/markers.js';
+import { reach } from '../weapons/weapons.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
@@ -109,7 +110,7 @@ export function update(dt, inp) {
       if (once('strike', T >= SK)) { strike(s === 'slash2' ? -.35 : .15, s === 'slash2' ? -1 : 1, false); ghost();
         for (let k = 0; k < 5; k++) { const life = rr(.06, .12); frags.push({ x: P.x - P.face * rr(4, 20), y: P.y - rr(4, 24), w: 3 + (Math.random() * 7 | 0), col: k % 2 ? '#ffffff' : COL.fx2, vx: P.face * rr(10, 30), vy: 0, life, max: life, jx: 0, on: true }); } }
       if (once('trail', T >= SK + .03)) ghost();
-      if (T >= SK && T < SK + .1) hit(s === 'slash2' ? 'slash2' : 'slash1', P.x + P.face * 14, P.y - 12, 22);
+      if (T >= SK && T < SK + .1) { const [d, r] = reach(14, 22); hit(s === 'slash2' ? 'slash2' : 'slash1', P.x + P.face * d, P.y - 12, r); }
       if (s !== 'slash2' && inp.slash && T > .15) P.combo = true;
       if (s !== 'slash2' && P.combo && T >= .3) { setState('slash2'); break; }   // flow straight out of the follow-through
       if (T >= D) { P.armed = true; P.still = 0; setState(afterAttack(moving)); }
@@ -138,8 +139,9 @@ export function update(dt, inp) {
       if (once('c1', T >= .225)) { strike(-.5, 1, true); moveBy(P.face * 3, 0); }
       if (once('c2', T >= .325)) { strike(.5, -1, true); moveBy(P.face * 3, 0);
         cuts.push({ x0: P.x + P.face * 2, x1: P.x + P.face * 48, y: Math.round(P.y - 12), life: .1, max: .1 }); }
-      if (T >= .225 && T < .3) hit('d1', P.x + P.face * 14, P.y - 12, 26);
-      if (T >= .325 && T < .4) hit('d2', P.x + P.face * 14, P.y - 12, 26);
+      const [rd, rr2] = reach(14, 26);
+      if (T >= .225 && T < .3) hit('d1', P.x + P.face * rd, P.y - 12, rr2);
+      if (T >= .325 && T < .4) hit('d2', P.x + P.face * rd, P.y - 12, rr2);
       // the sheath click: whatever he cut bursts now, a beat after the blades
       if (once('click', T >= .6)) { spark(P.x + P.face * 3, P.y - 10, 0, -10, .12, '#ffffff', false);
         if (P.struck.size) { S.hitstop = .06; S.shake = 1 / 60; for (const d of P.struck) burst(d); } }
