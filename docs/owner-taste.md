@@ -14,3 +14,8 @@
 - More REALISTIC deaths. A clean split that just slides off and hangs there reads fake. The body was in motion (turning, flinching, stepping), so when it's cut it FALLS and TWISTS with that momentum and with gravity: there is always downward motion, nothing hangs suspended in the air (unless it was deliberately launched, like the rising launch).
 - The enemy must REACT to everything happening to him: flinch when the ronin appears, start to turn toward him or raise his guard, stagger when struck, knees buckle as he dies. He should never just stand there waiting like a mannequin while things happen to him.
 - Practically: give the enemy a reaction pose timeline (startle, begin turning, stagger in the direction of each hit, arms/sword dropping). When cutting him into pieces, give each piece velocity from the body's motion plus the cut: the upper part drops right away and rotates the way he was turning or the way he was struck; the legs buckle and fold; landing is heavy (no bounce, a short slide), then rest.
+
+## Deaths end on the ground, and bodies crumple (owner)
+- Never tip a whole body over like a rigid plank. A body crumples through its joints: knees give, hips drop, hands catch the floor, face down (or onto the back).
+- A body cut in two keeps its legs as a live rig that buckles and folds on its own; the severed part falls separately.
+- The end state is always lying on the ground, whole or in pieces. Pieces come to rest lying flat.

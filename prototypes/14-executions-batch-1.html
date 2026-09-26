@@ -30,7 +30,7 @@
   <header>
     <div class="eyebrow">K · executions · batch 1, second pass</div>
     <h1>Eight assassinations</h1>
-    <p>Every enemy now moves in one continuous, eased performance that fits where and when he is hit: a jolt, a stumbling step, a hand going to the wound, a knee dropping, curling over. His body only breaks apart once it is already falling, and the pieces carry that motion on. Reworked from your notes, and more realistic: the enemy reacts to everything (he flinches when the ronin appears, raises his guard, turns after him and reels from each hit), and when he's cut the pieces drop right away and twist the way his body was moving, landing heavy without bouncing. The enemies are now samurai built like him, bare-headed with a topknot. Kills are shorter and more brutal, and the enemy comes apart into real pieces cut from his own pixels, which tumble and fall. Most of the motion happens between frames. The few poses you do see lean into where he is going and where he has just been.</p>
+    <p>Every enemy now moves in one continuous, eased performance that fits where and when he is hit: a jolt, a stumbling step, a hand going to the wound, a knee dropping, curling over. His body only breaks apart once it is already falling, and the pieces carry that motion on. Whole bodies crumple through the joints (knees, hands, face down) instead of tipping over like a plank, a body cut in two keeps its legs, which fold under on their own, and everything ends lying on the ground. Reworked from your notes, and more realistic: the enemy reacts to everything (he flinches when the ronin appears, raises his guard, turns after him and reels from each hit), and when he's cut the pieces drop right away and twist the way his body was moving, landing heavy without bouncing. The enemies are now samurai built like him, bare-headed with a topknot. Kills are shorter and more brutal, and the enemy comes apart into real pieces cut from his own pixels, which tumble and fall. Most of the motion happens between frames. The few poses you do see lean into where he is going and where he has just been.</p>
     <div class="bar"><label for="slow"><input type="checkbox" id="slow"> Half speed</label></div>
   </header>
   <div class="grid" id="grid"></div>
@@ -48,7 +48,7 @@ const RC = { K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', H: '#2a2f37
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
 // angles in radians: limbs 0 = straight down, + swings forward; knee + folds the shin back; elbow + folds the forearm forward
 const REST = { hx: 0, hy: 0, lean: .04, chest: 0, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
-  sword: null, bsword: null, sheathing: false, bare: false, noHead: false, hat: 0, flutter: 0 };
+  sword: null, bsword: null, sheathing: false, bare: false, noHead: false, noUpper: false, hat: 0, flutter: 0 };
 const pz = o => ({ ...REST, ...o });
 const HILT = [.42, 1.0];          // front hand resting on the hilt at the hip
 const lerpP = (a, b, k) => { const o = {}; for (const key in a) {
@@ -90,6 +90,9 @@ function rig(g, fx, p) {
     seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
   const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
 
+  if (p.noUpper) {   // cut in two: only the pelvis and legs are left, and they fold on their own
+    leg(p.bl, 'D', -.5); poly([L(0, -2), L(0, 2), L(2.6, 2.2), L(2.6, -2.2)], 'K'); leg(p.fl, 'K', .5); return;
+  }
   // far side first: scabbard, far arm, far leg
   seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
   // the back hand can carry the blade too, for the counter stance
@@ -225,7 +228,13 @@ function updatePieces(S, dt) {
       if (P.maxA != null && Math.abs(P.a) > P.maxA) { P.a = Math.sign(P.a) * P.maxA; P.va = 0; }
       const low = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
       if (P.z - low <= 0 && P.vz < 0) { P.z = low; P.vz = -P.vz * .06; P.vx *= .55; P.va *= .3; if (Math.abs(P.vz) < 25) { P.vz = 0; P.va = 0; P.vx *= .6; P.rest += .34; } } }
-    else P.life -= dt;
+    else {
+      if (P.flatA == null) { const xs = P.pts.map(q => q[0]), ys = P.pts.map(q => q[1]), w = Math.max(...xs) - Math.min(...xs), h = Math.max(...ys) - Math.min(...ys);
+        const q = h > w * 1.2 ? Math.PI / 2 : Math.PI; P.flatA = Math.round(P.a / q) * q; if (h > w * 1.2 && Math.abs(Math.round(P.a / Math.PI) * Math.PI - P.a) < .01) P.flatA = P.a >= 0 ? Math.PI / 2 : -Math.PI / 2; }
+      P.a += (P.flatA - P.a) * Math.min(1, dt * 10);   // tip over onto its long side
+      P.z = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
+      P.life -= dt;
+    }
   }
   for (let i = S.pieces.length - 1; i >= 0; i--) if (S.pieces[i].life <= 0) S.pieces.splice(i, 1);
 }
@@ -315,9 +324,19 @@ const RX = {
   sag:     pz({ hy: 5, lean: .35, chest: .45, fl: [.9, 1.5], bl: [-.35, 1.2], fa: [.45, .25], ba: [.2, .3], sword: 1.3 }),    // the legs start to go
   kneel:   pz({ hy: 7, lean: .45, chest: .5, fl: [1.3, 2.05], bl: [-.1, 2.4], fa: [.9, 1.6], ba: [.3, .6], sword: null }),   // down on one knee
   curl:    pz({ hy: 8, lean: .8, chest: .6, fl: [1.4, 2.2], bl: [.2, 2.4], fa: [1.1, 1.9], ba: [1.3, 1.7], sword: null }),   // curled over the wound
+  handsDown: pz({ hy: 8, lean: .95, chest: .35, fl: [1.4, 2.2], bl: [.1, 2.4], fa: [.75, .2], ba: [.55, .3], sword: null }),   // the hands catch the floor
+  prone:   pz({ hy: 9, lean: 1.52, chest: .03, fl: [-1.45, 0], bl: [-1.5, .05], fa: [1.45, .1], ba: [1.3, .2], sword: null }),      // face down on the ground
+  legsSag: pz({ hy: 5, fl: [.9, 1.5], bl: [-.35, 1.2], noUpper: true }),
+  legsKneel: pz({ hy: 7, fl: [1.3, 2.05], bl: [-.1, 2.4], noUpper: true }),
+  legsDown: pz({ hy: 10, fl: [1.45, .5], bl: [1.25, .8], noUpper: true }),     // the hips hit the floor, the legs fold out in front
   stiff:   pz({ hy: 1, lean: -.25, chest: -.35, fl: [.3, .35], bl: [-.35, .3], fa: [.35, .3], sword: 1.4, ba: [-.1, .2] }),
 };
 // a body going over: gravity-like, slow to start and quick to finish, pivoting at the feet, then still
+function sever(S, E, L, push) {
+  const up = side(L, E.x, E.y - 40);
+  S.pieces.push(...toPieces(pixelsOf(E).filter(q => side(L, q[0], q[1]) === up), [], E.y, push));
+  E.legs = true;
+}
 function topple(S, E, dir, dur = .5, slide = 3) {
   shatter(S, E, [], P => { P.x0 = P.x; P.z0 = P.z; P.script = tt => { const k = Math.min(1, tt / dur), g = k * k;
     return { dx: dir * slide * g, dz: -40, a: dir * 1.52 * g, done: tt > dur + .9 }; }; });
@@ -332,7 +351,7 @@ function dropSword(S, E, pose, dir = -1) {
 const quickSheathe = (t0, from) => [[t0, from], [t0 + .08, pz({ hy: 2, lean: .2, fa: [1.45, .05], sword: 1.2, ba: [-.4, .3] }), lin],
   [t0 + .2, pz({ hy: 1, lean: .12, fa: [1.0, .6], sheathing: true, ba: [.45, 1.1] })], [t0 + .34, pz({ hy: 1, lean: .06, fa: HILT, ba: [.3, 1.0] })], [t0 + .6, IDLE]];
 const EXECS = [
-  { name: 'Behind the back', note: 'He lands back to back with him. The enemy never turns: he knows. His shoulders drop, his head goes down, his arms open and his sword falls from his hand, and as it drops the blade goes in, backward, under the ronin\'s own arm. On the click his knees give, and he goes over.',
+  { name: 'Behind the back', note: 'He lands back to back with him. The enemy never turns: he knows. His shoulders drop, his head goes down, his arms open and his sword falls from his hand, and as it drops the blade goes in, backward, under the ronin\'s own arm. On the click his knees give, his hands catch the floor, and he lies down on his face.',
     side: +1, gap: 10, dur: 2.2,
     run(S, t, R, E) {
       const wait = pz({ hy: 3, lean: .25, chest: .15, fl: [.55, .85], bl: [-.5, .3], fa: HILT, ba: [-.3, .6] });
@@ -346,11 +365,10 @@ const EXECS = [
       // resignation, the sword slips, the blade goes in: his back arches, he looks down and finds the wound with his hand, his knees go, and he tips forward
       const opened = pz({ ...open, sword: null });
       E.pose = t < SLICE - .05 ? at([[0, EG], [.18, slump], [.4, open]], t)
-        : at([[SLICE - .05, opened], [SLICE + .06, RX.jolt, lin], [.8, pz({ ...RX.clutch, sword: null, lean: .22 })], [1.15, pz({ ...RX.clutch, sword: null, lean: .3, hy: 5 })], [1.45, RX.kneel]], t);
+        : at([[SLICE - .05, opened], [SLICE + .06, RX.jolt, lin], [.8, pz({ ...RX.clutch, sword: null, lean: .22 })], [1.15, pz({ ...RX.clutch, sword: null, lean: .3, hy: 5 })], [1.45, RX.kneel], [1.68, RX.handsDown], [1.92, RX.prone]], t);
       S.once('drop', t >= SLICE - .05, () => dropSword(S, E, open, 1));
       S.once('stab', t >= SLICE, () => { F.hit(S, E, .1, .05); F.burst(S, E.x, E.y - 10, 10); F.ghost(S, { ...R, pose: stab }, WH, .1); });
       S.once('click', t >= 1.3, () => { F.cut(S, E.x - 6, E.y - 13, E.x + 6, E.y - 9, .16); F.slivers(S, E.x, E.y, 6); });
-      S.once('fall', t >= 1.5, () => topple(S, E, -1, .5));
     } },
   { name: 'Through and past', note: 'Almost no wind-up. A crouch, and he is already on the far side, low, the blade reaching past, his whole body still falling forward. The enemy flinches and turns after him with his guard up. On the click his top half drops as he turns and pitches over, and his legs fold back under it.',
     side: -1, gap: 22, dur: 1.4,
@@ -366,10 +384,9 @@ const EXECS = [
       S.once('click', t >= .76, () => { F.burst(S, E.x, E.y - 11, 12);
         // the top half slides down the cut, then tips over and settles; the legs buckle a moment later. Eased, no bounce.
         // he was turning after the ronin: the top half drops at once and pitches the way he turned, the legs fold back under it
-        shatter(S, E, [[E.x - 9, E.y - 16, E.x + 9, E.y - 7]], (P, cx, cy) => { P.x0 = P.x; P.z0 = P.z;
-          P.script = cy < E.y - 12 ? fallScript(1, 1) : buckle(-1, .1); }); });
+        sever(S, E, [E.x - 9, E.y - 16, E.x + 9, E.y - 7], P => { P.x0 = P.x; P.z0 = P.z; P.script = fallScript(1, 1); }); });
       // cut as the ronin passes: he folds over it, turns after him reaching, a hand goes to the wound, the legs start to go, and the top half breaks away mid-fall
-      if (!E.gone) E.pose = at([[0, EG], [.05, RX.flinch], [.07, RX.flinch], [.13, RX.doubled, lin], [.26, RX.turning], [.36, RX.reach], [.58, RX.clutch], [.76, RX.sag]], t);
+      if (!E.gone) E.pose = at([[0, EG], [.05, RX.flinch], [.07, RX.flinch], [.13, RX.doubled, lin], [.26, RX.turning], [.36, RX.reach], [.58, RX.clutch], [.76, RX.sag], [.77, RX.legsSag], [1.0, RX.legsKneel], [1.3, RX.legsDown]], t);
       E.face = t >= .28 ? 1 : -1;
     } },
   { name: 'Rising launch', note: 'One rising cut from the kneel and the enemy\'s top half goes up. He goes after it, gone from the ground. Cuts flash in the air, and the pieces split and split again as they fall. Then he drops back down, blade low, into the rain of pieces.',
@@ -382,7 +399,8 @@ const EXECS = [
       R.hidden = t >= .13 && t < .62;
       R.z = t >= .62 && t < .68 ? (1 - (t - .62) / .06) * 40 : 0;
       S.once('rise', t >= .05, () => { F.hit(S, E, .05, 1 / 60); F.cres(S, E.x - 3, E.y - 12, 1, 12, -1.2, 1, .14);
-        shatter(S, E, [[E.x - 10, E.y - 9, E.x + 10, E.y - 11]], (P, cx, cy) => { if (cy < E.y - 10) { P.vz = 150; P.vx = 6; P.va = 5; } else { P.x0 = P.x; P.z0 = P.z; P.script = buckle(-1, .15); } }); });
+        sever(S, E, [E.x - 10, E.y - 9, E.x + 10, E.y - 11], P => { P.vz = 150; P.vx = 6; P.va = 5; }); });
+      if (t >= .05) E.pose = at([[.05, pz({ ...RX.legsSag, hy: 2, fl: [.4, .5], bl: [-.45, .35] })], [.35, pz({ ...RX.legsSag, hx: 2 })], [.65, RX.legsKneel], [.95, RX.legsDown]], t);
       S.once('gone', t >= .13, () => F.slivers(S, R.x, R.y, 10));
       // the air: cut flashes on whatever is flying
       for (let i = 0; i < 5; i++) S.once('air' + i, t >= .2 + i * .075, () => {
@@ -453,7 +471,7 @@ const EXECS = [
         shatter(S, E, [[x - 10, y - 20, x + 10, y], [x + 10, y - 20, x - 10, y], [x - 12, y - 12, x + 12, y - 8], [x - 3, y - 22, x + 2, y + 2]], (P, cx, cy) => { P.vx = (cx - x) * 2.2; P.vz = rr(-25, -5); P.va = (cx - x) * .35 + rr(-1, 1); });
         S.shake = .08; F.burst(S, x, y - 10, 12); });
     } },
-  { name: 'Peek-a-boo, from behind', note: 'He glitches in right behind the enemy, takes his head in both hands and snaps it round. No blade at all. He glitches back to where he started and lets his hands fall. The enemy stands a moment longer, then drops.',
+  { name: 'Peek-a-boo, from behind', note: 'He glitches in right behind the enemy, takes his head in both hands and snaps it round. No blade at all. He glitches back to where he started and lets his hands fall. The enemy stands rigid a moment, sways, and crumples: knees, hands, face down.',
     side: +1, gap: 6, dur: 1.9, stay: true,
     run(S, t, R, E) {
       const reach = pz({ hy: 1, lean: .12, fl: [.3, .3], bl: [-.35, .3], fa: [2.0, .9], ba: [1.8, 1.0] });
@@ -466,12 +484,11 @@ const EXECS = [
         for (let k = 0; k < 4; k++) F.spark(S, E.x + rr(-2, 2), E.y - 18, rr(-40, 40), rr(-30, 0), .1, WH, true); });
       // his head yanked round, then limp
       E.face = t >= .15 && t < .2 ? 1 : -1;
-      if (!E.gone) E.pose = at([[0, EG], [.06, RX.flinch], [.15, RX.flinch], [.19, RX.stiff, lin], [.4, RX.stiff], [.55, pz({ ...RX.stiff, lean: .1, chest: -.1, hy: 2 })], [.72, pz({ ...RX.sag, sword: 1.3 })], [.9, RX.kneel]], t);
+      if (!E.gone) E.pose = at([[0, EG], [.06, RX.flinch], [.15, RX.flinch], [.19, RX.stiff, lin], [.4, RX.stiff], [.55, pz({ ...RX.stiff, lean: .1, chest: -.1, hy: 2 })], [.72, pz({ ...RX.sag, sword: 1.3 })], [.9, RX.kneel], [1.1, RX.handsDown], [1.32, RX.prone]], t);
       S.once('drop7', t >= .74, () => dropSword(S, E, pz({ ...RX.sag, sword: 1.3 }), -1));
       S.once('back', t >= .34, () => { F.slivers(S, E.x + 6, E.y, 8); F.slivers(S, START.x, START.y, 6); });
-      S.once('fall7', t >= .95, () => topple(S, E, 1, .45, 2));
     } },
-  { name: 'Decapitation', note: 'A glitch slice at neck height: he is through and past in a blink. The head pops off, spinning up, and lands far behind the enemy. The body does not know yet: it drops its sword and reaches around for a neck that is not there, stumbles back, sinks to a knee, and pitches forward.',
+  { name: 'Decapitation', note: 'A glitch slice at neck height: he is through and past in a blink. The head pops off, spinning up, and lands far behind the enemy. The body does not know yet: it drops its sword and reaches around for a neck that is not there, stumbles back, sinks to a knee, catches itself on its hands and slumps face down.',
     side: -1, gap: 22, dur: 2.1,
     run(S, t, R, E) {
       const crouch = pz({ hy: 4, lean: .6, chest: .15, fl: [.85, 1.45], bl: [-.85, .5], fa: HILT, ba: [-.05, .8] });
@@ -492,10 +509,9 @@ const EXECS = [
       const noH = o => pz({ ...o, noHead: true });
       const grab = noH({ hy: 3, lean: -.1, chest: -.2, fl: [.45, .55], bl: [-.45, .35], fa: [2.5, 2.0], ba: [2.4, 1.9] });
       if (!E.gone) E.pose = t < .07 ? at([[0, EG], [.05, RX.flinch]], t)
-        : at([[.07, noH(RX.flinch)], [.13, noH({ ...RX.jolt, sword: null }), lin], [.36, grab], [.62, pz({ ...grab, hx: 2, lean: -.25, hy: 4 })], [.88, noH({ ...RX.sag, sword: null, fa: [2.2, 1.9], ba: [2.0, 1.8] })], [1.12, noH({ ...RX.kneel, fa: [1.2, 1.2], ba: [1.0, 1.1] })]], t);
+        : at([[.07, noH(RX.flinch)], [.13, noH({ ...RX.jolt, sword: null }), lin], [.36, grab], [.62, pz({ ...grab, hx: 2, lean: -.25, hy: 4 })], [.88, noH({ ...RX.sag, sword: null, fa: [2.2, 1.9], ba: [2.0, 1.8] })], [1.12, noH({ ...RX.kneel, fa: [1.2, 1.2], ba: [1.0, 1.1] })], [1.36, noH(RX.handsDown)], [1.6, noH(RX.prone)]], t);
       S.once('drop', t >= .1, () => dropSword(S, E, RX.flinch, 1));
       S.once('click', t >= 1.1, () => F.slivers(S, E.x, E.y, 6));
-      S.once('over', t >= 1.3, () => topple(S, E, -1, .5));
     } },
 ];
 
