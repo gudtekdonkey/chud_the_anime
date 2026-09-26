@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>41 · Travel and glitch storms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* the game's own dark page, floor grey and cyan (as the other prototypes) */
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --dim: #6f7876; --cyan: #6ff3e4; --press: #182423; --red: #ff5a4a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 32px 16px 72px; display: grid; gap: 44px; }
+  header, .intro { display: grid; gap: 10px; max-width: 72ch; }
+  .eyebrow, h3, th, .key, .lbl, .tag { font-family: "Pixelify Sans", ui-monospace, monospace; }
+  .eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(30px, 5.5vw, 46px)/1.02 "Pixelify Sans", ui-monospace, monospace; margin: 0; text-wrap: balance; }
+  h2 { font: 700 22px/1.1 "Pixelify Sans", ui-monospace, monospace; margin: 0; }
+  h3 { font-size: 15px; margin: 0; }
+  p { margin: 0; color: var(--muted); } p b, li b, td b { color: var(--ink); font-weight: 600; }
+  section { display: grid; gap: 16px; }
+  .dim { color: var(--dim); }
+  .stage { background: var(--panel); border: 1px solid var(--rule); display: grid; }
+  canvas { image-rendering: pixelated; display: block; width: 100%; max-width: 100%; }
+  .zoomable { margin: 0 auto; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 10px 14px; border-top: 1px solid var(--rule); align-items: center; font-size: 14px; color: var(--muted); }
+  .key { display: inline-block; font-size: 12px; padding: 1px 6px; border: 1px solid #4a5157; color: var(--ink); }
+  button.key { background: var(--press); border-color: var(--cyan); color: var(--cyan); cursor: pointer; padding: 6px 11px; font-size: 13px; }
+  button.key.on { background: var(--cyan); color: #0c0d11; }
+  button.key:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .two { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+  @media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--rule); padding: 16px; display: grid; gap: 10px; align-content: start; }
+  .card .lbl { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  #sc-title { font: 700 20px/1.1 "Pixelify Sans", monospace; }
+  #sc-text { color: var(--ink); }
+  #sc-who { margin: 0; padding-left: 18px; font-size: 14px; color: var(--muted); }
+  #choices { display: flex; flex-wrap: wrap; gap: 8px; }
+  #outcome { color: var(--ink); min-height: 1.5em; }
+  .facts { display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+  #log { list-style: none; margin: 0; padding: 0; font-size: 13px; color: var(--muted); max-height: 320px; overflow: auto; display: grid; gap: 3px; }
+  .tag { font-size: 11px; letter-spacing: .04em; padding: 0 5px; border: 1px solid var(--rule); color: var(--cyan); white-space: nowrap; }
+  #layers { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--muted); }
+  input[type=range] { accent-color: var(--cyan); width: min(280px, 60vw); }
+  .tbl { overflow-x: auto; border: 1px solid var(--rule); }
+  table { border-collapse: collapse; width: 100%; min-width: 680px; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); background: var(--panel); }
+  td { color: var(--muted); } td:first-child { color: var(--ink); white-space: nowrap; }
+  ul.plain { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Prototype 41 · travel lane</span>
+    <h1>The road, and the glitch storms</h1>
+    <p>A stretch of the living world (seed <span id="seed"></span>) and the ronin on it, at game scale. Everything he meets comes out of the ledger: the region's own outlaws and their bands on the road, its merchants and funerals, people of a culture that hates this one crossing into it, the weather, the hour, the season, his karma and bounties. The <b>glitch storms</b> cross the map by the day, while you are away too, and a storm is on its way across his road now.</p>
+  </header>
+
+  <section>
+    <div class="two">
+      <div class="stage">
+        <canvas id="road" class="zoomable" width="480" height="270" aria-label="The road at game scale"></canvas>
+        <div class="bar"><span id="where"></span></div>
+        <div class="bar"><span id="when"></span> <span id="k-here" class="tag"></span></div>
+        <div class="bar"><span id="odds"></span></div>
+        <div class="bar"><span id="me"></span></div>
+      </div>
+      <div class="card" aria-live="polite">
+        <span class="lbl">Encounter</span>
+        <div id="sc-title"></div>
+        <p id="sc-text"></p>
+        <ul id="sc-who"></ul>
+        <div id="choices"></div>
+        <p id="outcome"></p>
+      </div>
+    </div>
+    <div class="two">
+      <div class="stage">
+        <canvas id="map" width="480" height="288" aria-label="The world map round him; click a zone to travel there"></canvas>
+        <div class="bar">
+          <span><span class="key">click</span> the map or <span class="key">arrows</span> to travel</span>
+          <button class="key" id="fast">Fast (F)</button>
+          <button class="key" id="wait">Wait a day</button>
+          <button class="key" id="storm">Send a storm across the road</button>
+          <button class="key" id="danger">Road danger</button>
+          <select id="meet" aria-label="Meet an encounter now"></select>
+          <button class="key" id="new">New world</button>
+        </div>
+        <div class="bar dim">Map: towns white, villages grey, camps red crosses, forts squares, shrines torii (grey and flickering: gone dark), outlaw bands blinking red, storms the torn cyan patches with their trail; he is the cyan square.</div>
+      </div>
+      <div class="card">
+        <span class="lbl">What the world hears (emit)</span>
+        <ul id="log"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="intro">
+      <span class="eyebrow">The look</span>
+      <h2>A glitch storm at game scale</h2>
+      <p>One stretch of road with a shrine, the ronin, a samurai and a farmer. Drag the strength from the edge of a storm to its heart. It speaks only the game's glitch language: <b>torn scanlines</b> sliding sideways like his idle glitch, a <b>cyan split</b> ghosting beside them, <b>slivers</b> like his teleport's residue drifting on the storm's wind, the Rewind's <b>damaged tape</b> (the picture holds, then jumps through a band of noise: lost time), rare <b>bolts</b>, and one thing of its own: <b>tears in the air</b>, seams that push the world apart onto nothing and close. People inside it slice and double. Nothing on the floor, nothing rising off him. At the edge it all gathers on the side the storm lies; the shrine goes dark past 0.35.</p>
+    </div>
+    <div class="stage">
+      <canvas id="look" class="zoomable" width="480" height="270" aria-label="The glitch storm's look at game scale"></canvas>
+      <div class="bar">
+        <label>Strength <input type="range" id="k" min="0" max="1" step="0.01" value="0.75"> <b id="kv">0.75</b></label>
+        <button class="key" data-k="0.2">Edge</button><button class="key" data-k="0.45">Inside</button><button class="key" data-k="0.75">Strong</button><button class="key" data-k="1">Heart</button>
+        <label>Storm lies <select id="side"><option value="0">all round</option><option value="1" selected>to the right</option><option value="-1">to the left</option></select></label>
+        <label><input type="checkbox" id="lnight"> Night</label>
+      </div>
+      <div class="bar"><span>Layers (both views):</span> <span id="layers"></span></div>
+      <div class="bar"><span>Scale:</span> <button class="key" data-zoom="1">1×</button><button class="key" data-zoom="2">2×</button><button class="key" data-zoom="3">3×</button><button class="key" data-zoom="fit">fit</button> <span class="dim">1× is the game's own pixels; the game shows them 4× on a 1080p screen.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="intro">
+      <span class="eyebrow">How it works</span>
+      <h2>What happens on the road, and how often</h2>
+      <p>Each zone he crosses (about 25 real seconds on foot) may bring one encounter: about one zone in 15 on a safe road, one in 8 in outlaw land, never two within three zones. The chance and the mix come from where and when he is; the bar under the road shows them live for the zone he is in.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Encounter</th><th>More likely</th><th>Choices</th><th>What it tells the world</th></tr></thead>
+      <tbody>
+        <tr><td>Ambush</td><td>dangerous regions, a band on this road, night, famine, an escort; less with pilgrims, less if his karma is low (outlaws take him for one of theirs)</td><td>draw · pay · run · (low karma) they know your name</td><td>travel.fight, travel.slain, travel.robbed, travel.beaten, travel.parley, travel.deed</td></tr>
+        <tr><td>War party</td><td>a people who hate this region's people have land within 16 zones</td><td>cut in · stand aside · take a share</td><td>travel.rescued, travel.raid, travel.slain (the victims too), travel.deed</td></tr>
+        <tr><td>Bounty hunters</td><td>a bounty on him (from crime.bounty), more on that people's land</td><td>draw · pay the bounty · run</td><td>travel.bountyPaid, travel.caught, travel.deed</td></tr>
+        <tr><td>Checkpoint / they know your face</td><td>clan and court roads; low standing; a bounty here</td><td>toll · go round · draw · go quietly · bribe · run</td><td>travel.toll, travel.surrender, travel.deed</td></tr>
+        <tr><td>Merchant</td><td>roads, day, merchant leagues; less in famine and danger</td><td>buy rice · escort him (paid on arrival) · rob · pass</td><td>travel.trade, travel.escort, travel.escorted, travel.deed</td></tr>
+        <tr><td>Pilgrims</td><td>roads, spring and autumn, temple lands; almost never at night</td><td>alms · walk with them (safer for 6 hours) · news · rob</td><td>travel.deed</td></tr>
+        <tr><td>Wounded stranger</td><td>danger; high karma (word gets round). In a dangerous region he can be bait</td><td>help · leave · take his purse</td><td>travel.deed (or an ambush follows)</td></tr>
+        <tr><td>Duelist</td><td>clan and rebel lands; a real ronin of the region when the ledger has one</td><td>first blood · to the death · bow and walk on</td><td>travel.duel, travel.loot (his weapon)</td></tr>
+        <tr><td>Funeral</td><td>roads, winter, famine; the dead is a real person of the region who died this week, when there is one</td><td>bow · walk and pray · push through</td><td>travel.deed</td></tr>
+        <tr><td>Runaway horse</td><td>danger (it ran from something: a band ahead)</td><td>catch it, then return it or keep it · let it run</td><td>travel.deed, travel.loot</td></tr>
+        <tr><td>The weather turns</td><td>the season: rain, fog, snow (winter; mountains in spring and autumn), wind</td><td>press on (fog can lose him the way) · shelter</td><td>travel.weather</td></tr>
+        <tr><td>A glitch storm</td><td>always, the moment he steps into one; inside it each zone may take hours from him (lost time)</td><td>walk through (shards, lost time) · wait at its edge · go round</td><td>storm.crossed, storm.lostTime, travel.loot</td></tr>
+      </tbody>
+    </table></div>
+    <div class="two">
+      <div class="card">
+        <span class="lbl">While he is away (onDay)</span>
+        <ul class="plain">
+          <li><b>Road danger</b> per region drifts toward its people's base (outlaw coasts worst, temple lands safest), pushed up by its camps, bands out and famine.</li>
+          <li><b>Outlaw bands</b>: two to five real men of a camp walk the roads for days, then go home. A man killed on the road is gone from his camp.</li>
+          <li><b>Weather</b> per region turns every one to four days, by season and ground.</li>
+          <li><b>Glitch storms</b>: about eighteen a year (autumn most), each lives 8 to 20 days and wanders 1 to 3.5 zones a day. Where they pass, shrines go dark for days, a settlement's people glitch, a strong storm steals hours from a village, and strange things are left lying in the wild.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="lbl">Inside a storm (for the game)</span>
+        <ul class="plain">
+          <li>People flicker, slice and double: about 1.6 × strength times a second.</li>
+          <li>His glitch powers run stronger (up to ×1.6: K's range, the slivers, Qi from hits) and, past the middle of a storm, wild: a glitch skill can misfire somewhere near.</li>
+          <li>Glitch shards in the road; residue left in the wild where it was strongest.</li>
+          <li>Lost time: past the middle, a zone can take hours from him.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+<!-- BUNDLE -->
+</body>
+</html>

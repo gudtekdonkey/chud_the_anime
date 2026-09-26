@@ -1,0 +1,6650 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>41 · Travel and glitch storms</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Pixelify+Sans:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  /* the game's own dark page, floor grey and cyan (as the other prototypes) */
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --dim: #6f7876; --cyan: #6ff3e4; --press: #182423; --red: #ff5a4a; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 32px 16px 72px; display: grid; gap: 44px; }
+  header, .intro { display: grid; gap: 10px; max-width: 72ch; }
+  .eyebrow, h3, th, .key, .lbl, .tag { font-family: "Pixelify Sans", ui-monospace, monospace; }
+  .eyebrow { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(30px, 5.5vw, 46px)/1.02 "Pixelify Sans", ui-monospace, monospace; margin: 0; text-wrap: balance; }
+  h2 { font: 700 22px/1.1 "Pixelify Sans", ui-monospace, monospace; margin: 0; }
+  h3 { font-size: 15px; margin: 0; }
+  p { margin: 0; color: var(--muted); } p b, li b, td b { color: var(--ink); font-weight: 600; }
+  section { display: grid; gap: 16px; }
+  .dim { color: var(--dim); }
+  .stage { background: var(--panel); border: 1px solid var(--rule); display: grid; }
+  canvas { image-rendering: pixelated; display: block; width: 100%; max-width: 100%; }
+  .zoomable { margin: 0 auto; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 10px 14px; border-top: 1px solid var(--rule); align-items: center; font-size: 14px; color: var(--muted); }
+  .key { display: inline-block; font-size: 12px; padding: 1px 6px; border: 1px solid #4a5157; color: var(--ink); }
+  button.key { background: var(--press); border-color: var(--cyan); color: var(--cyan); cursor: pointer; padding: 6px 11px; font-size: 13px; }
+  button.key.on { background: var(--cyan); color: #0c0d11; }
+  button.key:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .two { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 16px; align-items: start; }
+  @media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--rule); padding: 16px; display: grid; gap: 10px; align-content: start; }
+  .card .lbl { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  #sc-title { font: 700 20px/1.1 "Pixelify Sans", monospace; }
+  #sc-text { color: var(--ink); }
+  #sc-who { margin: 0; padding-left: 18px; font-size: 14px; color: var(--muted); }
+  #choices { display: flex; flex-wrap: wrap; gap: 8px; }
+  #outcome { color: var(--ink); min-height: 1.5em; }
+  .facts { display: grid; gap: 4px; font-size: 14px; color: var(--muted); }
+  #log { list-style: none; margin: 0; padding: 0; font-size: 13px; color: var(--muted); max-height: 320px; overflow: auto; display: grid; gap: 3px; }
+  .tag { font-size: 11px; letter-spacing: .04em; padding: 0 5px; border: 1px solid var(--rule); color: var(--cyan); white-space: nowrap; }
+  #layers { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 14px; color: var(--muted); }
+  input[type=range] { accent-color: var(--cyan); width: min(280px, 60vw); }
+  .tbl { overflow-x: auto; border: 1px solid var(--rule); }
+  table { border-collapse: collapse; width: 100%; min-width: 680px; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-size: 12px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); background: var(--panel); }
+  td { color: var(--muted); } td:first-child { color: var(--ink); white-space: nowrap; }
+  ul.plain { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Prototype 41 · travel lane</span>
+    <h1>The road, and the glitch storms</h1>
+    <p>A stretch of the living world (seed <span id="seed"></span>) and the ronin on it, at game scale. Everything he meets comes out of the ledger: the region's own outlaws and their bands on the road, its merchants and funerals, people of a culture that hates this one crossing into it, the weather, the hour, the season, his karma and bounties. The <b>glitch storms</b> cross the map by the day, while you are away too, and a storm is on its way across his road now.</p>
+  </header>
+
+  <section>
+    <div class="two">
+      <div class="stage">
+        <canvas id="road" class="zoomable" width="480" height="270" aria-label="The road at game scale"></canvas>
+        <div class="bar"><span id="where"></span></div>
+        <div class="bar"><span id="when"></span> <span id="k-here" class="tag"></span></div>
+        <div class="bar"><span id="odds"></span></div>
+        <div class="bar"><span id="me"></span></div>
+      </div>
+      <div class="card" aria-live="polite">
+        <span class="lbl">Encounter</span>
+        <div id="sc-title"></div>
+        <p id="sc-text"></p>
+        <ul id="sc-who"></ul>
+        <div id="choices"></div>
+        <p id="outcome"></p>
+      </div>
+    </div>
+    <div class="two">
+      <div class="stage">
+        <canvas id="map" width="480" height="288" aria-label="The world map round him; click a zone to travel there"></canvas>
+        <div class="bar">
+          <span><span class="key">click</span> the map or <span class="key">arrows</span> to travel</span>
+          <button class="key" id="fast">Fast (F)</button>
+          <button class="key" id="wait">Wait a day</button>
+          <button class="key" id="storm">Send a storm across the road</button>
+          <button class="key" id="danger">Road danger</button>
+          <select id="meet" aria-label="Meet an encounter now"></select>
+          <button class="key" id="new">New world</button>
+        </div>
+        <div class="bar dim">Map: towns white, villages grey, camps red crosses, forts squares, shrines torii (grey and flickering: gone dark), outlaw bands blinking red, storms the torn cyan patches with their trail; he is the cyan square.</div>
+      </div>
+      <div class="card">
+        <span class="lbl">What the world hears (emit)</span>
+        <ul id="log"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="intro">
+      <span class="eyebrow">The look</span>
+      <h2>A glitch storm at game scale</h2>
+      <p>One stretch of road with a shrine, the ronin, a samurai and a farmer. Drag the strength from the edge of a storm to its heart. It speaks only the game's glitch language: <b>torn scanlines</b> sliding sideways like his idle glitch, a <b>cyan split</b> ghosting beside them, <b>slivers</b> like his teleport's residue drifting on the storm's wind, the Rewind's <b>damaged tape</b> (the picture holds, then jumps through a band of noise: lost time), rare <b>bolts</b>, and one thing of its own: <b>tears in the air</b>, seams that push the world apart onto nothing and close. People inside it slice and double. Nothing on the floor, nothing rising off him. At the edge it all gathers on the side the storm lies; the shrine goes dark past 0.35.</p>
+    </div>
+    <div class="stage">
+      <canvas id="look" class="zoomable" width="480" height="270" aria-label="The glitch storm's look at game scale"></canvas>
+      <div class="bar">
+        <label>Strength <input type="range" id="k" min="0" max="1" step="0.01" value="0.75"> <b id="kv">0.75</b></label>
+        <button class="key" data-k="0.2">Edge</button><button class="key" data-k="0.45">Inside</button><button class="key" data-k="0.75">Strong</button><button class="key" data-k="1">Heart</button>
+        <label>Storm lies <select id="side"><option value="0">all round</option><option value="1" selected>to the right</option><option value="-1">to the left</option></select></label>
+        <label><input type="checkbox" id="lnight"> Night</label>
+      </div>
+      <div class="bar"><span>Layers (both views):</span> <span id="layers"></span></div>
+      <div class="bar"><span>Scale:</span> <button class="key" data-zoom="1">1×</button><button class="key" data-zoom="2">2×</button><button class="key" data-zoom="3">3×</button><button class="key" data-zoom="fit">fit</button> <span class="dim">1× is the game's own pixels; the game shows them 4× on a 1080p screen.</span></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="intro">
+      <span class="eyebrow">How it works</span>
+      <h2>What happens on the road, and how often</h2>
+      <p>Each zone he crosses (about 25 real seconds on foot) may bring one encounter: about one zone in 15 on a safe road, one in 8 in outlaw land, never two within three zones. The chance and the mix come from where and when he is; the bar under the road shows them live for the zone he is in.</p>
+    </div>
+    <div class="tbl"><table>
+      <thead><tr><th>Encounter</th><th>More likely</th><th>Choices</th><th>What it tells the world</th></tr></thead>
+      <tbody>
+        <tr><td>Ambush</td><td>dangerous regions, a band on this road, night, famine, an escort; less with pilgrims, less if his karma is low (outlaws take him for one of theirs)</td><td>draw · pay · run · (low karma) they know your name</td><td>travel.fight, travel.slain, travel.robbed, travel.beaten, travel.parley, travel.deed</td></tr>
+        <tr><td>War party</td><td>a people who hate this region's people have land within 16 zones</td><td>cut in · stand aside · take a share</td><td>travel.rescued, travel.raid, travel.slain (the victims too), travel.deed</td></tr>
+        <tr><td>Bounty hunters</td><td>a bounty on him (from crime.bounty), more on that people's land</td><td>draw · pay the bounty · run</td><td>travel.bountyPaid, travel.caught, travel.deed</td></tr>
+        <tr><td>Checkpoint / they know your face</td><td>clan and court roads; low standing; a bounty here</td><td>toll · go round · draw · go quietly · bribe · run</td><td>travel.toll, travel.surrender, travel.deed</td></tr>
+        <tr><td>Merchant</td><td>roads, day, merchant leagues; less in famine and danger</td><td>buy rice · escort him (paid on arrival) · rob · pass</td><td>travel.trade, travel.escort, travel.escorted, travel.deed</td></tr>
+        <tr><td>Pilgrims</td><td>roads, spring and autumn, temple lands; almost never at night</td><td>alms · walk with them (safer for 6 hours) · news · rob</td><td>travel.deed</td></tr>
+        <tr><td>Wounded stranger</td><td>danger; high karma (word gets round). In a dangerous region he can be bait</td><td>help · leave · take his purse</td><td>travel.deed (or an ambush follows)</td></tr>
+        <tr><td>Duelist</td><td>clan and rebel lands; a real ronin of the region when the ledger has one</td><td>first blood · to the death · bow and walk on</td><td>travel.duel, travel.loot (his weapon)</td></tr>
+        <tr><td>Funeral</td><td>roads, winter, famine; the dead is a real person of the region who died this week, when there is one</td><td>bow · walk and pray · push through</td><td>travel.deed</td></tr>
+        <tr><td>Runaway horse</td><td>danger (it ran from something: a band ahead)</td><td>catch it, then return it or keep it · let it run</td><td>travel.deed, travel.loot</td></tr>
+        <tr><td>The weather turns</td><td>the season: rain, fog, snow (winter; mountains in spring and autumn), wind</td><td>press on (fog can lose him the way) · shelter</td><td>travel.weather</td></tr>
+        <tr><td>A glitch storm</td><td>always, the moment he steps into one; inside it each zone may take hours from him (lost time)</td><td>walk through (shards, lost time) · wait at its edge · go round</td><td>storm.crossed, storm.lostTime, travel.loot</td></tr>
+      </tbody>
+    </table></div>
+    <div class="two">
+      <div class="card">
+        <span class="lbl">While he is away (onDay)</span>
+        <ul class="plain">
+          <li><b>Road danger</b> per region drifts toward its people's base (outlaw coasts worst, temple lands safest), pushed up by its camps, bands out and famine.</li>
+          <li><b>Outlaw bands</b>: two to five real men of a camp walk the roads for days, then go home. A man killed on the road is gone from his camp.</li>
+          <li><b>Weather</b> per region turns every one to four days, by season and ground.</li>
+          <li><b>Glitch storms</b>: about eighteen a year (autumn most), each lives 8 to 20 days and wanders 1 to 3.5 zones a day. Where they pass, shrines go dark for days, a settlement's people glitch, a strong storm steals hours from a village, and strange things are left lying in the wild.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="lbl">Inside a storm (for the game)</span>
+        <ul class="plain">
+          <li>People flicker, slice and double: about 1.6 × strength times a second.</li>
+          <li>His glitch powers run stronger (up to ×1.6: K's range, the slivers, Qi from hits) and, past the middle of a storm, wild: a glitch skill can misfire somewhere near.</li>
+          <li>Glitch shards in the road; residue left in the wild where it was strongest.</li>
+          <li>Lost time: past the middle, a zone can take hours from him.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+<script>
+(function() {
+	//#region src/sim/rng.js
+	function hash(...parts) {
+		let h = 2166136261;
+		for (const p of parts) {
+			const s = String(p);
+			for (let i = 0; i < s.length; i++) {
+				h ^= s.charCodeAt(i);
+				h = Math.imul(h, 16777619) >>> 0;
+			}
+			h ^= 40503;
+			h = Math.imul(h, 16777619) >>> 0;
+		}
+		return h >>> 0;
+	}
+	function rng$1(seed) {
+		let a = seed >>> 0;
+		const next = () => {
+			a = a + 1831565813 >>> 0;
+			let t = a;
+			t = Math.imul(t ^ t >>> 15, t | 1);
+			t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+			return ((t ^ t >>> 14) >>> 0) / 4294967296;
+		};
+		return {
+			next,
+			range: (lo, hi) => lo + next() * (hi - lo),
+			int: (lo, hi) => lo + Math.floor(next() * (hi - lo + 1)),
+			chance: (p) => next() < p,
+			pick: (arr) => arr[Math.floor(next() * arr.length)],
+			weighted: (pairs) => {
+				let t = 0;
+				for (const [, w] of pairs) t += w;
+				let x = next() * t;
+				for (const [v, w] of pairs) if ((x -= w) < 0) return v;
+				return pairs[pairs.length - 1][0];
+			},
+			shuffle: (arr) => {
+				for (let i = arr.length - 1; i > 0; i--) {
+					const j = Math.floor(next() * (i + 1));
+					[arr[i], arr[j]] = [arr[j], arr[i]];
+				}
+				return arr;
+			}
+		};
+	}
+	const rngFor = (seed, ...keys) => rng$1(hash(seed, ...keys));
+	//#endregion
+	//#region src/sim/time.js
+	const TIME = {
+		REAL_MS_PER_HOUR: 1e5,
+		HOURS_PER_DAY: 24,
+		DAYS_PER_SEASON: 28,
+		SEASONS: [
+			"spring",
+			"summer",
+			"autumn",
+			"winter"
+		],
+		DAWN: 5,
+		DUSK: 19
+	};
+	const HOURS_PER_SEASON = TIME.HOURS_PER_DAY * TIME.DAYS_PER_SEASON;
+	const HOURS_PER_YEAR = HOURS_PER_SEASON * TIME.SEASONS.length;
+	function calendar(h) {
+		const day = Math.floor(h / TIME.HOURS_PER_DAY), hour = h % TIME.HOURS_PER_DAY, si = Math.floor(h / HOURS_PER_SEASON) % 4;
+		return {
+			h,
+			hour,
+			day,
+			dayOfSeason: day % TIME.DAYS_PER_SEASON + 1,
+			seasonIndex: si,
+			season: TIME.SEASONS[si],
+			year: Math.floor(h / HOURS_PER_YEAR) + 1,
+			night: hour >= TIME.DUSK || hour < TIME.DAWN
+		};
+	}
+	const SYSTEMS = [];
+	function system(def) {
+		const i = SYSTEMS.findIndex((s) => s.id === def.id);
+		if (i >= 0) SYSTEMS.splice(i, 1);
+		SYSTEMS.push({
+			order: 50,
+			...def
+		});
+		SYSTEMS.sort((a, b) => a.order - b.order);
+		return def;
+	}
+	function createLedger(seed, realNow = Date.now()) {
+		return {
+			v: 1,
+			seed: seed >>> 0,
+			hour: 0,
+			realAt: realNow,
+			size: {
+				w: 100,
+				h: 100
+			},
+			zones: [],
+			regions: [],
+			cultures: [],
+			plots: {},
+			actors: {},
+			player: null,
+			log: [],
+			ids: {},
+			sys: {}
+		};
+	}
+	function initSystems(L) {
+		for (const s of SYSTEMS) if (s.init && !L.sys[s.id]) {
+			L.sys[s.id] = {};
+			s.init(L);
+		}
+	}
+	function newId(L, kind) {
+		const n = (L.ids[kind] || 0) + 1;
+		L.ids[kind] = n;
+		return kind + n;
+	}
+	const zoneAt = (L, x, y) => x < 0 || y < 0 || x >= L.size.w || y >= L.size.h ? null : L.zones[y * L.size.w + x];
+	const LISTENERS = /* @__PURE__ */ new Map();
+	function on(type, fn) {
+		(LISTENERS.get(type) || LISTENERS.set(type, []).get(type)).push(fn);
+		return () => {
+			const a = LISTENERS.get(type);
+			a.splice(a.indexOf(fn), 1);
+		};
+	}
+	const LOG_CAP = 4e3;
+	function emit(L, type, data = {}) {
+		const e = {
+			h: L.hour,
+			type,
+			...data
+		};
+		L.log.push(e);
+		if (L.log.length > 4e3) L.log.splice(0, L.log.length - LOG_CAP);
+		for (const fn of LISTENERS.get(type) || []) fn(e, L);
+		for (const fn of LISTENERS.get("*") || []) fn(e, L);
+		return e;
+	}
+	const HOURLY_CATCHUP = 48;
+	function advance(L, hours, live = false) {
+		const hourly = live || hours <= HOURLY_CATCHUP;
+		for (let i = 0; i < hours; i++) {
+			L.hour++;
+			const cal = calendar(L.hour);
+			if (hourly) {
+				for (const s of SYSTEMS) if (s.onHour) s.onHour(L, cal, rngFor(L.seed, "h", L.hour, s.id));
+			}
+			if (cal.hour === 0) {
+				if (cal.dayOfSeason === 1) {
+					if (cal.seasonIndex === 0) {
+						for (const s of SYSTEMS) if (s.onYear) s.onYear(L, cal, rngFor(L.seed, "y", cal.year, s.id));
+					}
+					for (const s of SYSTEMS) if (s.onSeason) s.onSeason(L, cal, rngFor(L.seed, "s", cal.day, s.id));
+				}
+				for (const s of SYSTEMS) if (s.onDay) s.onDay(L, cal, rngFor(L.seed, "d", cal.day, s.id));
+			}
+		}
+	}
+	//#endregion
+	//#region src/sim/travel/roads.js
+	const KIND_DANGER = {
+		bandits: .6,
+		rebels: .3,
+		shinobi: .3,
+		miners: .25,
+		clan: .2,
+		merchants: .15,
+		fishers: .15,
+		court: .1,
+		monastic: .08
+	};
+	const WEATHER = {
+		spring: [
+			["clear", 5],
+			["cloud", 3],
+			["rain", 3],
+			["fog", 2],
+			["wind", 1]
+		],
+		summer: [
+			["clear", 6],
+			["cloud", 2],
+			["rain", 4],
+			["wind", 1]
+		],
+		autumn: [
+			["clear", 4],
+			["cloud", 3],
+			["rain", 2],
+			["fog", 3],
+			["wind", 2]
+		],
+		winter: [
+			["clear", 3],
+			["cloud", 3],
+			["snow", 5],
+			["fog", 1],
+			["wind", 2]
+		]
+	};
+	const BIOME_WX = {
+		mountains: {
+			snow: 3,
+			wind: 2
+		},
+		hills: {
+			snow: 1,
+			fog: 1
+		},
+		coast: {
+			fog: 2,
+			wind: 2,
+			rain: 1
+		},
+		marsh: { fog: 3 },
+		paddy: { rain: 1 }
+	};
+	function initRoads(L, st) {
+		st.regions = L.regions.map((g) => {
+			const base = KIND_DANGER[L.cultures[g.culture].kind] ?? .2;
+			return {
+				danger: base,
+				base,
+				camps: 0,
+				weather: "clear",
+				wxDays: 0,
+				famine: 0,
+				biome: zoneAt(L, ...g.seat).biome
+			};
+		});
+		countCamps(L, st);
+		st.bands = [];
+	}
+	function countCamps(L, st) {
+		for (const s of st.regions) s.camps = 0;
+		st.camps = [];
+		for (const z of L.zones) if (z.kind === "camp" && z.region >= 0) {
+			st.regions[z.region].camps++;
+			st.camps.push([z.x, z.y]);
+		}
+	}
+	function roadsDay(L, st, cal, r) {
+		const out = new Array(st.regions.length).fill(0);
+		for (const b of st.bands) out[b.region] = (out[b.region] || 0) + 1;
+		st.regions.forEach((s, id) => {
+			const target = Math.min(1, s.base + s.camps * .06 + out[id] * .08 + (s.famine > 0 ? .2 : 0));
+			const was = s.danger;
+			s.danger = +Math.max(0, Math.min(1, s.danger + (target - s.danger) * .15 + r.range(-.03, .03))).toFixed(3);
+			if (s.famine > 0) s.famine--;
+			if (was < .6 && s.danger >= .6) emit(L, "travel.unsafe", {
+				region: id,
+				danger: s.danger,
+				zone: L.regions[id].seat
+			});
+			if (was >= .6 && s.danger < .5) emit(L, "travel.safe", {
+				region: id,
+				danger: s.danger,
+				zone: L.regions[id].seat
+			});
+			if (--s.wxDays <= 0) {
+				const bonus = BIOME_WX[s.biome] || {};
+				let opts = WEATHER[cal.season].map(([k, w]) => [k, w + (bonus[k] || 0)]);
+				if (cal.season !== "winter") {
+					opts = opts.filter(([k]) => k !== "snow");
+					if (s.biome === "mountains" && cal.season !== "summer") opts.push(["snow", 1.5]);
+				}
+				s.weather = r.weighted(opts);
+				s.wxDays = r.int(1, 4);
+			}
+		});
+		bandsDay(L, st, cal, r);
+	}
+	const ROAM = 8;
+	const MAX_BANDS = 48;
+	function bandsDay(L, st, cal, r) {
+		if (st.bands.length < MAX_BANDS) for (let k = 0; k < 3; k++) {
+			const z = st.camps.length ? zoneAt(L, ...r.pick(st.camps)) : null;
+			if (!z || z.kind !== "camp" || st.bands.some((b) => b.camp[0] === z.x && b.camp[1] === z.y)) continue;
+			const s = st.regions[z.region], p = .12 * (cal.season === "winter" ? 1.5 : 1) * (s.famine > 0 ? 2 : 1);
+			if (!r.chance(p)) continue;
+			const members = campMembers(L, z, r);
+			if (members.length < 2) continue;
+			const b = {
+				id: "band" + (st.nextBand = (st.nextBand || 0) + 1),
+				culture: L.regions[z.region].culture,
+				region: z.region,
+				camp: [z.x, z.y],
+				at: [z.x, z.y],
+				goal: roadNear(L, z.x, z.y, r),
+				members,
+				days: r.int(4, 14)
+			};
+			st.bands.push(b);
+			emit(L, "travel.bandOut", {
+				band: b.id,
+				culture: b.culture,
+				region: b.region,
+				zone: b.camp,
+				members: members.length
+			});
+		}
+		for (let i = st.bands.length - 1; i >= 0; i--) {
+			const b = st.bands[i];
+			b.members = b.members.filter((id) => L.actors[id]?.alive);
+			if (!b.members.length || --b.days <= 0 && b.at[0] === b.camp[0] && b.at[1] === b.camp[1]) {
+				st.bands.splice(i, 1);
+				emit(L, "travel.bandHome", {
+					band: b.id,
+					zone: b.camp,
+					members: b.members.length
+				});
+				continue;
+			}
+			if (b.days <= 0) b.goal = b.camp;
+			for (let s = 0; s < 2; s++) step(L, b);
+			if (b.at[0] === b.goal[0] && b.at[1] === b.goal[1] && b.days > 0) b.goal = roadNear(L, b.camp[0], b.camp[1], r);
+			const z = zoneAt(L, ...b.at);
+			b.region = z.region >= 0 ? z.region : b.region;
+			if (z.road && r.chance(.15)) emit(L, "travel.robbery", {
+				band: b.id,
+				culture: b.culture,
+				region: z.region,
+				zone: b.at
+			});
+		}
+	}
+	const CAMP_INDEX = /* @__PURE__ */ new WeakMap();
+	function campMembers(L, z, r) {
+		const season = Math.floor(L.hour / 672);
+		let ix = CAMP_INDEX.get(L);
+		if (!ix || ix.season !== season) {
+			ix = {
+				season,
+				at: {}
+			};
+			for (const id in L.actors) {
+				const a = L.actors[id];
+				if (a.alive && !a.chief && a.home && a.cls !== "commoner" && zoneAt(L, a.home[0], a.home[1])?.kind === "camp") (ix.at[a.home[0] + "," + a.home[1]] ||= []).push(id);
+			}
+			CAMP_INDEX.set(L, ix);
+		}
+		const home = (ix.at[z.x + "," + z.y] || []).filter((id) => L.actors[id]?.alive), n = r.int(2, 5);
+		return r.shuffle(home).slice(0, n);
+	}
+	function roadNear(L, x, y, r) {
+		for (let t = 0; t < 12; t++) {
+			const z = zoneAt(L, x + r.int(-8, ROAM), y + r.int(-8, ROAM));
+			if (z && z.road) return [z.x, z.y];
+		}
+		return [x, y];
+	}
+	function step(L, b) {
+		const [x, y] = b.at, [gx, gy] = b.goal;
+		if (x === gx && y === gy) return;
+		let best = null, bd = Math.abs(gx - x) + Math.abs(gy - y) + (zoneAt(L, x, y).road ? 0 : .5);
+		for (const [dx, dy] of [
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1]
+		]) {
+			const n = zoneAt(L, x + dx, y + dy);
+			if (!n || n.kind === "sea") continue;
+			const d = Math.abs(gx - n.x) + Math.abs(gy - n.y) + (n.road ? 0 : .5);
+			if (d < bd) {
+				bd = d;
+				best = n;
+			}
+		}
+		if (best) b.at = [best.x, best.y];
+	}
+	function bandNear(st, x, y, reach = 1) {
+		return st.bands.find((b) => Math.abs(b.at[0] - x) <= reach && Math.abs(b.at[1] - y) <= reach) || null;
+	}
+	//#endregion
+	//#region src/sim/travel/storms.js
+	const STORM = {
+		perDay: {
+			spring: .14,
+			summer: .16,
+			autumn: .26,
+			winter: .1
+		},
+		max: 6,
+		speed: [1.2, 3.5],
+		life: [8, 20],
+		radius: [2.5, 6],
+		peak: [.45, 1],
+		core: .5,
+		edge: 1.35,
+		shrineDark: .35
+	};
+	const env$1 = (u) => u < .25 ? ease$1(u / .25) : u > .7 ? ease$1((1 - u) / .3) : 1;
+	const ease$1 = (k) => k * k * (3 - 2 * k);
+	function stormsDay(L, st, cal, r) {
+		for (const k in st.dark) if (st.dark[k] <= cal.day) {
+			delete st.dark[k];
+			emit(L, "storm.shrineLit", { zone: k.split(",").map(Number) });
+		}
+		for (const k in st.residue) if (cal.day - st.residue[k].day > 12) delete st.residue[k];
+		if (st.storms.length < STORM.max && r.chance(STORM.perDay[cal.season])) {
+			let z = null;
+			for (let t = 0; t < 20 && !z; t++) {
+				const c = L.zones[r.int(0, L.zones.length - 1)];
+				if (c.kind !== "sea") z = c;
+			}
+			if (z) spawnStorm(L, {
+				x: z.x + .5,
+				y: z.y + .5,
+				r: r.range(...STORM.radius),
+				peak: r.range(...STORM.peak),
+				hdg: r.range(0, 6.283),
+				speed: r.range(...STORM.speed),
+				life: r.int(...STORM.life)
+			});
+		}
+		for (let i = st.storms.length - 1; i >= 0; i--) {
+			const s = st.storms[i];
+			s.hdg = +(s.hdg + r.range(-.45, .45)).toFixed(3);
+			const v = s.speed * r.range(.7, 1.2);
+			s.x = +(s.x + Math.cos(s.hdg) * v).toFixed(2);
+			s.y = +(s.y + Math.sin(s.hdg) * v).toFixed(2);
+			s.age++;
+			shape(s);
+			s.path.push([
+				Math.floor(s.x),
+				Math.floor(s.y),
+				s.power
+			]);
+			if (s.age >= s.life || s.x < -3 || s.y < -3 || s.x > L.size.w + 3 || s.y > L.size.h + 3) {
+				st.storms.splice(i, 1);
+				fade(L, st, s);
+				continue;
+			}
+			feel(L, st, s, cal, r);
+		}
+	}
+	function spawnStorm(L, o) {
+		const st = L.sys.travel, day = Math.floor(L.hour / 24);
+		const s = {
+			id: "storm" + (st.nextStorm = (st.nextStorm || 0) + 1),
+			x: +o.x.toFixed(2),
+			y: +o.y.toFixed(2),
+			r0: +(o.r ?? 3).toFixed(2),
+			r: 0,
+			peak: +(o.peak ?? .8).toFixed(2),
+			power: 0,
+			hdg: +(o.hdg ?? 0).toFixed(3),
+			speed: +(o.speed ?? 2).toFixed(2),
+			age: o.age ?? 0,
+			life: o.life ?? 10,
+			born: day,
+			path: [],
+			regions: [],
+			touched: []
+		};
+		shape(s);
+		st.storms.push(s);
+		const z = zoneAt(L, Math.floor(s.x), Math.floor(s.y));
+		emit(L, "storm.born", {
+			storm: s.id,
+			zone: [Math.floor(s.x), Math.floor(s.y)],
+			region: z ? z.region : -1,
+			power: s.peak
+		});
+		return s;
+	}
+	function shape(s) {
+		const e = env$1(s.age / s.life);
+		s.power = +(s.peak * Math.max(.15, e)).toFixed(2);
+		s.r = +(s.r0 * (.6 + .4 * e)).toFixed(2);
+	}
+	function fade(L, st, s) {
+		st.past.push({
+			id: s.id,
+			born: s.born,
+			died: s.born + s.age,
+			peak: s.peak,
+			path: s.path.map(([x, y]) => [x, y]),
+			regions: s.regions
+		});
+		if (st.past.length > 12) st.past.shift();
+		emit(L, "storm.faded", {
+			storm: s.id,
+			zone: [Math.floor(s.x), Math.floor(s.y)],
+			days: s.age,
+			regions: s.regions.length
+		});
+	}
+	function feel(L, st, s, cal, r) {
+		const R = Math.ceil(s.r * STORM.edge);
+		for (let y = Math.floor(s.y) - R; y <= Math.floor(s.y) + R; y++) for (let x = Math.floor(s.x) - R; x <= Math.floor(s.x) + R; x++) {
+			const z = zoneAt(L, x, y);
+			if (!z || z.kind === "sea") continue;
+			const k = strength(s, x + .5, y + .5);
+			if (k <= 0) continue;
+			if (!s.regions.includes(z.region)) {
+				s.regions.push(z.region);
+				emit(L, "storm.reached", {
+					storm: s.id,
+					region: z.region,
+					zone: [x, y],
+					power: +k.toFixed(2)
+				});
+			}
+			const key = x + "," + y;
+			if (k > .55 && z.kind === "wild" && r.chance(.08 * k) && Object.keys(st.residue).length < 60) st.residue[key] = {
+				day: cal.day,
+				n: r.int(1, 3),
+				power: +k.toFixed(2)
+			};
+			if (z.kind === "wild" || s.touched.includes(key)) continue;
+			s.touched.push(key);
+			emit(L, "storm.touched", {
+				storm: s.id,
+				zone: [x, y],
+				kind: z.kind,
+				region: z.region,
+				power: +k.toFixed(2)
+			});
+			if (z.kind === "shrine" && k > STORM.shrineDark && r.chance(.4 + k * .5) && !st.dark[key]) {
+				st.dark[key] = cal.day + r.int(3, 10);
+				emit(L, "storm.shrineDark", {
+					storm: s.id,
+					zone: [x, y],
+					region: z.region,
+					until: st.dark[key]
+				});
+			}
+			if (z.kind === "town" || z.kind === "village" || z.kind === "camp" || z.kind === "fort") {
+				emit(L, "storm.glitched", {
+					storm: s.id,
+					zone: [x, y],
+					region: z.region,
+					kind: z.kind,
+					power: +k.toFixed(2)
+				});
+				if (k > .6 && r.chance(k * .4)) emit(L, "storm.lostTime", {
+					storm: s.id,
+					zone: [x, y],
+					region: z.region,
+					hours: r.int(2, 10)
+				});
+			}
+		}
+	}
+	const strength = (s, x, y) => {
+		const d = Math.hypot(x - s.x, y - s.y), a = s.r * STORM.core, b = s.r * STORM.edge;
+		return d <= a ? s.power : d >= b ? 0 : s.power * ease$1(1 - (d - a) / (b - a));
+	};
+	function stormAt(L, x, y) {
+		let best = {
+			k: 0,
+			storm: null,
+			dist: Infinity
+		};
+		for (const s of L.sys.travel.storms) {
+			const k = strength(s, x, y), d = Math.hypot(x - s.x, y - s.y);
+			if (k > best.k || !best.k && d < best.dist) best = {
+				k,
+				storm: s,
+				dist: d
+			};
+		}
+		return best;
+	}
+	const shrineDark = (L, x, y) => !!L.sys.travel.dark[x + "," + y];
+	function takeResidue(L, x, y) {
+		const k = x + "," + y, v = L.sys.travel.residue[k];
+		if (!v) return null;
+		delete L.sys.travel.residue[k];
+		emit(L, "storm.residueTaken", {
+			zone: [x, y],
+			n: v.n
+		});
+		return v;
+	}
+	function stormEffects(k) {
+		return {
+			k,
+			glitch: +(k * 1.6).toFixed(2),
+			power: +(1 + k * .6).toFixed(2),
+			qi: +(1 + k).toFixed(2),
+			wild: +Math.max(0, (k - .45) * .7).toFixed(2),
+			lostTime: +Math.max(0, (k - .5) * .5).toFixed(2),
+			loot: +(k * .3).toFixed(2)
+		};
+	}
+	//#endregion
+	//#region src/sim/travel/encounters.js
+	const TRAVEL = {
+		chance: {
+			road: .06,
+			wild: .045
+		},
+		cap: .45,
+		gap: 2,
+		karmaScale: 100,
+		stormFelt: .1
+	};
+	const clamp = (v, a = -1, b = 1) => Math.max(a, Math.min(b, v));
+	function context(L, x, y) {
+		const st = L.sys.travel, z = zoneAt(L, x, y), reg = L.regions[z.region], culture = L.cultures[reg.culture], s = st.regions[z.region];
+		const cal = calendar(L.hour), p = L.actors[L.player];
+		let enemy = null, ev = -.5;
+		for (const g of L.regions) {
+			if (g.culture === culture.id) continue;
+			const rel = culture.relations[g.culture] ?? 0;
+			if (rel < ev && Math.hypot(g.center[0] - x, g.center[1] - y) < 16) {
+				ev = rel;
+				enemy = g.culture;
+			}
+		}
+		const heatHere = st.heat[culture.id] || 0, heat = Object.values(st.heat).reduce((a, b) => Math.max(a, b), 0);
+		return {
+			x,
+			y,
+			z,
+			region: z.region,
+			culture,
+			kind: culture.kind,
+			road: z.road,
+			cal,
+			night: cal.night,
+			season: cal.season,
+			danger: s.danger,
+			weather: s.weather,
+			famine: s.famine > 0,
+			storm: stormAt(L, x + .5, y + .5),
+			band: bandNear(st, x, y),
+			karma: clamp((p.karma || 0) / TRAVEL.karmaScale),
+			standing: p.standing?.[culture.id] || 0,
+			heat,
+			heatHere,
+			hunted: Object.keys(st.heat).filter((c) => st.heat[c] > 0).map(Number),
+			enemy,
+			safe: st.safeUntil > L.hour,
+			escort: !!st.escort,
+			mon: p.money?.mon || 0
+		};
+	}
+	function chanceAt(c) {
+		let p = c.road ? TRAVEL.chance.road : TRAVEL.chance.wild;
+		p *= .7 + c.danger;
+		if (c.night) p *= 1.25;
+		if (c.weather === "fog") p *= 1.2;
+		if (c.band) p += .25;
+		if (c.heat > 0) p += Math.min(.1, c.heat / 2e3);
+		if (c.safe) p *= .4;
+		return Math.min(TRAVEL.cap, p);
+	}
+	const ENCOUNTERS = {
+		ambush: { w: (c) => ((c.band ? 3 : 0) + c.danger ** 1.5 * (c.road ? 3 : 4)) * (c.night ? 1.6 : 1) * (c.famine ? 1.3 : 1) * (c.safe ? .3 : 1) * (1 + Math.min(0, c.karma) * .5) * (c.escort ? 1.4 : 1) },
+		raiders: { w: (c) => c.enemy == null ? 0 : .35 + c.danger * .4 },
+		hunters: { w: (c) => c.heat <= 0 ? 0 : Math.min(2.5, c.heat / 150) * (c.heatHere ? 1.5 : 1) },
+		patrol: { w: (c) => (c.road && (c.kind === "clan" || c.kind === "court") ? .3 : 0) + Math.max(0, -c.standing) * 1.5 + (c.heatHere ? .5 : 0) },
+		merchant: { w: (c) => (c.road ? 1.2 : .25) * (c.night ? .25 : 1) * (c.kind === "merchants" ? 1.6 : 1) * (c.famine ? .5 : 1) * (1 - c.danger * .5) },
+		pilgrims: { w: (c) => (c.road ? .55 : .15) * (c.season === "spring" || c.season === "autumn" ? 1.5 : 1) * (c.kind === "monastic" ? 2 : 1) * (c.night ? .2 : 1) },
+		wounded: { w: (c) => .45 * (1 + c.danger) * (1 + Math.max(0, c.karma) * .5) },
+		duelist: { w: (c) => .3 * (c.kind === "clan" || c.kind === "rebels" ? 1.3 : 1) * (c.night ? .5 : 1) },
+		funeral: { w: (c) => (c.road ? .35 : .08) * (c.famine ? 2 : 1) * (c.season === "winter" ? 1.4 : 1) },
+		horse: { w: (c) => (c.road ? .3 : .2) * (1 + c.danger) },
+		weather: { w: (c) => c.weather === "clear" || c.weather === "cloud" ? .6 : .15 }
+	};
+	function pickType(c, r) {
+		const pairs = Object.entries(ENCOUNTERS).map(([id, e]) => [id, Math.max(0, e.w(c))]).filter(([, w]) => w > 0);
+		return pairs.length ? r.weighted(pairs) : null;
+	}
+	//#endregion
+	//#region src/sim/cultures.js
+	const CLASSES = {
+		royal: {
+			rank: 6,
+			dress: "royal",
+			weapons: [
+				["katana", 3],
+				["daisho", 2],
+				["tessen", 1]
+			],
+			jobs: ["lord"]
+		},
+		noble: {
+			rank: 5,
+			dress: "dark",
+			weapons: [
+				["katana", 3],
+				["daisho", 2],
+				["tessen", 1]
+			],
+			jobs: [
+				"lord",
+				"magistrate",
+				"steward"
+			]
+		},
+		retainer: {
+			rank: 4,
+			dress: "dark",
+			weapons: [
+				["katana", 5],
+				["daisho", 2],
+				["nodachi", 1]
+			],
+			jobs: [
+				"retainer",
+				"guard",
+				"magistrate",
+				"tax collector"
+			]
+		},
+		ronin: {
+			rank: 3,
+			dress: "black",
+			weapons: [
+				["katana", 5],
+				["nodachi", 2],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"ronin",
+				"bounty hunter",
+				"guard"
+			]
+		},
+		ashigaru: {
+			rank: 2,
+			dress: "earth",
+			weapons: [
+				["yari", 5],
+				["katana", 1],
+				["tetsubo", 1]
+			],
+			jobs: [
+				"ashigaru",
+				"guard",
+				"courier"
+			]
+		},
+		monk: {
+			rank: 3,
+			dress: "black",
+			weapons: [["naginata", 3], ["bo", 3]],
+			jobs: [
+				"monk",
+				"abbot",
+				"healer"
+			]
+		},
+		commoner: {
+			rank: 1,
+			dress: "earth",
+			weapons: [
+				["kama", 3],
+				["bo", 1],
+				["tanto", 1],
+				["nunchaku", 1]
+			],
+			jobs: [
+				"farmer",
+				"farmer",
+				"farmer",
+				"fisher",
+				"woodcutter",
+				"miner",
+				"smith",
+				"merchant",
+				"innkeeper",
+				"carpenter",
+				"weaver",
+				"brewer",
+				"courier"
+			]
+		},
+		rebel: {
+			rank: 1,
+			dress: "earth",
+			weapons: [
+				["naginata", 3],
+				["yari", 3],
+				["kama", 3],
+				["nunchaku", 1],
+				["katana", 1]
+			],
+			jobs: ["farmer", "rebel"]
+		},
+		outlaw: {
+			rank: 0,
+			dress: "earth",
+			weapons: [
+				["katana", 2],
+				["tanto", 2],
+				["kanabo", 2],
+				["tetsubo", 1],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"bandit",
+				"smuggler",
+				"thief"
+			]
+		},
+		shinobi: {
+			rank: 2,
+			dress: "black",
+			weapons: [
+				["tanto", 3],
+				["kusarigama", 3],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"shinobi",
+				"spy",
+				"courier"
+			]
+		}
+	};
+	const KINDS = {
+		clan: {
+			count: 7,
+			size: 7,
+			label: "clan",
+			classes: [
+				["noble", 1],
+				["retainer", 6],
+				["ashigaru", 8],
+				["commoner", 30],
+				["monk", 1]
+			],
+			traits: [
+				"soldier",
+				"stoic",
+				"proud",
+				"veteran",
+				"calm"
+			],
+			despise: [
+				"drunk",
+				"lazy",
+				"slouch"
+			],
+			royalty: true
+		},
+		court: {
+			count: 1,
+			size: 2,
+			label: "court",
+			classes: [
+				["royal", 2],
+				["noble", 5],
+				["retainer", 6],
+				["commoner", 20]
+			],
+			traits: [
+				"regal",
+				"vain",
+				"serene",
+				"scholar"
+			],
+			despise: [
+				"drunk",
+				"scratcher",
+				"brawler"
+			],
+			royalty: true
+		},
+		rebels: {
+			count: 3,
+			size: 5,
+			label: "free valleys",
+			classes: [
+				["rebel", 12],
+				["commoner", 20],
+				["monk", 2],
+				["ronin", 1]
+			],
+			traits: [
+				"restless",
+				"grim",
+				"weary",
+				"eager"
+			],
+			despise: [
+				"regal",
+				"vain",
+				"cocky"
+			]
+		},
+		monastic: {
+			count: 2,
+			size: 3,
+			label: "temple lands",
+			classes: [["monk", 8], ["commoner", 14]],
+			traits: [
+				"serene",
+				"monk",
+				"humble",
+				"calm"
+			],
+			despise: [
+				"menacing",
+				"vain",
+				"drunk"
+			]
+		},
+		bandits: {
+			count: 2,
+			size: 4,
+			label: "outlaw coast",
+			classes: [
+				["outlaw", 14],
+				["ronin", 3],
+				["commoner", 6]
+			],
+			traits: [
+				"menacing",
+				"cocky",
+				"brawler",
+				"drunk",
+				"twitchy"
+			],
+			despise: [
+				"soldier",
+				"regal",
+				"monk"
+			]
+		},
+		shinobi: {
+			count: 1,
+			size: 2,
+			label: "hidden villages",
+			classes: [["shinobi", 8], ["commoner", 10]],
+			traits: [
+				"shinobi",
+				"wary",
+				"nimble",
+				"shadow"
+			],
+			despise: [
+				"cocky",
+				"hummer",
+				"vain"
+			]
+		},
+		merchants: {
+			count: 2,
+			size: 4,
+			label: "merchant league",
+			classes: [
+				["commoner", 24],
+				["ronin", 3],
+				["ashigaru", 3]
+			],
+			traits: [
+				"cheerful",
+				"glancer",
+				"eager",
+				"vain"
+			],
+			despise: ["menacing", "brawler"]
+		},
+		fishers: {
+			count: 1,
+			size: 4,
+			label: "fishing folk",
+			classes: [["commoner", 24], ["ronin", 1]],
+			traits: [
+				"weary",
+				"cheerful",
+				"calm",
+				"hummer"
+			],
+			despise: ["regal", "cocky"]
+		},
+		miners: {
+			count: 1,
+			size: 4,
+			label: "mountain folk",
+			classes: [
+				["commoner", 22],
+				["ashigaru", 2],
+				["outlaw", 1]
+			],
+			traits: [
+				"heavy",
+				"lumbering",
+				"grim",
+				"stoic"
+			],
+			despise: ["vain", "nimble"]
+		}
+	};
+	const REL = {
+		"clan|clan": -.3,
+		"clan|court": .4,
+		"clan|rebels": -.8,
+		"clan|monastic": .2,
+		"clan|bandits": -.9,
+		"clan|shinobi": -.3,
+		"clan|merchants": .3,
+		"clan|fishers": .1,
+		"clan|miners": .1,
+		"court|rebels": -1,
+		"court|monastic": .3,
+		"court|bandits": -.9,
+		"court|shinobi": -.5,
+		"court|merchants": .4,
+		"court|fishers": .1,
+		"court|miners": .1,
+		"rebels|monastic": .3,
+		"rebels|bandits": -.4,
+		"rebels|shinobi": .1,
+		"rebels|merchants": -.2,
+		"rebels|fishers": .4,
+		"rebels|miners": .4,
+		"monastic|bandits": -.6,
+		"monastic|shinobi": -.2,
+		"monastic|merchants": .1,
+		"monastic|fishers": .3,
+		"monastic|miners": .2,
+		"bandits|shinobi": -.2,
+		"bandits|merchants": -.9,
+		"bandits|fishers": -.5,
+		"bandits|miners": -.3,
+		"shinobi|merchants": 0,
+		"shinobi|fishers": 0,
+		"shinobi|miners": 0,
+		"merchants|fishers": .3,
+		"merchants|miners": .3,
+		"fishers|miners": .2,
+		"court|court": .5,
+		"rebels|rebels": .4,
+		"monastic|monastic": .5,
+		"bandits|bandits": -.2,
+		"merchants|merchants": -.1,
+		"shinobi|shinobi": .3,
+		"fishers|fishers": .5,
+		"miners|miners": .5
+	};
+	const kindRelation = (a, b) => REL[a + "|" + b] ?? REL[b + "|" + a] ?? 0;
+	const ON = [
+		"ka",
+		"ta",
+		"na",
+		"ma",
+		"sa",
+		"ha",
+		"ya",
+		"ra",
+		"wa",
+		"ki",
+		"shi",
+		"chi",
+		"ni",
+		"mi",
+		"ri",
+		"ku",
+		"tsu",
+		"nu",
+		"mu",
+		"yu",
+		"ru",
+		"ko",
+		"to",
+		"no",
+		"mo",
+		"yo",
+		"ro",
+		"se",
+		"te",
+		"ne",
+		"me",
+		"re",
+		"ga",
+		"ji",
+		"zu",
+		"do",
+		"bo",
+		"go",
+		"hi",
+		"fu",
+		"ho",
+		"o",
+		"a",
+		"i",
+		"u",
+		"e"
+	];
+	const PLACE_END = [
+		"mura",
+		"hara",
+		"yama",
+		"kawa",
+		"zawa",
+		"saka",
+		"no",
+		"ta",
+		"shima",
+		"oka",
+		"tani",
+		"hama",
+		"mori",
+		"ishi",
+		"se"
+	];
+	const GIVEN_M = [
+		"rō",
+		"ta",
+		"suke",
+		"maru",
+		"zō",
+		"nobu",
+		"mune",
+		"hide",
+		"kichi",
+		"emon",
+		"bei",
+		"shirō",
+		"jirō"
+	];
+	const GIVEN_F = [
+		"ko",
+		"e",
+		"yo",
+		"no",
+		"mi",
+		"ne",
+		"ha",
+		"ka",
+		"ri",
+		"sa"
+	];
+	const cap = (s) => s[0].toUpperCase() + s.slice(1);
+	const placeName = (r) => cap(r.pick(ON) + r.pick(ON) + r.pick(PLACE_END));
+	const familyName = (r) => cap(r.pick(ON) + r.pick(ON) + r.pick([
+		"moto",
+		"da",
+		"yama",
+		"kawa",
+		"no",
+		"mura",
+		"saki",
+		"ta",
+		"hara",
+		"gawa"
+	]));
+	const givenName = (r, sex) => cap(r.pick(ON) + (sex === "f" ? r.pick(GIVEN_F) : r.pick(ON) + r.pick(GIVEN_M)));
+	//#endregion
+	//#region src/sim/actors.js
+	const nameOf = (a) => `${a.given} ${a.family}`;
+	function makeActor(L, r, o) {
+		const cls = CLASSES[o.cls], sex = o.sex || (r.chance(.5) ? "m" : "f");
+		const a = {
+			id: newId(L, "a"),
+			given: givenName(r, sex),
+			family: o.family || familyName(r),
+			sex,
+			born: L.hour - Math.round((o.age ?? 30) * HOURS_PER_YEAR) - r.int(0, HOURS_PER_YEAR - 1),
+			alive: true,
+			culture: o.culture,
+			cls: o.cls,
+			job: o.job || r.pick(cls.jobs),
+			rank: cls.rank,
+			home: o.home || null,
+			spouse: null,
+			parents: [],
+			children: [],
+			household: o.household || null,
+			weapon: r.weighted(cls.weapons),
+			traits: [],
+			karma: 0,
+			standing: {},
+			money: purse(r, o.cls),
+			holds: []
+		};
+		const kind = o.culture != null && L.cultures[o.culture] ? KINDS[L.cultures[o.culture].kind] : null;
+		if (kind) a.traits.push([r.pick(kind.traits), +r.range(.5, 1).toFixed(2)]);
+		if (r.chance(.4)) a.traits.push([r.pick([
+			"calm",
+			"nervous",
+			"cheerful",
+			"grim",
+			"lazy",
+			"eager",
+			"wary",
+			"proud",
+			"humble",
+			"weary"
+		]), +r.range(.3, .8).toFixed(2)]);
+		L.actors[a.id] = a;
+		return a;
+	}
+	function purse(r, cls) {
+		const m = {
+			royal: [
+				0,
+				0,
+				[20, 60]
+			],
+			noble: [
+				[500, 2e3],
+				[5, 30],
+				[2, 10]
+			],
+			retainer: [
+				[200, 900],
+				[0, 5],
+				0
+			],
+			ronin: [
+				[20, 400],
+				0,
+				0
+			],
+			ashigaru: [
+				[30, 200],
+				0,
+				0
+			],
+			monk: [
+				[0, 60],
+				0,
+				0
+			],
+			commoner: [
+				[30, 300],
+				0,
+				0
+			],
+			rebel: [
+				[10, 120],
+				0,
+				0
+			],
+			outlaw: [
+				[20, 500],
+				[0, 3],
+				0
+			],
+			shinobi: [
+				[100, 600],
+				[0, 4],
+				0
+			]
+		}[cls] || [
+			[0, 50],
+			0,
+			0
+		];
+		const v = (x) => Array.isArray(x) ? r.int(x[0], x[1]) : x;
+		return {
+			mon: v(m[0]),
+			silver: v(m[1]),
+			ryo: v(m[2])
+		};
+	}
+	function marry(a, b) {
+		a.spouse = b.id;
+		b.spouse = a.id;
+		b.family = a.sex === "m" ? a.family : b.family;
+		if (b.sex === "m") a.family = b.family;
+	}
+	function bear(L, r, mother, father, o = {}) {
+		const c = makeActor(L, r, {
+			cls: o.cls || father.cls,
+			culture: father.culture,
+			family: father.family,
+			home: father.home,
+			household: father.household,
+			age: o.age ?? 0,
+			job: o.job
+		});
+		c.parents = [father.id, mother.id];
+		father.children.push(c.id);
+		mother.children.push(c.id);
+		return c;
+	}
+	const HOUSES = {
+		town: 8,
+		village: 4
+	};
+	function populate(L) {
+		for (const z of L.zones) {
+			if (z.kind === "sea" || z.kind === "wild") continue;
+			const reg = L.regions[z.region], cult = L.cultures[reg.culture], kind = KINDS[cult.kind], r = rngFor(L.seed, "people", z.x, z.y), home = [z.x, z.y];
+			const commonCls = kind.classes.filter(([c]) => CLASSES[c].rank <= 3 && c !== "monk");
+			if (z.kind === "town" || z.kind === "village") {
+				if (z.kind === "town") {
+					const lordCls = cult.kind === "court" ? "royal" : cult.kind === "clan" ? "noble" : cult.kind === "monastic" ? "monk" : "commoner";
+					const lord = household(L, r, cult.id, lordCls, home, {
+						age: r.int(34, 60),
+						job: "lord",
+						kids: r.int(1, 4)
+					});
+					lord.lord = reg.id;
+					reg.lord = lord.id;
+				}
+				for (let i = 0; i < HOUSES[z.kind]; i++) household(L, r, cult.id, r.weighted(commonCls), home, { plot: `${z.x},${z.y}:${i + 1}` });
+			} else if (z.kind === "camp") {
+				const chief = makeActor(L, r, {
+					cls: "outlaw",
+					culture: cult.id,
+					home,
+					age: r.int(28, 50),
+					job: "bandit"
+				});
+				chief.chief = true;
+				z.holder = chief.id;
+				for (let i = 0; i < r.int(4, 7); i++) makeActor(L, r, {
+					cls: r.chance(.8) ? "outlaw" : "ronin",
+					culture: cult.id,
+					home,
+					age: r.int(17, 45),
+					household: chief.id
+				});
+			} else if (z.kind === "fort") for (let i = 0; i < r.int(5, 8); i++) makeActor(L, r, {
+				cls: r.chance(.4) ? "retainer" : "ashigaru",
+				culture: cult.id,
+				home,
+				age: r.int(18, 45),
+				sex: "m"
+			});
+			else if (z.kind === "shrine") for (let i = 0; i < r.int(1, 3); i++) makeActor(L, r, {
+				cls: "monk",
+				culture: cult.id,
+				home,
+				age: r.int(20, 70)
+			});
+		}
+		const r = rngFor(L.seed, "player");
+		const start = L.zones.filter((z) => z.kind === "village").sort((a, b) => Math.hypot(a.x - 50, a.y - 50) - Math.hypot(b.x - 50, b.y - 50))[0];
+		const p = makeActor(L, r, {
+			cls: "ronin",
+			culture: null,
+			home: null,
+			age: 28,
+			sex: "m",
+			job: "ronin"
+		});
+		p.weapon = "katana";
+		p.traits = [];
+		p.money = {
+			mon: 120,
+			silver: 0,
+			ryo: 0
+		};
+		p.at = [start.x, start.y];
+		L.player = p.id;
+	}
+	function household(L, r, culture, cls, home, o = {}) {
+		const sex = r.chance(.85) ? "m" : "f", head = makeActor(L, r, {
+			cls,
+			culture,
+			home,
+			sex,
+			age: o.age ?? r.int(22, 55),
+			job: o.job
+		});
+		head.household = head.id;
+		let spouse = null;
+		if (r.chance(.8)) {
+			spouse = makeActor(L, r, {
+				cls,
+				culture,
+				home,
+				sex: sex === "m" ? "f" : "m",
+				age: Math.max(18, ageish(L, head) + r.int(-6, 4)),
+				household: head.id
+			});
+			marry(head, spouse);
+		}
+		const kids = o.kids ?? r.int(0, 4);
+		for (let i = 0; i < kids && spouse; i++) {
+			const age = Math.max(0, ageish(L, head) - r.int(18, 35));
+			if (age <= 0 && i > 0) break;
+			bear(L, r, head.sex === "f" ? head : spouse, head.sex === "m" ? head : spouse, {
+				age,
+				cls
+			});
+		}
+		if (r.chance(.2)) {
+			const elder = makeActor(L, r, {
+				cls,
+				culture,
+				home,
+				family: head.family,
+				age: ageish(L, head) + r.int(20, 30),
+				household: head.id
+			});
+			head.parents.push(elder.id);
+			elder.children.push(head.id);
+		}
+		if (o.plot) {
+			L.plots[o.plot] = {
+				title: head.id,
+				holder: head.id
+			};
+			head.holds.push(o.plot);
+		}
+		return head;
+	}
+	const ageish = (L, a) => Math.floor((L.hour - a.born) / HOURS_PER_YEAR);
+	//#endregion
+	//#region src/sim/travel/kit.js
+	function people(L, pred, r, n) {
+		const out = [];
+		for (const id in L.actors) {
+			const a = L.actors[id];
+			if (a.alive && id !== L.player && pred(a)) out.push(a);
+		}
+		return r.shuffle(out).slice(0, n);
+	}
+	const homeRegion = (L, a) => a.home ? zoneAt(L, a.home[0], a.home[1])?.region : null;
+	const who = (a) => ({
+		id: a.id,
+		name: nameOf(a),
+		cls: a.cls,
+		weapon: a.weapon,
+		culture: a.culture,
+		job: a.job
+	});
+	function stranger(r, culture, cls, job) {
+		const sex = r.chance(.8) ? "m" : "f";
+		return {
+			id: null,
+			name: `${givenName(r, sex)} ${familyName(r)}`,
+			cls,
+			weapon: r.weighted(CLASSES[cls].weapons),
+			culture,
+			job: job || r.pick(CLASSES[cls].jobs)
+		};
+	}
+	const plural = (n, one, many) => n === 1 ? one : many;
+	const cultName = (L, c) => L.cultures[c]?.name || "no people";
+	function fight(L, sc, r, result, { lethal = true, edge = 0 } = {}) {
+		const foes = sc.who.filter((w) => w.fighter !== false), n = foes.length;
+		const won = result ? !!result.won : r.chance(Math.max(.25, Math.min(.95, .95 - n * .07 + edge)));
+		const slain = result ? result.slain || [] : won && lethal ? foes.filter((f) => f.id).map((f) => f.id) : [];
+		let mon = 0;
+		for (const id of slain) {
+			const a = L.actors[id];
+			if (a?.money) {
+				mon += a.money.mon;
+				a.money.mon = 0;
+			}
+		}
+		return {
+			foes: foes.map((f) => f.id || f.name),
+			lethal,
+			won,
+			slain,
+			mon
+		};
+	}
+	const beaten = (L, r) => ({
+		mon: -Math.floor((L.actors[L.player].money?.mon || 0) * .5),
+		hours: r.int(3, 8)
+	});
+	//#endregion
+	//#region src/sim/travel/scenes-road.js
+	const FIGHTERS = /* @__PURE__ */ new Set([
+		"retainer",
+		"ashigaru",
+		"rebel",
+		"outlaw",
+		"shinobi",
+		"ronin",
+		"monk"
+	]);
+	function campMen(L, c, r, n) {
+		let best = null, bd = 1e9;
+		for (const z of L.zones) if (z.kind === "camp" && z.region === c.region) {
+			const d = Math.abs(z.x - c.x) + Math.abs(z.y - c.y);
+			if (d < bd) {
+				bd = d;
+				best = z;
+			}
+		}
+		if (!best) return [];
+		return people(L, (a) => !a.chief && a.home && a.home[0] === best.x && a.home[1] === best.y && a.cls !== "commoner", r, n);
+	}
+	const ROAD_SCENES = {
+		ambush: {
+			make(L, c, r) {
+				const band = c.band, n = r.int(2, 4);
+				let men = band ? band.members.map((id) => L.actors[id]).filter((a) => a?.alive) : campMen(L, c, r, n);
+				const culture = band ? band.culture : c.culture.id;
+				if (!men.length) men = Array.from({ length: n }, () => stranger(r, culture, "outlaw", "bandit"));
+				else men = men.map(who);
+				const demand = Math.max(20, Math.round(c.mon * .35));
+				const choices = [
+					{
+						id: "fight",
+						label: "Draw"
+					},
+					{
+						id: "pay",
+						label: `Pay ${demand} mon`
+					},
+					{
+						id: "flee",
+						label: "Run for it"
+					}
+				];
+				if (c.karma < -.4) choices.push({
+					id: "talk",
+					label: "They know your name"
+				});
+				return {
+					title: "Ambush",
+					who: men,
+					choices,
+					data: {
+						demand,
+						band: band?.id || null,
+						outlaws: culture
+					},
+					text: `${men.length} ${plural(men.length, "man", "men")} of ${cultName(L, culture)} ${c.night ? "with torches " : ""}step out ${c.road ? "onto the road" : "of the " + c.z.biome}. "${demand} mon, ronin, and you walk on."`
+				};
+			},
+			resolve(L, sc, ch, r, result) {
+				if (ch === "pay") {
+					const mon = L.actors[L.player].money.mon;
+					if (mon >= sc.data.demand) return {
+						text: "They count it twice and melt back off the road.",
+						mon: -sc.data.demand,
+						events: [["travel.robbed", {
+							mon: sc.data.demand,
+							culture: sc.data.outlaws
+						}]]
+					};
+					return {
+						text: "Not enough. They take what there is, and the rest out of your ribs.",
+						mon: -mon,
+						hours: r.int(2, 5),
+						events: [["travel.robbed", {
+							mon,
+							culture: sc.data.outlaws
+						}]]
+					};
+				}
+				if (ch === "talk") return {
+					text: "\"Ah. You.\" They step aside. One of them grins and names a camp where a man like you would eat well.",
+					events: [["travel.parley", { culture: sc.data.outlaws }]]
+				};
+				if (ch === "flee") {
+					if (r.chance(sc.zone && zoneAt(L, ...sc.zone).road ? .45 : .6)) return {
+						text: "You are off the road and through the brush before they close. An hour lost, finding the way back.",
+						hours: 1
+					};
+					ch = "fight";
+				}
+				const f = fight(L, sc, r, result, { edge: ch === "flee" ? -.1 : 0 });
+				if (!f.won) return {
+					text: "Too many. You wake in the ditch, your purse lighter.",
+					fight: f,
+					...beaten(L, r),
+					events: [["travel.beaten", { culture: sc.data.outlaws }]]
+				};
+				return {
+					text: `The road is quiet again.${f.slain.length ? ` ${f.slain.length} dead; their purses hold ${f.mon} mon.` : ""}`,
+					fight: f,
+					mon: f.mon,
+					deeds: [{
+						deed: "killedOutlaws",
+						karma: f.slain.length,
+						standing: { [sc.culture]: .02 }
+					}]
+				};
+			}
+		},
+		raiders: {
+			make(L, c, r) {
+				const n = r.int(3, 5);
+				let men = people(L, (a) => a.culture === c.enemy && FIGHTERS.has(a.cls), r, n).map(who);
+				if (men.length < 2) men = Array.from({ length: n }, () => stranger(r, c.enemy, "ashigaru"));
+				const locals = people(L, (a) => a.culture === c.culture.id && a.cls === "commoner" && homeRegion(L, a) === c.region, r, r.int(1, 3)).map((w) => ({
+					...w,
+					fighter: false
+				}));
+				return {
+					title: "War party",
+					who: [...men, ...locals],
+					data: {
+						raiders: c.enemy,
+						victims: locals.map((w) => w.id)
+					},
+					choices: [
+						{
+							id: "defend",
+							label: "Cut in"
+						},
+						{
+							id: "aside",
+							label: "Stand aside"
+						},
+						{
+							id: "join",
+							label: "Take a share"
+						}
+					],
+					text: `A war party of ${cultName(L, c.enemy)} has stopped a cart on the road.${locals.length ? ` ${locals.map((l) => l.name).join(", ")} of ${c.culture.name} ${plural(locals.length, "is", "are")} on ${plural(locals.length, "his", "their")} knees.` : ""}`
+				};
+			},
+			resolve(L, sc, ch, r, result) {
+				const raiders = sc.data.raiders, here = sc.culture, victims = sc.data.victims.filter(Boolean);
+				if (ch === "defend") {
+					const f = fight(L, sc, r, result);
+					if (!f.won) return {
+						text: "They leave you for dead beside the cart.",
+						fight: f,
+						...beaten(L, r),
+						dead: victims.slice(0, 1).map((id) => ({
+							id,
+							by: raiders
+						}))
+					};
+					return {
+						text: "The raiders are dead or gone. The people from the cart will not stop bowing.",
+						fight: f,
+						mon: f.mon,
+						deeds: [{
+							deed: "defended",
+							karma: 4,
+							standing: {
+								[here]: .1,
+								[raiders]: -.1
+							},
+							witnesses: victims
+						}],
+						events: [["travel.rescued", {
+							actors: victims,
+							from: raiders
+						}]]
+					};
+				}
+				const dead = victims.filter(() => r.chance(.5)).map((id) => ({
+					id,
+					by: raiders
+				}));
+				if (ch === "join") return {
+					text: "You take your share of the cart. Nobody from it will forget your hat.",
+					mon: r.int(20, 80),
+					dead,
+					deeds: [{
+						deed: "raided",
+						karma: -8,
+						standing: {
+							[here]: -.25,
+							[raiders]: .08
+						},
+						witnesses: victims
+					}],
+					events: [["travel.raid", {
+						raiders,
+						region: sc.region,
+						with: L.player
+					}]]
+				};
+				return {
+					text: "You walk on. Behind you, it ends the way these things end.",
+					dead,
+					deeds: [{
+						deed: "passedBy",
+						karma: -1,
+						standing: { [here]: -.03 },
+						witnesses: victims
+					}],
+					events: [["travel.raid", {
+						raiders,
+						region: sc.region
+					}]]
+				};
+			}
+		},
+		hunters: {
+			make(L, c, r) {
+				const cult = c.hunted.includes(c.culture.id) ? c.culture.id : r.pick(c.hunted), bounty = Math.round(L.sys.travel.heat[cult] || 0), n = r.int(2, 3);
+				let men = people(L, (a) => a.culture === cult && a.job === "bounty hunter", r, n).map(who);
+				if (!men.length) men = Array.from({ length: n }, () => stranger(r, cult, "ronin", "bounty hunter"));
+				const choices = [{
+					id: "fight",
+					label: "Draw"
+				}, {
+					id: "run",
+					label: "Run"
+				}];
+				if (c.mon >= bounty) choices.splice(1, 0, {
+					id: "pay",
+					label: `Pay the bounty (${bounty} mon)`
+				});
+				return {
+					title: "Bounty hunters",
+					who: men,
+					choices,
+					data: {
+						hunters: cult,
+						bounty
+					},
+					text: `${men.length === 1 ? "A bounty hunter" : men.length + " bounty hunters"} of ${cultName(L, cult)}. The paper ${men.length === 1 ? "he holds" : "one of them holds"} up has your hat drawn on it, and ${bounty} mon.`
+				};
+			},
+			resolve(L, sc, ch, r, result) {
+				const cult = sc.data.hunters;
+				if (ch === "pay") return {
+					text: "He counts it, tears the paper in half, and hands you one half.",
+					mon: -sc.data.bounty,
+					events: [["travel.bountyPaid", {
+						culture: cult,
+						mon: sc.data.bounty
+					}]]
+				};
+				if (ch === "run" && r.chance(.4)) return {
+					text: "You lose them in the trees. Two hours to find the road again.",
+					hours: 2
+				};
+				const f = fight(L, sc, r, result, { edge: ch === "run" ? -.1 : 0 });
+				if (!f.won) return {
+					text: "They drag you as far as the next post before you slip the rope. Your purse stays with them.",
+					fight: f,
+					...beaten(L, r),
+					events: [["travel.caught", { culture: cult }]]
+				};
+				return {
+					text: "More paper will come.",
+					fight: f,
+					mon: f.mon,
+					deeds: [{
+						deed: "killedHunters",
+						karma: -2,
+						standing: { [cult]: -.1 }
+					}]
+				};
+			}
+		},
+		patrol: {
+			make(L, c, r) {
+				const n = r.int(2, 4), wanted = c.standing < -.3 || c.heatHere > 0;
+				let men = people(L, (a) => a.culture === c.culture.id && (a.cls === "ashigaru" || a.cls === "retainer") && homeRegion(L, a) === c.region, r, n).map(who);
+				if (!men.length) men = Array.from({ length: n }, () => stranger(r, c.culture.id, "ashigaru", "guard"));
+				const toll = r.int(1, 3) * 10, bribe = r.int(5, 15) * 10;
+				const choices = wanted ? [
+					{
+						id: "surrender",
+						label: "Go quietly"
+					},
+					{
+						id: "bribe",
+						label: `Bribe (${bribe} mon)`
+					},
+					{
+						id: "fight",
+						label: "Draw"
+					},
+					{
+						id: "run",
+						label: "Run"
+					}
+				] : [
+					{
+						id: "toll",
+						label: `Pay the toll (${toll} mon)`
+					},
+					{
+						id: "back",
+						label: "Turn back, go round"
+					},
+					{
+						id: "fight",
+						label: "Draw"
+					}
+				];
+				return {
+					title: wanted ? "They know your face" : "Checkpoint",
+					who: men,
+					choices,
+					data: {
+						toll,
+						bribe,
+						wanted
+					},
+					text: wanted ? `Guards of ${c.culture.name}. The one in front has seen your face before. "Hands where I can see them."` : `A barrier across the road, and guards of ${c.culture.name}. "${toll} mon to pass, traveller."`
+				};
+			},
+			resolve(L, sc, ch, r, result) {
+				const here = sc.culture, mon = L.actors[L.player].money.mon;
+				if (ch === "toll") return mon >= sc.data.toll ? {
+					text: "The barrier lifts.",
+					mon: -sc.data.toll,
+					events: [["travel.toll", {
+						culture: here,
+						mon: sc.data.toll
+					}]]
+				} : {
+					text: "Not enough. You go round.",
+					hours: r.int(2, 4)
+				};
+				if (ch === "back") return {
+					text: "You go round through the fields. It costs the afternoon.",
+					hours: r.int(2, 4)
+				};
+				if (ch === "surrender") return {
+					text: "A night in a cell, a magistrate in the morning.",
+					hours: 12,
+					events: [["travel.surrender", {
+						culture: here,
+						region: sc.region
+					}]]
+				};
+				if (ch === "bribe") {
+					if (mon >= sc.data.bribe && r.chance(.65)) return {
+						text: "The money vanishes into a sleeve. Nobody saw anybody.",
+						mon: -sc.data.bribe,
+						deeds: [{
+							deed: "bribed",
+							karma: -1
+						}]
+					};
+					return {
+						text: "The captain does not take bribes. He takes you.",
+						hours: 12,
+						events: [["travel.surrender", {
+							culture: here,
+							region: sc.region
+						}]]
+					};
+				}
+				if (ch === "run" && r.chance(.45)) return {
+					text: "Shouts behind you, then nothing.",
+					hours: 1,
+					deeds: [{
+						deed: "fledGuards",
+						karma: 0,
+						standing: { [here]: -.05 }
+					}]
+				};
+				const f = fight(L, sc, r, result);
+				if (!f.won) return {
+					text: "They beat you and throw you out of their land.",
+					fight: f,
+					...beaten(L, r),
+					events: [["travel.surrender", {
+						culture: here,
+						region: sc.region
+					}]]
+				};
+				return {
+					text: "The barrier is down and so are its guards.",
+					fight: f,
+					mon: f.mon,
+					deeds: [{
+						deed: "killedGuards",
+						karma: -6,
+						standing: { [here]: -.3 }
+					}]
+				};
+			}
+		},
+		duelist: {
+			make(L, c, r) {
+				const d = people(L, (a) => a.cls === "ronin" && homeRegion(L, a) === c.region, r, 1).map(who)[0] || stranger(r, c.culture.id, "ronin", "ronin");
+				return {
+					title: "A duelist",
+					who: [d],
+					data: {},
+					choices: [
+						{
+							id: "first",
+							label: "To first blood"
+						},
+						{
+							id: "death",
+							label: "To the death"
+						},
+						{
+							id: "decline",
+							label: "Bow and walk on"
+						}
+					],
+					text: `${d.name}, masterless, with a ${d.weapon}, stands in the road. "They say you are good. Show me."`
+				};
+			},
+			resolve(L, sc, ch, r, result) {
+				const d = sc.who[0];
+				if (ch === "decline") return { text: `${d.name.split(" ")[0]} spits, and lets you pass.` };
+				const f = fight(L, sc, r, result, {
+					lethal: ch === "death",
+					edge: -.15
+				});
+				const ev = [["travel.duel", {
+					foe: d.id || d.name,
+					won: f.won,
+					lethal: ch === "death"
+				}]];
+				if (!f.won) return ch === "death" ? {
+					text: "You go down. When you wake he is gone, and so is your purse.",
+					fight: f,
+					...beaten(L, r),
+					events: ev
+				} : {
+					text: "A line opens on your forearm. He bows, satisfied, and walks off.",
+					fight: f,
+					events: ev
+				};
+				if (ch === "death") return {
+					text: `${d.name} folds onto the road. His ${d.weapon} is yours, if you want it.`,
+					fight: f,
+					mon: f.mon,
+					loot: [{
+						item: d.weapon,
+						n: 1
+					}],
+					events: ev
+				};
+				return {
+					text: "Your blade stops a hair from his throat. He laughs, bows low, and tells you which roads are bad.",
+					fight: f,
+					events: ev,
+					news: true
+				};
+			}
+		}
+	};
+	//#endregion
+	//#region src/sim/travel/scenes-meet.js
+	const RICE = 30;
+	const riceHere = (L, region) => {
+		const p = L.sys.economy?.prices?.[region]?.rice;
+		return typeof p === "number" && p > 0 ? Math.round(p) : RICE;
+	};
+	function nearestPlace(L, x, y, not) {
+		let best = null, bd = 1e9;
+		for (let R = 1; R <= 12 && !best; R++) for (let yy = y - R; yy <= y + R; yy++) for (let xx = x - R; xx <= x + R; xx++) {
+			const z = zoneAt(L, xx, yy);
+			if (!z || z.kind !== "town" && z.kind !== "village" || not && xx === x && yy === y) continue;
+			const d = Math.abs(xx - x) + Math.abs(yy - y);
+			if (d < bd) {
+				bd = d;
+				best = z;
+			}
+		}
+		return best;
+	}
+	const MEET_SCENES = {
+		merchant: {
+			make(L, c, r) {
+				const m = people(L, (a) => a.job === "merchant" && homeRegion(L, a) === c.region, r, 1).map(who)[0] || stranger(r, c.culture.id, "commoner", "merchant");
+				const to = nearestPlace(L, c.x, c.y, true), price = riceHere(L, c.region), pay = r.int(4, 12) * 10;
+				const choices = [
+					{
+						id: "buy",
+						label: `Buy rice (${price} mon)`
+					},
+					{
+						id: "rob",
+						label: "Rob him"
+					},
+					{
+						id: "pass",
+						label: "Nod and pass"
+					}
+				];
+				if (to && !L.sys.travel.escort) choices.splice(1, 0, {
+					id: "escort",
+					label: `Escort him to ${to.name} (${pay} mon)`
+				});
+				return {
+					title: "A merchant",
+					who: [{
+						...m,
+						fighter: false
+					}],
+					choices,
+					data: {
+						price,
+						pay,
+						to: to ? [to.x, to.y] : null,
+						toName: to?.name
+					},
+					text: `${m.name}, a merchant with a pack-horse${to ? `, bound for ${to.name}` : ""}. He eyes your sword, then your hat, and decides to smile.`
+				};
+			},
+			resolve(L, sc, ch, r) {
+				const m = sc.who[0];
+				if (ch === "buy") return L.actors[L.player].money.mon >= sc.data.price ? {
+					text: "Rice wrapped in a leaf, still warm from somewhere.",
+					mon: -sc.data.price,
+					loot: [{
+						item: "rice",
+						n: 1
+					}],
+					events: [["travel.trade", {
+						merchant: m.id,
+						mon: sc.data.price,
+						item: "rice"
+					}]]
+				} : { text: "Your purse says no." };
+				if (ch === "escort") {
+					L.sys.travel.escort = {
+						who: m.id || m.name,
+						name: m.name,
+						to: sc.data.to,
+						toName: sc.data.toName,
+						pay: sc.data.pay,
+						until: L.hour + 72
+					};
+					return {
+						text: `He walks beside you now, talking about prices. ${sc.data.toName} within three days.`,
+						events: [["travel.escort", {
+							merchant: m.id,
+							to: sc.data.to,
+							pay: sc.data.pay
+						}]]
+					};
+				}
+				if (ch === "rob") {
+					const a = m.id && L.actors[m.id], mon = a ? a.money.mon : r.int(40, 200);
+					if (a) a.money.mon = 0;
+					return {
+						text: `He hands it over with shaking hands: ${mon} mon.`,
+						mon,
+						deeds: [{
+							deed: "robbedMerchant",
+							karma: -6,
+							standing: { [sc.culture]: -.1 },
+							witnesses: m.id ? [m.id] : []
+						}]
+					};
+				}
+				return { text: "He bows you past." };
+			}
+		},
+		pilgrims: {
+			make(L, c, r) {
+				const n = r.int(2, 5), shrine = L.zones.find((z) => z.kind === "shrine" && z.region === c.region);
+				return {
+					title: "Pilgrims",
+					who: Array.from({ length: n }, (_, i) => ({
+						...i === 0 ? stranger(r, c.culture.id, "monk", "monk") : stranger(r, c.culture.id, "commoner"),
+						fighter: false
+					})),
+					data: { shrine: shrine?.name || null },
+					choices: [
+						{
+							id: "alms",
+							label: "Give 10 mon"
+						},
+						{
+							id: "walk",
+							label: "Walk with them"
+						},
+						{
+							id: "news",
+							label: "Ask for news"
+						},
+						{
+							id: "rob",
+							label: "Rob them"
+						}
+					],
+					text: `${n} pilgrims in straw sandals${shrine ? `, on their way to ${shrine.name}` : ""}. The monk at the front rings a small bell at every step.`
+				};
+			},
+			resolve(L, sc, ch, r) {
+				if (ch === "alms") return L.actors[L.player].money.mon >= 10 ? {
+					text: "The monk says a sutra over your hat.",
+					mon: -10,
+					deeds: [{
+						deed: "alms",
+						karma: 2,
+						standing: { [sc.culture]: .02 }
+					}]
+				} : { text: "You have nothing to give. They bless you anyway." };
+				if (ch === "walk") {
+					L.sys.travel.safeUntil = L.hour + 6;
+					return {
+						text: "Nobody ambushes a party of pilgrims with a ronin in it. Slower, but quiet: the next few hours are safer.",
+						hours: 1
+					};
+				}
+				if (ch === "news") return {
+					text: "The monk tells you what the road has told him.",
+					news: true
+				};
+				return {
+					text: "They have almost nothing. You take it.",
+					mon: r.int(5, 25),
+					deeds: [{
+						deed: "robbedPilgrims",
+						karma: -10,
+						standing: { [sc.culture]: -.15 }
+					}]
+				};
+			}
+		},
+		wounded: {
+			make(L, c, r) {
+				const w = stranger(r, c.culture.id, r.chance(.5) ? "commoner" : "ronin");
+				const trap = r.chance(c.danger * .35);
+				return {
+					title: "A wounded stranger",
+					who: [{
+						...w,
+						fighter: false
+					}],
+					data: { trap },
+					choices: [
+						{
+							id: "help",
+							label: "Help him"
+						},
+						{
+							id: "leave",
+							label: "Leave him"
+						},
+						{
+							id: "purse",
+							label: "Take his purse"
+						}
+					],
+					text: `${w.name} is sitting against a tree with his hand pressed to his side. "Please. They took everything. Just to the next village."`
+				};
+			},
+			resolve(L, sc, ch, r) {
+				if (sc.data.trap && ch !== "leave") return {
+					text: "He stops groaning. Men step out of the trees behind you.",
+					then: "ambush"
+				};
+				if (ch === "help") return {
+					text: "You bind the wound and walk him to the edge of the next village. He tells everyone who will listen.",
+					hours: 2,
+					deeds: [{
+						deed: "helpedStranger",
+						karma: 5,
+						standing: { [sc.culture]: .05 }
+					}]
+				};
+				if (ch === "purse") return {
+					text: "There were a few coins left after all.",
+					mon: r.int(3, 20),
+					deeds: [{
+						deed: "robbedWounded",
+						karma: -8
+					}]
+				};
+				return {
+					text: "You walk on. His voice follows you for a while.",
+					deeds: [{
+						deed: "passedBy",
+						karma: -1
+					}]
+				};
+			}
+		},
+		funeral: {
+			make(L, c, r) {
+				const since = L.hour - 168, dead = Object.values(L.actors).find((a) => !a.alive && a.died > since && a.home && homeRegion(L, a) === c.region);
+				const name = dead ? nameOf(dead) : stranger(r, c.culture.id, "commoner").name, n = r.int(4, 8);
+				return {
+					title: "A funeral",
+					who: Array.from({ length: n }, () => ({
+						...stranger(r, c.culture.id, "commoner"),
+						fighter: false
+					})),
+					data: {
+						dead: dead?.id || null,
+						name
+					},
+					choices: [
+						{
+							id: "bow",
+							label: "Step aside and bow"
+						},
+						{
+							id: "pray",
+							label: "Walk with them and pray"
+						},
+						{
+							id: "push",
+							label: "Push through"
+						}
+					],
+					text: `A procession ${c.night ? "by lantern light" : "in white"} comes down the road: ${n} mourners and a closed box on poles. They are burying ${name}.`
+				};
+			},
+			resolve(L, sc, ch) {
+				if (ch === "pray") return {
+					text: "An hour at the graveside. The widow gives you a rice ball for the road.",
+					hours: 1,
+					loot: [{
+						item: "rice",
+						n: 1
+					}],
+					deeds: [{
+						deed: "mourned",
+						karma: 2,
+						standing: { [sc.culture]: .05 }
+					}]
+				};
+				if (ch === "push") return {
+					text: "They part for your sword, and stare after it.",
+					deeds: [{
+						deed: "disrespect",
+						karma: -2,
+						standing: { [sc.culture]: -.05 }
+					}]
+				};
+				return {
+					text: "The box goes by. Someone in the line nods to you.",
+					deeds: [{
+						deed: "bowed",
+						karma: 1
+					}]
+				};
+			}
+		},
+		horse: {
+			make(L, c, r) {
+				const home = nearestPlace(L, c.x, c.y);
+				return {
+					title: "A runaway horse",
+					who: [],
+					data: {
+						home: home ? [home.x, home.y] : null,
+						homeName: home?.name,
+						spooked: !!c.band
+					},
+					choices: [{
+						id: "catch",
+						label: "Catch it"
+					}, {
+						id: "let",
+						label: "Let it run"
+					}],
+					text: `A saddled horse with no rider comes down the road at a gallop${c.band ? ", eyes white, as if something back there frightened it" : ""}.`
+				};
+			},
+			resolve(L, sc, ch, r) {
+				if (ch === "let") return { text: sc.data.spooked ? "It thunders past. Whatever it ran from is still up ahead." : "It thunders past and is gone." };
+				if (ch === "return") return {
+					text: "The owner nearly weeps, and presses coins on you.",
+					hours: 1,
+					mon: r.int(3, 8) * 10,
+					deeds: [{
+						deed: "returnedHorse",
+						karma: 3,
+						standing: { [sc.culture]: .04 }
+					}]
+				};
+				if (ch === "keep") return {
+					text: "A horse is worth a great deal to a man on the road. And to its owner.",
+					loot: [{
+						item: "horse",
+						n: 1
+					}],
+					deeds: [{
+						deed: "keptHorse",
+						karma: -3
+					}]
+				};
+				if (!r.chance(.6)) return { text: "You grab for the reins and eat dust instead." };
+				return {
+					text: "You catch the reins and it drags you ten paces before it stops. A good horse.",
+					again: [{
+						id: "return",
+						label: `Take it back to ${sc.data.homeName || "its owner"}`
+					}, {
+						id: "keep",
+						label: "Keep it"
+					}]
+				};
+			}
+		},
+		weather: {
+			make(L, c, r) {
+				const turn = {
+					spring: ["rain", "fog"],
+					summer: ["rain", "wind"],
+					autumn: [
+						"fog",
+						"rain",
+						"wind"
+					],
+					winter: [
+						"snow",
+						"wind",
+						"fog"
+					]
+				}[c.season];
+				const w = r.pick(turn.filter((t) => t !== c.weather)), s = L.sys.travel.regions[c.region];
+				s.weather = w;
+				s.wxDays = r.int(1, 2);
+				const text = {
+					rain: "The sky goes the colour of slate, and then the rain comes sideways.",
+					fog: "Fog comes up out of the ground until the road ends ten paces ahead of you.",
+					snow: "Snow begins, soft at first, then thick enough to fill your hat brim.",
+					wind: "Wind comes down off the hills and leans on you like a hand."
+				}[w];
+				return {
+					title: "The weather turns",
+					who: [],
+					data: { weather: w },
+					text,
+					events: [["travel.weather", {
+						region: c.region,
+						weather: w
+					}]],
+					choices: [{
+						id: "press",
+						label: "Press on"
+					}, {
+						id: "shelter",
+						label: "Find shelter and wait"
+					}]
+				};
+			},
+			resolve(L, sc, ch, r) {
+				const w = sc.data.weather;
+				if (ch === "shelter") return {
+					text: "Under a farmer's eaves, you wait it out.",
+					hours: r.int(2, 4)
+				};
+				if (w === "fog" && r.chance(.4)) return {
+					text: "You walk for an hour and come back to the same stone. The fog lifts a little; you find the road.",
+					hours: r.int(1, 3)
+				};
+				if (w === "snow") return {
+					text: "Slow going. Your feet stop hurting after a while, which is worse.",
+					hours: 2,
+					hurt: .1
+				};
+				return {
+					text: "Wet through, you go on.",
+					hours: w === "rain" ? 1 : 0
+				};
+			}
+		},
+		storm: {
+			make(L, c, r) {
+				const k = c.storm.k, fx = stormEffects(k), heavy = k > .55;
+				return {
+					title: "A glitch storm",
+					who: [],
+					data: {
+						k: +k.toFixed(2),
+						storm: c.storm.storm.id,
+						fx
+					},
+					choices: [
+						{
+							id: "through",
+							label: "Walk through it"
+						},
+						{
+							id: "wait",
+							label: "Wait at its edge"
+						},
+						{
+							id: "round",
+							label: "Go round"
+						}
+					],
+					text: heavy ? "The road ahead is torn. Strips of the world slide sideways and back, the light stutters, and a white seam opens in the air and closes again without a sound." : "At the edge of sight, a strip of the hills slides a hand's width sideways and snaps back. Then another. The air tastes of copper."
+				};
+			},
+			resolve(L, sc, ch, r) {
+				const fx = sc.data.fx;
+				if (ch === "wait") return {
+					text: "You sit with your back to a stone while the world flickers past. When it has gone, the grass is wrong for a while.",
+					hours: r.int(4, 10)
+				};
+				if (ch === "round") return {
+					text: "A long way round, keeping the tear always on your left.",
+					hours: r.int(3, 6)
+				};
+				const out = {
+					text: "You walk into it. Your blade hums in its sheath; your own edges keep trying to be somewhere else.",
+					loot: [],
+					events: [["storm.crossed", {
+						storm: sc.data.storm,
+						k: sc.data.k
+					}]]
+				};
+				if (r.chance(fx.loot)) {
+					const n = r.int(1, 3);
+					out.loot.push({
+						item: "shard",
+						n
+					});
+					out.text += ` ${n} glitch ${plural(n, "shard lies", "shards lie")} in the road, humming.`;
+				}
+				if (r.chance(fx.lostTime)) {
+					out.hours = r.int(3, 18);
+					out.text += ` You come out the other side and the sun is in the wrong place. ${out.hours} hours, gone.`;
+					out.events.push(["storm.lostTime", {
+						storm: sc.data.storm,
+						player: true,
+						hours: out.hours
+					}]);
+				}
+				return out;
+			}
+		},
+		slip: {
+			make(L, c, r) {
+				const h = r.int(2, 12);
+				return {
+					title: "Lost time",
+					who: [],
+					data: { hours: h },
+					choices: [{
+						id: "on",
+						label: "Go on"
+					}],
+					text: `A step, a flicker, and the light has changed. Your shadow points the other way. ${h} hours are gone, and you remember none of them.`
+				};
+			},
+			resolve: (L, sc) => ({
+				text: "You go on.",
+				hours: sc.data.hours,
+				events: [["storm.lostTime", {
+					player: true,
+					hours: sc.data.hours
+				}]]
+			})
+		}
+	};
+	//#endregion
+	//#region src/sim/travel/index.js
+	const SCENES = {
+		...ROAD_SCENES,
+		...MEET_SCENES,
+		arrived: {
+			make: (L, c) => {
+				const e = L.sys.travel.escort;
+				return {
+					title: "Arrived",
+					who: [],
+					data: {
+						pay: e.pay,
+						who: e.who
+					},
+					choices: [{
+						id: "ok",
+						label: "Take the pay"
+					}],
+					text: `${e.name} counts out ${e.pay} mon at the gate of ${e.toName}, and means every one of them.`
+				};
+			},
+			resolve: (L, sc) => (L.sys.travel.escort = null, {
+				text: "The merchant goes in to sell his goods.",
+				mon: sc.data.pay,
+				events: [["travel.escorted", {
+					merchant: sc.data.who,
+					mon: sc.data.pay
+				}]]
+			})
+		}
+	};
+	system({
+		id: "travel",
+		order: 60,
+		init(L) {
+			const st = L.sys.travel;
+			Object.assign(st, {
+				v: 1,
+				storms: [],
+				past: [],
+				dark: {},
+				residue: {},
+				heat: {},
+				scene: null,
+				escort: null,
+				safeUntil: 0,
+				quiet: 0,
+				lastK: 0,
+				steps: 0,
+				met: {}
+			});
+			initRoads(L, st);
+		},
+		onDay(L, cal, r) {
+			const st = L.sys.travel;
+			roadsDay(L, st, cal, r);
+			stormsDay(L, st, cal, r);
+			if (st.escort && L.hour > st.escort.until) {
+				emit(L, "travel.escortFailed", { merchant: st.escort.who });
+				st.escort = null;
+			}
+		},
+		onSeason(L) {
+			countCamps(L, L.sys.travel);
+		}
+	});
+	on("econ.famine", (e, L) => {
+		const s = L.sys.travel?.regions[e.region];
+		if (s) s.famine = 28;
+	});
+	on("crime.bounty", (e, L) => {
+		const st = L.sys.travel;
+		if (!st || e.actor !== L.player || e.culture == null) return;
+		st.heat[e.culture] = (st.heat[e.culture] || 0) + (e.mon ?? e.amount ?? 50);
+	});
+	on("crime.bountyCleared", (e, L) => {
+		const st = L.sys.travel;
+		if (st && e.actor === L.player) delete st.heat[e.culture];
+	});
+	on("travel.bountyPaid", (e, L) => {
+		delete L.sys.travel.heat[e.culture];
+	});
+	function enterZone(L, x, y) {
+		const st = L.sys.travel;
+		if (st.scene) return st.scene;
+		const r = rngFor(L.seed, "travel", L.hour, x, y, st.steps++), c = context(L, x, y), k = c.storm.k;
+		let type = null;
+		if (st.escort && st.escort.to[0] === x && st.escort.to[1] === y) type = "arrived";
+		else if (k > TRAVEL.stormFelt) type = st.lastK <= TRAVEL.stormFelt ? "storm" : r.chance(stormEffects(k).lostTime) ? "slip" : null;
+		st.lastK = k;
+		if (!type) {
+			if (st.quiet > 0) {
+				st.quiet--;
+				return null;
+			}
+			if (!r.chance(chanceAt(c))) return null;
+			type = pickType(c, r);
+		}
+		return type ? open(L, type, c, r) : null;
+	}
+	function openScene(L, type, x, y) {
+		const st = L.sys.travel;
+		if (st.scene) return st.scene;
+		if (!SCENES[type]) throw new Error(`no travel scene "${type}"`);
+		const c = context(L, x, y);
+		if (type === "storm" && !c.storm.storm) return null;
+		if (type === "raiders" && c.enemy == null) return null;
+		if (type === "hunters" && !c.hunted.length) return null;
+		return open(L, type, c, rngFor(L.seed, "travelo", L.hour, x, y, st.steps++));
+	}
+	function open(L, type, c, r) {
+		const st = L.sys.travel, made = SCENES[type].make(L, c, r), events = made.events || [];
+		delete made.events;
+		const sc = {
+			id: newId(L, "enc"),
+			type,
+			h: L.hour,
+			zone: [c.x, c.y],
+			region: c.region,
+			culture: c.culture.id,
+			...made
+		};
+		st.scene = sc;
+		st.quiet = TRAVEL.gap;
+		st.met[type] = (st.met[type] || 0) + 1;
+		emit(L, "travel.encounter", {
+			enc: sc.id,
+			encounter: type,
+			zone: sc.zone,
+			region: sc.region,
+			culture: sc.culture
+		});
+		for (const [t, d] of events) emit(L, t, {
+			zone: sc.zone,
+			...d
+		});
+		return sc;
+	}
+	function choose(L, choiceId, result) {
+		const st = L.sys.travel, sc = st.scene;
+		if (!sc || !sc.choices.some((ch) => ch.id === choiceId)) return null;
+		const r = rngFor(L.seed, "travelc", sc.id, choiceId), out = SCENES[sc.type].resolve(L, sc, choiceId, r, result);
+		apply(L, sc, out);
+		if (out.again) {
+			sc.choices = out.again;
+			return out;
+		}
+		st.scene = null;
+		if (out.news) out.text += " " + news(L, sc.zone);
+		emit(L, "travel.resolved", {
+			enc: sc.id,
+			encounter: sc.type,
+			choice: choiceId,
+			zone: sc.zone,
+			region: sc.region
+		});
+		if (out.then) out.next = open(L, out.then, context(L, ...sc.zone), r);
+		return out;
+	}
+	function apply(L, sc, out) {
+		const p = L.actors[L.player], at = {
+			zone: sc.zone,
+			region: sc.region,
+			enc: sc.id,
+			encounter: sc.type
+		};
+		if (out.mon) p.money.mon = Math.max(0, p.money.mon + out.mon);
+		for (const id of out.fight?.slain || []) dead(L, id, L.player, sc.zone);
+		for (const d of out.dead || []) dead(L, d.id, d.by, sc.zone);
+		if (out.fight) emit(L, "travel.fight", {
+			...at,
+			encounter: sc.type,
+			won: out.fight.won,
+			foes: out.fight.foes,
+			slain: out.fight.slain
+		});
+		for (const d of out.deeds || []) emit(L, "travel.deed", {
+			...at,
+			witnesses: [],
+			standing: {},
+			...d
+		});
+		for (const l of out.loot || []) emit(L, "travel.loot", {
+			...at,
+			...l
+		});
+		if (out.hurt) emit(L, "travel.hurt", {
+			...at,
+			amount: out.hurt
+		});
+		for (const [t, d] of out.events || []) emit(L, t, {
+			...at,
+			...d
+		});
+	}
+	function dead(L, id, by, zone) {
+		const a = L.actors[id];
+		if (!a || !a.alive) return;
+		a.alive = false;
+		a.died = L.hour;
+		emit(L, "travel.slain", {
+			actor: id,
+			by,
+			zone,
+			culture: a.culture
+		});
+	}
+	const DIR = [
+		"east",
+		"south-east",
+		"south",
+		"south-west",
+		"west",
+		"north-west",
+		"north",
+		"north-east"
+	];
+	const dirTo = (dx, dy) => DIR[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8];
+	function news(L, [x, y]) {
+		const st = L.sys.travel, out = [];
+		const b = st.bands.slice().sort((a, c) => Math.hypot(a.at[0] - x, a.at[1] - y) - Math.hypot(c.at[0] - x, c.at[1] - y))[0];
+		if (b && Math.hypot(b.at[0] - x, b.at[1] - y) < 12) {
+			const d = Math.round(Math.hypot(b.at[0] - x, b.at[1] - y));
+			out.push(d < 1 ? `Men of ${cultName(L, b.culture)} are on this very road.` : `Men of ${cultName(L, b.culture)} are on the road ${d} zones to the ${dirTo(b.at[0] - x, b.at[1] - y)}.`);
+		}
+		const s = st.storms.slice().sort((a, c) => Math.hypot(a.x - x, a.y - y) - Math.hypot(c.x - x, c.y - y))[0];
+		if (s) out.push(`The world is tearing ${Math.round(Math.hypot(s.x - x, s.y - y))} zones to the ${dirTo(s.x - x, s.y - y)}, and moving ${dirTo(Math.cos(s.hdg), Math.sin(s.hdg))}.`);
+		const unsafe = st.regions.map((s2, i) => [i, s2.danger]).filter(([, d]) => d >= .6).map(([i]) => L.regions[i]).sort((a, c) => Math.hypot(a.center[0] - x, a.center[1] - y) - Math.hypot(c.center[0] - x, c.center[1] - y))[0];
+		if (unsafe) out.push(`Nobody sane walks the roads of ${unsafe.name} just now.`);
+		return out.length ? out.join(" ") : "The roads are quiet, for once.";
+	}
+	//#endregion
+	//#region src/sim/worldgen.js
+	function noise(seed, scale, octaves = 4) {
+		const cache = /* @__PURE__ */ new Map(), cell = (ix, iy) => {
+			const k = ix + "," + iy;
+			let v = cache.get(k);
+			if (v == null) {
+				v = hash(seed, ix, iy) % 1e5 / 1e5;
+				cache.set(k, v);
+			}
+			return v;
+		};
+		const sm = (t) => t * t * (3 - 2 * t);
+		const one = (x, y) => {
+			const ix = Math.floor(x), iy = Math.floor(y), fx = sm(x - ix), fy = sm(y - iy);
+			const a = cell(ix, iy), b = cell(ix + 1, iy), c = cell(ix, iy + 1), d = cell(ix + 1, iy + 1);
+			return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+		};
+		return (x, y) => {
+			let v = 0, amp = 1, tot = 0, f = 1 / scale;
+			for (let o = 0; o < octaves; o++) {
+				v += one(x * f, y * f) * amp;
+				tot += amp;
+				amp *= .5;
+				f *= 2;
+			}
+			return v / tot;
+		};
+	}
+	function generateWorld(seed, realNow = Date.now()) {
+		const L = createLedger(seed, realNow), { w, h } = L.size;
+		const elevN = noise(hash(seed, "elev"), 22), moistN = noise(hash(seed, "moist"), 18), warpN = noise(hash(seed, "warp"), 14, 2);
+		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+			const dx = (x - w / 2) / (w / 2), dy = (y - h / 2) / (h / 2), edge = Math.max(0, Math.max(Math.abs(dx), Math.abs(dy * 1.05)) - .78);
+			const elev = Math.max(0, Math.min(1, elevN(x, y) * 1.3 + .02 - edge * 2.2)), moist = moistN(x + 400, y + 400);
+			let biome = "plains";
+			if (elev < .26) biome = "sea";
+			else if (elev < .3) biome = "coast";
+			else if (elev > .74) biome = "mountains";
+			else if (elev > .6) biome = "hills";
+			else if (moist > .64) biome = elev < .42 ? "marsh" : "forest";
+			else if (moist > .5) biome = elev < .46 ? "paddy" : moist > .58 ? "bamboo" : "forest";
+			L.zones.push({
+				x,
+				y,
+				biome,
+				region: -1,
+				kind: biome === "sea" ? "sea" : "wild",
+				road: false
+			});
+		}
+		const land = L.zones.filter((z) => z.biome !== "sea");
+		const r = rngFor(seed, "regions"), seeds = [];
+		for (let minD = 9; seeds.length < 100 && minD > 2; minD -= .5) for (let tries = 0; tries < 4e3 && seeds.length < 100; tries++) {
+			const z = r.pick(land);
+			if (seeds.every((s) => Math.hypot(s.x - z.x, s.y - z.y) >= minD)) seeds.push(z);
+		}
+		for (const z of land) {
+			let best = 0, bd = 1e9;
+			const wx = z.x + (warpN(z.x, z.y) - .5) * 8, wy = z.y + (warpN(z.x + 99, z.y + 99) - .5) * 8;
+			seeds.forEach((s, i) => {
+				const d = Math.hypot(s.x - wx, s.y - wy);
+				if (d < bd) {
+					bd = d;
+					best = i;
+				}
+			});
+			z.region = best;
+		}
+		L.regions = seeds.map((s, i) => ({
+			id: i,
+			name: placeName(rngFor(seed, "rname", i)),
+			culture: -1,
+			seat: null,
+			zones: 0,
+			center: [s.x, s.y]
+		}));
+		for (const z of land) L.regions[z.region].zones++;
+		const adj = L.regions.map(() => /* @__PURE__ */ new Set());
+		for (const z of land) for (const [dx, dy] of [[1, 0], [0, 1]]) {
+			const n = zoneAt(L, z.x + dx, z.y + dy);
+			if (n && n.region >= 0 && n.region !== z.region) {
+				adj[z.region].add(n.region);
+				adj[n.region].add(z.region);
+			}
+		}
+		const cr = rngFor(seed, "cultures"), kinds = [];
+		for (const [kind, k] of Object.entries(KINDS)) for (let i = 0; i < k.count; i++) kinds.push(kind);
+		cr.shuffle(kinds);
+		const starts = [cr.int(0, 99)];
+		while (starts.length < kinds.length) {
+			let best = -1, bd = -1;
+			for (const g of L.regions) {
+				if (starts.includes(g.id)) continue;
+				const d = Math.min(...starts.map((s) => Math.hypot(L.regions[s].center[0] - g.center[0], L.regions[s].center[1] - g.center[1])));
+				if (d > bd) {
+					bd = d;
+					best = g.id;
+				}
+			}
+			starts.push(best);
+		}
+		L.cultures = kinds.map((kind, i) => {
+			return {
+				id: i,
+				kind,
+				name: cultureName(rngFor(seed, "cname", i), kind),
+				regions: [starts[i]],
+				relations: {},
+				hue: Math.round(i * 137.5) % 360
+			};
+		});
+		starts.forEach((g, i) => L.regions[g].culture = i);
+		for (let guard = 0; guard < 1e3 && L.regions.some((g) => g.culture < 0); guard++) {
+			const order = L.cultures.slice().sort((a, b) => a.regions.length / KINDS[a.kind].size - b.regions.length / KINDS[b.kind].size);
+			let grew = false;
+			for (const c of order) {
+				const free = [...new Set(c.regions.flatMap((g) => [...adj[g]]))].filter((g) => L.regions[g].culture < 0);
+				if (free.length) {
+					const g = cr.pick(free);
+					L.regions[g].culture = c.id;
+					c.regions.push(g);
+					grew = true;
+					break;
+				}
+			}
+			if (!grew) {
+				const g = L.regions.find((q) => q.culture < 0), n = [...adj[g.id]].find((q) => L.regions[q].culture >= 0);
+				const c = L.cultures[n != null ? L.regions[n].culture : 0];
+				g.culture = c.id;
+				c.regions.push(g.id);
+			}
+		}
+		const border = /* @__PURE__ */ new Set();
+		for (const g of L.regions) for (const n of adj[g.id]) if (L.regions[n].culture !== g.culture) border.add([g.culture, L.regions[n].culture].sort().join("|"));
+		for (const a of L.cultures) for (const b of L.cultures) if (a.id < b.id) {
+			const hr = rngFor(seed, "rel", a.id, b.id), v = Math.max(-1, Math.min(1, kindRelation(a.kind, b.kind) + (border.has(a.id + "|" + b.id) ? -.2 : 0) + hr.range(-.25, .25)));
+			a.relations[b.id] = b.relations[a.id] = +v.toFixed(2);
+		}
+		const pr = rngFor(seed, "places");
+		const placed = [];
+		const fit = {
+			town: {
+				paddy: 3,
+				plains: 3,
+				coast: 2,
+				forest: 1,
+				bamboo: 1,
+				hills: 1
+			},
+			village: {
+				paddy: 4,
+				plains: 3,
+				coast: 3,
+				forest: 2,
+				bamboo: 2,
+				hills: 1,
+				marsh: 1
+			},
+			camp: {
+				forest: 3,
+				hills: 3,
+				bamboo: 2,
+				marsh: 2,
+				mountains: 1
+			},
+			fort: {
+				hills: 4,
+				plains: 2,
+				mountains: 2
+			},
+			shrine: {
+				hills: 3,
+				mountains: 3,
+				forest: 2,
+				bamboo: 2
+			}
+		};
+		for (const g of L.regions) {
+			const zs = land.filter((z) => z.region === g.id), kind = L.cultures[g.culture].kind;
+			const place = (what, minGap = 4) => {
+				const cands = zs.filter((z) => z.kind === "wild" && fit[what][z.biome] && placed.every((o) => Math.abs(o.x - z.x) + Math.abs(o.y - z.y) >= minGap));
+				if (!cands.length) return null;
+				const z = pr.weighted(cands.map((c) => [c, fit[what][c.biome]]));
+				z.kind = what;
+				placed.push(z);
+				return z;
+			};
+			const seat = place(kind === "bandits" ? "camp" : "town", 5) || zs[0];
+			if (!placed.includes(seat)) placed.push(seat);
+			seat.kind = kind === "bandits" ? "camp" : "town";
+			seat.name = placeName(rngFor(seed, "seat", g.id));
+			g.seat = [seat.x, seat.y];
+			const nv = kind === "bandits" ? pr.int(0, 1) : pr.int(2, Math.min(4, 1 + Math.floor(zs.length / 25)));
+			for (let i = 0; i < nv; i++) {
+				const z = place("village");
+				if (z) z.name = placeName(rngFor(seed, "village", z.x, z.y));
+			}
+			const ncamp = kind === "bandits" ? pr.int(2, 3) : pr.int(0, 2);
+			for (let i = 0; i < ncamp; i++) {
+				const z = place("camp", 3);
+				if (z) z.name = placeName(rngFor(seed, "camp", z.x, z.y)) + " camp";
+			}
+			if (kind === "clan" || kind === "court") {
+				const z = place("fort", 4);
+				if (z) z.name = placeName(rngFor(seed, "fort", z.x, z.y)) + " fort";
+			}
+			if (pr.chance(kind === "monastic" ? 1 : .6)) {
+				const z = place("shrine", 3);
+				if (z) z.name = placeName(rngFor(seed, "shrine", z.x, z.y)) + " shrine";
+			}
+		}
+		const seats = L.regions.map((g) => zoneAt(L, ...g.seat));
+		const linked = [seats[0]], rest = seats.slice(1);
+		while (rest.length) {
+			let bi = 0, bj = 0, bd = 1e9;
+			for (let i = 0; i < linked.length; i++) for (let j = 0; j < rest.length; j++) {
+				const d = Math.hypot(linked[i].x - rest[j].x, linked[i].y - rest[j].y);
+				if (d < bd) {
+					bd = d;
+					bi = i;
+					bj = j;
+				}
+			}
+			road$1(L, linked[bi], rest[bj]);
+			linked.push(rest.splice(bj, 1)[0]);
+		}
+		for (const z of land) if (z.kind === "village" || z.kind === "fort" || z.kind === "shrine") road$1(L, z, zoneAt(L, ...L.regions[z.region].seat));
+		populate(L);
+		initSystems(L);
+		return L;
+	}
+	const COST$1 = {
+		sea: 1e9,
+		coast: 1.5,
+		plains: 1,
+		paddy: 1.3,
+		forest: 2,
+		bamboo: 2.2,
+		marsh: 3.5,
+		hills: 2.5,
+		mountains: 6
+	};
+	function road$1(L, a, b) {
+		if (!a || !b || a === b) return;
+		const { w } = L.size, start = a.y * w + a.x, goal = b.y * w + b.x, g = /* @__PURE__ */ new Map([[start, 0]]), from = /* @__PURE__ */ new Map(), open = [[0, start]];
+		const push = (f, i) => {
+			open.push([f, i]);
+			let k = open.length - 1;
+			while (k > 0) {
+				const p = k - 1 >> 1;
+				if (open[p][0] <= open[k][0]) break;
+				[open[p], open[k]] = [open[k], open[p]];
+				k = p;
+			}
+		};
+		const pop = () => {
+			const top = open[0], last = open.pop();
+			if (open.length) {
+				open[0] = last;
+				let k = 0;
+				for (;;) {
+					const l = 2 * k + 1, r = l + 1;
+					let m = k;
+					if (l < open.length && open[l][0] < open[m][0]) m = l;
+					if (r < open.length && open[r][0] < open[m][0]) m = r;
+					if (m === k) break;
+					[open[m], open[k]] = [open[k], open[m]];
+					k = m;
+				}
+			}
+			return top;
+		};
+		while (open.length) {
+			const [, i] = pop();
+			if (i === goal) break;
+			const x = i % w, y = (i - x) / w;
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			]) {
+				const n = zoneAt(L, x + dx, y + dy);
+				if (!n) continue;
+				const j = n.y * w + n.x;
+				const c = g.get(i) + (n.road ? .35 : COST$1[n.biome]);
+				if (c < (g.get(j) ?? 0xe8d4a51000)) {
+					g.set(j, c);
+					from.set(j, i);
+					push(c + Math.abs(n.x - b.x) + Math.abs(n.y - b.y), j);
+				}
+			}
+		}
+		for (let i = goal; i != null && i !== start; i = from.get(i)) L.zones[i].road = true;
+		L.zones[start].road = true;
+	}
+	function cultureName(r, kind) {
+		const n = familyName(r);
+		return {
+			clan: `the ${n} clan`,
+			court: `the Court of ${placeName(r)}`,
+			rebels: `the free valleys of ${placeName(r)}`,
+			monastic: `the temples of ${placeName(r)}`,
+			bandits: `the ${r.pick([
+				"Red",
+				"Black",
+				"Salt",
+				"Crow",
+				"Iron"
+			])} ${r.pick([
+				"Tide",
+				"Coast",
+				"Knives",
+				"Wake"
+			])}`,
+			shinobi: `the hidden ${n}`,
+			merchants: `the ${n} league`,
+			fishers: `the ${placeName(r)} fisherfolk`,
+			miners: `the ${placeName(r)} mountain folk`
+		}[kind];
+	}
+	Object.fromEntries([
+		"grass",
+		"field",
+		"paddy",
+		"forest",
+		"bamboo",
+		"water",
+		"rock",
+		"sand",
+		"road",
+		"building",
+		"marsh",
+		"shrine",
+		"palisade",
+		"wall"
+	].map((t, i) => [t, i]));
+	//#endregion
+	//#region src/rig/pose.js
+	const REST = {
+		hx: 0,
+		hy: 0,
+		lean: .04,
+		chest: 0,
+		breath: 0,
+		fl: [.1, .08],
+		bl: [-.1, .04],
+		fa: [.12, .18],
+		ba: [-.08, .12],
+		sword: null,
+		bsword: null,
+		sheathing: false,
+		hat: 0,
+		flutter: 0,
+		bow: 0,
+		dim: 0,
+		neck: 0,
+		bare: false,
+		empty: false,
+		noHead: false,
+		noUpper: false,
+		headFlip: false,
+		spread: 0
+	};
+	const pz = (o) => ({
+		...REST,
+		...o
+	});
+	const HILT = [.42, 1];
+	const ease = (k) => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+	//#endregion
+	//#region src/traits/knobs.js
+	const BASE = {
+		idle: {
+			lean: .04,
+			chest: 0,
+			hx: 0,
+			hy: 0,
+			bow: 0,
+			hat: 0,
+			dim: 0,
+			legs: 1,
+			knee: 0,
+			fa: [.12, .18],
+			ba: [-.08, .12],
+			breath: 1,
+			armBreath: .03,
+			period: 16 / 6,
+			fps: 6,
+			bob: 0,
+			sway: 0,
+			swayLean: 0,
+			jitter: 0,
+			flutter: 1,
+			every: 2,
+			f: {},
+			b: {}
+		},
+		walk: {
+			lean: .08,
+			chest: 0,
+			hx: 0,
+			hy: 0,
+			bow: 0,
+			hat: 0,
+			dim: 0,
+			stride: .5,
+			knee0: .12,
+			lift: .55,
+			swing: .25,
+			fa0: .1,
+			faEl: .3,
+			ba0: -.1,
+			baEl: .25,
+			bounce: .6,
+			heavy: 0,
+			rock: 0,
+			limp: 0,
+			wobble: 0,
+			fps: 8,
+			speed: 40,
+			flutter: .5,
+			f: { hilt: .6 },
+			b: {}
+		},
+		run: {
+			lean: .32,
+			chest: 0,
+			hx: 0,
+			hy: 0,
+			bow: 0,
+			hat: 0,
+			dim: 0,
+			stride: .95,
+			knee0: .3,
+			lift: 1.1,
+			swing: .7,
+			fa0: .3,
+			faEl: .9,
+			ba0: -.5,
+			baEl: .5,
+			bounce: 1,
+			heavy: 0,
+			rock: 0,
+			limp: 0,
+			wobble: 0,
+			fps: 14,
+			speed: 78,
+			flutter: 1,
+			f: {},
+			b: {}
+		}
+	};
+	const MUL = /* @__PURE__ */ new Set([
+		"period",
+		"fps",
+		"speed"
+	]);
+	const MODES = [
+		"idle",
+		"walk",
+		"run"
+	];
+	const ARMS = {
+		hilt: HILT,
+		scabbard: [.35, .6],
+		behind: [-.5, -1],
+		cross: [.15, 1.45],
+		sleeves: [.25, 1.35],
+		folded: [.3, .85],
+		pray: [.55, 2.15],
+		chin: [1, 2.35],
+		hip: [-.6, 1.3],
+		clutch: [.15, 1.2],
+		fists: [.5, 2.2],
+		dangle: [.02, .04],
+		trail: [-1.35, .1]
+	};
+	//#endregion
+	//#region src/traits/fidgets.js
+	const env = (u, a = .2, b = .25) => u < a ? ease(u / a) : u > 1 - b ? ease((1 - u) / b) : 1;
+	const hump = (u) => Math.sin(Math.PI * Math.min(1, Math.max(0, u)));
+	const FIDGETS = {
+		hatTip: {
+			dur: 1.6,
+			about: "reaches up and tugs the brim of his hat down",
+			at: (u) => ({
+				f: [2.4, .6],
+				w: env(u, .25, .3),
+				add: {
+					hat: u > .4 && u < .75 ? 1 : 0,
+					bow: .35 * env(u)
+				}
+			})
+		},
+		hiltCheck: {
+			dur: 1.8,
+			about: "rests a hand on the hilt and glances down at it",
+			at: (u) => ({
+				f: HILT,
+				w: env(u),
+				add: {
+					bow: .6 * env(u, .3, .3),
+					lean: .05 * env(u)
+				}
+			})
+		},
+		hiltThumb: {
+			dur: 1.4,
+			about: "thumbs the guard of his sword, restless",
+			at: (u) => ({
+				f: [HILT[0] + .1 * Math.max(0, Math.sin(u * 28)), HILT[1]],
+				w: env(u, .15, .2),
+				add: {}
+			})
+		},
+		neckCrack: {
+			dur: 1.3,
+			about: "tips his head over, then snaps it back",
+			at: (u) => ({
+				w: 0,
+				add: {
+					bow: u < .45 ? 1.1 * ease(u / .45) : u < .55 ? 1.1 - 1.7 * (u - .45) / .1 : -.6 * env(u, 0, .45),
+					chest: -.06 * env(u)
+				}
+			})
+		},
+		shoulderRoll: {
+			dur: 1.6,
+			about: "rolls his shoulders up and back",
+			at: (u) => ({
+				w: 0,
+				add: {
+					breath: .9 * hump(u),
+					chest: -.12 * Math.sin(Math.PI * 2 * u) * env(u)
+				}
+			})
+		},
+		footTap: {
+			dur: 1.6,
+			about: "taps his front foot three times",
+			at: (u) => {
+				const t = Math.max(0, Math.sin(u * 6 * Math.PI)) * env(u, .1, .1);
+				return {
+					w: 0,
+					add: { fl: [.2 * t, .5 * t] }
+				};
+			}
+		},
+		weightShift: {
+			dur: 1.8,
+			about: "shifts his weight onto the back foot and back again",
+			at: (u) => ({
+				w: 0,
+				add: {
+					hx: -1.5 * env(u, .3, .3),
+					lean: -.05 * env(u, .3, .3),
+					fl: [.12 * env(u, .3, .3), 0]
+				}
+			})
+		},
+		stretch: {
+			dur: 2.2,
+			about: "stretches both arms up over his head",
+			at: (u) => ({
+				f: [2.95, .15],
+				b: [2.8, .25],
+				w: env(u, .3, .3),
+				add: {
+					breath: 1 * env(u, .3, .3),
+					lean: -.08 * env(u),
+					chest: -.14 * env(u),
+					bow: -.4 * env(u)
+				}
+			})
+		},
+		sigh: {
+			dur: 2.4,
+			about: "a long sigh: the chest lifts, then everything sags",
+			at: (u) => ({
+				w: 0,
+				add: {
+					breath: 1.2 * hump(u / .55),
+					bow: .7 * env(u, .5, .2) * (u > .45 ? 1 : 0),
+					fa: [-.06 * env(u, .5, .2), 0],
+					ba: [.06 * env(u, .5, .2), 0]
+				}
+			})
+		},
+		glance: {
+			dur: 1.5,
+			about: "glances up and back over his shoulder",
+			at: (u) => ({
+				w: 0,
+				add: {
+					bow: -.45 * env(u, .15, .3),
+					hx: -1 * env(u, .15, .3),
+					chest: -.1 * env(u, .15, .3),
+					hat: -1 * (u > .15 && u < .7 ? 1 : 0)
+				}
+			})
+		},
+		nod: {
+			dur: 1.4,
+			about: "two slow nods",
+			at: (u) => ({
+				w: 0,
+				add: { bow: .8 * Math.pow(Math.sin(Math.PI * 2 * u), 2) }
+			})
+		},
+		lookDown: {
+			dur: 2,
+			about: "lowers his head and stares at the floor",
+			at: (u) => ({
+				w: 0,
+				add: {
+					bow: 1.2 * env(u, .3, .3),
+					lean: .06 * env(u, .3, .3)
+				}
+			})
+		},
+		scratch: {
+			dur: 1.6,
+			about: "scratches the back of his head under the hat",
+			at: (u) => ({
+				f: [2.2, 1.45 + .12 * Math.sin(u * 40)],
+				w: env(u, .25, .25),
+				add: {
+					bow: .3 * env(u),
+					hat: u > .3 && u < .7 ? -1 : 0
+				}
+			})
+		},
+		knuckles: {
+			dur: 1.5,
+			about: "brings his hands together and cracks his knuckles",
+			at: (u) => ({
+				f: [.7, 1.6],
+				b: [.65, 1.7],
+				w: env(u, .25, .25),
+				add: {
+					chest: u > .5 && u < .6 ? .08 : 0,
+					bow: .2 * env(u)
+				}
+			})
+		},
+		dustOff: {
+			dur: 1.6,
+			about: "brushes dust off his far shoulder",
+			at: (u) => ({
+				f: [1.25, 2.3 + .15 * Math.sin(u * 22)],
+				w: env(u, .25, .25),
+				add: {
+					bow: .3 * env(u),
+					chest: .06 * env(u)
+				}
+			})
+		},
+		yawn: {
+			dur: 2.2,
+			about: "a slow yawn behind one hand",
+			at: (u) => ({
+				f: [1.6, 2.1],
+				w: env(u, .3, .3),
+				add: {
+					breath: 1.3 * env(u, .3, .3),
+					bow: -.5 * env(u, .3, .3),
+					chest: -.1 * env(u)
+				}
+			})
+		},
+		stumble: {
+			dur: 1.6,
+			about: "loses his footing for a moment and catches himself",
+			at: (u) => {
+				const e = env(u, .1, .55);
+				return {
+					b: [-1.4, .2],
+					f: [1.3, .2],
+					w: e,
+					add: {
+						hx: -2.5 * e,
+						lean: -.25 * e,
+						bl: [-.3 * e, 0],
+						fl: [.3 * e, .2 * e],
+						hat: e > .5 ? -1 : 0
+					}
+				};
+			}
+		},
+		flexHand: {
+			dur: 1.3,
+			about: "shakes out his sword hand",
+			at: (u) => ({
+				f: [.6, .4 + .5 * Math.max(0, Math.sin(u * 30))],
+				w: env(u),
+				add: {}
+			})
+		},
+		fixMantle: {
+			dur: 1.7,
+			about: "straightens his mantle at the collar",
+			at: (u) => ({
+				f: [1.6, 2.3],
+				w: env(u, .25, .3),
+				add: {
+					chest: -.05 * env(u),
+					bow: .25 * env(u),
+					flutter: u > .4 && u < .7 ? 1 : 0
+				}
+			})
+		},
+		toes: {
+			dur: 1.3,
+			about: "rocks up onto his toes and back",
+			at: (u) => ({
+				w: 0,
+				add: { hy: -Math.round(hump(u * 2 % 1) * env(u, .1, .1)) }
+			})
+		}
+	};
+	//#endregion
+	//#region src/traits/traits.js
+	const TRAITS = {
+		stoic: {
+			name: "Stoic",
+			group: "bearing",
+			about: "Barely moves. A shallow breath, a rare glance at his blade, an even, quiet step.",
+			idle: {
+				breath: -.4,
+				every: 4
+			},
+			walk: {
+				bounce: -.42,
+				swing: -.14
+			},
+			run: { swing: -.21 },
+			fidgets: ["hiltCheck"]
+		},
+		proud: {
+			name: "Proud",
+			group: "bearing",
+			about: "Chest out, chin up, hands clasped behind him. Long, unhurried strides.",
+			all: {
+				lean: -.16,
+				chest: -.14,
+				bow: -.52
+			},
+			idle: {
+				legs: .6,
+				b: { behind: 1 }
+			},
+			walk: {
+				stride: .24,
+				fps: .84,
+				swing: -.21,
+				b: { behind: 1 }
+			},
+			fidgets: ["glance"]
+		},
+		humble: {
+			name: "Humble",
+			group: "bearing",
+			about: "Head dipped, hands folded low in front of him. Small, polite steps.",
+			all: {
+				bow: .75,
+				lean: .1
+			},
+			idle: {
+				f: { folded: 1 },
+				b: { folded: 1 }
+			},
+			walk: {
+				stride: -.19,
+				fps: .84,
+				swing: -.21,
+				f: { folded: .7 }
+			},
+			fidgets: ["nod"]
+		},
+		regal: {
+			name: "Regal",
+			group: "bearing",
+			about: "Upright and still, both hands behind his back. A slow, level walk with no bounce at all.",
+			all: {
+				lean: -.12,
+				chest: -.07,
+				bow: -.3
+			},
+			idle: {
+				breath: -.3,
+				f: { behind: 1 },
+				b: { behind: 1 }
+			},
+			walk: {
+				fps: .68,
+				stride: .16,
+				bounce: -.84,
+				f: { behind: 1 },
+				b: { behind: 1 }
+			},
+			run: { fps: .87 },
+			fidgets: ["nod"]
+		},
+		hunched: {
+			name: "Hunched",
+			group: "bearing",
+			about: "Rounded over, head low, as if under a weight. Short steps.",
+			all: {
+				lean: .44,
+				chest: .22,
+				bow: .9
+			},
+			idle: {
+				fa: [.1, .2],
+				ba: [.1, .2]
+			},
+			walk: {
+				stride: -.16,
+				lift: -.2
+			},
+			run: { lean: .16 }
+		},
+		coiled: {
+			name: "Coiled",
+			group: "bearing",
+			about: "Always half a breath from drawing: knees bent, feet wide, hand on the hilt. Stalks rather than walks.",
+			all: { lean: .24 },
+			idle: {
+				knee: 1.12,
+				legs: 2,
+				breath: -.3,
+				f: { hilt: 1 }
+			},
+			walk: {
+				knee0: .56,
+				bounce: -.56,
+				stride: .16,
+				fps: .76,
+				f: { hilt: 1 }
+			},
+			run: {
+				lean: .2,
+				f: { hilt: .8 }
+			},
+			fidgets: ["hiltThumb"]
+		},
+		slouch: {
+			name: "Slouched",
+			group: "bearing",
+			about: "Hips pushed forward, shoulders back, arms hanging. Scuffs along.",
+			all: {
+				lean: -.2,
+				chest: .32,
+				bow: .52,
+				hx: 1
+			},
+			idle: {
+				f: { dangle: .6 },
+				b: { dangle: .6 }
+			},
+			walk: {
+				swing: -.14,
+				lift: -.26,
+				bounce: -.28
+			},
+			fidgets: ["sigh"]
+		},
+		soldier: {
+			name: "Soldier",
+			group: "bearing",
+			about: "Drilled: feet together, still as a post, then a crisp march with the arms swinging high.",
+			all: {
+				lean: -.04,
+				chest: -.07
+			},
+			idle: {
+				breath: -.5,
+				legs: -.5,
+				every: 6
+			},
+			walk: {
+				swing: .49,
+				lift: .33,
+				fps: 1.16,
+				faEl: -.2,
+				baEl: -.2,
+				bounce: .28,
+				f: { hilt: -.6 }
+			},
+			run: { swing: .14 }
+		},
+		lazy: {
+			name: "Lazy",
+			group: "energy",
+			about: "Arms dead at his sides, slow deep breaths, a yawn now and then. Drags his feet.",
+			all: {
+				bow: .45,
+				lean: -.08
+			},
+			idle: {
+				period: 1.35,
+				breath: .3,
+				hx: 1,
+				f: { dangle: 1 },
+				b: { dangle: 1 }
+			},
+			walk: {
+				fps: .52,
+				lift: -.45,
+				stride: -.16,
+				swing: -.21,
+				bounce: -.42,
+				speed: .8
+			},
+			run: {
+				fps: .76,
+				lift: -.39,
+				speed: .9
+			},
+			fidgets: ["yawn"]
+		},
+		restless: {
+			name: "Restless",
+			group: "energy",
+			about: "Can't stand still: sways, taps his foot, shifts his weight, and fidgets every breath.",
+			idle: {
+				sway: 1.3,
+				jitter: .48,
+				every: -1
+			},
+			walk: { fps: 1.16 },
+			fidgets: ["footTap", "weightShift"]
+		},
+		twitchy: {
+			name: "Twitchy",
+			group: "energy",
+			about: "Quick shallow breaths and little jerks. Glances round, shakes out his hand.",
+			idle: {
+				jitter: 1.44,
+				period: .8,
+				every: -1
+			},
+			walk: {
+				fps: 1.32,
+				wobble: .2
+			},
+			run: { fps: 1.16 },
+			fidgets: ["glance", "flexHand"]
+		},
+		bouncy: {
+			name: "Bouncy",
+			group: "energy",
+			about: "Springs on his knees with each breath and bounds when he walks.",
+			idle: {
+				bob: 1,
+				period: .8,
+				knee: .28
+			},
+			walk: {
+				bounce: 1.96,
+				lift: .39,
+				fps: 1.16
+			},
+			run: { bounce: 1.4 },
+			fidgets: ["toes"]
+		},
+		weary: {
+			name: "Weary",
+			group: "energy",
+			about: "Bone tired: heavy breaths, head down, arms hanging. Every footfall lands hard.",
+			all: {
+				bow: .9,
+				lean: .24,
+				chest: .14
+			},
+			idle: {
+				breath: .8,
+				period: 1.2,
+				knee: .21,
+				f: { dangle: .7 },
+				b: { dangle: .7 }
+			},
+			walk: {
+				fps: .6,
+				stride: -.19,
+				lift: -.39,
+				swing: -.21,
+				heavy: 1.04,
+				speed: .75
+			},
+			run: {
+				fps: .76,
+				speed: .85,
+				lift: -.39
+			},
+			fidgets: ["sigh"]
+		},
+		eager: {
+			name: "Eager",
+			group: "energy",
+			about: "Leaning in, up on the balls of his feet, quick to go.",
+			all: {
+				lean: .2,
+				bow: -.22
+			},
+			idle: {
+				bob: .5,
+				period: .85,
+				knee: .21
+			},
+			walk: {
+				fps: 1.32,
+				stride: .16,
+				speed: 1.15
+			},
+			run: {
+				speed: 1.1,
+				lean: .16,
+				fps: 1.08
+			},
+			fidgets: ["toes"]
+		},
+		heavy: {
+			name: "Heavy",
+			group: "energy",
+			about: "Wide and solid. Rolls his shoulders; every step thuds.",
+			all: { lean: .06 },
+			idle: {
+				legs: 1.5,
+				knee: .28,
+				breath: .3
+			},
+			walk: {
+				heavy: 1.95,
+				fps: .68,
+				stride: .08,
+				speed: .85
+			},
+			run: {
+				heavy: 1.56,
+				fps: .76
+			},
+			fidgets: ["shoulderRoll"]
+		},
+		lightFooted: {
+			name: "Light-footed",
+			group: "energy",
+			about: "Barely touches the floor: no bounce, high quick feet.",
+			idle: { knee: .14 },
+			walk: {
+				bounce: -.7,
+				lift: .26,
+				fps: 1.16
+			},
+			run: {
+				bounce: -.56,
+				lift: .26,
+				speed: 1.08
+			},
+			fidgets: ["toes"]
+		},
+		calm: {
+			name: "Calm",
+			group: "mood",
+			about: "Slow, even breathing, few fidgets, a gentle unhurried walk.",
+			idle: {
+				period: 1.3,
+				breath: -.2,
+				every: 2
+			},
+			walk: {
+				fps: .84,
+				bounce: -.28
+			}
+		},
+		nervous: {
+			name: "Nervous",
+			group: "mood",
+			about: "Hand never leaves the hilt. Shrinks a little, glances round, quick short steps.",
+			all: {
+				bow: .3,
+				lean: .12
+			},
+			idle: {
+				jitter: .6,
+				every: -1,
+				knee: .28,
+				legs: -.3,
+				f: { hilt: .9 }
+			},
+			walk: {
+				fps: 1.24,
+				stride: -.16,
+				f: { hilt: 1 }
+			},
+			fidgets: ["glance", "hiltThumb"]
+		},
+		cocky: {
+			name: "Cocky",
+			group: "mood",
+			about: "Fist on his hip, hat pushed back, a swagger in every step.",
+			all: {
+				lean: -.16,
+				chest: -.11,
+				bow: -.3,
+				hat: -1
+			},
+			idle: {
+				legs: 1.5,
+				sway: .78,
+				b: { hip: 1 }
+			},
+			walk: {
+				rock: 1.6,
+				fps: .84,
+				stride: .16,
+				bounce: .42,
+				b: { hip: 1 }
+			},
+			run: { rock: .8 },
+			fidgets: ["dustOff", "neckCrack"]
+		},
+		brooding: {
+			name: "Brooding",
+			group: "mood",
+			about: "Arms folded, head sunk, staring at nothing.",
+			all: {
+				bow: 1.2,
+				lean: .04
+			},
+			idle: {
+				breath: -.2,
+				f: { cross: 1 },
+				b: { cross: 1 }
+			},
+			walk: {
+				fps: .68,
+				stride: -.13,
+				f: { cross: 1 },
+				b: { cross: 1 }
+			},
+			fidgets: ["lookDown"]
+		},
+		cheerful: {
+			name: "Cheerful",
+			group: "mood",
+			about: "Chin up, a little sway, a springy walk with big arm swings.",
+			all: { bow: -.38 },
+			idle: {
+				bob: .6,
+				sway: 1.04
+			},
+			walk: {
+				bounce: 1.12,
+				swing: .35,
+				fps: 1.16,
+				f: { hilt: -.6 }
+			},
+			run: {
+				swing: .14,
+				bounce: .56
+			},
+			fidgets: ["toes", "stretch"]
+		},
+		grim: {
+			name: "Grim",
+			group: "mood",
+			about: "Feet set, hand on the hilt, jaw down. A heavy, deliberate walk.",
+			all: {
+				bow: .45,
+				lean: .08
+			},
+			idle: {
+				breath: -.4,
+				every: 2,
+				legs: .6,
+				f: { hilt: 1 }
+			},
+			walk: {
+				heavy: .78,
+				fps: .76,
+				swing: -.21,
+				f: { hilt: 1 }
+			},
+			fidgets: ["hiltCheck"]
+		},
+		wary: {
+			name: "Wary",
+			group: "mood",
+			about: "Half crouched, weight ready, checking behind him.",
+			all: { lean: .12 },
+			idle: {
+				knee: .49,
+				legs: 1.2,
+				f: { hilt: .7 }
+			},
+			walk: {
+				knee0: .32,
+				fps: .84,
+				bounce: -.42,
+				f: { hilt: .8 }
+			},
+			fidgets: ["glance", "weightShift"]
+		},
+		melancholy: {
+			name: "Melancholy",
+			group: "mood",
+			about: "Long sighs, eyes on the floor, a slow and heavy walk.",
+			all: {
+				bow: 1.05,
+				lean: .06
+			},
+			idle: {
+				period: 1.4,
+				breath: .4,
+				f: { dangle: .5 },
+				b: { dangle: .5 }
+			},
+			walk: {
+				fps: .6,
+				speed: .8,
+				swing: -.28,
+				stride: -.16
+			},
+			run: {
+				fps: .84,
+				speed: .9
+			},
+			fidgets: ["sigh", "lookDown"]
+		},
+		menacing: {
+			name: "Menacing",
+			group: "mood",
+			about: "Leans in, arms still, cracks his neck and knuckles. Slow, long, heavy strides.",
+			all: {
+				lean: .2,
+				chest: .11,
+				bow: .38
+			},
+			idle: {
+				breath: -.3,
+				legs: 1,
+				knee: .28
+			},
+			walk: {
+				fps: .52,
+				stride: .32,
+				bounce: -.42,
+				swing: -.35,
+				speed: .85,
+				heavy: .52
+			},
+			fidgets: ["neckCrack", "knuckles"]
+		},
+		serene: {
+			name: "Serene",
+			group: "mood",
+			about: "Hands tucked into his sleeves, deep slow breaths, a glide of a walk.",
+			all: { bow: .3 },
+			idle: {
+				period: 1.5,
+				breath: .2,
+				every: 2,
+				f: { sleeves: 1 },
+				b: { sleeves: 1 }
+			},
+			walk: {
+				fps: .68,
+				bounce: -.56,
+				swing: -.28,
+				f: { sleeves: 1 },
+				b: { sleeves: 1 }
+			},
+			fidgets: ["nod"]
+		},
+		hatTipper: {
+			name: "Hat tipper",
+			group: "quirk",
+			about: "Keeps tugging the brim of his hat down.",
+			idle: { every: -.5 },
+			fidgets: ["hatTip"]
+		},
+		hiltFiddler: {
+			name: "Hilt fiddler",
+			group: "quirk",
+			about: "His hand keeps drifting to the sword: thumbing the guard, checking it's there.",
+			idle: { f: { hilt: .4 } },
+			fidgets: ["hiltThumb", "hiltCheck"]
+		},
+		neckCracker: {
+			name: "Neck cracker",
+			group: "quirk",
+			about: "Tips his head over and snaps it back.",
+			fidgets: ["neckCrack"]
+		},
+		shoulderRoller: {
+			name: "Shoulder roller",
+			group: "quirk",
+			about: "Rolls the stiffness out of his shoulders.",
+			fidgets: ["shoulderRoll"]
+		},
+		footTapper: {
+			name: "Foot tapper",
+			group: "quirk",
+			about: "Taps his front foot, impatient.",
+			fidgets: ["footTap"]
+		},
+		stretcher: {
+			name: "Stretcher",
+			group: "quirk",
+			about: "Stretches his arms up over his head.",
+			fidgets: ["stretch"]
+		},
+		sigher: {
+			name: "Sigher",
+			group: "quirk",
+			about: "Lets out long sighs.",
+			fidgets: ["sigh"]
+		},
+		glancer: {
+			name: "Glancer",
+			group: "quirk",
+			about: "Keeps looking back over his shoulder.",
+			idle: { every: -1 },
+			fidgets: ["glance"]
+		},
+		hummer: {
+			name: "Hummer",
+			group: "quirk",
+			about: "Sways to a tune only he can hear, and walks to its beat.",
+			idle: {
+				sway: 1.56,
+				swayLean: .05,
+				bob: .4
+			},
+			walk: {
+				rock: .96,
+				bounce: .42
+			}
+		},
+		knuckleCracker: {
+			name: "Knuckle cracker",
+			group: "quirk",
+			about: "Brings his hands together and cracks his knuckles.",
+			fidgets: ["knuckles"]
+		},
+		vain: {
+			name: "Vain",
+			group: "quirk",
+			about: "Always tidying: straightens the mantle, brushes off a shoulder, sets the hat.",
+			all: { chest: -.07 },
+			idle: { every: -1 },
+			fidgets: [
+				"fixMantle",
+				"dustOff",
+				"hatTip"
+			]
+		},
+		scratcher: {
+			name: "Head scratcher",
+			group: "quirk",
+			about: "Scratches the back of his head, puzzled.",
+			fidgets: ["scratch"]
+		},
+		limping: {
+			name: "Limping",
+			group: "body",
+			about: "Favours his near leg: a short stiff step, then a dip onto the good one.",
+			idle: {
+				lean: -.04,
+				legs: .5
+			},
+			walk: {
+				limp: 1,
+				fps: .76,
+				speed: .8
+			},
+			run: {
+				limp: .6,
+				speed: .85
+			}
+		},
+		elder: {
+			name: "Elder",
+			group: "body",
+			about: "Stooped, hands behind the back, short careful steps.",
+			all: {
+				lean: .36,
+				bow: .52,
+				chest: .18
+			},
+			idle: {
+				knee: .35,
+				period: 1.2,
+				b: { behind: 1 }
+			},
+			walk: {
+				stride: -.32,
+				lift: -.39,
+				fps: .68,
+				speed: .7,
+				swing: -.28,
+				b: { behind: 1 }
+			},
+			run: {
+				speed: .8,
+				fps: .76,
+				lift: -.52
+			},
+			fidgets: ["nod"]
+		},
+		drunk: {
+			name: "Drunk",
+			group: "body",
+			about: "Sways, lurches, loses his footing and catches it. Weaves as he walks.",
+			idle: {
+				sway: 2.6,
+				swayLean: .1,
+				jitter: .72
+			},
+			walk: {
+				wobble: 1,
+				fps: .84,
+				speed: .85
+			},
+			run: { wobble: .6 },
+			fidgets: ["stumble"]
+		},
+		lumbering: {
+			name: "Lumbering",
+			group: "body",
+			about: "A big man's weight: planted wide, arms held off the body, a slow rolling gait.",
+			all: {
+				lean: .12,
+				chest: .07
+			},
+			idle: {
+				legs: 2.5,
+				knee: .42,
+				breath: .4,
+				period: 1.2,
+				fa: [.15, 0],
+				ba: [-.15, 0]
+			},
+			walk: {
+				stride: .32,
+				fps: .52,
+				heavy: 1.56,
+				rock: .96,
+				speed: .9,
+				swing: .14
+			},
+			run: {
+				fps: .68,
+				heavy: 1.3
+			}
+		},
+		nimble: {
+			name: "Nimble",
+			group: "body",
+			about: "Wiry and quick, light on bent knees, flexing his hand.",
+			idle: {
+				knee: .35,
+				bob: .4,
+				period: .85
+			},
+			walk: {
+				fps: 1.32,
+				stride: -.13,
+				lift: .33,
+				bounce: -.28
+			},
+			run: {
+				fps: 1.16,
+				speed: 1.1,
+				lean: .12
+			},
+			fidgets: ["toes", "flexHand"]
+		},
+		wounded: {
+			name: "Wounded",
+			group: "body",
+			about: "Clutches his side, breathes fast and shallow, limps.",
+			all: {
+				bow: .6,
+				lean: .2
+			},
+			idle: {
+				breath: .5,
+				period: .8,
+				knee: .28,
+				f: { clutch: 1 }
+			},
+			walk: {
+				limp: .5,
+				fps: .68,
+				speed: .75,
+				heavy: .65,
+				f: { clutch: 1 }
+			},
+			run: {
+				limp: .4,
+				speed: .85,
+				f: { clutch: .8 }
+			},
+			fidgets: ["sigh"]
+		},
+		shinobi: {
+			name: "Shinobi",
+			group: "discipline",
+			about: "Low and silent, hand on the hilt. Runs bent double with both arms swept back.",
+			all: {
+				lean: .3,
+				bow: .3
+			},
+			idle: {
+				knee: .98,
+				legs: 1,
+				f: { hilt: 1 }
+			},
+			walk: {
+				knee0: .72,
+				bounce: -.7,
+				fps: .84,
+				speed: .9,
+				f: { hilt: 1 },
+				b: { behind: .4 }
+			},
+			run: {
+				lean: .7,
+				swing: -.7,
+				f: { trail: 1 },
+				b: { trail: 1 }
+			}
+		},
+		duelist: {
+			name: "Duelist",
+			group: "discipline",
+			about: "One hand on the hilt, the other on the scabbard, side-on and measured.",
+			all: { lean: .04 },
+			idle: {
+				legs: 1.2,
+				knee: .28,
+				f: { hilt: 1 },
+				b: { scabbard: 1 }
+			},
+			walk: {
+				fps: .84,
+				bounce: -.28,
+				f: { hilt: 1 },
+				b: { scabbard: 1 }
+			},
+			run: { f: { hilt: .8 } },
+			fidgets: ["hiltCheck"]
+		},
+		monk: {
+			name: "Monk",
+			group: "discipline",
+			about: "Palms together, a slow breath, a quiet walk in prayer.",
+			all: { bow: .45 },
+			idle: {
+				breath: -.2,
+				period: 1.3,
+				f: { pray: 1 },
+				b: { pray: 1 }
+			},
+			walk: {
+				fps: .76,
+				bounce: -.42,
+				f: { pray: .8 },
+				b: { pray: .8 }
+			},
+			fidgets: ["nod"]
+		},
+		brawler: {
+			name: "Brawler",
+			group: "discipline",
+			about: "Fists up, bouncing on his toes, rolling his shoulders.",
+			all: {
+				lean: .2,
+				bow: .22
+			},
+			idle: {
+				bob: .8,
+				period: .7,
+				knee: .42,
+				legs: 1.5,
+				f: { fists: 1 },
+				b: { fists: 1 }
+			},
+			walk: {
+				rock: 1.28,
+				bounce: .56,
+				f: { fists: .7 },
+				b: { fists: .7 }
+			},
+			fidgets: ["shoulderRoll", "knuckles"]
+		},
+		wanderer: {
+			name: "Wanderer",
+			group: "discipline",
+			about: "Arms tucked in his sleeves, an easy sway, a long road ahead.",
+			all: { lean: .04 },
+			idle: {
+				sway: .65,
+				f: { sleeves: 1 },
+				b: { sleeves: 1 }
+			},
+			walk: {
+				fps: .76,
+				bounce: .14,
+				f: { sleeves: 1 },
+				b: { sleeves: 1 }
+			},
+			fidgets: ["glance"]
+		},
+		shadow: {
+			name: "Shadow",
+			group: "discipline",
+			about: "Sunk low and dead still; glides with no bob at all.",
+			all: { lean: .16 },
+			idle: {
+				knee: .56,
+				breath: -.5,
+				every: 4
+			},
+			walk: {
+				bounce: -1.4,
+				lift: -.13,
+				knee0: .48,
+				fps: .84
+			},
+			run: {
+				bounce: -1.4,
+				lean: .12
+			}
+		},
+		scholar: {
+			name: "Scholar",
+			group: "discipline",
+			about: "Hand at his chin, lost in thought. Walks with his hands behind him, head bent.",
+			all: { bow: .45 },
+			idle: { f: { chin: 1 } },
+			walk: {
+				fps: .76,
+				bow: .15,
+				f: { behind: 1 },
+				b: { behind: 1 }
+			},
+			fidgets: ["nod", "scratch"]
+		},
+		veteran: {
+			like: "grim",
+			name: "Veteran",
+			group: "discipline",
+			about: "Grim, plus an old wound: the same set jaw and hand on the hilt, with a slight limp.",
+			walk: { limp: .35 },
+			fidgets: ["shoulderRoll"]
+		}
+	};
+	//#endregion
+	//#region src/traits/mix.js
+	const clone = (o) => JSON.parse(JSON.stringify(o));
+	const expand = (id, k, seen = /* @__PURE__ */ new Set()) => {
+		const t = TRAITS[id];
+		if (!t) throw new Error(`unknown trait "${id}"`);
+		if (seen.has(id)) throw new Error(`trait "${id}" is its own ancestor`);
+		seen.add(id);
+		return [...t.like ? expand(t.like, k, seen) : [], [t, k]];
+	};
+	function nudge(m, key, v, k) {
+		if (key === "f" || key === "b") {
+			for (const a in v) m[key][a] = (m[key][a] || 0) + v[a] * k;
+			return;
+		}
+		if (!(key in m)) return;
+		if (Array.isArray(m[key])) m[key] = m[key].map((x, i) => x + v[i] * k);
+		else if (MUL.has(key)) m[key] *= Math.pow(v, k);
+		else m[key] += v * k;
+	}
+	function mix(list = [], extra) {
+		const out = clone(BASE);
+		out.fidgets = [];
+		for (const [id, k] of list) for (const [t, kk] of expand(id, k)) {
+			for (const mode of MODES) for (const blk of [t.all, t[mode]]) if (blk) for (const key in blk) nudge(out[mode], key, blk[key], kk);
+			if (kk > .25) {
+				for (const f of t.fidgets || []) if (!out.fidgets.includes(f)) out.fidgets.push(f);
+			}
+		}
+		if (extra) {
+			for (const mode of MODES) for (const blk of [extra.all, extra[mode]]) if (blk) for (const key in blk) nudge(out[mode], key, blk[key], 1);
+		}
+		out.fidgets = out.fidgets.slice(0, 4);
+		return out;
+	}
+	function check(id, t) {
+		const bad = (m) => {
+			throw new Error(`trait "${id}": ${m}`);
+		};
+		if (!t.name || !t.about) bad("needs a name and an about");
+		if (t.like && !TRAITS[t.like]) bad(`like "${t.like}" is not a trait`);
+		for (const mode of ["all", ...MODES]) for (const key in t[mode] || {}) {
+			if (key === "f" || key === "b") {
+				for (const a in t[mode][key]) if (!ARMS[a]) bad(`no hand target "${a}"`);
+				continue;
+			}
+			if (!MODES.some((m) => key in BASE[m]) || mode !== "all" && !(key in BASE[mode])) bad(`${mode} has no knob "${key}"`);
+		}
+		for (const f of t.fidgets || []) if (!FIDGETS[f]) bad(`no fidget "${f}"`);
+	}
+	for (const id in TRAITS) check(id, TRAITS[id]);
+	//#endregion
+	//#region src/traits/bake.js
+	const TAU = Math.PI * 2;
+	const BREATH_T = [
+		0,
+		0,
+		0,
+		.15,
+		.45,
+		.75,
+		.95,
+		1,
+		1,
+		1,
+		.85,
+		.6,
+		.3,
+		.1,
+		0,
+		0
+	];
+	const FLUT_T = [
+		0,
+		0,
+		0,
+		0,
+		1,
+		1,
+		0,
+		0,
+		0,
+		0,
+		0,
+		1,
+		1,
+		1,
+		0,
+		0
+	];
+	const table = (tb, u) => {
+		let x = (u % 1 + 1) % 1 * tb.length;
+		if (Math.abs(x - Math.round(x)) < 1e-6) x = Math.round(x) % tb.length;
+		const i = Math.floor(x), f = x - i;
+		return tb[i] + (tb[(i + 1) % tb.length] - tb[i]) * f;
+	};
+	const toward = (a, t, w) => {
+		w = Math.min(1, Math.max(0, w));
+		return a.map((v, i) => v + (t[i] - v) * w);
+	};
+	function hands(q, m) {
+		for (const a in m.f) q.fa = toward(q.fa, ARMS[a], m.f[a]);
+		for (const a in m.b) q.ba = toward(q.ba, ARMS[a], m.b[a]);
+	}
+	const reach = ([th, kn]) => 5 * Math.cos(th) + 6 * Math.cos(th - kn);
+	function meet([th, kn], R) {
+		const x = Math.min(1, Math.max(-1, (R - 5 * Math.cos(th)) / 6)), a = Math.acos(x);
+		return [th, th - (Math.abs(a - (th - kn)) < Math.abs(-a - (th - kn)) ? a : -a)];
+	}
+	function plant(q) {
+		const drop = Math.round(11 - Math.max(reach(q.fl), reach(q.bl))), R = 11 - drop;
+		q.hy += drop;
+		if (Math.abs(reach(q.fl) - R) > .4) q.fl = meet(q.fl, R);
+		if (Math.abs(reach(q.bl) - R) > .4) q.bl = meet(q.bl, R);
+	}
+	function addTo(q, add) {
+		for (const k in add) q[k] = Array.isArray(add[k]) ? q[k].map((v, i) => v + add[k][i]) : k === "flutter" ? Math.max(q[k], add[k]) : q[k] + add[k];
+	}
+	function idleFrames(m, fidgets = []) {
+		const n1 = Math.max(4, Math.round(m.period * m.fps)), every = Math.max(1, Math.round(m.every));
+		let breaths = fidgets.length ? every * fidgets.length : 1;
+		if ((m.sway || m.swayLean || m.jitter) && breaths % 2) breaths *= 2;
+		const n = n1 * breaths, seg = n1 * every, out = [];
+		for (let i = 0; i < n; i++) {
+			const u = i / n1, b = table(BREATH_T, u) * m.breath, slow = Math.sin(TAU * i / (2 * n1));
+			const jit = m.jitter * (.6 * Math.sin(TAU * 3 * i / n) + .4 * Math.sin(TAU * 7 * i / n + 1));
+			const q = pz({
+				lean: m.lean + m.swayLean * slow,
+				chest: m.chest,
+				hx: m.hx + m.sway * slow + jit,
+				hy: m.hy + m.bob * b,
+				bow: m.bow,
+				hat: m.hat,
+				dim: m.dim,
+				breath: b,
+				fl: [.1 * m.legs + .45 * m.knee, .08 + m.knee],
+				bl: [-.1 * m.legs - .2 * m.knee, .04 + .7 * m.knee],
+				fa: [m.fa[0] + b * m.armBreath, m.fa[1]],
+				ba: [m.ba[0] - b * m.armBreath, m.ba[1]],
+				flutter: FLUT_T[Math.floor(u * 16 + 1e-6) % 16] * m.flutter
+			});
+			hands(q, m);
+			plant(q);
+			const fd = fidgets.length && FIDGETS[fidgets[Math.floor(i / seg) % fidgets.length]];
+			if (fd) {
+				const len = Math.min(seg, Math.max(4, Math.round(fd.dur * m.fps))), at = i % seg - (seg - len);
+				if (at >= 0) {
+					const r = fd.at(at / len);
+					if (r.f) q.fa = toward(q.fa, r.f, r.w);
+					if (r.b) q.ba = toward(q.ba, r.b, r.w);
+					addTo(q, r.add);
+				}
+			}
+			q.hx = Math.round(q.hx);
+			q.hy = Math.round(q.hy);
+			out.push(q);
+		}
+		return out;
+	}
+	function gaitFrames(m) {
+		const cycles = m.wobble ? 2 : 1, out = [];
+		const stride = Math.max(0, m.stride), lift = Math.max(0, m.lift), swing = Math.max(0, m.swing);
+		const lf = 1 - m.limp * .4, lk = 1 - m.limp * .6;
+		for (let i = 0; i < 8 * cycles; i++) {
+			const T = i / 8, ph = T % 1, slow = Math.sin(TAU * T / cycles);
+			const a = TAU * (ph + m.limp * .06 * Math.sin(TAU * ph)), s = Math.sin(a), c = Math.cos(a), dip = .5 - .5 * Math.cos(2 * a);
+			const q = pz({
+				hx: Math.round(m.hx + m.wobble * 2 * slow),
+				hy: Math.round(m.hy + m.bounce * dip + m.heavy * 1.5 * dip ** 3 + m.limp * 1.5 * Math.max(0, -s)),
+				lean: m.lean + m.rock * .06 * Math.cos(2 * a) + m.wobble * .1 * slow,
+				chest: m.chest,
+				bow: m.bow,
+				hat: m.hat,
+				dim: m.dim,
+				fl: [stride * lf * s, m.knee0 + lift * lk * Math.max(0, c)],
+				bl: [-stride * s, m.knee0 + lift * Math.max(0, -c)],
+				fa: [-swing * s + m.fa0, m.faEl],
+				ba: [swing * s + m.ba0, m.baEl],
+				flutter: m.flutter * (i % 4) / 2
+			});
+			hands(q, m);
+			out.push(q);
+		}
+		return out;
+	}
+	function bake(list, extra) {
+		const m = mix(list, extra), idleFps = m.fidgets.length ? Math.max(m.idle.fps, 12) : m.idle.fps;
+		return {
+			idle: {
+				poses: idleFrames({
+					...m.idle,
+					fps: idleFps
+				}, m.fidgets),
+				fps: idleFps
+			},
+			walk: {
+				poses: gaitFrames(m.walk),
+				fps: m.walk.fps
+			},
+			run: {
+				poses: gaitFrames(m.run),
+				fps: m.run.fps
+			},
+			speed: {
+				walk: m.walk.speed,
+				run: m.run.speed
+			},
+			fidgets: m.fidgets,
+			knobs: m
+		};
+	}
+	//#endregion
+	//#region src/traits/cultures.js
+	const CULTURES = {
+		court: {
+			name: "Imperial court",
+			about: "Upright and unhurried, hands out of sight, everything measured.",
+			traits: [["regal", .7], ["serene", .5]],
+			pool: [
+				"proud",
+				"vain",
+				"scholar",
+				"hatTipper",
+				"calm"
+			],
+			each: 1
+		},
+		clan: {
+			name: "Samurai clan",
+			about: "Drilled and watchful: hand near the hilt, feet set, never idle.",
+			traits: [["duelist", .7], ["soldier", .4]],
+			pool: [
+				"grim",
+				"stoic",
+				"wary",
+				"veteran",
+				"hiltFiddler",
+				"proud"
+			],
+			each: 1
+		},
+		monastery: {
+			name: "Mountain monastery",
+			about: "Palms together, slow breath, a quiet walk.",
+			traits: [["monk", .8], ["calm", .6]],
+			pool: [
+				"elder",
+				"serene",
+				"humble",
+				"lightFooted",
+				"sigher"
+			],
+			each: 1
+		},
+		port: {
+			name: "Port town",
+			about: "Loud and loose: rolling sailor's gait, shoulders rolling, a swagger.",
+			traits: [["heavy", .5], ["hummer", .6]],
+			pool: [
+				"cocky",
+				"cheerful",
+				"drunk",
+				"lazy",
+				"knuckleCracker",
+				"brawler"
+			],
+			each: 1
+		},
+		outlaws: {
+			name: "Bandit hills",
+			about: "Hunched, restless, always checking behind them.",
+			traits: [["wary", .7], ["slouch", .5]],
+			pool: [
+				"menacing",
+				"nervous",
+				"cocky",
+				"limping",
+				"glancer",
+				"neckCracker"
+			],
+			each: 1
+		},
+		village: {
+			name: "Farming village",
+			about: "Worn by the fields: bowed heads, heavy steps, humble.",
+			traits: [["humble", .6], ["weary", .5]],
+			pool: [
+				"elder",
+				"cheerful",
+				"lazy",
+				"shoulderRoller",
+				"footTapper",
+				"scratcher"
+			],
+			each: 1
+		},
+		shinobi: {
+			name: "Shadow village",
+			about: "Low, silent, still: they glide rather than walk.",
+			traits: [["shadow", .8], ["shinobi", .6]],
+			pool: [
+				"coiled",
+				"nimble",
+				"stoic",
+				"glancer"
+			],
+			each: 1
+		}
+	};
+	const rng = (seed) => {
+		let a = seed * 2654435761 >>> 0;
+		return () => {
+			a = a + 1831565813 >>> 0;
+			let t = Math.imul(a ^ a >>> 15, 1 | a);
+			t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+			return ((t ^ t >>> 14) >>> 0) / 4294967296;
+		};
+	};
+	function personOf(id, seed = 0) {
+		const c = CULTURES[id];
+		if (!c) throw new Error(`unknown culture "${id}"`);
+		const r = rng(seed + 1), pool = [...c.pool], own = [];
+		for (let i = 0; i < (c.each ?? 1) && pool.length; i++) own.push([pool.splice(r() * pool.length | 0, 1)[0], Math.round((.5 + r() * .6) * 10) / 10]);
+		return [...c.traits, ...own];
+	}
+	function checkCulture(id, c) {
+		if (!c.name || !c.traits) throw new Error(`culture "${id}" needs a name and traits`);
+		for (const t of [...c.traits.map((p) => p[0]), ...c.pool || []]) if (!TRAITS[t]) throw new Error(`culture "${id}": no trait "${t}"`);
+	}
+	for (const id in CULTURES) checkCulture(id, CULTURES[id]);
+	//#endregion
+	//#region src/config.js
+	const RC = {
+		K: "#0c0d11",
+		D: "#2c323b",
+		M: "#1b1e25",
+		m: "#30353e",
+		H: "#2a2f37",
+		G: "#3b424c",
+		B: "#1a1d24",
+		E: "#6ff3e4",
+		e: "#2e6a64",
+		W: "#e9eeee",
+		S: "#7d868e",
+		s: "#2c3037",
+		T: "#806650",
+		c0: "#0f1115",
+		c1: "#14171c",
+		c2: "#1b1e25",
+		c3: "#22262e",
+		c4: "#2b2f38",
+		c5: "#30353e",
+		c6: "#3d424d"
+	};
+	//#endregion
+	//#region src/weapons/art3d.js
+	const V = {
+		add: (a, b) => [
+			a[0] + b[0],
+			a[1] + b[1],
+			a[2] + b[2]
+		],
+		sub: (a, b) => [
+			a[0] - b[0],
+			a[1] - b[1],
+			a[2] - b[2]
+		],
+		mul: (a, k) => [
+			a[0] * k,
+			a[1] * k,
+			a[2] * k
+		],
+		len: (a) => Math.hypot(a[0], a[1], a[2]),
+		norm: (a) => {
+			const l = Math.hypot(a[0], a[1], a[2]) || 1;
+			return [
+				a[0] / l,
+				a[1] / l,
+				a[2] / l
+			];
+		}
+	};
+	const dotAt = (S, q, z, w, key) => {
+		const s = S.P(q);
+		S.dot(s[0], s[1], s[2] + z, w, key);
+	};
+	const grip = (S, A, top) => dotAt(S, A.hand, top + 2, 2, A.col);
+	const KATANA_3D = {
+		carried(S, J, p, home) {
+			const tip = V.add(J.mouth, V.mul(J.sd, 12));
+			S.seg(J.mouth, tip, 1, "s");
+			dotAt(S, tip, 0, 1, "S");
+			if (home && !p.empty) {
+				dotAt(S, J.mouth, .2, 1, "S");
+				S.seg(V.sub(J.mouth, J.sd), V.sub(J.mouth, V.mul(J.sd, 3.5)), 1, "W", .2);
+			}
+		},
+		held(S, A, d, top) {
+			const h = A.hand;
+			S.seg(h, V.sub(h, V.mul(d, 2.5)), 1, "K", top);
+			S.seg(V.add(h, d), V.add(h, V.mul(d, 13)), 1, "W", top);
+			grip(S, A, top);
+			dotAt(S, V.add(h, V.mul(d, 1.2)), top + 3, 1, "S");
+		},
+		sheathing(S, J, hand) {
+			S.seg(hand, J.mouth, 1, "W", .3);
+		}
+	};
+	//#endregion
+	//#region src/weapons/katana.js
+	const along = (a) => [Math.cos(a), Math.sin(a)];
+	const KATANA_ART = {
+		d3: KATANA_3D,
+		far(k, p, mouth, sd) {
+			k.seg(mouth, k.add(mouth, sd, 12), 1, "s");
+			k.put(...k.add(mouth, sd, 12), "S");
+		},
+		stowed(k, p, mouth, sd) {
+			k.put(...mouth, "S");
+			k.seg(k.add(mouth, sd, -1), k.add(mouth, sd, -3.5), 1, "W");
+		},
+		held(k, hand, a) {
+			const d = along(a);
+			k.seg(hand, k.add(hand, d, -2.5), 1, "K");
+			k.put(...hand, "S");
+			k.seg(k.add(hand, d, 1), k.add(hand, d, 13), 1, "W");
+		},
+		backHeld(k, bh, a) {
+			const d = along(a);
+			k.blob(bh[0], bh[1], 2, "D");
+			k.seg(bh, k.add(bh, d, -2.5), 1, "K");
+			k.put(...bh, "S");
+			k.seg(k.add(bh, d, 1), k.add(bh, d, 13), 1, "W");
+		},
+		sheathing(k, hand, mouth) {
+			const dx = hand[0] - mouth[0], dy = hand[1] - mouth[1], m = Math.hypot(dx, dy) || 1;
+			k.seg(hand, mouth, 1, "W");
+			k.put(...hand, "S");
+			k.put(...k.add(hand, [dx / m, dy / m], 2), "K");
+		},
+		front: null,
+		sit: null
+	};
+	const DX = 24;
+	const DY = 16;
+	const Z$1 = {
+		scab: -3.5,
+		farArm: -3,
+		offHand: -2.9,
+		farLeg: -2.5,
+		body: 0,
+		obi: .01,
+		nearLeg: 1.2,
+		head: 2.5,
+		eye: 2.51,
+		hat: 3,
+		mantle: 3.5,
+		bblade: 40,
+		nearArm: 45,
+		blade: 50
+	};
+	Z$1.nearArm;
+	const HAT_SIDE = [
+		"........GGGG........",
+		".....GGHHHHHHGG.....",
+		"..GGHHHHHHHHHHHHGG..",
+		".GBBBBBBBBBBBBBBBBG.",
+		"..KBBBBBBBBBBBBBBK.."
+	];
+	function rig(g, fx, p, pal = RC) {
+		return draw((x, y, z, c) => {
+			if (x < 0 || x >= 96 || y < 0 || y >= 64) return;
+			g.fillStyle = pal[c];
+			g.fillRect(fx + x, y, 1, 1);
+		}, p, true);
+	}
+	function draw(out, p, clothed) {
+		let z = 0;
+		const put = (x, y, c) => out(DX + Math.round(x), DY + Math.round(y), z, c);
+		const blob = (x, y, w, c) => {
+			const x0 = Math.round(x - (w - 1) / 2), y0 = Math.round(y - (w - 1) / 2);
+			for (let j = 0; j < w; j++) for (let i = 0; i < w; i++) out(DX + x0 + i, DY + y0 + j, z, c);
+		};
+		const seg = (a, b, w, c) => {
+			const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
+			for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c);
+		};
+		const poly = (pts, c) => {
+			const xs = pts.map((q) => q[0]), ys = pts.map((q) => q[1]);
+			for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++) for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+				let inside = false;
+				for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+					const [xi, yi] = pts[i], [xj, yj] = pts[j];
+					if (yi > y + .5 !== yj > y + .5 && x + .5 < (xj - xi) * (y + .5 - yi) / (yj - yi) + xi) inside = !inside;
+				}
+				if (inside) put(x, y, c);
+			}
+		};
+		const hip = [24 + p.hx, 29 + p.hy];
+		const up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
+		const up2 = [Math.sin(p.lean + p.chest), -Math.cos(p.lean + p.chest)], fw2 = [Math.cos(p.lean + p.chest), Math.sin(p.lean + p.chest)];
+		const L = (u, v) => {
+			const b = u > 4 ? p.breath * Math.min(1, (u - 4) / 3) : 0;
+			if (u <= 4) return [hip[0] + up[0] * u + fw[0] * v, hip[1] + up[1] * u + fw[1] * v];
+			const w = [hip[0] + up[0] * 4, hip[1] + up[1] * 4];
+			return [w[0] + up2[0] * (u - 4) + fw2[0] * v, w[1] + up2[1] * (u - 4) + fw2[1] * v - b];
+		};
+		const dir = (a) => [Math.sin(a), Math.cos(a)];
+		const add = (a, d, k) => [a[0] + d[0] * k, a[1] + d[1] * k];
+		const leg = ([th, kn], c, off) => {
+			const h = L(0, off), k = add(h, dir(th), 5), f = add(k, dir(th - kn), 6);
+			seg(h, k, 2, c);
+			seg(k, f, 2, c);
+			seg(f, [f[0] + 2, f[1]], 1, c);
+		};
+		const arm = ([sh, el], c) => {
+			const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
+			seg(s, e, 2, c);
+			seg(e, h, 1, c);
+			blob(h[0], h[1], 2, c);
+			return h;
+		};
+		const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
+		if (p.noUpper) {
+			z = Z$1.farLeg;
+			leg(p.bl, "D", -.5);
+			z = Z$1.body;
+			poly([
+				L(0, -2),
+				L(0, 2),
+				L(2.6, 2.2),
+				L(2.6, -2.2)
+			], "K");
+			z = Z$1.nearLeg;
+			leg(p.fl, "K", .5);
+			return { hc: null };
+		}
+		const wp = p.wp || KATANA_ART, kit = {
+			put,
+			seg,
+			blob,
+			add,
+			L,
+			p
+		};
+		z = Z$1.scab;
+		wp.far(kit, p, mouth, sd);
+		z = Z$1.farArm;
+		const bh = arm(p.ba, "D");
+		kit.bh = bh;
+		z = Z$1.offHand;
+		if (wp.offHand) wp.offHand(kit, p, bh);
+		z = Z$1.farLeg;
+		leg(p.bl, "D", -.5);
+		z = Z$1.body;
+		poly([
+			L(0, -2),
+			L(0, 2),
+			L(7, 2.3),
+			L(8.2, 1.4),
+			L(8.2, -1.6),
+			L(7, -2.4)
+		], "K");
+		z = Z$1.obi;
+		for (let v = -2; v <= 2; v++) put(...L(2.2, v), "D");
+		z = Z$1.nearLeg;
+		leg(p.fl, "K", .5);
+		const nk = p.neck || 0, hc = L(10 - p.bow * .7 - Math.abs(nk) * 1.2, .6 + p.bow * 1.1 + nk * 2.2);
+		if (!p.noHead) {
+			z = Z$1.head;
+			for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, "K");
+			const hf = p.headFlip ? -1 : 1;
+			z = Z$1.eye;
+			put(hc[0] + 1.5 * hf, hc[1], p.dim ? "e" : "E");
+			z = Z$1.head;
+			if (p.bare) {
+				for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] - 2, "K");
+				put(hc[0] - hf, hc[1] - 3, "K");
+				put(hc[0] - 2 * hf, hc[1] - 4, "K");
+				put(hc[0] - 2 * hf, hc[1] - 3, "D");
+			}
+		}
+		const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
+		z = Z$1.hat;
+		if (clothed && !p.bare) HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => {
+			if (ch !== ".") put(hx0 + x, hy0 + y, ch);
+		}));
+		const f = p.flutter;
+		z = Z$1.mantle;
+		if (clothed && !p.bare) {
+			poly([
+				L(8.4, 2.3),
+				L(8.9, -1.6),
+				L(6.8, -2.9),
+				L(3, -3 - f * .7),
+				L(3.6, -1.2),
+				L(5.4, 2.7)
+			], "M");
+			seg(L(8.4, 2.1), L(8.8, -1.4), 1, "m");
+			if (f > .5) put(...L(2.6, -3.4), "M");
+		}
+		z = Z$1.bblade;
+		if (p.bsword != null) wp.backHeld(kit, bh, p.bsword);
+		z = Z$1.nearArm;
+		const hand = arm(p.fa, "K");
+		z = Z$1.blade;
+		if (p.sword === null && !p.sheathing && p.bsword == null && !p.empty) wp.stowed(kit, p, mouth, sd);
+		else if (p.sheathing) wp.sheathing(kit, hand, mouth);
+		else if (p.sword !== null) wp.held(kit, hand, p.sword);
+		return { hc: p.noHead ? null : [hc[0] + DX, hc[1] + DY] };
+	}
+	const PALS = {
+		ronin: RC,
+		samurai: {
+			...RC,
+			K: "#3a2e31",
+			D: "#5a4a4e",
+			E: "#ff5a4a",
+			e: "#7a2d27",
+			W: "#cfd4d6",
+			S: "#7d868e",
+			s: "#3a3033"
+		},
+		earth: {
+			...RC,
+			K: "#2e2823",
+			D: "#4f453a",
+			M: "#3a322a",
+			m: "#564a3e",
+			H: "#7d6d50",
+			G: "#948260",
+			B: "#62553f",
+			E: "#171310",
+			e: "#2a231d"
+		},
+		monk: {
+			...RC,
+			K: "#1d1b20",
+			D: "#3b3542",
+			M: "#2a2630",
+			m: "#443d4b",
+			H: "#7d6d50",
+			G: "#948260",
+			B: "#62553f",
+			E: "#151417",
+			e: "#26232a"
+		},
+		mourner: {
+			...RC,
+			K: "#8d9290",
+			D: "#b9bebc",
+			M: "#a4a9a7",
+			m: "#c8cdcb",
+			E: "#2b2f2e",
+			e: "#4a4f4d"
+		},
+		rival: {
+			...RC,
+			K: "#16181c",
+			D: "#343a44",
+			E: "#cfd4d6",
+			e: "#5b6068"
+		}
+	};
+	const frame = document.createElement("canvas");
+	frame.width = 96;
+	frame.height = 64;
+	const fg = frame.getContext("2d");
+	const EYES = Object.fromEntries(Object.keys(RC).map((k) => [k, "rgba(0,0,0,0)"]));
+	function sprite(p, pal = RC, eyesOnly = false) {
+		fg.clearRect(0, 0, 96, 64);
+		rig(fg, 0, p, eyesOnly ? {
+			...EYES,
+			E: pal.E
+		} : pal);
+		return frame;
+	}
+	function figure(g, p, x, y, face, pal, { alpha = 1, slice, shadow = true } = {}) {
+		let img = sprite(p, pal);
+		if (slice) img = slice(img);
+		if (shadow) {
+			g.fillStyle = "rgba(16,20,20,.32)";
+			g.fillRect(Math.round(x - 6), Math.round(y), 12, 2);
+		}
+		g.save();
+		g.globalAlpha = alpha;
+		g.translate(Math.round(x), Math.round(y) - 56);
+		if (face < 0) g.scale(-1, 1);
+		g.drawImage(img, -48, 0);
+		g.restore();
+	}
+	function eyes(g, p, x, y, face, pal) {
+		g.save();
+		g.translate(Math.round(x), Math.round(y) - 56);
+		if (face < 0) g.scale(-1, 1);
+		g.drawImage(sprite(p, pal, true), -48, 0);
+		g.restore();
+	}
+	const BIOME_FLOOR = {
+		plains: "#474c4a",
+		paddy: "#454c4a",
+		forest: "#434946",
+		bamboo: "#444a46",
+		marsh: "#434948",
+		hills: "#4a4e4c",
+		mountains: "#4d5150",
+		coast: "#4a4d4a",
+		sea: "#2a3337"
+	};
+	function ground(zone, season, dark) {
+		const c = document.createElement("canvas");
+		c.width = 480;
+		c.height = 270;
+		const g = c.getContext("2d");
+		const r = rng$1(hash("ground", zone.x, zone.y)), px = (x, y, col, w = 1, h = 1) => {
+			g.fillStyle = col;
+			g.fillRect(x | 0, y | 0, w, h);
+		};
+		g.fillStyle = BIOME_FLOOR[zone.biome] || "#474c4a";
+		g.fillRect(0, 0, 480, 270);
+		for (let i = 0; i < 700; i++) {
+			const x = r.int(0, 480), y = r.int(0, 270);
+			px(x, y, r.chance(.5) ? "#3f4442" : "#505553");
+			if (r.chance(.3)) px(x, y - 1, "#3b403e");
+		}
+		const trees = {
+			forest: 34,
+			bamboo: 0,
+			plains: 5,
+			hills: 8,
+			paddy: 2,
+			marsh: 3,
+			coast: 2,
+			mountains: 6
+		}[zone.biome] || 0;
+		const tree = (x, y, s) => {
+			px(x - 1, y + s - 2, "#2a2f2c", 3, 4);
+			for (let k = 0; k < s * s * 2.2; k++) {
+				const a = r.range(0, 6.283), d = Math.sqrt(r.next()) * s;
+				const tx = x + Math.cos(a) * d, ty = y + Math.sin(a) * d * .8;
+				px(tx, ty, d > s * .7 ? "#2c3530" : r.chance(.25) ? "#3f4b43" : "#343e38");
+			}
+			px(x - 2, y - s * .6, "#46534a", 2, 1);
+		};
+		for (let i = 0; i < trees; i++) {
+			const y = r.chance(.5) ? r.int(8, 126) : r.int(192, 264);
+			tree(r.int(0, 480), y, r.int(6, 12));
+		}
+		if (zone.biome === "bamboo") for (let i = 0; i < 90; i++) {
+			const x = r.int(0, 480), y0 = r.chance(.5) ? r.int(0, 106) : r.int(186, 230), h = r.int(18, 40);
+			px(x, y0, "#3a4a40", 1, h);
+			for (let k = 0; k < h; k += 6) px(x - 1, y0 + k, "#2d3a32", 3, 1);
+		}
+		if (zone.biome === "paddy") for (let yy = 0; yy < 2; yy++) for (let i = 0; i < 5; i++) {
+			const x = i * 100 + r.int(-10, 10), y = yy ? 196 : 20, w = r.int(70, 90), h = yy ? 64 : 106;
+			px(x, y, "#3a484b", w, h);
+			for (let k = 3; k < h; k += 5) for (let j = 2; j < w; j += 4) px(x + j, y + k, "#4d5e54");
+			px(x, y, "#56676a", w, 1);
+		}
+		if (zone.biome === "hills" || zone.biome === "mountains") for (let i = 0; i < (zone.biome === "mountains" ? 14 : 7); i++) {
+			const x = r.int(0, 480), y = r.chance(.5) ? r.int(4, 116) : r.int(192, 254), w = r.int(10, 28), h = r.int(6, 14);
+			for (let k = 0; k < h; k++) {
+				const ww = Math.round(w * (1 - k / h * .6));
+				px(x - ww / 2, y - k, k === h - 1 ? "#7a807d" : k > h * .6 ? "#6d7370" : "#5f6562", ww, 1);
+			}
+			px(x - w / 2, y + 1, "#3a3f3d", w, 1);
+		}
+		if (zone.biome === "marsh") for (let i = 0; i < 40; i++) {
+			const x = r.int(0, 480), y = r.chance(.5) ? r.int(10, 136) : r.int(190, 270);
+			px(x - 6, y, "#3a484b", 14, 3);
+			px(x, y - 5, "#55604f", 1, 5);
+			px(x + 2, y - 4, "#55604f", 1, 4);
+		}
+		if (zone.biome === "coast") {
+			for (let y = 236; y < 270; y++) px(0, y, y < 246 ? "#6b675c" : "#26333a", 480, 1);
+			for (let i = 0; i < 60; i++) px(r.int(0, 480), r.int(246, 270), "#8b9ea3", r.int(1, 4), 1);
+		}
+		if (zone.kind === "town" || zone.kind === "village") for (let i = 0; i < (zone.kind === "town" ? 7 : 4); i++) {
+			const x = 20 + i * (zone.kind === "town" ? 64 : 110) + r.int(0, 20), y = 108 + r.int(-10, 6), w = r.int(34, 48), h = r.int(18, 24);
+			px(x, y + 6, "#5a5449", w, h);
+			px(x, y + h + 4, "#3a3630", w, 2);
+			for (let k = 0; k < 9; k++) px(x - 3 + k * .3, y + k, k === 0 ? "#3d444a" : "#2b2f33", w + 6 - k * .6, 1);
+			px(x + w / 2 - 3, y + h - 4, "#241f1b", 6, 10);
+		}
+		if (zone.kind === "camp") {
+			for (let i = 0; i < 60; i++) {
+				const x = 30 + i * 7;
+				px(x, 104 + i % 3, "#3a322b", 2, 16);
+				px(x, 103 + i % 3, "#57493d", 2, 1);
+			}
+			px(230, 130, "#2a2420", 10, 3);
+		}
+		if (zone.kind === "fort") {
+			px(0, 86, "#5f6562", 480, 36);
+			for (let x = 0; x < 480; x += 12) px(x, 82, "#6d7370", 8, 4);
+			px(0, 122, "#3a3f3d", 480, 2);
+			px(210, 94, "#241f1b", 28, 28);
+		}
+		if (zone.kind === "shrine") {
+			px(218, 92, "#4a2c29", 44, 3);
+			px(216, 89, "#3a2220", 48, 3);
+			px(222, 100, "#4a2c29", 36, 2);
+			px(224, 92, "#3e2624", 3, 44);
+			px(253, 92, "#3e2624", 3, 44);
+			px(274, 120, "#6d7370", 8, 2);
+			px(275, 122, "#5f6562", 6, 6);
+			px(274, 128, "#6d7370", 8, 2);
+			px(276, 130, "#5f6562", 4, 6);
+			if (!dark) {
+				px(276, 123, "#f1d9a0", 2, 3);
+				px(277, 124, "#ffffff");
+			}
+		}
+		if (zone.road) {
+			px(0, 152, "#56524a", 480, 22);
+			px(0, 151, "#4e4a43", 480, 1);
+			px(0, 174, "#4e4a43", 480, 1);
+			for (let x = 0; x < 480; x += 1) {
+				if (r.chance(.6)) px(x, 160, "#4f4b44");
+				if (r.chance(.6)) px(x, 168, "#4f4b44");
+			}
+			for (let i = 0; i < 50; i++) px(r.int(0, 480), r.int(153, 173), r.chance(.5) ? "#6d6a62" : "#48443e");
+		} else for (let x = 0; x < 480; x++) if (r.chance(.35)) px(x, 166 + r.int(-2, 2), "#4f5451");
+		if (season === "winter") {
+			g.fillStyle = "rgba(214,222,222,.14)";
+			g.fillRect(0, 0, 480, 270);
+			for (let i = 0; i < 500; i++) px(r.int(0, 480), r.int(0, 270), "#c9d0d0");
+		}
+		return c;
+	}
+	function weather(g, kind, t, wind, parts) {
+		if (kind === "rain") {
+			g.fillStyle = "rgba(12,16,20,.14)";
+			g.fillRect(0, 0, 480, 270);
+			g.fillStyle = "rgba(160,178,184,.45)";
+			for (let i = 0; i < 160; i++) {
+				const x = (i * 97 + t * 260) % 540 - 30, y = (i * 53 + t * 420 + i * i) % 290 - 10;
+				for (let k = 0; k < 4; k++) g.fillRect(Math.round(x - k), Math.round(y - k * 2), 1, 1);
+			}
+			for (let i = 0; i < 18; i++) {
+				g.fillStyle = "rgba(190,205,208,.5)";
+				g.fillRect((i * 131 + (t * 30 | 0) * 17) % 480, (i * 71 + (t * 30 | 0) * 29) % 270, 1, 1);
+			}
+		}
+		if (kind === "fog") for (let b = 0; b < 7; b++) {
+			const y = (b * 41 + t * 3) % 310 - 20;
+			for (let k = 0; k < 18; k++) {
+				g.fillStyle = `rgba(170,178,176,${(.05 + .04 * Math.sin(k / 18 * 3.14)).toFixed(3)})`;
+				g.fillRect(0, Math.round(y + k * 2), 480, 2);
+			}
+		}
+		if (kind === "snow") {
+			g.fillStyle = "rgba(20,24,30,.08)";
+			g.fillRect(0, 0, 480, 270);
+			for (let i = 0; i < 140; i++) {
+				const x = ((i * 89 + Math.sin(t * 1.3 + i) * 6 + t * 12) % 480 + 480) % 480, y = (i * 37 + t * 22 + i * 3) % 270;
+				g.fillStyle = i % 5 ? "#e6ecec" : "#ffffff";
+				g.fillRect(Math.round(x), Math.round(y), 1, 1);
+			}
+		}
+		if (kind === "wind") {
+			g.fillStyle = "rgba(150,158,150,.45)";
+			for (let i = 0; i < 26; i++) {
+				const x = (i * 151 + t * 190) % 520 - 20, y = (i * 67 + Math.sin(t * 2 + i) * 4) % 270;
+				g.fillRect(Math.round(x), Math.round(y), 3 + i % 3, 1);
+			}
+		}
+	}
+	function night(g, amount) {
+		if (amount <= 0) return;
+		g.fillStyle = `rgba(6,10,20,${(.5 * amount).toFixed(3)})`;
+		g.fillRect(0, 0, 480, 270);
+	}
+	function horse(g, x, y, face, t, saddled = true) {
+		const f = Math.floor(t * 12) % 4, s = face, px = (dx, dy, col, w = 1, h = 1) => {
+			g.fillStyle = col;
+			g.fillRect(Math.round(x + (s > 0 ? dx : -dx - w)), Math.round(y + dy), w, h);
+		};
+		g.fillStyle = "rgba(16,20,20,.32)";
+		g.fillRect(Math.round(x - 12), Math.round(y), 24, 2);
+		const legs = [
+			[
+				[-9, 2],
+				[-7, -2],
+				[7, 2],
+				[9, -2]
+			],
+			[
+				[-8, -1],
+				[-10, 1],
+				[9, -1],
+				[6, 1]
+			],
+			[
+				[-11, 2],
+				[-6, 0],
+				[5, 2],
+				[10, 0]
+			],
+			[
+				[-7, 1],
+				[-9, -1],
+				[8, 1],
+				[7, -2]
+			]
+		][f];
+		for (const [lx, ly] of legs) {
+			px(lx, -8, "#2e2521", 2, 5);
+			px(lx + ly * .5, -3, "#2e2521", 1, 3 + (ly < 0 ? -1 : 0));
+		}
+		px(-11, -17, "#3b2f2a", 22, 9);
+		px(-10, -18, "#46382f", 20, 1);
+		px(-11, -9, "#2e2521", 22, 1);
+		px(10, -22, "#3b2f2a", 5, 7);
+		px(13, -24, "#3b2f2a", 6, 4);
+		px(17, -23, "#2e2521", 3, 3);
+		px(15, -24, "#e9eeee");
+		px(9, -24, "#1c1614", 4, 6);
+		px(-14, -17, "#1c1614", 3, 2);
+		px(-15, -15 + f % 2, "#1c1614", 2, 5);
+		if (saddled) {
+			px(-4, -19, "#5a4a3a", 9, 2);
+			px(-2, -17, "#3a2f25", 2, 7);
+		}
+	}
+	function coffin(g, x, y) {
+		g.fillStyle = "#2a2622";
+		g.fillRect(Math.round(x - 30), Math.round(y - 20), 60, 2);
+		g.fillStyle = "#d9dcd8";
+		g.fillRect(Math.round(x - 9), Math.round(y - 30), 18, 10);
+		g.fillStyle = "#b3b8b5";
+		g.fillRect(Math.round(x - 9), Math.round(y - 21), 18, 1);
+		g.fillStyle = "#8d9290";
+		g.fillRect(Math.round(x - 10), Math.round(y - 31), 20, 1);
+	}
+	//#endregion
+	//#region prototypes-src/41-travel/storm-look.js
+	const FX = "#52e8d6";
+	const FX1 = "#6ff3e4";
+	const FX2 = "#b8fff6";
+	const WH = "#ffffff";
+	const VOID = "#050607";
+	const INK = "#0d1012";
+	const rr$1 = (a, b) => a + Math.random() * (b - a);
+	const ri$1 = (a, b) => Math.floor(rr$1(a, b + 1));
+	const sgn = () => Math.random() < .5 ? -1 : 1;
+	const LAYERS = {
+		pall: "The light",
+		slices: "Torn scanlines",
+		split: "Cyan split",
+		tears: "Tears in the air",
+		slivers: "Slivers",
+		bolts: "Bolts",
+		stutter: "Lost time (tape)",
+		people: "People glitching"
+	};
+	function makeStorm(W, H) {
+		const tmp = document.createElement("canvas");
+		tmp.width = W;
+		tmp.height = H;
+		const held = document.createElement("canvas");
+		held.width = W;
+		held.height = H;
+		return {
+			W,
+			H,
+			tmp,
+			held,
+			burst: null,
+			tears: [],
+			slivers: [],
+			bolts: [],
+			freeze: 0,
+			noise: 0,
+			t: 0,
+			flash: 0
+		};
+	}
+	const across = (S, k, side) => {
+		const u = Math.random();
+		if (!side || k > .55) return u * S.W;
+		const b = Math.pow(u, 1 + (.55 - k) * 5) * S.W;
+		return side > 0 ? S.W - b : b;
+	};
+	function stormUpdate(S, dt, k, side, drift, L, avoidX, focus = [S.H * .4, S.H * .7]) {
+		S.t += dt;
+		if (S.freeze > 0) {
+			S.freeze--;
+			if (!S.freeze) S.noise = 2;
+			return;
+		}
+		if (S.noise > 0) S.noise--;
+		if (S.flash > 0) S.flash -= dt;
+		if (L.slices || L.split) {
+			if (S.burst && --S.burst.frames <= 0) S.burst = null;
+			if (!S.burst && Math.random() < (.35 + 5 * k * k) * dt) {
+				const n = ri$1(1, 1 + Math.round(6 * k)), bands = [];
+				for (let i = 0; i < n; i++) {
+					const big = k > .7 && Math.random() < .12, x0 = Math.max(0, across(S, k, side) - rr$1(40, 220));
+					bands.push({
+						y: Math.random() < .5 ? ri$1(focus[0], focus[1]) : ri$1(0, S.H - 4),
+						h: big ? ri$1(6, 16) : ri$1(1, 1 + Math.round(3 * k)),
+						x0: Math.round(x0),
+						x1: Math.round(Math.min(S.W, x0 + rr$1(40, 140 + 200 * k))),
+						off: sgn() * ri$1(2, 2 + Math.round(12 * k))
+					});
+				}
+				S.burst = {
+					frames: ri$1(2, 3 + Math.round(6 * k)),
+					bands
+				};
+			} else if (S.burst) {
+				for (const b of S.burst.bands) if (Math.random() < .3) b.off = sgn() * ri$1(1, 2 + Math.round(12 * k));
+			}
+		} else S.burst = null;
+		if (L.tears && k > .3 && Math.random() < (k - .3) * 2.4 * dt && S.tears.length < 1 + k * 4) {
+			let x = 0;
+			for (let t = 0; t < 8; t++) {
+				x = Math.round(across(S, k, side));
+				if (Math.abs(x - avoidX) > 28 && x > 8 && x < S.W - 8) break;
+			}
+			const h = ri$1(24, 40 + Math.round(80 * k)), top = ri$1(4, S.H - h - 30), jag = [];
+			let o = 0;
+			for (let y = 0; y <= h; y += ri$1(3, 5)) {
+				o = Math.max(-3, Math.min(3, o + ri$1(-2, 2)));
+				jag.push([y, o]);
+			}
+			S.tears.push({
+				x,
+				top,
+				h,
+				jag,
+				w: rr$1(2, 2 + 4 * k),
+				age: 0,
+				open: .07,
+				hold: rr$1(.2, .35 + .4 * k),
+				close: .05
+			});
+		}
+		for (let i = S.tears.length - 1; i >= 0; i--) {
+			const t = S.tears[i];
+			t.age += dt;
+			if (t.age > t.open + t.hold + t.close) {
+				S.tears.splice(i, 1);
+				if (L.slivers) spray(S, t.x, t.top, t.h, 10, drift);
+			}
+		}
+		if (L.slivers) {
+			const want = 6 + 70 * k;
+			while (S.slivers.length < want && Math.random() < .5 + k) spray(S, across(S, k, side), rr$1(0, S.H), 1, 1, drift);
+		}
+		for (let i = S.slivers.length - 1; i >= 0; i--) {
+			const s = S.slivers[i];
+			s.life -= dt;
+			if (s.life <= 0) {
+				S.slivers.splice(i, 1);
+				continue;
+			}
+			s.x += s.vx * dt;
+			s.y += s.vy * dt;
+			if (Math.random() < .08) s.x += sgn();
+			s.on = Math.random() > .15;
+		}
+		if (L.bolts && k > .6 && S.tears.length && Math.random() < (k - .6) * 1.8 * dt) {
+			const t = S.tears[ri$1(0, S.tears.length - 1)];
+			S.bolts.push({
+				pts: jag(t.x, t.top + t.h, t.x + ri$1(-30, 30), Math.min(S.H - 4, t.top + t.h + ri$1(30, 80))),
+				life: 2
+			});
+			S.flash = .04;
+		}
+		for (let i = S.bolts.length - 1; i >= 0; i--) if (--S.bolts[i].life < 0) S.bolts.splice(i, 1);
+		if (L.stutter && k > .5 && Math.random() < (k - .5) * .5 * dt) S.freeze = ri$1(4, 4 + Math.round(8 * k));
+	}
+	function spray(S, x, y, h, n, drift) {
+		for (let i = 0; i < n; i++) {
+			const life = rr$1(.35, 1.1);
+			S.slivers.push({
+				x: x + rr$1(-6, 6),
+				y: y + rr$1(0, h),
+				w: ri$1(1, 4),
+				col: [
+					FX,
+					FX2,
+					WH,
+					INK
+				][ri$1(0, 3)],
+				vx: drift * rr$1(14, 34) + rr$1(-4, 4),
+				vy: rr$1(-3, 3),
+				life,
+				on: true
+			});
+		}
+	}
+	function jag(x0, y0, x1, y1) {
+		const pts = [[x0, y0]], n = Math.max(3, Math.round(Math.hypot(x1 - x0, y1 - y0) / 5));
+		for (let i = 1; i < n; i++) pts.push([Math.round(x0 + (x1 - x0) * i / n + ri$1(-3, 3)), Math.round(y0 + (y1 - y0) * i / n)]);
+		pts.push([x1, y1]);
+		return pts;
+	}
+	function line(g, [x0, y0], [x1, y1]) {
+		const n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+		for (let i = 0; i <= n; i++) g.fillRect(Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n), 1, 1);
+	}
+	function hold(S, g) {
+		S.held.getContext("2d").drawImage(g.canvas, 0, 0);
+	}
+	function stormDraw(g, S, k, L) {
+		const { W, H } = S;
+		if (S.freeze > 0) {
+			g.drawImage(S.held, 0, 0);
+			return;
+		}
+		if (L.pall && k > 0) {
+			g.fillStyle = `rgba(6,10,12,${(.24 * k).toFixed(3)})`;
+			g.fillRect(0, 0, W, H);
+			g.fillStyle = `rgba(82,232,214,${(.025 * k).toFixed(3)})`;
+			g.fillRect(0, 0, W, H);
+		}
+		for (const t of S.tears) {
+			const a = t.age, op = a < t.open ? a / t.open : a < t.open + t.hold ? 1 : 1 - (a - t.open - t.hold) / t.close, pulse = .8 + .2 * Math.sin(a * 40);
+			const w = t.w * op * pulse;
+			for (let i = 0; i < t.jag.length - 1; i++) {
+				const [y0, o0] = t.jag[i], [y1, o1] = t.jag[i + 1];
+				for (let y = y0; y < y1; y++) {
+					const u = y / t.h, hw = Math.round(w * Math.pow(Math.sin(Math.PI * u), .6)), cx = t.x + Math.round(o0 + (o1 - o0) * (y - y0) / (y1 - y0)), yy = t.top + y;
+					if (hw >= 1) {
+						g.drawImage(g.canvas, cx - 14, yy, 14, 1, cx - 14 - hw, yy, 14, 1);
+						g.drawImage(g.canvas, cx + 1, yy, 14, 1, cx + 1 + hw, yy, 14, 1);
+						g.fillStyle = VOID;
+						g.fillRect(cx - hw, yy, 2 * hw + 1, 1);
+						g.fillStyle = FX;
+						g.fillRect(cx - hw - 1, yy, 1, 1);
+						g.fillRect(cx + hw + 1, yy, 1, 1);
+						if (Math.random() < .12) {
+							g.fillStyle = Math.random() < .5 ? FX2 : WH;
+							g.fillRect(cx + ri$1(-hw, hw), yy, 1, 1);
+						}
+					} else {
+						g.fillStyle = Math.random() < .7 ? WH : FX2;
+						g.fillRect(cx, yy, 1, 1);
+					}
+				}
+			}
+		}
+		if (S.burst) {
+			const tg = S.tmp.getContext("2d");
+			for (const b of S.burst.bands) {
+				const w = b.x1 - b.x0;
+				if (w <= 0) continue;
+				tg.clearRect(0, 0, w, b.h);
+				tg.drawImage(g.canvas, b.x0, b.y, w, b.h, 0, 0, w, b.h);
+				if (L.split) {
+					g.save();
+					g.globalAlpha = .22 + .2 * k;
+					g.globalCompositeOperation = "screen";
+					tg.globalCompositeOperation = "source-atop";
+					tg.fillStyle = FX;
+					tg.fillRect(0, 0, w, b.h);
+					tg.globalCompositeOperation = "source-over";
+					g.drawImage(S.tmp, 0, 0, w, b.h, b.x0 + b.off + sgn() * 2, b.y, w, b.h);
+					g.restore();
+					tg.clearRect(0, 0, w, b.h);
+					tg.drawImage(g.canvas, b.x0, b.y, w, b.h, 0, 0, w, b.h);
+				}
+				if (L.slices) {
+					g.drawImage(S.tmp, 0, 0, w, b.h, b.x0 + b.off, b.y, w, b.h);
+					if (b.h > 4) {
+						g.fillStyle = "rgba(0,0,0,.18)";
+						for (let y = b.y + 1; y < b.y + b.h; y += 2) g.fillRect(b.x0 + b.off, y, w, 1);
+					}
+					g.fillStyle = FX;
+					for (let x = b.x0 + b.off + ri$1(0, 20); x < b.x0 + b.off + w; x += ri$1(10, 36)) g.fillRect(x, b.y, ri$1(1, 5), 1);
+					if (Math.random() < .5) {
+						g.fillStyle = WH;
+						g.fillRect(b.off > 0 ? b.x0 + b.off : b.x0 + b.off + w - 1, b.y, 1, b.h);
+					}
+				}
+			}
+		}
+		for (const s of S.slivers) if (s.on) {
+			g.globalAlpha = Math.min(1, s.life * 2);
+			g.fillStyle = s.col;
+			g.fillRect(Math.round(s.x), Math.round(s.y), s.w, 1);
+		}
+		g.globalAlpha = 1;
+		for (const b of S.bolts) {
+			g.fillStyle = FX;
+			for (let i = 0; i < b.pts.length - 1; i++) {
+				const [x0, y0] = b.pts[i], [x1, y1] = b.pts[i + 1];
+				line(g, [x0 - 1, y0], [x1 - 1, y1]);
+				line(g, [x0 + 1, y0], [x1 + 1, y1]);
+			}
+			g.fillStyle = WH;
+			for (let i = 0; i < b.pts.length - 1; i++) line(g, b.pts[i], b.pts[i + 1]);
+		}
+		if (S.flash > 0) {
+			g.fillStyle = "rgba(184,255,246,.07)";
+			g.fillRect(0, 0, W, H);
+		}
+		if (S.noise > 0) {
+			const y = ri$1(10, H - 20), h = ri$1(2, 6);
+			for (let yy = y; yy < y + h; yy++) for (let x = 0; x < W; x += 1) if (Math.random() < .55) {
+				const v = ri$1(90, 255);
+				g.fillStyle = `rgb(${v},${v},${v})`;
+				g.fillRect(x, yy, 1, 1);
+			}
+		}
+	}
+	const fcv = document.createElement("canvas");
+	const fcg = fcv.getContext("2d");
+	function glitchFigure(img, k, seedT) {
+		if (k <= 0 || Math.random() > .06 + k * .35) return img;
+		fcv.width = img.width;
+		fcv.height = img.height;
+		fcg.clearRect(0, 0, fcv.width, fcv.height);
+		for (let y = 0; y < img.height;) {
+			const h = ri$1(1, 3), off = Math.random() < k * .8 ? sgn() * ri$1(1, 1 + Math.round(5 * k)) : 0;
+			fcg.drawImage(img, 0, y, img.width, h, off, y, img.width, h);
+			y += h;
+		}
+		if (Math.random() < k * .5) {
+			fcg.save();
+			fcg.globalCompositeOperation = "destination-over";
+			fcg.globalAlpha = .45;
+			fcg.drawImage(tint(img), sgn() * ri$1(2, 4), 0);
+			fcg.restore();
+		}
+		fcg.fillStyle = FX;
+		for (let i = 0; i < 3 * k; i++) fcg.fillRect(ri$1(34, 54), ri$1(22, 52), ri$1(2, 7), 1);
+		return fcv;
+	}
+	const tcv = document.createElement("canvas");
+	const tcg = tcv.getContext("2d");
+	function tint(img) {
+		tcv.width = img.width;
+		tcv.height = img.height;
+		tcg.clearRect(0, 0, tcv.width, tcv.height);
+		tcg.drawImage(img, 0, 0);
+		tcg.globalCompositeOperation = "source-atop";
+		tcg.fillStyle = FX1;
+		tcg.fillRect(0, 0, tcv.width, tcv.height);
+		tcg.globalCompositeOperation = "source-over";
+		return tcv;
+	}
+	//#endregion
+	//#region prototypes-src/41-travel/road.js
+	const MANNER = {
+		clan: "clan",
+		court: "court",
+		rebels: "village",
+		monastic: "monastery",
+		bandits: "outlaws",
+		shinobi: "shinobi",
+		merchants: "port",
+		fishers: "port",
+		miners: "village"
+	};
+	const NONE = new Proxy({}, { get: () => () => {} });
+	const GAITS = /* @__PURE__ */ new Map();
+	const gaitOf = (manner, seed) => {
+		const k = manner + ":" + seed;
+		if (!GAITS.has(k)) GAITS.set(k, manner ? bake(personOf(manner, seed)) : bake([]));
+		return GAITS.get(k);
+	};
+	const RONIN = gaitOf(null, 0);
+	const KNEEL = pz({
+		hy: 7,
+		lean: .5,
+		chest: .35,
+		fl: [1.35, 2.3],
+		bl: [-.35, 2.45],
+		fa: [.85, 1.7],
+		ba: [.55, 1.3],
+		bow: .6,
+		empty: true
+	});
+	function look(w, L, scKind) {
+		const kind = L.cultures[w.culture]?.kind, seed = hash(w.name) % 9973;
+		const armed = w.fighter !== false;
+		let pal = PALS.earth, bare = true, manner = MANNER[kind] || "village";
+		if (w.cls === "outlaw") {
+			pal = PALS.samurai;
+			manner = "outlaws";
+		} else if (w.cls === "ashigaru" || w.cls === "retainer" || w.cls === "noble") {
+			pal = PALS.samurai;
+			manner = "clan";
+		} else if (w.cls === "shinobi") {
+			pal = PALS.samurai;
+			manner = "shinobi";
+		} else if (w.cls === "ronin") {
+			pal = PALS.rival;
+			bare = false;
+			manner = "clan";
+		} else if (w.cls === "monk") {
+			pal = PALS.monk;
+			bare = false;
+			manner = "monastery";
+		} else if (w.job === "merchant") {
+			bare = false;
+			manner = "port";
+		}
+		if (scKind === "funeral") {
+			pal = PALS.mourner;
+			bare = true;
+			manner = "village";
+		}
+		if (scKind === "pilgrims") bare = false;
+		return {
+			pal,
+			bare,
+			wp: armed ? void 0 : NONE,
+			empty: !armed,
+			gait: gaitOf(manner, seed)
+		};
+	}
+	function makeRoad(cv) {
+		const g = cv.getContext("2d"), S = makeStorm(480, 270);
+		const R = {
+			g,
+			S,
+			zone: null,
+			bg: null,
+			x: 0,
+			dir: 1,
+			run: true,
+			stop: null,
+			people: [],
+			props: [],
+			t: 0,
+			arrived: null,
+			flash: 0,
+			caption: ""
+		};
+		R.enter = (zone, dir, season, dark) => {
+			R.zone = zone;
+			R.dir = dir;
+			R.bg = ground(zone, season, dark);
+			R.x = dir > 0 ? -12 : 492;
+			R.people = [];
+			R.props = [];
+			R.stop = null;
+			R.arrived = null;
+		};
+		R.redrawGround = (season, dark) => {
+			if (R.zone) R.bg = ground(R.zone, season, dark);
+		};
+		R.scene = (sc, L) => {
+			const d = R.dir, stopX = d > 0 ? 170 : 310;
+			R.stop = stopX;
+			R.people = [];
+			R.props = [];
+			const ahead = (i, gap = 26) => stopX + d * (70 + i * gap), face = -d;
+			const put = (w, i, o = {}) => {
+				const lk = look(w, L, sc.type);
+				R.people.push({
+					w,
+					...lk,
+					x: o.x ?? ahead(i),
+					y: 166 + (o.dy ?? i % 2 * 5 - 2),
+					face: o.face ?? face,
+					mode: o.mode || "idle",
+					t: i * .37,
+					vx: o.vx || 0,
+					alpha: 1
+				});
+			};
+			const n = sc.who.length;
+			if (sc.type === "raiders") sc.who.forEach((w, i) => w.fighter === false ? put(w, i, {
+				x: stopX + d * (60 + i * 14),
+				mode: "kneel",
+				face: d
+			}) : put(w, i, { x: stopX + d * (120 + i * 22) }));
+			else if (sc.type === "wounded") {
+				put(sc.who[0], 0, {
+					mode: "kneel",
+					x: stopX + d * 64,
+					dy: -14,
+					face: -d
+				});
+				R.props.push({
+					kind: "blood",
+					x: stopX + d * 64,
+					y: 152
+				});
+			} else if (sc.type === "funeral") {
+				sc.who.forEach((w, i) => put(w, i, {
+					x: stopX + d * (80 + i * 18),
+					mode: "walk",
+					vx: -d * 14,
+					dy: i % 2 * 4 - 2
+				}));
+				R.props.push({
+					kind: "coffin",
+					follow: 2
+				});
+			} else if (sc.type === "pilgrims") sc.who.forEach((w, i) => put(w, i, {
+				x: stopX + d * (90 + i * 18),
+				mode: "walk",
+				vx: -d * 18
+			}));
+			else if (sc.type === "merchant") {
+				put(sc.who[0], 0, { x: stopX + d * 80 });
+				R.props.push({
+					kind: "packhorse",
+					x: stopX + d * 108,
+					y: 167,
+					face: -d
+				});
+			} else if (sc.type === "horse") R.props.push({
+				kind: "horse",
+				x: d > 0 ? 510 : -30,
+				y: 168,
+				face: -d,
+				vx: -d * 150
+			});
+			else sc.who.forEach((w, i) => put(w, i));
+			R.halt = {
+				x: stopX,
+				n
+			};
+		};
+		R.after = (sc, out) => {
+			const slain = new Set(out.fight?.slain || []), fought = !!out.fight;
+			if (fought) R.flash = .034;
+			for (const p of R.people) if (fought && p.w.fighter !== false && (slain.has(p.w.id) || !p.w.id && out.fight.won && out.fight.lethal)) {
+				p.mode = "fall";
+				p.t = 0;
+			} else if (out.again) continue;
+			else if (sc.type === "wounded" && out.hours) p.mode = "gone";
+			else {
+				p.mode = "walk";
+				p.vx = sc.type === "duelist" || fought && !out.fight.won ? R.dir * 30 : -R.dir * 22;
+				p.face = Math.sign(p.vx);
+			}
+			const h = R.props.find((p) => p.kind === "horse");
+			if (h && sc.type === "horse") {
+				if (out.again) {
+					h.vx = 0;
+					h.x = R.stop + R.dir * 26;
+					h.caught = true;
+				} else if (!h.caught) h.vx = -R.dir * 150;
+				else h.vx = 0;
+			}
+			if (out.loot?.some((l) => l.item === "horse")) R.riding = true;
+			if (!out.again) {
+				R.stop = null;
+				R.halt = null;
+			}
+		};
+		R.frame = (dt, { k, side, drift, wx, dark, layers, moving, onEdge }) => {
+			R.t += dt;
+			stormUpdate(S, dt, k, side, drift, layers, R.x, [132, 168]);
+			if (S.freeze > 0) {
+				stormDraw(g, S, k, layers);
+				return;
+			}
+			const going = moving && (R.stop == null || Math.abs(R.x - R.stop) > 2);
+			if (going) {
+				const sp = (R.run ? RONIN.speed.run : RONIN.speed.walk) * (R.fast ? 4 : 1);
+				R.x += R.dir * sp * dt;
+				if (R.stop != null && (R.x - R.stop) * R.dir > 0) R.x = R.stop;
+			}
+			if (!R.arrived && (R.dir > 0 ? R.x > 492 : R.x < -12)) {
+				R.arrived = true;
+				onEdge();
+			}
+			g.drawImage(R.bg, 0, 0);
+			const list = [];
+			for (const p of R.props) list.push({
+				y: p.y ?? 166,
+				draw: () => prop(p, dt)
+			});
+			for (const p of R.people) if (p.mode !== "gone") list.push({
+				y: p.y,
+				draw: () => person(p, dt, k, layers)
+			});
+			const rp = pose(RONIN, going ? R.run ? "run" : "walk" : "idle", R.t);
+			list.push({
+				y: 167,
+				draw: () => figure(g, rp, R.x, 167, R.dir, PALS.ronin, { slice: layers.people && k > 0 ? (img) => glitchFigure(img, k * .6) : null })
+			});
+			list.sort((a, b) => a.y - b.y).forEach((o) => o.draw());
+			if (wx !== "clear" && wx !== "cloud") weather(g, wx, R.t, drift);
+			if (wx === "cloud") {
+				g.fillStyle = "rgba(10,14,18,.08)";
+				g.fillRect(0, 0, 480, 270);
+			}
+			night(g, dark);
+			if (dark > .3) {
+				eyes(g, rp, R.x, 167, R.dir, PALS.ronin);
+				for (const p of R.people) if (p.mode !== "gone" && p.mode !== "fall") eyes(g, pp(p), p.x, p.y, p.face, p.pal);
+			}
+			stormDraw(g, S, k, layers);
+			if (layers.stutter) hold(S, g);
+		};
+		const pose = (gait, mode, t) => {
+			const m = gait[mode];
+			return m.poses[Math.floor(t * m.fps) % m.poses.length];
+		};
+		const pp = (p) => ({
+			...p.mode === "kneel" ? KNEEL : pose(p.gait, p.mode === "walk" ? "walk" : "idle", p.t),
+			bare: p.bare,
+			wp: p.wp,
+			empty: p.empty
+		});
+		function person(p, dt, k, layers) {
+			p.t += dt;
+			if (p.mode === "walk") {
+				p.x += p.vx * dt;
+				if (p.x < -40 || p.x > 520) p.mode = "gone";
+			}
+			let q = pp(p), alpha = p.alpha;
+			if (p.mode === "fall") {
+				const u = Math.min(1, p.t / .45);
+				q = {
+					...pose(p.gait, "idle", 0),
+					hy: 9 * u * u,
+					bow: u,
+					lean: .6 * u,
+					fl: [.1 + 1.2 * u, .08 + 2.2 * u],
+					bl: [-.1 - .3 * u, .04 + 2.3 * u],
+					bare: p.bare,
+					wp: p.wp,
+					empty: p.empty
+				};
+				alpha = p.t < .8 ? 1 : Math.max(0, 1 - (p.t - .8) / .6);
+				if (alpha <= 0) p.mode = "gone";
+			}
+			const flash = R.flash > 0 && p.w.fighter !== false && p.mode !== "kneel";
+			figure(g, q, p.x, p.y, p.face, flash ? WHITE : p.pal, {
+				alpha,
+				slice: layers.people && k > 0 ? (img) => glitchFigure(img, k) : null
+			});
+		}
+		function prop(p, dt) {
+			if (p.kind === "blood") {
+				g.fillStyle = "#5a2320";
+				g.fillRect(Math.round(p.x) - 3, Math.round(p.y) + 1, 7, 1);
+				g.fillRect(Math.round(p.x) + 5, Math.round(p.y) + 2, 2, 1);
+				return;
+			}
+			if (p.kind === "coffin") {
+				const a = R.people[p.follow - 1], b = R.people[p.follow];
+				if (a && b && a.mode !== "gone") {
+					p.y = (a.y + b.y) / 2 + 1;
+					coffin(g, (a.x + b.x) / 2, p.y);
+				}
+				return;
+			}
+			if (p.kind === "packhorse") {
+				const m = R.people[0];
+				if (m && m.mode === "walk") {
+					p.x = m.x - m.face * 28;
+					p.face = m.face;
+				}
+				if (!m || m.mode === "gone") return;
+				horse(g, p.x, p.y, p.face, m.mode === "walk" ? R.t * .5 : 0);
+				return;
+			}
+			if (p.kind === "shard") {
+				if (Math.random() < .85) {
+					g.fillStyle = Math.random() < .3 ? "#ffffff" : "#52e8d6";
+					g.fillRect(Math.round(p.x), Math.round(p.y), 2, 1);
+					g.fillStyle = "#b8fff6";
+					g.fillRect(Math.round(p.x), Math.round(p.y) - 1, 1, 1);
+				}
+				return;
+			}
+			if (p.kind === "horse") {
+				p.x += (p.vx || 0) * dt;
+				horse(g, p.x, p.y, p.face, p.vx ? R.t : 0);
+			}
+		}
+		R.tick = (dt) => {
+			if (R.flash > 0) R.flash -= dt;
+		};
+		return R;
+	}
+	const WHITE = Object.fromEntries(Object.keys(PALS.ronin).map((k) => [k, "#ffffff"]));
+	const BIOME = {
+		sea: "#1b2326",
+		coast: "#3a4240",
+		plains: "#444b47",
+		paddy: "#3e4946",
+		forest: "#343e39",
+		bamboo: "#37423b",
+		marsh: "#39413e",
+		hills: "#4c504e",
+		mountains: "#5a5f5d"
+	};
+	const rr = (a, b) => a + Math.random() * (b - a);
+	const ri = (a, b) => Math.floor(rr(a, b + 1));
+	function makeMap(cv) {
+		const g = cv.getContext("2d"), M = {
+			g,
+			ox: 0,
+			oy: 0,
+			hover: null,
+			showDanger: false
+		};
+		M.center = (x, y, L) => {
+			M.ox = Math.max(0, Math.min(L.size.w - 40, x - 20));
+			M.oy = Math.max(0, Math.min(L.size.h - 24, y - 12));
+		};
+		M.zoneAtPx = (px, py) => [M.ox + Math.floor(px / 12), M.oy + Math.floor(py / 12)];
+		M.draw = (L, me, route, t) => {
+			const st = L.sys.travel;
+			g.fillStyle = "#121416";
+			g.fillRect(0, 0, cv.width, cv.height);
+			for (let j = 0; j < 24; j++) for (let i = 0; i < 40; i++) {
+				const z = zoneAt(L, M.ox + i, M.oy + j);
+				if (!z) continue;
+				const x = i * 12, y = j * 12;
+				g.fillStyle = BIOME[z.biome];
+				g.fillRect(x, y, 12, 12);
+				if (M.showDanger && z.region >= 0) {
+					const d = st.regions[z.region].danger;
+					g.fillStyle = `rgba(255,90,74,${(d * .32).toFixed(3)})`;
+					g.fillRect(x, y, 12, 12);
+				}
+				const e = zoneAt(L, z.x + 1, z.y), s = zoneAt(L, z.x, z.y + 1);
+				g.fillStyle = "#23292a";
+				if (e && e.region !== z.region && z.kind !== "sea" && e.kind !== "sea") g.fillRect(x + 12 - 1, y, 1, 12);
+				if (s && s.region !== z.region && z.kind !== "sea" && s.kind !== "sea") g.fillRect(x, y + 12 - 1, 12, 1);
+			}
+			g.fillStyle = "#7a7466";
+			for (let j = 0; j < 24; j++) for (let i = 0; i < 40; i++) {
+				const z = zoneAt(L, M.ox + i, M.oy + j);
+				if (!z || !z.road) continue;
+				const cx = i * 12 + 6, cy = j * 12 + 6;
+				g.fillRect(cx - 1, cy - 1, 2, 2);
+				for (const [dx, dy] of [
+					[1, 0],
+					[0, 1],
+					[-1, 0],
+					[0, -1]
+				]) {
+					const n = zoneAt(L, z.x + dx, z.y + dy);
+					if (n && n.road) g.fillRect(dx ? dx > 0 ? cx : cx - 6 : cx - 1, dy ? dy > 0 ? cy : cy - 6 : cy - 1, dx ? 6 : 2, dy ? 6 : 2);
+				}
+			}
+			for (let j = 0; j < 24; j++) for (let i = 0; i < 40; i++) {
+				const z = zoneAt(L, M.ox + i, M.oy + j);
+				if (!z) continue;
+				const cx = i * 12 + 6, cy = j * 12 + 6;
+				if (z.kind === "town") {
+					g.fillStyle = "#0c0d0e";
+					g.fillRect(cx - 4, cy - 4, 8, 8);
+					g.fillStyle = "#d4d9d6";
+					g.fillRect(cx - 3, cy - 3, 6, 6);
+				} else if (z.kind === "village") {
+					g.fillStyle = "#0c0d0e";
+					g.fillRect(cx - 3, cy - 3, 6, 6);
+					g.fillStyle = "#aab1ae";
+					g.fillRect(cx - 2, cy - 2, 4, 4);
+				} else if (z.kind === "camp") {
+					g.fillStyle = "#b0524a";
+					for (let k = -3; k <= 3; k++) {
+						g.fillRect(cx + k, cy + k, 1, 1);
+						g.fillRect(cx + k, cy - k, 1, 1);
+					}
+				} else if (z.kind === "fort") {
+					g.fillStyle = "#8d9491";
+					g.fillRect(cx - 4, cy - 4, 8, 1);
+					g.fillRect(cx - 4, cy + 3, 8, 1);
+					g.fillRect(cx - 4, cy - 4, 1, 8);
+					g.fillRect(cx + 3, cy - 4, 1, 8);
+				} else if (z.kind === "shrine") {
+					const dark = st.dark[z.x + "," + z.y];
+					g.fillStyle = dark ? "#3e4442" : "#c0605a";
+					g.fillRect(cx - 4, cy - 3, 9, 1);
+					g.fillRect(cx - 3, cy - 3, 1, 7);
+					g.fillRect(cx + 3, cy - 3, 1, 7);
+					if (dark) {
+						g.fillStyle = "#52e8d6";
+						g.fillRect(cx + ri(-3, 3), cy + ri(-2, 3), 2, 1);
+					}
+				}
+			}
+			for (const b of st.bands) {
+				const i = b.at[0] - M.ox, j = b.at[1] - M.oy;
+				if (i < 0 || j < 0 || i >= 40 || j >= 24) continue;
+				g.fillStyle = "#0c0d0e";
+				g.fillRect(i * 12 + 3, j * 12 + 3, 6, 6);
+				g.fillStyle = (t * 2 | 0) % 2 ? "#ff5a4a" : "#b0524a";
+				g.fillRect(i * 12 + 4, j * 12 + 4, 4, 4);
+			}
+			for (const s of st.storms) {
+				g.fillStyle = "rgba(82,232,214,.55)";
+				for (const [x, y] of s.path) {
+					const i = x - M.ox, j = y - M.oy;
+					if (i >= 0 && j >= 0 && i < 40 && j < 24) g.fillRect(i * 12 + 5, j * 12 + 5, 2, 2);
+				}
+				const R = Math.ceil(s.r * 1.4), x0 = Math.floor(s.x - R) - M.ox, y0 = Math.floor(s.y - R) - M.oy;
+				for (let j = y0; j <= y0 + 2 * R; j++) for (let i = x0; i <= x0 + 2 * R; i++) {
+					if (i < 0 || j < 0 || i >= 40 || j >= 24) continue;
+					const k = stormAt(L, M.ox + i + .5, M.oy + j + .5).k;
+					if (k <= 0) continue;
+					g.fillStyle = `rgba(6,10,12,${(.35 * k).toFixed(3)})`;
+					g.fillRect(i * 12, j * 12, 12, 12);
+					for (let n = 0; n < 1 + k * 5; n++) if (Math.random() < .5) {
+						g.fillStyle = [
+							"#52e8d6",
+							"#b8fff6",
+							"#ffffff",
+							"#0d1012"
+						][ri(0, 3)];
+						g.fillRect(i * 12 + ri(0, 10), j * 12 + ri(0, 11), ri(1, 5), 1);
+					}
+				}
+				const top = (Math.floor(s.y - R) - M.oy) * 12, h = (2 * R + 1) * 12;
+				for (let n = 0; n < 4 * s.power; n++) {
+					const y = top + ri(0, h), rh = ri(1, 3), x = (Math.floor(s.x - R) - M.ox) * 12, w = (2 * R + 1) * 12;
+					if (y > 0 && y < cv.height) g.drawImage(cv, Math.max(0, x), y, w, rh, Math.max(0, x) + (Math.random() < .5 ? -1 : 1) * ri(1, 4), y, w, rh);
+				}
+			}
+			g.fillStyle = "rgba(233,238,238,.7)";
+			for (const [x, y] of route || []) {
+				const i = x - M.ox, j = y - M.oy;
+				g.fillRect(i * 12 + 5, j * 12 + 5, 2, 2);
+			}
+			const i = me[0] - M.ox, j = me[1] - M.oy;
+			g.fillStyle = "#0c0d0e";
+			g.fillRect(i * 12 + 2, j * 12 + 2, 8, 8);
+			g.fillStyle = "#6ff3e4";
+			g.fillRect(i * 12 + 3, j * 12 + 3, 6, 6);
+			g.fillStyle = "#0c0d11";
+			g.fillRect(i * 12 + 5, j * 12 + 5, 2, 2);
+			if (M.hover) {
+				const [hx, hy] = M.hover;
+				g.strokeStyle = "rgba(233,238,238,.6)";
+				g.strokeRect((hx - M.ox) * 12 + .5, (hy - M.oy) * 12 + .5, 11, 11);
+			}
+		};
+		return M;
+	}
+	const COST = {
+		coast: 1.5,
+		plains: 1,
+		paddy: 1.3,
+		forest: 2,
+		bamboo: 2.2,
+		marsh: 3.5,
+		hills: 2.5,
+		mountains: 6
+	};
+	function route(L, from, to) {
+		const W = L.size.w, key = (x, y) => y * W + x, dist = /* @__PURE__ */ new Map([[key(...from), 0]]), prev = /* @__PURE__ */ new Map(), heap = [[0, key(...from)]];
+		const push = (e) => {
+			heap.push(e);
+			let i = heap.length - 1;
+			while (i > 0) {
+				const p = i - 1 >> 1;
+				if (heap[p][0] <= heap[i][0]) break;
+				[heap[p], heap[i]] = [heap[i], heap[p]];
+				i = p;
+			}
+		};
+		const pop = () => {
+			const top = heap[0], last = heap.pop();
+			if (heap.length) {
+				heap[0] = last;
+				let i = 0;
+				for (;;) {
+					const l = 2 * i + 1, r = l + 1;
+					let m = i;
+					if (l < heap.length && heap[l][0] < heap[m][0]) m = l;
+					if (r < heap.length && heap[r][0] < heap[m][0]) m = r;
+					if (m === i) break;
+					[heap[m], heap[i]] = [heap[i], heap[m]];
+					i = m;
+				}
+			}
+			return top;
+		};
+		const goal = key(...to);
+		while (heap.length) {
+			const [d, k] = pop();
+			if (k === goal) break;
+			if (d > (dist.get(k) ?? 1e9)) continue;
+			const x = k % W, y = (k - x) / W;
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			]) {
+				const z = zoneAt(L, x + dx, y + dy);
+				if (!z || z.kind === "sea") continue;
+				const c = d + (z.road ? .35 : COST[z.biome] || 2), n = key(z.x, z.y);
+				if (c < (dist.get(n) ?? 1e9)) {
+					dist.set(n, c);
+					prev.set(n, k);
+					push([c, n]);
+				}
+			}
+		}
+		if (!prev.has(goal)) return [];
+		const out = [];
+		for (let k = goal; k !== key(...from); k = prev.get(k)) out.unshift([k % W, Math.floor(k / W)]);
+		return out;
+	}
+	//#endregion
+	//#region prototypes-src/41-travel/main.js
+	const $ = (s) => document.querySelector(s);
+	const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({
+		"&": "&amp;",
+		"<": "&lt;",
+		">": "&gt;"
+	})[c]);
+	const layers = Object.fromEntries(Object.keys(LAYERS).map((k) => [k, true]));
+	const road = makeRoad($("#road"));
+	const map = makeMap($("#map"));
+	let L;
+	let P;
+	let T;
+	const log = [];
+	function world(seed) {
+		L = generateWorld(seed, 0);
+		P = L.actors[L.player];
+		advance(L, 144);
+		spawnStorm(L, {
+			x: P.at[0] + 9.5,
+			y: P.at[1] + 1.5,
+			r: 3.6,
+			peak: .9,
+			hdg: Math.PI,
+			speed: 1.4,
+			life: 14,
+			age: 3
+		});
+		T = {
+			route: [],
+			step: null,
+			hours: 0,
+			scene: null,
+			last: null
+		};
+		log.length = 0;
+		$("#log").innerHTML = "";
+		$("#seed").textContent = seed;
+		road.enter(zoneAt(L, ...P.at), 1, calendar(L.hour).season, shrineDark(L, ...P.at));
+		road.stop = 200;
+		map.center(...P.at, L);
+		panel(null);
+		info();
+	}
+	on("*", (e) => {
+		if (!/^(travel|storm)\./.test(e.type) || !L) return;
+		const { h, type, ...d } = e, cal = calendar(h);
+		log.unshift(`<li><span class="tag">${type}</span> <span class="dim">d${cal.day} ${String(cal.hour).padStart(2, "0")}h</span> ${esc(summary(d))}</li>`);
+		if (log.length > 60) log.length = 60;
+		$("#log").innerHTML = log.join("");
+	});
+	const summary = (d) => Object.entries(d).filter(([k]) => k !== "enc").map(([k, v]) => `${k}: ${k === "region" && L.regions[v] ? L.regions[v].name : k === "culture" && L.cultures[v] ? L.cultures[v].name : Array.isArray(v) ? v.join(",") : typeof v === "object" ? JSON.stringify(v) : v}`).join(" · ");
+	on("travel.deed", (e) => {
+		if (!P) return;
+		P.karma = (P.karma || 0) + (e.karma || 0);
+		for (const c in e.standing || {}) P.standing[c] = +Math.max(-1, Math.min(1, (P.standing[c] || 0) + e.standing[c])).toFixed(3);
+	});
+	const dirOf = (a, b) => [Math.sign(b[0] - a[0]), Math.sign(b[1] - a[1])];
+	function go(to) {
+		if (T.scene) return;
+		T.route = route(L, P.at, to);
+		road.stop = null;
+		road.arrived = null;
+		if (T.route.length) {
+			const [dx] = dirOf(P.at, T.route[0]);
+			if (dx && dx !== road.dir) road.dir = dx;
+		}
+	}
+	function onEdge() {
+		if (!T.route.length) return;
+		const next = T.route.shift(), [dx] = dirOf(P.at, next);
+		P.at = next;
+		if (++T.hours >= 4) {
+			T.hours = 0;
+			pass(1);
+		}
+		const cal = calendar(L.hour), d = dx || road.dir;
+		road.enter(zoneAt(L, ...P.at), d, cal.season, shrineDark(L, ...P.at));
+		const res = takeResidue(L, ...P.at);
+		if (res) for (let i = 0; i < res.n * 3; i++) road.props.push({
+			kind: "shard",
+			x: 60 + Math.random() * 360,
+			y: 156 + Math.random() * 18
+		});
+		if (!T.route.length) road.stop = 240 - 40 * road.dir;
+		const sc = enterZone(L, ...P.at);
+		if (sc) show(sc);
+		map.center(...P.at, L);
+		info();
+	}
+	function pass(hours) {
+		const before = calendar(L.hour);
+		advance(L, hours, true);
+		const now = calendar(L.hour);
+		if (now.season !== before.season || now.day !== before.day) road.redrawGround(now.season, shrineDark(L, ...P.at));
+	}
+	function show(sc) {
+		T.scene = sc;
+		road.scene(sc, L);
+		panel(sc);
+	}
+	function pick(id) {
+		const sc = T.scene;
+		if (!sc) return;
+		const out = choose(L, id);
+		if (!out) return;
+		road.after(sc, out);
+		let note = "";
+		if (out.hours) {
+			pass(out.hours);
+			note = ` <span class="dim">(${out.hours} ${out.hours === 1 ? "hour passes" : "hours pass"})</span>`;
+		}
+		if (out.fight) note += ` <span class="dim">(the fight is the game's: it gets these people by ledger id and answers won or lost; here it was rolled: ${out.fight.won ? "won" : "lost"})</span>`;
+		if (out.loot?.length) note += ` <span class="dim">(found: ${out.loot.map((l) => l.n + " " + l.item).join(", ")})</span>`;
+		$("#outcome").innerHTML = esc(out.text) + note;
+		if (out.again) {
+			renderChoices(sc.choices);
+			return;
+		}
+		T.scene = null;
+		renderChoices([]);
+		if (out.next) {
+			show(out.next);
+			$("#outcome").innerHTML = esc(out.text);
+		}
+		info();
+	}
+	function panel(sc) {
+		$("#sc-title").textContent = sc ? sc.title : "On the road";
+		$("#sc-text").textContent = sc ? sc.text : "Click a zone on the map (or use the arrow keys) and he sets off. Whatever the road holds finds him on the way.";
+		$("#sc-who").innerHTML = sc && sc.who.length ? sc.who.map((w) => `<li>${esc(w.name)} <span class="dim">${esc(w.job || w.cls)}, ${esc(w.weapon)}${w.id ? " · in the ledger as " + w.id : " · a stranger"}</span></li>`).join("") : "";
+		$("#outcome").innerHTML = "";
+		renderChoices(sc ? sc.choices : []);
+	}
+	function renderChoices(chs) {
+		$("#choices").innerHTML = chs.map((c) => `<button class="key" data-ch="${c.id}">${esc(c.label)}</button>`).join("");
+	}
+	$("#choices").addEventListener("click", (e) => {
+		const b = e.target.closest("[data-ch]");
+		if (b) pick(b.dataset.ch);
+	});
+	const pct = (v) => Math.round(v * 100) + "%";
+	function info() {
+		const cal = calendar(L.hour), z = zoneAt(L, ...P.at), reg = L.regions[z.region], cult = L.cultures[reg.culture], c = context(L, ...P.at), s = L.sys.travel.regions[z.region];
+		const ws = Object.entries(ENCOUNTERS).map(([id, e]) => [id, Math.max(0, e.w(c))]), tot = ws.reduce((a, [, w]) => a + w, 0);
+		$("#where").innerHTML = `<b>${reg.name}</b>, ${esc(cult.name)} <span class="dim">(${cult.kind})</span> · ${z.name ? esc(z.name) + " · " : ""}${z.biome}${z.road ? ", road" : ", wild"} · zone ${z.x},${z.y}`;
+		$("#when").innerHTML = `Year ${cal.year} · ${cal.season}, day ${cal.dayOfSeason} · ${String(cal.hour).padStart(2, "0")}:00${cal.night ? " · night" : ""} · weather: ${s.weather}`;
+		$("#odds").innerHTML = `Danger ${pct(s.danger)} · chance per zone here ${(chanceAt(c) * 100).toFixed(1)}% · ` + ws.filter(([, w]) => w > 0).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([id, w]) => `${id} ${pct(w / tot)}`).join(", ") + (c.band ? " · <b>a band is on this road</b>" : "");
+		$("#me").innerHTML = `${P.money.mon} mon · karma ${P.karma || 0} · standing here ${(P.standing[cult.id] || 0).toFixed(2)}${L.sys.travel.escort ? " · escorting " + esc(L.sys.travel.escort.name) + " to " + esc(L.sys.travel.escort.toName) : ""}`;
+	}
+	$("#map").addEventListener("click", (e) => {
+		const r = e.target.getBoundingClientRect(), s = e.target.width / r.width;
+		const to = map.zoneAtPx((e.clientX - r.left) * s, (e.clientY - r.top) * s);
+		const z = zoneAt(L, ...to);
+		if (z && z.kind !== "sea") go(to);
+	});
+	$("#map").addEventListener("mousemove", (e) => {
+		const r = e.target.getBoundingClientRect(), s = e.target.width / r.width;
+		map.hover = map.zoneAtPx((e.clientX - r.left) * s, (e.clientY - r.top) * s);
+	});
+	$("#map").addEventListener("mouseleave", () => map.hover = null);
+	addEventListener("keydown", (e) => {
+		if (e.target.closest && e.target.closest("input,select")) return;
+		const d = {
+			ArrowRight: [1, 0],
+			KeyD: [1, 0],
+			ArrowLeft: [-1, 0],
+			KeyA: [-1, 0],
+			ArrowUp: [0, -1],
+			KeyW: [0, -1],
+			ArrowDown: [0, 1],
+			KeyS: [0, 1]
+		}[e.code];
+		if (d) {
+			e.preventDefault();
+			const to = [P.at[0] + d[0], P.at[1] + d[1]], z = zoneAt(L, ...to);
+			if (z && z.kind !== "sea") go(to);
+		}
+		if (e.code === "KeyF") {
+			road.fast = !road.fast;
+			$("#fast").classList.toggle("on", road.fast);
+		}
+	});
+	$("#fast").onclick = () => {
+		road.fast = !road.fast;
+		$("#fast").classList.toggle("on", road.fast);
+	};
+	$("#wait").onclick = () => {
+		if (T.scene) return;
+		pass(24);
+		info();
+	};
+	$("#danger").onclick = () => {
+		map.showDanger = !map.showDanger;
+		$("#danger").classList.toggle("on", map.showDanger);
+	};
+	$("#storm").onclick = () => {
+		const d = road.dir;
+		spawnStorm(L, {
+			x: P.at[0] + .5 + d * 5,
+			y: P.at[1] + .5,
+			r: 3.4,
+			peak: .95,
+			hdg: d > 0 ? Math.PI : 0,
+			speed: 1.2,
+			life: 12,
+			age: 3
+		});
+		info();
+	};
+	$("#meet").innerHTML = "<option value=\"\">Meet…</option>" + Object.keys(SCENES).filter((k) => k !== "arrived" && k !== "slip").map((k) => `<option>${k}</option>`).join("");
+	$("#meet").onchange = (e) => {
+		const k = e.target.value;
+		e.target.value = "";
+		if (!k || T.scene) return;
+		const sc = openScene(L, k, ...P.at);
+		if (sc) {
+			road.stop = road.x;
+			show(sc);
+		} else $("#outcome").textContent = k === "hunters" ? "Nobody has a bounty on him yet." : k === "raiders" ? "No people near here hate this region's people enough." : "No storm here.";
+	};
+	$("#new").onclick = () => world(Math.random() * 1e6 | 0);
+	for (const k in LAYERS) {
+		const l = document.createElement("label");
+		l.innerHTML = `<input type="checkbox" checked data-layer="${k}"> ${LAYERS[k]}`;
+		$("#layers").append(l);
+	}
+	$("#layers").addEventListener("change", (e) => {
+		const k = e.target.dataset.layer;
+		if (k) layers[k] = e.target.checked;
+	});
+	const lg = $("#look").getContext("2d");
+	const LS = makeStorm(480, 270);
+	const RON = bake([]);
+	const SAM = bake(personOf("clan", 7));
+	const FARM = bake(personOf("village", 3));
+	let lookBg = null;
+	let lookDark = null;
+	let lookT = 0;
+	const lookK = () => +$("#k").value;
+	function lookFrame(dt) {
+		lookT += dt;
+		const k = lookK(), side = +$("#side").value, dark = k > STORM.shrineDark;
+		stormUpdate(LS, dt, k, side, .6, layers, 200, [132, 168]);
+		if (LS.freeze > 0) {
+			stormDraw(lg, LS, k, layers);
+			return;
+		}
+		if (!lookBg || lookDark !== dark) {
+			lookBg = ground({
+				x: 3,
+				y: 7,
+				biome: "plains",
+				kind: "shrine",
+				road: true
+			}, "autumn", dark);
+			lookDark = dark;
+		}
+		lg.drawImage(lookBg, 0, 0);
+		const f = (b, m) => b[m].poses[Math.floor(lookT * b[m].fps) % b[m].poses.length];
+		const people = [
+			[
+				FARM,
+				110,
+				1,
+				PALS.earth,
+				{
+					bare: true,
+					empty: true
+				}
+			],
+			[
+				RON,
+				200,
+				1,
+				PALS.ronin,
+				{}
+			],
+			[
+				SAM,
+				300,
+				-1,
+				PALS.samurai,
+				{ bare: true }
+			]
+		];
+		for (const [b, x, face, pal, o] of people) figure(lg, {
+			...f(b, "idle"),
+			...o
+		}, x, 167, face, pal, { slice: layers.people && k > 0 ? (img) => glitchFigure(img, x === 200 ? k * .6 : k) : null });
+		if ($("#lnight").checked) {
+			night(lg, .9);
+			for (const [b, x, face, pal, o] of people) eyes(lg, {
+				...f(b, "idle"),
+				...o
+			}, x, 167, face, pal);
+		}
+		stormDraw(lg, LS, k, layers);
+		if (layers.stutter) hold(LS, lg);
+	}
+	$("#k").oninput = () => $("#kv").textContent = (+$("#k").value).toFixed(2);
+	document.querySelectorAll("[data-k]").forEach((b) => b.onclick = () => {
+		$("#k").value = b.dataset.k;
+		$("#kv").textContent = (+b.dataset.k).toFixed(2);
+	});
+	document.querySelectorAll("[data-zoom]").forEach((b) => b.onclick = () => {
+		document.querySelectorAll(".zoomable").forEach((c) => c.style.width = b.dataset.zoom === "fit" ? "" : 480 * +b.dataset.zoom + "px");
+	});
+	let last = performance.now();
+	let infoT = 0;
+	function loop(now) {
+		const dt = Math.max(0, Math.min(.05, (now - last) / 1e3));
+		last = now;
+		const h = calendar(L.hour).hour, dark = h >= 21 || h < 4 ? .9 : h >= 19 ? (h - 19) / 2 * .9 : h < 6 ? (6 - h) / 2 * .9 : 0;
+		const next = T.route[0], [sx, sy] = next ? dirOf(P.at, next) : [0, 0], prog = road.dir > 0 ? road.x / 480 : 1 - road.x / 480;
+		const px = P.at[0] + .5 + sx * (prog - .5), py = P.at[1] + .5 + sy * (prog - .5), s = stormAt(L, px, py);
+		const toward = s.storm ? Math.sign((s.storm.x - px) * (sx || road.dir) + (s.storm.y - py) * sy) * road.dir || road.dir : 0;
+		const drift = s.storm ? Math.cos(s.storm.hdg) * (sx ? sx * road.dir : 1) : 0;
+		road.tick(dt);
+		road.frame(dt, {
+			k: s.k,
+			side: s.k > .55 ? 0 : toward,
+			drift: drift || .5,
+			wx: L.sys.travel.regions[zoneAt(L, ...P.at).region].weather,
+			dark,
+			layers,
+			moving: !T.scene && (T.route.length > 0 || road.stop != null),
+			onEdge
+		});
+		$("#k-here").textContent = s.k > 0 ? `storm here ${s.k.toFixed(2)}` : s.storm ? `nearest storm ${s.dist.toFixed(1)} zones` : "no storm";
+		map.draw(L, P.at, T.route, now / 1e3);
+		lookFrame(dt);
+		if ((infoT += dt) > .5) {
+			infoT = 0;
+			info();
+		}
+		requestAnimationFrame(loop);
+	}
+	world(12345);
+	requestAnimationFrame(loop);
+	window.__travel = {
+		get L() {
+			return L;
+		},
+		get T() {
+			return T;
+		},
+		road,
+		go,
+		pick
+	};
+	//#endregion
+})();
+
+</script>
+</body>
+</html>
