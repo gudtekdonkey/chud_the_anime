@@ -1,6 +1,7 @@
 import { RY } from '../rig/rig.js';
 import { shoulderDraw, shoulderStow } from './grip.js';
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
+import { NODACHI_3D } from './art3d.js';
 
 // ---- The nodachi (the Grave Nodachi pickup): a greatsword worn on the back, hilt over the shoulder. Every cut is heavy, wound up far and followed through low ----
 const along = a => [Math.cos(a), Math.sin(a)];
@@ -15,6 +16,7 @@ function blade(k, hand, a, len = LEN) { const d = along(a), n = [-d[1], d[0]]; l
   k.seg(k.add(hand, d, 2), k.add(hand, d, e), 1, 'W'); k.seg(k.add(k.add(hand, d, 2), n, 1), k.add(k.add(hand, d, Math.min(e, len - 3)), n, 1), 1, 'S'); }
 const MOUTH = (k) => k.L(9.5, -3.4), END = (k) => k.L(-14, -8.6);
 const ART = {
+  d3: NODACHI_3D,   // the same weapon from any other facing (art3d.js)
   // the long saya slung down his back to his calves, always there; the long hilt stands up past his hat while the blade is home
   far(k, p) { const m = MOUTH(k), e = END(k), d = [(e[0] - m[0]), (e[1] - m[1])], l = Math.hypot(...d), u = [d[0] / l, d[1] / l];
     k.seg(m, e, 2, 's'); k.put(...e, 'S');

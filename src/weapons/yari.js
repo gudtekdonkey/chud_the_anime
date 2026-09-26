@@ -1,6 +1,7 @@
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
 import { RY } from '../rig/rig.js';
 import { grip, twoHanded, breathe, slungDraw, slungStow } from './grip.js';
+import { YARI_3D } from './art3d.js';
 
 // ---- The yari: a straight-headed spear half again his height, slung across his back. Both hands on the haft, far apart;
 //   the back hand drives it through the front one, so every attack is led by the point ----
@@ -20,6 +21,7 @@ function held(k, hand, a) { const t = twoHanded(k, hand, a);
   if (t) spear(k, k.bh, t, 5, SHAFT - 5); else spear(k, hand, along(a), 13, SHAFT - 13); }
 const stowed = p => p.sword === null && !p.sheathing && p.bsword == null;
 const ART = {
+  d3: YARI_3D,   // the same weapon from any other facing (art3d.js)
   // slung diagonally across the back, butt at his calves and the head well above the hat; the body and mantle cover its middle
   far(k, p) { if (!stowed(p)) return; const g = k.L(9, -4.3); spear(k, g, along(SLUNG), 17, SHAFT - 17); },
   stowed() {},

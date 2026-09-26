@@ -24,10 +24,11 @@ The proof is `prototypes/27-port-system.html`. It reads the game's real `POSES` 
 - **Facing:** `P.view` is E, SE, S, NE or N, from the last movement input; `P.face` mirrors it for the west side. `player/draw.js` turns idle, walk, run and runArmed, and Harvest faces N. Attacks, skills and stances stay side on.
 - **Sheets:** no extra baking. The player is dressed live every frame (`dressed()`), so the facing is just a yaw passed along. The baked sheets (mirror images, afterimages) stay side on.
 - **Tuning:** `port()` rests the feet a little wider than rig v2 did (leg spread .15), so a stride seen from the front shows two legs.
-- **Not yet:** the samurai, and weapons other than the katana off the side.
+- **Samurai:** `world/enemies.js` turns them toward the ronin (`viewTo`, `e.view`), a beat late; `world/enemy-draw.js` ports their guard, flinch and stagger poses, bare-headed in their red-grey. The dead stay side on.
+- **Weapons:** each weapon's art carries `d3`, its 3D twin (`weapons/art3d.js`): where it is carried (hip scabbard, back sling, back saya), how it sits in either hand, sliding home, and the tanto's reverse-grip off hand.
 
 ## Still open
 
-- True left side or a mirror when facing W, SW and NW (mirrored for now).
-- Whether attacks and skills should turn too (their hits aim along x today).
+- Mirrored for W, SW and NW (owner: "sure for now"); his true left side is still possible later.
+- Attacks and skills stay side on (owner: "ok").
 - Moves drawn by hand (sit, the two open stances) stay hand-drawn. They face the camera or away and need no port.

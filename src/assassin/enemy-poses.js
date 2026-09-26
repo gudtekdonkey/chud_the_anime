@@ -69,6 +69,6 @@ export const RX = {
 };
 // the enemy's own swing cutting nothing: a thin pale arc where the ronin just was
 export const whiff = (S, E, dir = -1) => F.cres(S, E.x + dir * 7, E.y - 12, dir, 9, .55, 1, .1);
-// the ronin always ends sheathed: a flick, the blade slid home, his hand leaving the hilt
+// how he sheathes when nobody is left near: a flick, the blade slid home, his hand leaving the hilt
 export const quickSheathe = (t0, from) => [[t0, from], [t0 + .08, pz({ hy: 2, lean: .2, fa: [1.45, .05], sword: 1.2, ba: [-.4, .3] }), lin],
   [t0 + .2, pz({ hy: 1, lean: .12, fa: [1.0, .6], sheathing: true, ba: [.45, 1.1] })], [t0 + .34, pz({ hy: 1, lean: .06, fa: HILT, ba: [.3, 1.0] })], [t0 + .6, IDLE]];
