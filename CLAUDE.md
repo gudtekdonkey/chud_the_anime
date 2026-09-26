@@ -75,7 +75,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 
 ## Working conventions
 
-- Iterate on design as standalone pages in `prototypes/`, numbered in order (`17-…html` next). Never edit an old prototype; make a new one.
+- Iterate on design as standalone pages in `prototypes/`, numbered in order (`26-…html` next). Never edit an old prototype; make a new one.
 - Record every decision the owner makes in `docs/design-notes.md`.
 - Every new move gets an `ANIMS` row with an `about` text (it fills the moveset table); a skill that plays on another move's frames gets a row in `ui/moveset.js` `SKILL_ROWS`.
 - Tuning numbers, colours and timings change only on purpose, never as a side effect of a refactor.
