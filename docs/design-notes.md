@@ -80,6 +80,13 @@ Decisions made in the design sessions so far, newest last.
 - **Skill bar, like League of Legends:** bottom centre. The Storm Chain passive on the left (the Qi fills its icon; during the storm its 8 s drain as a sweep), then I, O, P, N and U, then K (the flash) and slide as the two summoner-style slots. Each slot shows its cooldown as a dark clockwise sweep with the seconds left, whole seconds then tenths under one.
 - **Cooldowns on every active.** The flash (K) is recastable after an assassination: its cooldown drops to 0.2 s. Starting values, to tune: K 3 s, I 2 s (Thousand Cuts 8 s), O 10 s, P 12 s, N 14 s, U 8 s, slide 1 s. K keeps the old rule that with no enemy near you can spam it.
 
+## Damage numbers and the health chip (2026-09-26)
+
+- Owner: "when dealing damage to the enemy or taking damage, small little numbers should appear and the health bar should get chipped away".
+- Claude's defaults, open to tuning: the HUD's 3x5 pixel font with a dark outline pops over the head and drifts up for 0.75 s. White for damage dealt, red for damage he or a companion takes. A killing blow's number is twice the size; an execution's is big and in the element's colour. Numbers count health in whole units: a samurai's 4 hp reads 40, his 0..1 health reads 100.
+- The chip: what a blow took lingers in a pale shade on the bar (pale red on his white HUD bar, pale pink on the samurai's red bar), holds 0.4 s, then drains. A heal fills at once. The samurai's bar stays after the killing blow until its chip runs out.
+- Nothing in the room hurts him yet, so H (testing) cuts him when nobody is in the party.
+
 ## Items and the HUD (`prototypes/20-items.html`, in the game)
 
 - **Owner:** "I love the whole UI … the HUD, everything, please do it." Built into `src/` as displayed: health and Qi top left (Qi notched in thirds, STORM when Storm Chain runs), mon and glitch shards top right, and the bottom bar (weapon slot, quick slots 1-4, four charm slots).

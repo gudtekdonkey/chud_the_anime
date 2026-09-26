@@ -9,15 +9,19 @@ import { panel, meter, slot, banner } from './hud-kit.js';
 import { text } from './pixfont.js';
 import { drawSkills } from './skill-bar.js';
 import { EL } from '../fx/element.js';
+import { trail, chip } from '../fx/numbers.js';
 
 // ---- The HUD (prototypes/20-items.html heroHud), in screen space after the world. It reads only INV, P.qi and the cooldowns ----
-const WH = '#ffffff', CY = '#6ff3e4', CY2 = '#b8fff6', LOW = '#ff5a4a';
+const WH = '#ffffff', CY = '#6ff3e4', CY2 = '#b8fff6', LOW = '#ff5a4a', CHIP = '#ff8f80';
 const WEAPON_ICON = { katana: ICON.katana, nodachi: ICON.nodachi };
+// the health bar's chip: a blow's worth lingers pale red, then drains after a beat
+const hpChip = trail(INV.hp); let last = 0;
 function healthAndQi(now) {
+  chip(hpChip, INV.hp, last ? Math.min(.1, (now - last) / 1000) : 0); last = now;
   const blink = Math.floor(now / 90) % 2, full = P.storm > 0;
   panel(5, 5, 80, 18);
   // below 35% the health blinks red
-  meter(10, 9, 70, 4, INV.hp, INV.hp < .35 && Math.floor(now / 250) % 2 ? LOW : WH, 0, INV.fx.hp > 0);
+  meter(10, 9, 70, 4, INV.hp, INV.hp < .35 && Math.floor(now / 250) % 2 ? LOW : WH, 0, INV.fx.hp > 0, hpChip.v, CHIP);
   // Qi, notched in thirds; while Storm Chain runs it glows and crackles and says so
   if (full) { g.globalAlpha = .35 + .35 * Math.random(); g.fillStyle = COL.fx; g.fillRect(8, 14, 74, 7); g.globalAlpha = 1; }
   meter(10, 16, 70, 3, P.qi, full ? (blink ? WH : COL.fx2) : COL.eye, 3, INV.fx.qi > 0);   // Qi takes the element's colours
