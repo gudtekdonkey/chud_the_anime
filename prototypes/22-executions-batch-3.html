@@ -176,14 +176,29 @@ const rr = (a, b) => a + Math.random() * (b - a), sgn = () => Math.random() < .5
 const ENEMY_RC = { K: '#3a2e31', D: '#5a4a4e', E: '#ff5a4a', W: '#cfd4d6', S: '#7d868e', s: '#3a3033' };
 const off = document.createElement('canvas'); off.width = off.height = 48; const og = off.getContext('2d', { willReadFrequently: true });
 const tint = document.createElement('canvas'); tint.width = tint.height = 48; const tg = tint.getContext('2d');
-function paint(pose, enemy, eye) {
+// feet on the floor: a pose's lowest point (knee, foot, a hand on the floor, the torso or head when he lies down) is set on the floor row,
+// so a planted foot never floats and never sinks, in the key poses and every in-between. Airborne figures (z, rot, air) are left alone.
+function lowest(p) {
+  const hip = [0, OY - 11 + p.hy], up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)], a2 = p.lean + p.chest;
+  const Ly = (u, v) => u <= 4 ? hip[1] + up[1] * u + fw[1] * v : hip[1] + up[1] * 4 - Math.cos(a2) * (u - 4) + Math.sin(a2) * v;
+  let m = -99; const leg = ([th, kn], off) => { const h = Ly(0, off), k = h + Math.cos(th) * 5, f = k + Math.cos(th - kn) * 6; m = Math.max(m, k + .25, f + .25); };
+  leg(p.fl, .5); leg(p.bl, -.5);
+  if (!p.noUpper) { for (const [u, v] of [[0, -2], [0, 2], [7, 2.3], [8.2, 1.4], [8.2, -1.6], [7, -2.4]]) m = Math.max(m, Ly(u, v) - 1);
+    if (!p.noHead) m = Math.max(m, Ly(10, .6) + 1);
+    for (const [sh, el] of [p.fa, p.ba]) m = Math.max(m, Ly(7, 0) + Math.cos(sh) * 4 + Math.cos(sh + el) * 4 + .25); }
+  else for (const [u, v] of [[0, -2], [0, 2], [2.6, 2.2], [2.6, -2.2]]) m = Math.max(m, Ly(u, v) - 1);
+  return m;
+}
+const ground = p => ({ ...p, hy: p.hy + (OY - lowest(p)) });
+function paint(pose, enemy, eye, air) {
+  if (!air && !pose.air) pose = ground(pose);
   og.clearRect(0, 0, 48, 48);
   if (enemy) { const saved = { ...RC }; Object.assign(RC, ENEMY_RC); if (eye) RC.E = eye; rig(og, 0, { ...pose, bare: true }); Object.assign(RC, saved); }
   else rig(og, 0, pose);
   return off;
 }
 function figure(g, R, alpha = 1) {
-  let img = paint(R.pose, R.enemy, R.eye);
+  let img = paint(R.pose, R.enemy, R.eye, R.z > .5 || !!R.rot || R.mir && R.z);
   if (R.col) { tg.clearRect(0, 0, 48, 48); tg.drawImage(img, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = R.col; tg.fillRect(0, 0, 48, 48); tg.globalCompositeOperation = 'source-over'; img = tint; }
   g.save(); g.globalAlpha *= alpha;
   if (R.mir) { g.translate(Math.round(R.x), Math.round(R.y) + 1 + Math.round(R.z || 0)); g.scale(1, -1); } else g.translate(Math.round(R.x), Math.round(R.y - (R.z || 0)));
@@ -202,7 +217,7 @@ function withShadow(g, R) {
 
 // ---------- pieces: the enemy cut apart along lines, each chunk tumbling and falling ----------
 function pixelsOf(E) {
-  const img = paint(E.pose, true, E.eye), d = og.getImageData(0, 0, 48, 48).data, out = [], c = Math.cos(E.rot || 0), sn = Math.sin(E.rot || 0);
+  const img = paint(E.pose, true, E.eye, E.z > .5 || !!E.rot), d = og.getImageData(0, 0, 48, 48).data, out = [], c = Math.cos(E.rot || 0), sn = Math.sin(E.rot || 0);
   for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) { const i = (y * 48 + x) * 4; if (d[i + 3] < 10) continue;
     let lx = E.face * (x - 24) + (E.face < 0 ? -1 : 0), ly = y - 40;
     if (E.rot) { const dy = ly + 11; [lx, ly] = [Math.round(lx * c - dy * sn), Math.round(lx * sn + dy * c - 11)]; }
@@ -216,7 +231,9 @@ function toPieces(pts, lines, floorY, push) {
   const out = [];
   for (const g of groups.values()) { if (g.length < 3) continue;
     const cx = g.reduce((s, p) => s + p[0], 0) / g.length, cy = g.reduce((s, p) => s + p[1], 0) / g.length;
-    const P = { pts: g.map(p => [p[0] - cx, p[1] - cy, p[2]]), x: cx, fy: floorY, z: floorY - cy, vx: 0, vy: 0, vz: 0, a: 0, va: 0, rest: 0, life: 9 };
+    let sxx = 0, syy = 0, sxy = 0; for (const p of g) { const dx = p[0] - cx, dy = p[1] - cy; sxx += dx * dx; syy += dy * dy; sxy += dx * dy; }
+    const P = { pts: g.map(p => [p[0] - cx, p[1] - cy, p[2]]), x: cx, fy: floorY, z: floorY - cy, vx: 0, vy: 0, vz: 0, a: 0, va: 0, rest: 0, life: 9,
+      axis: .5 * Math.atan2(2 * sxy, sxx - syy) };   // its long axis: it comes to rest with this lying flat
     push(P, cx, cy); out.push(P); }
   return out;
 }
@@ -228,6 +245,8 @@ function splitPiece(S, P, L, kick) {   // cut an airborne chunk in two along a w
 function updatePieces(S, dt) {
   for (const P of S.pieces) {
     if (P.script) { P.st = (P.st || 0) + dt; const o = P.script(P.st); P.x = P.x0 + o.dx; P.a = o.a;
+      if (P.axis != null && P.st > .45) { const base = -P.axis, flat = base + Math.round((o.a - base) / Math.PI) * Math.PI, k = Math.min(1, (P.st - .45) / .35);   // once down, it settles onto its long side
+        P.a = o.a + (flat - o.a) * k * k * (3 - 2 * k); }
       const low = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
       P.z = Math.max(low, (P.z0 + (o.dz || 0)));
       if (o.done) P.life -= dt; continue; }
@@ -237,7 +256,11 @@ function updatePieces(S, dt) {
       if (P.z - low <= 0 && P.vz < 0) { P.z = low; P.vz = -P.vz * .06; P.vx *= .55; P.va *= .3; if (Math.abs(P.vz) < 25) { P.vz = 0; P.va = 0; P.vx *= .6; P.rest += .34; } } }
     else {
       if (P.flatA == null) { const xs = P.pts.map(q => q[0]), ys = P.pts.map(q => q[1]), w = Math.max(...xs) - Math.min(...xs), h = Math.max(...ys) - Math.min(...ys);
-        const q = h > w * 1.2 ? Math.PI / 2 : Math.PI; P.flatA = Math.round(P.a / q) * q; if (h > w * 1.2 && Math.abs(Math.round(P.a / Math.PI) * Math.PI - P.a) < .01) P.flatA = P.a >= 0 ? Math.PI / 2 : -Math.PI / 2; }
+        // a long piece (a blade, a half of him) settles with its long axis flat on the floor, whatever angle it was cut at
+        let sxx = 0, syy = 0, sxy = 0; for (const [x, y] of P.pts) { sxx += x * x; syy += y * y; sxy += x * y; }
+        const th = .5 * Math.atan2(2 * sxy, sxx - syy), l1 = (sxx + syy) / 2 + Math.hypot((sxx - syy) / 2, sxy), l2 = (sxx + syy) / 2 - Math.hypot((sxx - syy) / 2, sxy);
+        if (l1 > 2.2 * Math.max(l2, .01)) P.flatA = Math.round((P.a + th) / Math.PI) * Math.PI - th;
+        else { const q = h > w * 1.2 ? Math.PI / 2 : Math.PI; P.flatA = Math.round(P.a / q) * q; if (h > w * 1.2 && Math.abs(Math.round(P.a / Math.PI) * Math.PI - P.a) < .01) P.flatA = P.a >= 0 ? Math.PI / 2 : -Math.PI / 2; } }
       P.a += (P.flatA - P.a) * Math.min(1, dt * 10);   // tip over onto its long side
       P.z = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
       P.life -= dt;
@@ -253,7 +276,10 @@ function drawPieces(g, S) {
 const fallScript = (dir, turn, delay = 0) => t => { const u = Math.max(0, t - delay), g = Math.min(1, u / .42);
   return { dx: dir * (u * 9 + g * 4), dz: -46 * g * g, a: turn * 1.55 * ease(Math.min(1, u / .5)), done: t > 1.3 + delay }; };
 const buckle = (dir, delay = .06) => t => { const k = ease(Math.min(1, Math.max(0, (t - delay) / .5))); return { dx: dir * 2 * k, dz: -40, a: dir * 1.45 * k, done: t > 1.3 }; };
-function shatter(S, E, lines, push) { S.pieces.push(...toPieces(pixelsOf(E), lines, E.y, push)); E.gone = true; }
+function shatter(S, E, lines, push) {
+  let body = E;
+  if (E.pose.sword != null && !E.keepSword) { dropSword(S, E, E.pose, E.face); body = { ...E, pose: pz({ ...E.pose, sword: null, empty: true }) }; }   // his hands open as he comes apart
+  S.pieces.push(...toPieces(pixelsOf(body), lines, E.y, push)); E.gone = true; }
 
 // ---------- per-scene effects ----------
 function FX() { return { sparks: [], frags: [], zaps: [], cuts: [], rings: [], cres: [], ghosts: [], cracks: [], dust: [] }; }
@@ -363,7 +389,8 @@ function topple(S, E, dir, dur = .5, slide = 3) {
 function dropSword(S, E, pose, dir = -1) {
   const withS = pixelsOf({ ...E, pose }), without = new Set(pixelsOf({ ...E, pose: pz({ ...pose, sword: null }) }).map(q => q[0] + ',' + q[1]));
   S.pieces.push(...toPieces(withS.filter(q => !without.has(q[0] + ',' + q[1])), [], E.y, P => { P.x0 = P.x; P.z0 = P.z;
-    P.script = tt => { const k = Math.min(1, tt / .3); return { dx: dir * k * 3, dz: -k * k * 40, a: -dir * k * 1.1, done: tt > 1.6 }; }; }));
+    const drop = Math.max(40, P.z0 + 10), T = .3 * Math.sqrt(drop / 40);   // from wherever it was let go, all the way down
+    P.script = tt => { const k = Math.min(1, tt / T); return { dx: dir * k * 3, dz: -k * k * drop, a: -dir * k * 1.1, done: tt > 1.6 + T }; }; }));
 }
 // each execution: side (where he lands), gap, dur, run(S, t, R, E). The ronin always ends sheathed and the kill lands on the click.
 const quickSheathe = (t0, from) => [[t0, from], [t0 + .08, pz({ hy: 2, lean: .2, fa: [1.45, .05], sword: 1.2, ba: [-.4, .3] }), lin],
