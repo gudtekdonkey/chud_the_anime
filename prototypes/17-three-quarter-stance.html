@@ -1,0 +1,126 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Three-Quarter Stance</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 26px; }
+  header { display: grid; gap: 8px; max-width: 70ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 19px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--rule); display: grid; }
+  .card canvas { width: 100%; aspect-ratio: 56 / 40; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--rule); }
+  .card div { padding: 14px 16px 16px; display: grid; gap: 6px; }
+  .num { font: 700 13px/1 "Pixelify Sans", monospace; color: var(--cyan); letter-spacing: .06em; }
+  .ask { background: var(--panel); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; max-width: 70ch; }
+  .ask b { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Sword out · three-quarter view</div>
+    <h1>Shoulder to him, chest to us</h1>
+    <p>His hips and chest are turned open toward the camera. His head is in profile and his lead shoulder points at the enemy, so he never looks at us. The blade hangs from his back hand, point to the floor behind him. The enemy stands to the right in each scene so the direction is clear. Three takes, each breathing, with a blink and the mantle stirring.</p>
+  </header>
+  <div class="grid" id="grid"></div>
+  <div class="ask">
+    <h2>Your call</h2>
+    <p><b>A, B or C</b>, or mix. This becomes his blade-out stance and replaces the ones you didn't like. The four side-on ones can stay in the rotation or go.</p>
+  </div>
+</div>
+
+<script>
+const PAL = { G: '#3b424c', H: '#2a2f37', B: '#1a1d24', K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', E: '#6ff3e4', W: '#e9eeee', S: '#7d868e' };
+// 28 wide. The hat and head are in profile facing right (toward the enemy); the chest and hips are open to the camera.
+const BASE = [
+  '.............GGGG...........',
+  '..........GGHHHHHHGG........',
+  '.......GGHHHHHHHHHHHHGG.....',
+  '......GBBBBBBBBBBBBBBBBG....',
+  '.......KBBBBBBBBBBBBBBK.....',
+  '.............KKKK...........',
+  '.............KKKE...........',
+  '.............KKK............',
+  '.........mMMMKKKKKK.........',
+  '........mMMMMKKDKKKK........',
+  '........MMMK.KKDKKK.K.......',
+  '.......MMM.K.KKDKKK.K.......',
+  '.......MM..K.KKDKKK..K......',
+  '.......M...K.DDDDDD..K......',
+  '......M...SK.KKKKKK...K.....',
+  '.........W...KKKKKK.........',
+  '........W...KKK..KKK........',
+  '.......W...KKK....KKK.......',
+  '......W...KKK......KKK......',
+  '.....W...KKK........KKK.....',
+  '....W...KKK..........KKK....',
+  '...W...KKKK..........KKKKK..',
+];
+const setPx = (rows, list) => { const r = rows.map(s => [...s]); for (const [x, y, c] of list) r[y][x] = c; return r.map(a => a.join('')); };
+// B: the lead arm lifted toward him, open hand, as if holding him off
+const REACH = setPx(BASE, [[20, 10, '.'], [20, 11, '.'], [21, 12, '.'], [21, 13, '.'], [22, 14, '.'],
+  [20, 10, 'K'], [21, 10, 'K'], [22, 11, 'K'], [23, 11, 'K'], [24, 11, 'K'], [25, 11, 'D']]);
+// C: a narrower, sunk stance with the hat tipped low over the eye
+const SUNK = [...BASE.slice(0, 16).map((r, y) => y === 6 ? '.............KKKK...........' : r),
+  '.......W...KKK...KKK........',
+  '......W....KKK...KKK........',
+  '.....W.....KK.....KK........',
+  '....W.....KKK.....KKK.......',
+  '...W.....KKKK.....KKKKK.....',
+].map((r, y) => y < 5 ? ' '.repeat(0) + r : r);
+const SUNK_ROWS = [...SUNK.slice(0, 5).map(r => r), ...SUNK.slice(5)];
+const TAKES = [
+  { name: 'Open, blade low', note: 'Wide stance, chest square to us, head turned to him. The lead arm hangs loose at his side and the blade trails from the back hand to the floor. Relaxed and dangerous.', rows: BASE, hatDrop: 0 },
+  { name: 'Holding him off', note: 'The same stance, but the lead arm lifts toward him with the hand open, keeping the distance. Reads as a warning.', rows: REACH, hatDrop: 0 },
+  { name: 'Sunk and hidden', note: 'Narrower and lower, knees bent. The hat tips down over the eye, so you only see the glint of it. The most menacing.', rows: SUNK_ROWS, hatDrop: 1 },
+];
+const UPPER = 15, BR = [0, 0, 0, 1, 1, 1, 1, 0];
+function pixels(tk, f, blink) {
+  const out = [], b = BR[f % 8], stir = f % 16 === 5 || f % 16 === 6;
+  tk.rows.forEach((r, y) => [...r].forEach((ch, x) => {
+    if (ch === '.' || ch === ' ') return;
+    if (blink && ch === 'E') ch = 'K';
+    let yy = y < UPPER ? y + b : y;
+    if (y < 5) yy += tk.hatDrop;   // C: the hat sits lower, over the eye
+    let xx = x; if (stir && (ch === 'M' || ch === 'm') && y >= 11) xx -= 1;   // the mantle's trailing edge lifts back
+    out.push([xx, yy, ch]);
+  }));
+  return out;
+}
+function floor(W, H, seed) { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); let r = seed;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  g.fillStyle = '#474c4a'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < W * H / 40; i++) { g.fillStyle = rnd() < .5 ? '#434846' : '#4b504e'; g.fillRect(rnd() * W | 0, rnd() * H | 0, 2, 1); } return c; }
+// a plain enemy silhouette to the right, facing him, so the direction reads
+const FOE = ['..KKK..', '.KKKKK.', '..KKE..', '...KK..', '.KKKKK.', 'K.KKK.K', 'K.KKK.K', '..KKK..', '..K.K..', '..K.K..', '.KK.KK.'];
+const FOEPAL = { K: '#3a2e31', E: '#ff5a4a' };
+function draw(g, px, ox, feet) {
+  const top = feet - 21;
+  g.globalAlpha = .17; for (const [x, y, ch] of px) { g.fillStyle = PAL[ch]; g.fillRect(ox + x, 2 * feet + 1 - (top + y), 1, 1); }
+  g.globalAlpha = 1; g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(ox + 8, feet + 1, 14, 1);
+  for (const [x, y, ch] of px) { g.fillStyle = PAL[ch]; g.fillRect(ox + x, top + y, 1, 1); }
+}
+const cards = TAKES.map((tk, i) => {
+  const card = document.createElement('section'); card.className = 'card';
+  card.innerHTML = `<canvas width="56" height="40" role="img" aria-label="Three-quarter stance ${String.fromCharCode(65 + i)}: ${tk.name}"></canvas><div><span class="num">${String.fromCharCode(65 + i)}</span><h2>${tk.name}</h2><p>${tk.note}</p></div>`;
+  document.getElementById('grid').append(card);
+  return { g: card.querySelector('canvas').getContext('2d'), tk, floor: floor(56, 40, 7 + i * 13), phase: i * 3 };
+});
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function tick(now) {
+  const t = still ? 0 : now / 1000, f = Math.floor(t * 4);
+  for (const c of cards) {
+    c.g.drawImage(c.floor, 0, 0);
+    draw(c.g, pixels(c.tk, f + c.phase, !still && (t + c.phase) % 3.4 < .12), 2, 33);
+    FOE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === '.') return; c.g.fillStyle = FOEPAL[ch]; c.g.fillRect(44 + 6 - x, 23 + y, 1, 1); }));
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
