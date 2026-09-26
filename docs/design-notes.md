@@ -32,11 +32,13 @@ Decisions made in the design sessions so far, newest last.
   - Decoy: cut.
   - Blade Recall: never spins. The blade flies point-first, turns slowly to point back at him, and hangs still, drifting a pixel at a time.
     - **Picked:** tap R to call it back. Recalls alternate between *home to the sheath* (the blade flies into the scabbard on the click) and *the catch* (he snatches the grip as it passes, then flicks and sheathes).
-    - *The anchor* (he flashes to the blade instead) is kept. Proposed use: **hold R**, a gap-closer, or an escape if the blade was thrown away from danger. Not yet confirmed.
+    - *The anchor* (he flashes to the blade instead) is kept, on **hold R** (confirmed): a gap-closer, or an escape if the blade was thrown away from danger. All three takes are in the game.
   - Time Slice (**approved**): takes every enemy inside a zone round him, however many. The pass takes as long as it needs (a step of 0.016–0.06 s per enemy) and the zone grows with power.
-  - Breath of Qi is a major skill. **All takes are kept, for different jobs** (proposed, to confirm): Seiza becomes the **Qi shield** (kneel and heal behind a dome of light that grows with power, huge at III with Qi floating round it); Standing kata is the quick heal on your feet; Lotus is the full heal at a rest point; Storm breath (loved) is the burst heal and knockback for the whole meter.
+  - Breath of Qi is a major skill. **All five takes approved and kept, for different jobs** (the jobs are proposed): Seiza becomes the **Qi shield** (kneel and heal behind a dome of light that grows with power, huge at III with Qi floating round it); Standing kata is the quick heal on your feet; Lotus is the full heal at a rest point; Storm breath (loved) is the burst heal and knockback for the whole meter.
   - Three power tiers each: I is quiet (a trickle of motes); II adds matter lifting off the floor; III adds ribbons of light. Nothing on the floor (no ripples, no sigils) and nothing over his head.
-  - **Harvest** splits off onto its own key (E proposed): hold near the fallen to turn their remains into EXP. Healing stays on C.
+  - **Harvest** splits off onto its own key (E proposed): hold near the fallen to turn their remains into EXP. Healing stays on C. Approved. He should face **north** (back to the camera) and let it come to him; that needs the 8-direction rig (see Next).
+  - **Glitch Dodge power:** at power II it dodges again if another blow comes within 0.5 s; at power III within 1 s.
+- **Counters by attack** (`prototypes/23-counters.html`): the enemy has several attacks, each with a readable tell (a glint running up the blade, the eye flashing, plus the wind-up itself). A blow that lands while he holds F plays the counter that answers that attack: overhead chop → receive and flow; horizontal sweep → under the sweep; thrust → along the blade; diagonal cut → disarm; low rising cut → pin the blade; charge → matador; leaping strike → under the leap; three-cut flurry → break the rhythm.
 - **Nothing left to fight:** if no enemy is within two screens (960 px) when an attack or execution ends, he skips the blade-out stance and sheathes at once, unbothered.
 
 ## Next
@@ -53,5 +55,5 @@ Decisions made in the design sessions so far, newest last.
    - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, in a darker red-grey.
    - Executions are short and brutal, show only the key frames (each one leaning into the motion), and cut the enemy into real pieces.
 3. **Clothing redesign.** The mantle was flattened because it read as a hump; the rest still needs a pass.
-4. **Front and back views** for every move. Everything uses the side view today.
+4. **Front, back and diagonal views** for every move. Everything uses the side view today. The 8-direction rig (`prototypes/19-rig-v2-and-clothing.html`) is the path: port each move's key poses onto it, starting with walk, idle and the stances. Harvest facing north waits on this.
 5. **Real enemies** with health, needed by K.
