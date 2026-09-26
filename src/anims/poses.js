@@ -2,6 +2,7 @@ import { pz, HILT, lin, keyed } from '../rig/pose.js';
 import { gaitFrames } from '../traits/bake.js';
 import { BASE } from '../traits/knobs.js';
 import { ITEM_POSES } from './item-poses.js';
+import { BREATH_POSES } from './breath-poses.js';
 import { comboPoses } from './combo-poses.js';
 import { TURNED } from './turned-poses.js';
 
@@ -44,7 +45,7 @@ const STANCE_POSES = [
 ];
 const STANCE_BREATH = [0, 0, .3, .7, 1, 1, 1, .7, .3, 0, 0, 0, .2, .5, .2, 0];
 export const POSES = {
-  ...ITEM_POSES,
+  ...ITEM_POSES, ...BREATH_POSES,
   ...Object.fromEntries(STANCE_POSES.map((q, k) => ['ready' + k, STANCE_BREATH.map((b, i) => pz({ ...q, breath: b, bsword: q.bsword + b * .03, flutter: i === 5 || i === 13 ? 1 : 0 }))])),
   ...TURNED,   // the two open stances and the monk sit, turned on the rig
   idle: idle16,

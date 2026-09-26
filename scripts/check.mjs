@@ -240,8 +240,16 @@ try {
     await kb.press('u'); await reach(/^sweep$/); await until('the slam', () => window.__game.P.t > 1.9); await shot('16-power-III-slam'); await reach(FREE, 8000);
     await page.selectOption('#power', '0'); });
   await run('C: sit, then a key to stand', async () => {
+    await until('the storm over (C in the storm is Storm breath)', () => !(window.__game.P.storm > 0), null, 15000);
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });
+  await run('hold C: Breath of Qi (the kata spends a notch of Qi and heals; with less than a notch it fizzles)', async () => {
+    await until('the storm over', () => !(window.__game.P.storm > 0), null, 15000);
+    const q0 = await page.evaluate(() => window.__game.P.qi);
+    await kb.down('c');
+    if (q0 >= 1 / 3) { await reach(/^kata$/); await until('an out-breath', q => window.__game.P.qi < q - .2, q0, 5000); await shot('07b-kata'); await kb.up('c'); }
+    else { await sleep(600); if (/^(kata|seiza|lotus)$/.test(await state())) fail(`a breath started on ${q0.toFixed(2)} Qi`); await kb.up('c'); }
+    await reach(FREE, 5000); });
   await run('every weapon (the picker) slashes, stands in a stance and sheathes', async () => {
     for (const id of ['yari', 'nodachi', 'tanto', 'naginata', 'kanabo', 'kusarigama', 'tessen', 'bo', 'tetsubo', 'kama', 'jitte', 'daisho', 'nunchaku', 'wakizashi', 'katana']) {
       await page.selectOption('#weapon', id); await until(`weapon ${id}`, w => window.__game.P.weapon === w, id);
