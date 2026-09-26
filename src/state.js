@@ -1,3 +1,5 @@
+import { makeFigure } from './wardrobe/dress.js';
+
 // ---- Shared mutable state: the player, the camera beats and every effect list ----
 export const P = { x: 200, y: 180, z: 0, vz: 0, vx: 0, vy: 0, face: 1, state: 'idle', t: 0, still: 0, combo: false,
   hitDone: {}, ev: {}, inv: false, ghosts: [], dead: 0, flash: 0, struck: new Set(), charge: null, cv: null, fr: null, trem: 0,
@@ -6,6 +8,8 @@ export const P = { x: 200, y: 180, z: 0, vz: 0, vx: 0, vy: 0, face: 1, state: 'i
   cd: {}, cdMax: {}, cdPop: {}, cdDeny: {},   // cooldowns: seconds left, the full length, the ready glint, the refused-press blink
   weapon: 'katana' };
 export const parts = [];
+// what he wears (item ids from src/wardrobe/items.js) and the state of its cloth; the wardrobe under the game changes it
+export const wear = makeFigure();
 // reassigned from many modules, so they live on one object: screen shake, hit pause, the pale screen flash,
 // and roomClear (page checkbox: treat the enemies as no threat)
 export const S = { shake: 0, hitstop: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false };

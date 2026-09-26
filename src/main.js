@@ -1,5 +1,5 @@
 // ---- Boot: build everything, wire the page, run a fixed 60 Hz update under a render per animation frame ----
-import { P } from './state.js';
+import { P, wear } from './state.js';
 import { ENEMIES } from './world/enemies.js';
 import { update } from './player/update.js';
 import { render } from './world/render.js';
@@ -8,6 +8,7 @@ import { fillMoveset } from './ui/moveset.js';
 import { initStripTester } from './ui/strip-tester.js';
 import { initPersonality } from './ui/personality.js';
 import { initWeaponPicker } from './ui/weapon-picker.js';
+import { initWardrobe } from './ui/wardrobe.js';
 
 let last = performance.now(), acc = 0;
 function frame(now) {
@@ -22,6 +23,7 @@ fillMoveset();
 initStripTester();
 initPersonality();
 initWeaponPicker();
+initWardrobe();
 
 // a read-only debug hook for `npm run check`: in dev, or in any build opened with ?test
-if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) window.__game = { P, E: ENEMIES };
+if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) window.__game = { P, E: ENEMIES, wear };
