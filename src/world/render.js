@@ -8,7 +8,7 @@ import { sgn } from '../fx/util.js';
 import { frameOf } from '../player/actions.js';
 import { drawPlayer, drawMirror } from '../player/draw.js';
 import { drawHud } from '../ui/hud.js';
-import { itemDrawables, drawItemsOver } from '../items/items.js';
+import { itemDrawables, drawItemsOver, drawSmoke } from '../items/items.js';
 import { DUMMIES, drawDummy } from './dummies.js';
 import { PILLARS, bg, drawPillar } from './room.js';
 
@@ -17,12 +17,13 @@ export function render() {
   if (S.shake > 0) { const a = Math.max(1, Math.round((P.shakeAmp || 2) * Math.min(1, S.shake / .15))); g.translate(sgn() * a, sgn() * Math.ceil(a / 2)); } // never a zero offset
   if (S.shake <= 0) P.shakeAmp = 2;
   g.drawImage(bg, 0, 0);
-  drawFloorFx();
+  drawFloorFx(); drawSmoke(false);
   // depth-sort the pillars, the dummy and the player by their feet
   const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), ...DUMMIES.map(d => ({ y: d.y, d: () => drawDummy(g, d) })), { y: P.y, d: drawPlayer }, ...itemDrawables(),
     ...mirrors.map(m => ({ y: m.y, d: () => drawMirror(m) })),
     ...debris.map(d => ({ y: d.state === 'in' ? d.cy + Math.sin(d.a) * d.r * .45 : d.py, d: () => drawDebris(d) }))];
   items.sort((a, b) => a.y - b.y).forEach(i => i.d());
+  drawSmoke(true);   // a thinner haze in front of everyone
   drawFx();
   for (const q of parts) {
     g.globalAlpha = Math.min(1, q.life / q.max * 1.6); g.fillStyle = q.col;

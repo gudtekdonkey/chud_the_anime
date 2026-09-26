@@ -6,7 +6,8 @@ export const P = { x: 200, y: 180, z: 0, vz: 0, vx: 0, vy: 0, face: 1, state: 'i
 export const parts = [];
 // reassigned from many modules, so they live on one object: screen shake, hit pause, the pale screen flash,
 // and roomClear (page checkbox: treat the training dummies as props, not enemies)
-export const S = { shake: 0, hitstop: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false, banner: null };
+export const S = { shake: 0, hitstop: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false, banner: null,
+  smoke: 0 };   // seconds of the static bomb's smoke left: while it is up every enemy counts as isolated, so K can take any of them
 
 // ---- The inventory: the HUD reads only this, and every system writes to it. Qi stays on P.qi (0..1) ----
 // hp 0..1; power 1..3 is the I / II / III tier, from shrine upgrades and power relics (items/inventory.js powerTier); edge: seconds of whetstone left

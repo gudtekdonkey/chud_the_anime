@@ -102,7 +102,8 @@ try {
     await kb.press('j'); await reach(/^slash1$/); await reach(FREE); });
   await run('1: throw a static bomb from the quick slot', async () => {
     const n0 = (await inv()).quick[0].n; await kb.press('1'); await reach(/^bomb$/); await sleep(250); await shot('13-bomb'); await reach(FREE);
-    if ((await inv()).quick[0].n !== n0 - 1) fail('the bomb count did not drop'); });
+    if ((await inv()).quick[0].n !== n0 - 1) fail('the bomb count did not drop');
+    if (!(await page.evaluate(() => window.__game.S.smoke > 0))) fail('the smoke is not up'); });
   await run('hold E by the fallen: Harvest turns them to EXP', async () => {
     await walkTo(160, 152); await kb.down('e'); await reach(/^harvest$/); await until('EXP', () => window.__game.INV.exp > 10 || window.__game.INV.lv > 1);
     await shot('14-harvest'); await kb.up('e'); await reach(FREE); });
