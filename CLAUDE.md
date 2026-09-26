@@ -13,7 +13,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
-- The check reads the player, the enemies, what he wears, the inventory, `S` and the K markers through `window.__game = { P, E, wear, INV, S, K }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
+- The check reads the player, the facing he is drawn in, the enemies, what he wears, the inventory, `S` and the K markers through `window.__game = { P, PF, E, wear, INV, S, K }`. That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
 
 ## Module map (`src/`)
 
@@ -25,8 +25,9 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `screen.js` | The `#game` canvas, its 2D context `g`, the `#hud` line |
 | `input.js` | Keyboard map, touch pad, `held`/`taps`, `readInput()`, the room-clear checkbox |
 | `rig/pose.js` | `pz()` (pose from REST), `HILT`, `lerpP`, `ease`/`lin`, `keyed()` (eased keyframes to frames) |
-| `rig/rig.js` | One side-view pose drawn pixel by pixel from joint angles: `rig(g, fx, p, pal)` onto a canvas with the painted hat and mantle (the samurai, execution pieces), `rigR(R, p)` into a depth raster, each part at its own depth (`Z`), the body only for the wardrobe. The weapon draws through `p.wp`'s hooks |
+| `rig/rig.js` | One side-view pose drawn pixel by pixel from joint angles: `rig(g, fx, p, pal, left)` onto a canvas with the painted hat and mantle (the samurai, execution pieces), `rigR(R, p, left)` into a depth raster, each part at its own depth (`Z`), the body only for the wardrobe; `left` is his true left side (near and far swapped, the W facing). The weapon draws through `p.wp`'s hooks |
 | `rig/port.js` | `port(p)`: any side pose to a rig v2 pose (hips follow the stride, chest turns into the blade, head stays on target, hand reaches the hilt); `DIRS`, the eight facings as yaws |
+| `rig/turn.js` | True facings: `trueView(view, face)` (facing left, E is W: never the east mirrored), `sideOn` (a side-on move facing left, from the true left), `turner`/`turnTo` (a turn steps through the facings between, half a turn by the camera), `YAW` |
 | `rig/body3d.js` | `drawBody3d`, `drawHat3d`: rig v2's body and hat from any facing, into the wardrobe's `Raster`; the weapon through its art's `d3` |
 | `weapons/art3d.js` | Each weapon from any facing (`KATANA_3D`, `YARI_3D`, `NODACHI_3D`, `TANTO_3D`, and the `blade3d` / `staff3d` makers the rest use): `carried`, `held`, `backHeld`, `sheathing`, `offHand`; hung on each art as `d3` |
 | `anims/anims.js` | `ANIMS` (frame count, fps, loop, the moveset "about" text), `GLITCHY` |
@@ -50,12 +51,13 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `player/weapon.js` | `WEAPONS` (blade length, reach, weight), `setWeapon`; a stopgap until the weapon pose layer lands |
 | `player/body.js` | His silhouette points (sparks and bolts land on his body), `motes`, `glowK` |
 | `player/personality.js` | `setPersonality()`: bakes a trait mix into his idle, walk and run and their speeds (`P.gait`) |
-| `player/draw.js` | Drawing him live in what he wears (`dressed`), with shadow, reflection, afterimages, charge rim, white flash, glitch slice, the whetstone's cyan edge; and the mirror images |
-| `wardrobe/skeleton.js` | The 3D skeleton (rig v2): `solve(p, yaw, flat)`. From the side, `fromSide(p)` solved flat on the side rig's pixels; any other facing, `port(p)` at the facing's yaw, with IK hands, the head, the scabbard and the blades |
-| `wardrobe/raster.js` | `Raster`: a figure's pixels with depth, nearer wins; `ring`, `bandLine` |
+| `player/facing.js` | The facing he is drawn in (`playerFacing`, `PF`): idle, walk and run turn to their true facing, Harvest faces N, everything else side on |
+| `player/draw.js` | Drawing him live in what he wears (`dressed`), with shadow, reflection, afterimages (in the facing they were left in), charge rim, white flash, glitch slice, the whetstone's cyan edge; and the mirror images, dressed live |
+| `wardrobe/skeleton.js` | The 3D skeleton (rig v2): `solve(p, yaw, flat, left)`. From the side, `fromSide(p)` solved flat on the side rig's pixels (`left`: his right away from the camera); any other facing, `port(p)` at the facing's yaw, with IK hands, the head, the scabbard and the blades |
+| `wardrobe/raster.js` | `Raster`: a figure's pixels with depth, nearer wins, `flush(mirror)`; `ring`, `bandLine` |
 | `wardrobe/cloth.js` | Verlet cloth (chains, sheets, skirts) pinned to the bones, kept out of his body |
 | `wardrobe/items.js` | `ITEMS` (data: slot, parts measured from the bones), `SLOTS`, `OUTFITS`, `drawPart` for rigid parts |
-| `wardrobe/dress.js` | `makeFigure`, `dress(R, F, p, dt, yaw)` (the side rig or, off the side, the ported body3d, plus clothes, into one raster, cloth stepped), `turnCloth` |
+| `wardrobe/dress.js` | `makeFigure`, `dress(R, F, p, dt, yaw, flip)` (the true facing: the side rig at E, the side rig from his left at W, the ported body3d elsewhere, plus clothes, into one raster, cloth stepped and mirrored itself when the caller's flip changes), `WEST` (how W is drawn) |
 | `traits/knobs.js` | `BASE`: the knobs a personality turns (lean, breath, hands, stride, bounce...), the plain ronin's values; `ARMS` hand targets |
 | `traits/fidgets.js` | `FIDGETS`: small idle actions (tug the hat, crack the neck...) |
 | `traits/traits.js` | `TRAITS`: 52 personality traits as plain data, `GROUPS`, `PRESETS` (ready-made characters) |
@@ -136,7 +138,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Assassination markers: every enemy has an isolation bubble (empty glows cyan; overlapping ones go grey and are joined by a link line); a kill line runs to the nearest enemy he can dash to; the K prompt appears only when that enemy is in range AND outside every other enemy's bubble; lock-on brackets are reserved for big pickups.
 - Skills and keys: move WASD / arrows · hold V walk · J slash (again in the follow-through for the next cut, up to six as landed cuts grow his basic skill) · Shift or L slide · Space jump · K glitch teleport, or on a lone enemy in reach an execution · I tap glitch double slash, hold Thousand Cuts · O hold Crescent Moon · P Cross Rift (hold to charge) · N Mirror Meditation · U storm slam · C sit (any key stands) · X die (testing) · E tap: the locked-on item's verb, hold near the fallen: Harvest · 1-4 quick slots · Tab kit screen · G party hold / follow · E by a recruit: take them on, held by a downed companion: lift them · K with a companion set up for it: a paired execution · H cut a companion down (testing). Reserved by the design (not built yet): F counter, R Blade Recall, Q Lightning Chain; X becomes Time Slice and C Breath of Qi. Storm Chain is passive: 8 s whenever the Qi meter fills.
 - Items and HUD (`prototypes/20-items.html`, built as displayed): big items are the only things with lock-on brackets; small pickups magnetise within about 22 px; relics go to the first empty charm slot. Qi from items fills the meter but only a landed hit wakes Storm Chain. Health and Qi are 0..1; Qi is notched in thirds. `INV.power` (1..3) is the I / II / III tier, from relics and upgrades (owner): 1 + shrine upgrades (OFFER 3 shards at a prayed shrine, two at most) + power relics worn, capped at III. Power raises every skill's tier AND scales stats (owner); the numbers live in `player/power.js`.
-- Facing (`P.view`, the port system): idle, walk, run and runArmed face the way he last moved: E, SE, S, NE or N; the west side mirrors the east with `P.face`. Harvest faces N. Every attack, skill and stance is still side on. The samurai turn the same way toward the ronin (`e.view`, a beat late) while they guard, flinch and stagger; the dead stay side on. Guard: the check's "eight facings" step.
+- Facing (`P.view` + `P.face`, the port system, `rig/turn.js`): idle, walk, run and runArmed face the way he last moved in all eight true facings; W, SW and NW are his true left side, never the east mirrored (the blade in his right hand, the scabbard at his left hip from every side), and a turn steps through the facings between. Harvest faces N. Every attack, skill and stance is still side on (owner: "Same side attack is fine"), and facing west it is his true left, never mirrored (owner: "don't mirror"): the scabbard stays at his left hip in every move. The samurai (guard, flinch, stagger) and the companions (idle, walk, run) turn the same way; the dead stay side on. Guard: the check's "eight facings" and "true left" steps.
 - Cooldowns (`player/cooldowns.js`): K 3 s (none with no enemy near; 0.2 s after an assassination) · I 2 s, Thousand Cuts 8 s · O 10 s · P 12 s · N 14 s · U 8 s · slide 1 s. J and jump have none.
 
 ## The simulation core (`src/sim/`, `docs/sim-core.md`)
@@ -145,7 +147,7 @@ The living world as plain data (the ledger): the 100 × 100 zone grid, regions, 
 
 ## Working conventions
 
-- Iterate on design as standalone pages in `prototypes/`, numbered in order (`45-…html` next; 35 to 42 are reserved by the parallel lanes in `docs/sim-core.md`). Never edit an old prototype; make a new one.
+- Iterate on design as standalone pages in `prototypes/`, numbered in order (`45-…html` next; 35 to 42 are reserved by the parallel lanes in `docs/sim-core.md`). A prototype built from the game's own modules keeps its source in `scripts/protoNN/` and is bundled into one page (`node scripts/proto36/build.mjs`). Never edit an old prototype; make a new one.
 - Record every decision the owner makes in `docs/design-notes.md`.
 - Every culture moves through the trait system: a character from a culture gets `setPersonality`/`bake(personOf(culture, seed))`, never hand-made idle or walk poses. A culture's mannerisms go in `CULTURES` (a new mannerism is a new trait or fidget).
 - Personality traits (`src/traits/`) never import player, enemy or clothing code, so any rig character can take them. A new trait is a new entry in `TRAITS`; a new knob goes in `BASE` with the plain ronin's value, so no-trait output never changes.

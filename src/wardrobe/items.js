@@ -113,7 +113,7 @@ export function drawPart(S, part, J) {
       const z = (q[0][2] + q[2][2]) / 2 + bias + A.dz; S.poly(q.map(p => S.P(p)), z, part.col); S.seg(q[2], q[3], 1, part.edge, bias + A.dz + .05); }
     return; }
   if (part.kind === 'arm') {
-    for (const k of ['r', 'l']) { const A = J.arm[k], near = A.col === 'K', b = bias + A.dz;
+    for (const k of ['r', 'l']) { const A = J.arm[k], near = A.col === 'K', b = bias + A.fdz;   // sleeves and wraps sit on the forearm
       if (part.style === 'wrap') { for (let i = 0; i <= 10; i++) { const t = .35 + .65 * i / 10, q = S.P(V.lerp(A.el, A.hand, t)); S.dot(q[0], q[1], q[2] + b, 1, i % 2 ? part.col[0] : part.col[1]); }
         const h = S.P(A.hand); S.dot(h[0], h[1], h[2] + b, 2, near ? part.col[1] : part.col[0]); }
       else { S.seg(V.lerp(A.el, A.hand, .1), V.lerp(A.el, A.hand, .85), 2, near ? part.col[0] : part.col[1], b);

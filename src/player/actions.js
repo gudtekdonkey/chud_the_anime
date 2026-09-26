@@ -3,6 +3,7 @@ import { ANIMS } from '../anims/anims.js';
 import { SHEETS } from '../anims/sheets.js';
 import { living } from '../world/enemies.js';
 import { collide } from '../world/room.js';
+import { PF } from './facing.js';
 
 // ---- Player actions: state changes, stances, movement, afterimages, the current frame ----
 // no enemy within two screens: nothing left to guard against, so he puts the blade away at once, unbothered
@@ -21,7 +22,8 @@ export function blink(dist, dir) {
   for (let i = 0; i < steps; i++) moveBy(dx * 2, dy * 2);
 }
 // hold: seconds an afterimage stays solid before its .25 s fade
-export function ghost(hold = 0) { const gh = { state: P.state, f: frameOf(), x: P.x, y: P.y - P.z, face: P.face, age: 0, hold, white: 0 }; P.ghosts.push(gh); return gh; }
+// yaw: the facing he is drawn in (player/facing.js), so an afterimage left while he faced the camera keeps facing it
+export function ghost(hold = 0) { const gh = { state: P.state, f: frameOf(), x: P.x, y: P.y - P.z, face: P.face, yaw: PF.flip > 0 ? PF.yaw : 0, age: 0, hold, white: 0 }; P.ghosts.push(gh); return gh; }
 export function frameOf() {
   if (P.fr != null) return P.fr; // the dash-and-cut skills pick the double's frames on their own timeline
   const a = ANIMS[P.state], n = SHEETS[P.state].n, f = Math.floor(P.t * a.fps);

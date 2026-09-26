@@ -11,7 +11,7 @@ import { onAssassination } from '../player/cooldowns.js';
 import { collide } from '../world/room.js';
 import { EG, SET, quickSheathe } from './enemy-poses.js';
 import { EXECS } from './executions.js';
-import { withShadow, drawPieces } from './pieces.js';
+import { withShadow, drawPieces, STAGE } from './pieces.js';
 import { SETTLE, stageBody, stepStageBody, updateStagePieces } from './stage-body.js';
 import { F, FX, updateStageFx, drawStageFloor, drawStageTop } from './stage-fx.js';
 import { K, K_RANGE, updateMarkers } from './markers.js';
@@ -50,7 +50,7 @@ export function assassinate(e, from) {
   const { k, open } = pickExec(e); lastExec = k;
   const ox = Math.round(e.x), m = -faceOf(e);
   const St = { ex: EXECS[k], target: e, ox, m, clock: -PRE, stop: 0, shake: 0, fx: FX(), pieces: [], ev: new Set(), flashUntil: 0,
-    k, open, land: landing(EXECS[k], e), start: { x: ox + m * (P.x - ox), y: P.y }, E: { x: ox, y: e.y, face: -1, pose: EG, enemy: true, z: 0 }, R: null, freed: false };
+    k, open, land: landing(EXECS[k], e), start: { x: ox + m * (P.x - ox), y: P.y }, E: { x: ox, y: e.y, face: -1, m, pose: EG, enemy: true, z: 0 }, R: null, freed: false };   // E.m: the stage's mirror, so his pieces are cut as he is drawn
   St.once = (key, cond, fn) => { if (cond && !St.ev.has(key)) { St.ev.add(key); fn(); } };
   stageBody(St.E); hold(e); stages.push(St);
   // chaining K: with anyone else near he keeps the blade out and ends in a counter stance, ready for the next one;
@@ -113,7 +113,7 @@ export function updateStages(dt) {
     if (St.cleared && f > 0) stages.splice(i, 1); }   // a new squad: the old bodies are gone
 }
 // drawn in world space, flipped round the enemy's x when he faced right
-const mirrored = (St, fn) => () => { g.save(); if (St.m < 0) { g.translate(St.ox * 2, 0); g.scale(-1, 1); } fn(); g.restore(); };
+const mirrored = (St, fn) => () => { g.save(); if (St.m < 0) { g.translate(St.ox * 2, 0); g.scale(-1, 1); } STAGE.m = St.m; fn(); STAGE.m = 1; g.restore(); };
 export function stageItems() {
   const out = [];
   const fade = roomFade();

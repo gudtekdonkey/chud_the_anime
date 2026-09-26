@@ -2,7 +2,8 @@ import { P, S } from '../state.js';
 import { POSES } from '../anims/poses.js';
 import { pz } from '../rig/pose.js';
 import { g } from '../screen.js';
-import { living, damage, onKill, DMG } from '../world/enemies.js';
+import { living, damage, onKill, DMG, viewTo } from '../world/enemies.js';
+import { turner, turnTo, trueView, sideOn } from '../rig/turn.js';
 import { collide } from '../world/room.js';
 import { qiAdd, QI_GAIN } from '../player/qi.js';
 import { WEAPONS } from '../weapons/weapons.js';
@@ -25,7 +26,7 @@ const ATTACKS = new Set(['slash1', 'slash2']);
 export const say = (s, t = 1.4) => { PS.note = s; PS.noteT = t; };
 
 function actorFor(c, x, y) {
-  return { c, F: figureFor(c), x, y, face: P.face, anim: 'idle', t: 0, armed: false, calm: 0, hp: 1, flash: 0, hitDone: false, cd: 0, target: null, anchor: null,
+  return { c, F: figureFor(c), x, y, face: P.face, view: 'E', anim: 'idle', t: 0, armed: false, calm: 0, hp: 1, flash: 0, hitDone: false, cd: 0, target: null, anchor: null,
     state: 'up', st: 0, lift: 0, oath: true, crane: true, px: x };
 }
 export function syncParty() {
@@ -75,6 +76,7 @@ function step(a, dt, mx, my, run) {
     const k = Math.min(1, m / (v * dt));   // never step past the spot they want
     move(a, mx / m * v * dt * k, my / m * v * dt * .8 * k);
     if (Math.abs(mx) > .05) a.face = faceTo(a.F, a.face, Math.sign(mx));
+    a.view = viewTo(mx, my / 1.25);   // they face the way they go, as he does
     setAnim(a, a.armed ? 'runArmed' : run ? 'run' : 'walk'); a.calm = 0;
   } else if (a.armed) { setAnim(a, 'ready'); if ((a.calm += dt) > 2) { a.armed = false; setAnim(a, 'sheathe'); } }
   else setAnim(a, 'idle');
@@ -113,7 +115,7 @@ function think(a, i, dt, load) {
     const k = load.get(a.target) || 0; load.set(a.target, k + 1);
     [tx, ty] = spotFor(a, a.target, k);
     if (Math.hypot(tx - a.x, ty - a.y) < 3) {
-      a.face = faceTo(a.F, a.face, Math.sign(a.target.x - a.x) || a.face);
+      a.face = faceTo(a.F, a.face, Math.sign(a.target.x - a.x) || a.face); a.view = 'E';   // squared up to the enemy, side on
       if (a.cd <= 0) { cut(a); a.cd = (ROLES[wid(a)].cd + Math.random() * .3) * Math.max(.6, 1 - .04 * stat(a.c, 'focus')); }
       return step(a, dt, 0, 0);
     }
@@ -121,7 +123,7 @@ function think(a, i, dt, load) {
   else [tx, ty] = slotBehind(i);
   const dx = tx - a.x, dy = ty - a.y, dd = Math.hypot(dx, dy);
   if (!a.target && dd < 3) {
-    if (!a.armed && a.face !== P.face && P.still > .3) a.face = faceTo(a.F, a.face, P.face);   // settled: they face the way he faces
+    if (!a.armed && (a.face !== P.face || a.view !== P.view) && P.still > .3) { a.face = faceTo(a.F, a.face, P.face); a.view = P.view; }   // settled: they face the way he faces
     return step(a, dt, 0, 0);
   }
   if (!a.target) run = dd > 26;
@@ -177,7 +179,7 @@ export function updateParty(dt, frozen, skip) {
   for (let i = 0; i < allies.length; i++) for (let j = i + 1; j < allies.length; j++) {
     const p = allies[i], q = allies[j], dx = q.x - p.x, dy = (q.y - p.y) * 1.6, d = Math.hypot(dx, dy);
     if (d < 7 && d > .01) { const k = (7 - d) * .25 / d; if (p.state === 'up') move(p, -dx * k, -dy * k / 1.6); if (q.state === 'up') move(q, dx * k, dy * k / 1.6); } }
-  for (const a of allies) { a.F.t += dt; a.F.vel = [Math.max(-300, Math.min(300, (a.x - a.px) / dt * a.face)), 0]; a.px = a.x; }
+  for (const a of allies) { a.F.t += dt; a.F.vel = [Math.max(-300, Math.min(300, (a.x - a.px) / dt)), 0]; a.px = a.x; }
 }
 export function toggleOrder() { party.order = party.order === 'follow' ? 'hold' : 'follow'; say(party.order === 'hold' ? 'HOLD HERE' : 'WITH ME', 1.2); }
 
@@ -189,9 +191,16 @@ export function poseFor(a) {
   if (a.state === 'dying') return poseOf(death, .5 + Math.min(a.st, .6) * .8);
   return poseOf(clip(a, a.anim), a.t);
 }
+// idle, walk and run turn with them through the eight true facings (rig/turn.js), the west side as itself;
+// cutting, the guard stance, the sheathe, down and dying stay side on, as his do: facing left, from their true left, never mirrored
+const TURNS = new Set(['idle', 'walk', 'run', 'runArmed']);
 export function drawAlly(a, dt = 1 / 60) {
-  const alpha = a.state === 'dying' ? Math.max(0, 1 - Math.max(0, a.st - 2.8) / .6) : 1;
-  place(g, paint(a.F, poseFor(a), S.hitstop > 0 ? 0 : dt), a.x, a.y, a.face, { flash: a.flash > 0, alpha });
+  const alpha = a.state === 'dying' ? Math.max(0, 1 - Math.max(0, a.st - 2.8) / .6) : 1, d = S.hitstop > 0 ? 0 : dt;
+  if (!a.turn) a.turn = turner(trueView(a.view, a.face));
+  let yaw, fl = 1;
+  if (a.state === 'up' && TURNS.has(a.anim)) yaw = turnTo(a.turn, trueView(a.view, a.face), a.face, d).yaw;
+  else [yaw, fl] = sideOn(a.turn, a.face);
+  place(g, paint(a.F, poseFor(a), d, 'ally', yaw, fl), a.x, a.y, fl, { flash: a.flash > 0, alpha });
 }
 export const partyDrawables = skip => allies.filter(a => a !== skip).map(a => ({ y: a.y, d: () => drawAlly(a) }));
 // over the world: the bleed bar under whoever is down, the hold markers, the LV pops
