@@ -71,6 +71,16 @@ Decisions made in the design sessions so far, newest last.
 - **Skill bar, like League of Legends:** bottom centre. The Storm Chain passive on the left (the Qi fills its icon; during the storm its 8 s drain as a sweep), then I, O, P, N and U, then K (the flash) and slide as the two summoner-style slots. Each slot shows its cooldown as a dark clockwise sweep with the seconds left, whole seconds then tenths under one.
 - **Cooldowns on every active.** The flash (K) is recastable after an assassination: its cooldown drops to 0.2 s. Starting values, to tune: K 3 s, I 2 s (Thousand Cuts 8 s), O 10 s, P 12 s, N 14 s, U 8 s, slide 1 s. K keeps the old rule that with no enemy near you can spam it.
 
+## Deaths pass (approved: prototypes 28 to 31)
+
+The owner said the deaths still don't feel like someone dying, and the executions lack impact when the sword lands. Prototypes 28, 29 and 30 replay execution batches 1, 2 and 3 (all 28 executions), and 31 replays the 14 counters, with one shared change to the enemy's body and a toggle to compare against the page as it was. The owner approved all of it, blood and impact frames included ("with blood"):
+
+- **Flow through poses.** The pages ease in and out of every key, so the body stops dead at each pose. The enemy's timeline is now read as one curve per joint that keeps its speed through a pose and only settles where the motion turns back.
+- **Limp joints.** Every joint chases its pose on a spring: the hips lead, the chest follows, the arms, blade and head trail and overshoot. As he goes down the springs soften, so the arms and head go loose.
+- **Gravity and the floor.** The last move into lying down accelerates like a fall and stops dead on the floor, with dust and a small shake; the arms and head flop on after the trunk stops. Then one twitch, a smaller one, and stillness. The red eye flickers and goes out, in a severed head too.
+- **Sword impact.** Each hit knocks him away from the blade, he shakes through the hit pause, light sparks leave out the far side, and a killing blow (hit pause of 0.09 s or more) gets two impact frames, black then white.
+- **Blood.** Dark red drops fly out with the spray and stain the floor, pieces trail a little and pool where they land. Approved as a new palette colour, alongside the impact frames.
+
 ## Next
 
 2. **K assassinations:**
