@@ -1,0 +1,5431 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ronin's Dominion</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  /* one committed look, the game's own: near-black ground, muted greys, the ronin's cyan (single dark theme by choice) */
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --panel2: #16191b; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; --cyan2: #52e8d6;
+    --good: #8fd6a0; --warn: #e2c26b; --bad: #e0737a; }
+  html, body { background: var(--ground); color: var(--ink); }
+  body { margin: 0; font: 15px/1.5 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 24px 56px; display: grid; gap: 18px; }
+  @media (max-width: 480px) { .wrap { padding-inline: 16px; } }
+  header { display: grid; gap: 8px; max-width: 80ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  h2 { font: 700 18px/1.15 "Pixelify Sans", monospace; margin: 0; text-wrap: balance; }
+  h3 { font: 500 12px/1 "Pixelify Sans", monospace; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0; }
+  p { margin: 0; color: var(--muted); } b { color: var(--ink); font-weight: 600; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; }
+  .bar label { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 14px; cursor: pointer; }
+  input[type=radio], input[type=checkbox], input[type=range] { accent-color: var(--cyan); }
+  button, select { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .05em; color: var(--ink); background: var(--panel2); border: 1px solid var(--rule); padding: 7px 10px; cursor: pointer; }
+  select { font: 14px Figtree, system-ui, sans-serif; letter-spacing: 0; padding: 4px 6px; max-width: 100%; }
+  button:hover:not(:disabled) { border-color: #5a636a; } button:disabled { color: #5f6769; cursor: not-allowed; }
+  button.primary { border-color: var(--cyan2); color: var(--cyan); }
+  button.on { background: #1f3a37; border-color: var(--cyan2); color: var(--cyan); }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .clock { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; background: var(--panel); border: 1px solid var(--rule); padding: 10px 14px; }
+  .clock .date { font: 700 16px/1 "Pixelify Sans", monospace; min-width: 12ch; }
+  .stat { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; } .stat b { font-variant-numeric: tabular-nums; }
+  .main { display: grid; grid-template-columns: minmax(0, 600px) minmax(0, 1fr); gap: 18px; align-items: start; }
+  @media (max-width: 1040px) { .main { grid-template-columns: 1fr; } }
+  .col { display: grid; gap: 16px; min-width: 0; }
+  .box { background: var(--panel); border: 1px solid var(--rule); padding: 14px 16px; display: grid; gap: 10px; min-width: 0; align-content: start; }
+  .mapbox { position: relative; background: var(--panel); border: 1px solid var(--rule); }
+  canvas { display: block; width: 100%; height: auto; image-rendering: pixelated; max-width: 100%; }
+  .tip { position: absolute; pointer-events: none; background: #0d0f10ee; border: 1px solid var(--rule); padding: 6px 8px; font-size: 13px; color: var(--ink); max-width: 280px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 13px; color: var(--muted); }
+  .sw { width: 10px; height: 10px; flex: none; display: inline-block; border: 1px solid #0006; }
+  .row { display: flex; gap: 8px; align-items: baseline; }
+  .home { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (max-width: 640px) { .home { grid-template-columns: 1fr; } }
+  #zone { cursor: crosshair; border: 1px solid var(--rule); }
+  dl { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; margin: 0; font-size: 14px; } dt { color: var(--muted); } dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .tier { display: flex; gap: 3px; } .tier span { flex: 1; height: 6px; background: #2a2f33; } .tier span.lit { background: var(--cyan2); }
+  .blist { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; max-height: 300px; overflow: auto; }
+  .b { text-align: left; display: grid; gap: 3px; padding: 7px 8px; font: 13px/1.25 Figtree, system-ui, sans-serif; letter-spacing: 0; }
+  .b .n { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .04em; } .b .c { color: var(--muted); font-size: 12px; font-variant-numeric: tabular-nums; } .b .why { color: #7b8386; font-size: 12px; }
+  .b.sel { border-color: var(--cyan2); background: #1a2d2b; }
+  .fam { font: 500 11px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); grid-column: 1 / -1; padding-top: 4px; }
+  .work { display: grid; gap: 6px; font-size: 14px; }
+  .prog { height: 5px; background: #2a2f33; } .prog i { display: block; height: 100%; background: var(--cyan2); }
+  .list { display: grid; gap: 4px; font-size: 14px; max-height: 320px; overflow: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; } th { text-align: left; color: var(--muted); font-weight: 400; font-size: 12px; padding: 3px 6px 3px 0; }
+  td { padding: 3px 6px 3px 0; border-top: 1px solid #262b2f; font-variant-numeric: tabular-nums; vertical-align: top; }
+  .tw { overflow-x: auto; }
+  .mine { color: var(--cyan); } .warn { color: var(--warn); } .bad { color: var(--bad); } .good { color: var(--good); }
+  .chron { font-size: 13px; line-height: 1.45; max-height: 360px; overflow: auto; display: grid; gap: 2px; }
+  .chron div { color: var(--muted); } .chron .d { color: #6c7477; font-variant-numeric: tabular-nums; margin-right: 6px; }
+  .note { font-size: 13px; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Dominion · prototype 42</div>
+    <h1>The ronin's dominion</h1>
+    <p>The whole world from seed 12345, with every region lord playing by the rules he plays by: they build, grow their towns, tax, raise hosts and go to war. He holds four plots on a hillside near where he started. <b>Pick a building and click his land to place it</b>, hire hands, watch the homestead grow a tier, raise a few men, then <b>run the years</b> and watch the realms change.</p>
+  </header>
+  <div class="clock">
+    <span class="date" id="date"></span>
+    <button type="button" id="t-day">+1 day</button><button type="button" id="t-season">+1 season</button><button type="button" id="t-year">+1 year</button><button type="button" id="t-5">+5 years</button>
+    <button type="button" id="t-play" class="primary">Play</button>
+    <span class="stat" id="purse"></span><span class="stat" id="rank"></span><span class="stat" id="world"></span>
+    <button type="button" id="gift" title="Testing only: the economy lane will decide where his money comes from">Test purse +5 ryō</button>
+  </div>
+  <div class="main">
+    <div class="col">
+      <div class="mapbox"><canvas id="map" width="600" height="600" role="img" aria-label="The world map, coloured by who rules each zone"></canvas><div class="tip" id="tip" hidden></div></div>
+      <div class="bar"><span class="stat">Show</span>
+        <label for="v-realm"><input type="radio" name="view" id="v-realm" value="realm" checked> Realms</label>
+        <label for="v-prov"><input type="radio" name="view" id="v-prov" value="prov"> Provinces</label>
+        <label for="v-tier"><input type="radio" name="view" id="v-tier" value="tier"> Settlements</label>
+        <label for="v-land"><input type="radio" name="view" id="v-land" value="land"> Land</label>
+        <label for="armies"><input type="checkbox" id="armies" checked> Armies</label>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="box"><h3>The great lords</h3><div class="tw" id="lords"></div></div>
+      <div class="box"><h3>Wars</h3><div class="list" id="wars"></div></div>
+    </div>
+    <div class="col">
+      <div class="box">
+        <h2 id="hname">His land</h2><p id="hsub" class="note"></p>
+        <div class="home">
+          <div><canvas id="zone" width="320" height="320" role="img" aria-label="His zone: its tiles, plots and buildings"></canvas><p class="note" id="zhint">Hover to see a footprint; click to place.</p></div>
+          <div class="col" style="gap:10px">
+            <div id="settle"></div>
+            <div class="work" id="work"></div>
+          </div>
+        </div>
+        <div class="bar"><h3 style="margin-right:auto">Build</h3><label for="crew">Hire hands per new building <select id="crew"><option>0</option><option>2</option><option selected>4</option><option>8</option></select></label></div>
+        <div class="blist" id="blist"></div>
+      </div>
+      <div class="grid2">
+        <div class="box" id="govern"></div>
+        <div class="box" id="army"></div>
+      </div>
+      <div class="box"><h3>Chronicle</h3><div class="chron" id="chron"></div></div>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+	//#region src/sim/rng.js
+	function hash(...parts) {
+		let h = 2166136261;
+		for (const p of parts) {
+			const s = String(p);
+			for (let i = 0; i < s.length; i++) {
+				h ^= s.charCodeAt(i);
+				h = Math.imul(h, 16777619) >>> 0;
+			}
+			h ^= 40503;
+			h = Math.imul(h, 16777619) >>> 0;
+		}
+		return h >>> 0;
+	}
+	function rng(seed) {
+		let a = seed >>> 0;
+		const next = () => {
+			a = a + 1831565813 >>> 0;
+			let t = a;
+			t = Math.imul(t ^ t >>> 15, t | 1);
+			t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+			return ((t ^ t >>> 14) >>> 0) / 4294967296;
+		};
+		return {
+			next,
+			range: (lo, hi) => lo + next() * (hi - lo),
+			int: (lo, hi) => lo + Math.floor(next() * (hi - lo + 1)),
+			chance: (p) => next() < p,
+			pick: (arr) => arr[Math.floor(next() * arr.length)],
+			weighted: (pairs) => {
+				let t = 0;
+				for (const [, w] of pairs) t += w;
+				let x = next() * t;
+				for (const [v, w] of pairs) if ((x -= w) < 0) return v;
+				return pairs[pairs.length - 1][0];
+			},
+			shuffle: (arr) => {
+				for (let i = arr.length - 1; i > 0; i--) {
+					const j = Math.floor(next() * (i + 1));
+					[arr[i], arr[j]] = [arr[j], arr[i]];
+				}
+				return arr;
+			}
+		};
+	}
+	const rngFor = (seed, ...keys) => rng(hash(seed, ...keys));
+	//#endregion
+	//#region src/sim/time.js
+	const TIME = {
+		REAL_MS_PER_HOUR: 1e5,
+		HOURS_PER_DAY: 24,
+		DAYS_PER_SEASON: 28,
+		SEASONS: [
+			"spring",
+			"summer",
+			"autumn",
+			"winter"
+		],
+		DAWN: 5,
+		DUSK: 19
+	};
+	const HOURS_PER_SEASON = TIME.HOURS_PER_DAY * TIME.DAYS_PER_SEASON;
+	const HOURS_PER_YEAR = HOURS_PER_SEASON * TIME.SEASONS.length;
+	function calendar(h) {
+		const day = Math.floor(h / TIME.HOURS_PER_DAY), hour = h % TIME.HOURS_PER_DAY, si = Math.floor(h / HOURS_PER_SEASON) % 4;
+		return {
+			h,
+			hour,
+			day,
+			dayOfSeason: day % TIME.DAYS_PER_SEASON + 1,
+			seasonIndex: si,
+			season: TIME.SEASONS[si],
+			year: Math.floor(h / HOURS_PER_YEAR) + 1,
+			night: hour >= TIME.DUSK || hour < TIME.DAWN
+		};
+	}
+	const SYSTEMS = [];
+	function system(def) {
+		const i = SYSTEMS.findIndex((s) => s.id === def.id);
+		if (i >= 0) SYSTEMS.splice(i, 1);
+		SYSTEMS.push({
+			order: 50,
+			...def
+		});
+		SYSTEMS.sort((a, b) => a.order - b.order);
+		return def;
+	}
+	function createLedger(seed, realNow = Date.now()) {
+		return {
+			v: 1,
+			seed: seed >>> 0,
+			hour: 0,
+			realAt: realNow,
+			size: {
+				w: 100,
+				h: 100
+			},
+			zones: [],
+			regions: [],
+			cultures: [],
+			plots: {},
+			actors: {},
+			player: null,
+			log: [],
+			ids: {},
+			sys: {}
+		};
+	}
+	function initSystems(L) {
+		for (const s of SYSTEMS) if (s.init && !L.sys[s.id]) {
+			L.sys[s.id] = {};
+			s.init(L);
+		}
+	}
+	function newId(L, kind) {
+		const n = (L.ids[kind] || 0) + 1;
+		L.ids[kind] = n;
+		return kind + n;
+	}
+	const zoneAt = (L, x, y) => x < 0 || y < 0 || x >= L.size.w || y >= L.size.h ? null : L.zones[y * L.size.w + x];
+	const LISTENERS = /* @__PURE__ */ new Map();
+	function on(type, fn) {
+		(LISTENERS.get(type) || LISTENERS.set(type, []).get(type)).push(fn);
+		return () => {
+			const a = LISTENERS.get(type);
+			a.splice(a.indexOf(fn), 1);
+		};
+	}
+	const LOG_CAP = 4e3;
+	function emit(L, type, data = {}) {
+		const e = {
+			h: L.hour,
+			type,
+			...data
+		};
+		L.log.push(e);
+		if (L.log.length > 4e3) L.log.splice(0, L.log.length - LOG_CAP);
+		for (const fn of LISTENERS.get(type) || []) fn(e, L);
+		for (const fn of LISTENERS.get("*") || []) fn(e, L);
+		return e;
+	}
+	const HOURLY_CATCHUP = 48;
+	function advance(L, hours, live = false) {
+		const hourly = live || hours <= HOURLY_CATCHUP;
+		for (let i = 0; i < hours; i++) {
+			L.hour++;
+			const cal = calendar(L.hour);
+			if (hourly) {
+				for (const s of SYSTEMS) if (s.onHour) s.onHour(L, cal, rngFor(L.seed, "h", L.hour, s.id));
+			}
+			if (cal.hour === 0) {
+				if (cal.dayOfSeason === 1) {
+					if (cal.seasonIndex === 0) {
+						for (const s of SYSTEMS) if (s.onYear) s.onYear(L, cal, rngFor(L.seed, "y", cal.year, s.id));
+					}
+					for (const s of SYSTEMS) if (s.onSeason) s.onSeason(L, cal, rngFor(L.seed, "s", cal.day, s.id));
+				}
+				for (const s of SYSTEMS) if (s.onDay) s.onDay(L, cal, rngFor(L.seed, "d", cal.day, s.id));
+			}
+		}
+	}
+	//#endregion
+	//#region src/sim/cultures.js
+	const CLASSES = {
+		royal: {
+			rank: 6,
+			dress: "royal",
+			weapons: [
+				["katana", 3],
+				["daisho", 2],
+				["tessen", 1]
+			],
+			jobs: ["lord"]
+		},
+		noble: {
+			rank: 5,
+			dress: "dark",
+			weapons: [
+				["katana", 3],
+				["daisho", 2],
+				["tessen", 1]
+			],
+			jobs: [
+				"lord",
+				"magistrate",
+				"steward"
+			]
+		},
+		retainer: {
+			rank: 4,
+			dress: "dark",
+			weapons: [
+				["katana", 5],
+				["daisho", 2],
+				["nodachi", 1]
+			],
+			jobs: [
+				"retainer",
+				"guard",
+				"magistrate",
+				"tax collector"
+			]
+		},
+		ronin: {
+			rank: 3,
+			dress: "black",
+			weapons: [
+				["katana", 5],
+				["nodachi", 2],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"ronin",
+				"bounty hunter",
+				"guard"
+			]
+		},
+		ashigaru: {
+			rank: 2,
+			dress: "earth",
+			weapons: [
+				["yari", 5],
+				["katana", 1],
+				["tetsubo", 1]
+			],
+			jobs: [
+				"ashigaru",
+				"guard",
+				"courier"
+			]
+		},
+		monk: {
+			rank: 3,
+			dress: "black",
+			weapons: [["naginata", 3], ["bo", 3]],
+			jobs: [
+				"monk",
+				"abbot",
+				"healer"
+			]
+		},
+		commoner: {
+			rank: 1,
+			dress: "earth",
+			weapons: [
+				["kama", 3],
+				["bo", 1],
+				["tanto", 1],
+				["nunchaku", 1]
+			],
+			jobs: [
+				"farmer",
+				"farmer",
+				"farmer",
+				"fisher",
+				"woodcutter",
+				"miner",
+				"smith",
+				"merchant",
+				"innkeeper",
+				"carpenter",
+				"weaver",
+				"brewer",
+				"courier"
+			]
+		},
+		rebel: {
+			rank: 1,
+			dress: "earth",
+			weapons: [
+				["naginata", 3],
+				["yari", 3],
+				["kama", 3],
+				["nunchaku", 1],
+				["katana", 1]
+			],
+			jobs: ["farmer", "rebel"]
+		},
+		outlaw: {
+			rank: 0,
+			dress: "earth",
+			weapons: [
+				["katana", 2],
+				["tanto", 2],
+				["kanabo", 2],
+				["tetsubo", 1],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"bandit",
+				"smuggler",
+				"thief"
+			]
+		},
+		shinobi: {
+			rank: 2,
+			dress: "black",
+			weapons: [
+				["tanto", 3],
+				["kusarigama", 3],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"shinobi",
+				"spy",
+				"courier"
+			]
+		}
+	};
+	const KINDS = {
+		clan: {
+			count: 7,
+			size: 7,
+			label: "clan",
+			classes: [
+				["noble", 1],
+				["retainer", 6],
+				["ashigaru", 8],
+				["commoner", 30],
+				["monk", 1]
+			],
+			traits: [
+				"soldier",
+				"stoic",
+				"proud",
+				"veteran",
+				"calm"
+			],
+			despise: [
+				"drunk",
+				"lazy",
+				"slouch"
+			],
+			royalty: true
+		},
+		court: {
+			count: 1,
+			size: 2,
+			label: "court",
+			classes: [
+				["royal", 2],
+				["noble", 5],
+				["retainer", 6],
+				["commoner", 20]
+			],
+			traits: [
+				"regal",
+				"vain",
+				"serene",
+				"scholar"
+			],
+			despise: [
+				"drunk",
+				"scratcher",
+				"brawler"
+			],
+			royalty: true
+		},
+		rebels: {
+			count: 3,
+			size: 5,
+			label: "free valleys",
+			classes: [
+				["rebel", 12],
+				["commoner", 20],
+				["monk", 2],
+				["ronin", 1]
+			],
+			traits: [
+				"restless",
+				"grim",
+				"weary",
+				"eager"
+			],
+			despise: [
+				"regal",
+				"vain",
+				"cocky"
+			]
+		},
+		monastic: {
+			count: 2,
+			size: 3,
+			label: "temple lands",
+			classes: [["monk", 8], ["commoner", 14]],
+			traits: [
+				"serene",
+				"monk",
+				"humble",
+				"calm"
+			],
+			despise: [
+				"menacing",
+				"vain",
+				"drunk"
+			]
+		},
+		bandits: {
+			count: 2,
+			size: 4,
+			label: "outlaw coast",
+			classes: [
+				["outlaw", 14],
+				["ronin", 3],
+				["commoner", 6]
+			],
+			traits: [
+				"menacing",
+				"cocky",
+				"brawler",
+				"drunk",
+				"twitchy"
+			],
+			despise: [
+				"soldier",
+				"regal",
+				"monk"
+			]
+		},
+		shinobi: {
+			count: 1,
+			size: 2,
+			label: "hidden villages",
+			classes: [["shinobi", 8], ["commoner", 10]],
+			traits: [
+				"shinobi",
+				"wary",
+				"nimble",
+				"shadow"
+			],
+			despise: [
+				"cocky",
+				"hummer",
+				"vain"
+			]
+		},
+		merchants: {
+			count: 2,
+			size: 4,
+			label: "merchant league",
+			classes: [
+				["commoner", 24],
+				["ronin", 3],
+				["ashigaru", 3]
+			],
+			traits: [
+				"cheerful",
+				"glancer",
+				"eager",
+				"vain"
+			],
+			despise: ["menacing", "brawler"]
+		},
+		fishers: {
+			count: 1,
+			size: 4,
+			label: "fishing folk",
+			classes: [["commoner", 24], ["ronin", 1]],
+			traits: [
+				"weary",
+				"cheerful",
+				"calm",
+				"hummer"
+			],
+			despise: ["regal", "cocky"]
+		},
+		miners: {
+			count: 1,
+			size: 4,
+			label: "mountain folk",
+			classes: [
+				["commoner", 22],
+				["ashigaru", 2],
+				["outlaw", 1]
+			],
+			traits: [
+				"heavy",
+				"lumbering",
+				"grim",
+				"stoic"
+			],
+			despise: ["vain", "nimble"]
+		}
+	};
+	const REL = {
+		"clan|clan": -.3,
+		"clan|court": .4,
+		"clan|rebels": -.8,
+		"clan|monastic": .2,
+		"clan|bandits": -.9,
+		"clan|shinobi": -.3,
+		"clan|merchants": .3,
+		"clan|fishers": .1,
+		"clan|miners": .1,
+		"court|rebels": -1,
+		"court|monastic": .3,
+		"court|bandits": -.9,
+		"court|shinobi": -.5,
+		"court|merchants": .4,
+		"court|fishers": .1,
+		"court|miners": .1,
+		"rebels|monastic": .3,
+		"rebels|bandits": -.4,
+		"rebels|shinobi": .1,
+		"rebels|merchants": -.2,
+		"rebels|fishers": .4,
+		"rebels|miners": .4,
+		"monastic|bandits": -.6,
+		"monastic|shinobi": -.2,
+		"monastic|merchants": .1,
+		"monastic|fishers": .3,
+		"monastic|miners": .2,
+		"bandits|shinobi": -.2,
+		"bandits|merchants": -.9,
+		"bandits|fishers": -.5,
+		"bandits|miners": -.3,
+		"shinobi|merchants": 0,
+		"shinobi|fishers": 0,
+		"shinobi|miners": 0,
+		"merchants|fishers": .3,
+		"merchants|miners": .3,
+		"fishers|miners": .2,
+		"court|court": .5,
+		"rebels|rebels": .4,
+		"monastic|monastic": .5,
+		"bandits|bandits": -.2,
+		"merchants|merchants": -.1,
+		"shinobi|shinobi": .3,
+		"fishers|fishers": .5,
+		"miners|miners": .5
+	};
+	const kindRelation = (a, b) => REL[a + "|" + b] ?? REL[b + "|" + a] ?? 0;
+	const ON = [
+		"ka",
+		"ta",
+		"na",
+		"ma",
+		"sa",
+		"ha",
+		"ya",
+		"ra",
+		"wa",
+		"ki",
+		"shi",
+		"chi",
+		"ni",
+		"mi",
+		"ri",
+		"ku",
+		"tsu",
+		"nu",
+		"mu",
+		"yu",
+		"ru",
+		"ko",
+		"to",
+		"no",
+		"mo",
+		"yo",
+		"ro",
+		"se",
+		"te",
+		"ne",
+		"me",
+		"re",
+		"ga",
+		"ji",
+		"zu",
+		"do",
+		"bo",
+		"go",
+		"hi",
+		"fu",
+		"ho",
+		"o",
+		"a",
+		"i",
+		"u",
+		"e"
+	];
+	const PLACE_END = [
+		"mura",
+		"hara",
+		"yama",
+		"kawa",
+		"zawa",
+		"saka",
+		"no",
+		"ta",
+		"shima",
+		"oka",
+		"tani",
+		"hama",
+		"mori",
+		"ishi",
+		"se"
+	];
+	const GIVEN_M = [
+		"rō",
+		"ta",
+		"suke",
+		"maru",
+		"zō",
+		"nobu",
+		"mune",
+		"hide",
+		"kichi",
+		"emon",
+		"bei",
+		"shirō",
+		"jirō"
+	];
+	const GIVEN_F = [
+		"ko",
+		"e",
+		"yo",
+		"no",
+		"mi",
+		"ne",
+		"ha",
+		"ka",
+		"ri",
+		"sa"
+	];
+	const cap$2 = (s) => s[0].toUpperCase() + s.slice(1);
+	const placeName = (r) => cap$2(r.pick(ON) + r.pick(ON) + r.pick(PLACE_END));
+	const familyName = (r) => cap$2(r.pick(ON) + r.pick(ON) + r.pick([
+		"moto",
+		"da",
+		"yama",
+		"kawa",
+		"no",
+		"mura",
+		"saki",
+		"ta",
+		"hara",
+		"gawa"
+	]));
+	const givenName = (r, sex) => cap$2(r.pick(ON) + (sex === "f" ? r.pick(GIVEN_F) : r.pick(ON) + r.pick(GIVEN_M)));
+	//#endregion
+	//#region src/sim/actors.js
+	const ageOf = (L, a) => (L.hour - a.born) / HOURS_PER_YEAR;
+	const nameOf = (a) => `${a.given} ${a.family}`;
+	function makeActor(L, r, o) {
+		const cls = CLASSES[o.cls], sex = o.sex || (r.chance(.5) ? "m" : "f");
+		const a = {
+			id: newId(L, "a"),
+			given: givenName(r, sex),
+			family: o.family || familyName(r),
+			sex,
+			born: L.hour - Math.round((o.age ?? 30) * HOURS_PER_YEAR) - r.int(0, HOURS_PER_YEAR - 1),
+			alive: true,
+			culture: o.culture,
+			cls: o.cls,
+			job: o.job || r.pick(cls.jobs),
+			rank: cls.rank,
+			home: o.home || null,
+			spouse: null,
+			parents: [],
+			children: [],
+			household: o.household || null,
+			weapon: r.weighted(cls.weapons),
+			traits: [],
+			karma: 0,
+			standing: {},
+			money: purse(r, o.cls),
+			holds: [],
+			int: o.int ?? +Math.min(1, Math.max(0, (r.next() + r.next() + r.next()) / 3 + (cls.rank - 2) * .02)).toFixed(2)
+		};
+		const kind = o.culture != null && L.cultures[o.culture] ? KINDS[L.cultures[o.culture].kind] : null;
+		if (kind) a.traits.push([r.pick(kind.traits), +r.range(.5, 1).toFixed(2)]);
+		if (r.chance(.4)) a.traits.push([r.pick([
+			"calm",
+			"nervous",
+			"cheerful",
+			"grim",
+			"lazy",
+			"eager",
+			"wary",
+			"proud",
+			"humble",
+			"weary"
+		]), +r.range(.3, .8).toFixed(2)]);
+		L.actors[a.id] = a;
+		return a;
+	}
+	function purse(r, cls) {
+		const m = {
+			royal: [
+				0,
+				0,
+				[20, 60]
+			],
+			noble: [
+				[500, 2e3],
+				[5, 30],
+				[2, 10]
+			],
+			retainer: [
+				[200, 900],
+				[0, 5],
+				0
+			],
+			ronin: [
+				[20, 400],
+				0,
+				0
+			],
+			ashigaru: [
+				[30, 200],
+				0,
+				0
+			],
+			monk: [
+				[0, 60],
+				0,
+				0
+			],
+			commoner: [
+				[30, 300],
+				0,
+				0
+			],
+			rebel: [
+				[10, 120],
+				0,
+				0
+			],
+			outlaw: [
+				[20, 500],
+				[0, 3],
+				0
+			],
+			shinobi: [
+				[100, 600],
+				[0, 4],
+				0
+			]
+		}[cls] || [
+			[0, 50],
+			0,
+			0
+		];
+		const v = (x) => Array.isArray(x) ? r.int(x[0], x[1]) : x;
+		return {
+			mon: v(m[0]),
+			silver: v(m[1]),
+			ryo: v(m[2])
+		};
+	}
+	function marry(a, b) {
+		a.spouse = b.id;
+		b.spouse = a.id;
+		b.family = a.sex === "m" ? a.family : b.family;
+		if (b.sex === "m") a.family = b.family;
+	}
+	function bear(L, r, mother, father, o = {}) {
+		const c = makeActor(L, r, {
+			cls: o.cls || father.cls,
+			culture: father.culture,
+			family: father.family,
+			home: father.home,
+			household: father.household,
+			age: o.age ?? 0,
+			job: o.job
+		});
+		c.parents = [father.id, mother.id];
+		father.children.push(c.id);
+		mother.children.push(c.id);
+		return c;
+	}
+	const HOUSES = {
+		town: 8,
+		village: 4
+	};
+	function populate(L) {
+		for (const z of L.zones) {
+			if (z.kind === "sea" || z.kind === "wild") continue;
+			const reg = L.regions[z.region], cult = L.cultures[reg.culture], kind = KINDS[cult.kind], r = rngFor(L.seed, "people", z.x, z.y), home = [z.x, z.y];
+			const commonCls = kind.classes.filter(([c]) => CLASSES[c].rank <= 3 && c !== "monk");
+			if (z.kind === "town" || z.kind === "village") {
+				if (z.kind === "town") {
+					const lordCls = cult.kind === "court" ? "royal" : cult.kind === "clan" ? "noble" : cult.kind === "monastic" ? "monk" : "commoner";
+					const lord = household(L, r, cult.id, lordCls, home, {
+						age: r.int(34, 60),
+						job: "lord",
+						kids: r.int(1, 4)
+					});
+					lord.lord = reg.id;
+					reg.lord = lord.id;
+				}
+				for (let i = 0; i < HOUSES[z.kind]; i++) household(L, r, cult.id, r.weighted(commonCls), home, { plot: `${z.x},${z.y}:${i + 1}` });
+			} else if (z.kind === "camp") {
+				const chief = makeActor(L, r, {
+					cls: "outlaw",
+					culture: cult.id,
+					home,
+					age: r.int(28, 50),
+					job: "bandit"
+				});
+				chief.chief = true;
+				z.holder = chief.id;
+				for (let i = 0; i < r.int(4, 7); i++) makeActor(L, r, {
+					cls: r.chance(.8) ? "outlaw" : "ronin",
+					culture: cult.id,
+					home,
+					age: r.int(17, 45),
+					household: chief.id
+				});
+			} else if (z.kind === "fort") for (let i = 0; i < r.int(5, 8); i++) makeActor(L, r, {
+				cls: r.chance(.4) ? "retainer" : "ashigaru",
+				culture: cult.id,
+				home,
+				age: r.int(18, 45),
+				sex: "m"
+			});
+			else if (z.kind === "shrine") for (let i = 0; i < r.int(1, 3); i++) makeActor(L, r, {
+				cls: "monk",
+				culture: cult.id,
+				home,
+				age: r.int(20, 70)
+			});
+		}
+		const r = rngFor(L.seed, "player");
+		const start = L.zones.filter((z) => z.kind === "village").sort((a, b) => Math.hypot(a.x - 50, a.y - 50) - Math.hypot(b.x - 50, b.y - 50))[0];
+		const p = makeActor(L, r, {
+			cls: "ronin",
+			culture: null,
+			home: null,
+			age: 28,
+			sex: "m",
+			job: "ronin"
+		});
+		p.weapon = "katana";
+		p.traits = [];
+		p.money = {
+			mon: 120,
+			silver: 0,
+			ryo: 0
+		};
+		p.at = [start.x, start.y];
+		L.player = p.id;
+	}
+	function household(L, r, culture, cls, home, o = {}) {
+		const sex = r.chance(.85) ? "m" : "f", head = makeActor(L, r, {
+			cls,
+			culture,
+			home,
+			sex,
+			age: o.age ?? r.int(22, 55),
+			job: o.job
+		});
+		head.household = head.id;
+		let spouse = null;
+		if (r.chance(.8)) {
+			spouse = makeActor(L, r, {
+				cls,
+				culture,
+				home,
+				sex: sex === "m" ? "f" : "m",
+				age: Math.max(18, ageish(L, head) + r.int(-6, 4)),
+				household: head.id
+			});
+			marry(head, spouse);
+		}
+		const kids = o.kids ?? r.int(0, 4);
+		for (let i = 0; i < kids && spouse; i++) {
+			const age = Math.max(0, ageish(L, head) - r.int(18, 35));
+			if (age <= 0 && i > 0) break;
+			bear(L, r, head.sex === "f" ? head : spouse, head.sex === "m" ? head : spouse, {
+				age,
+				cls
+			});
+		}
+		if (r.chance(.2)) {
+			const elder = makeActor(L, r, {
+				cls,
+				culture,
+				home,
+				family: head.family,
+				age: ageish(L, head) + r.int(20, 30),
+				household: head.id
+			});
+			head.parents.push(elder.id);
+			elder.children.push(head.id);
+		}
+		if (o.plot) {
+			L.plots[o.plot] = {
+				title: head.id,
+				holder: head.id
+			};
+			head.holds.push(o.plot);
+		}
+		return head;
+	}
+	const ageish = (L, a) => Math.floor((L.hour - a.born) / HOURS_PER_YEAR);
+	//#endregion
+	//#region src/sim/worldgen.js
+	function noise(seed, scale, octaves = 4) {
+		const cache = /* @__PURE__ */ new Map(), cell = (ix, iy) => {
+			const k = ix + "," + iy;
+			let v = cache.get(k);
+			if (v == null) {
+				v = hash(seed, ix, iy) % 1e5 / 1e5;
+				cache.set(k, v);
+			}
+			return v;
+		};
+		const sm = (t) => t * t * (3 - 2 * t);
+		const one = (x, y) => {
+			const ix = Math.floor(x), iy = Math.floor(y), fx = sm(x - ix), fy = sm(y - iy);
+			const a = cell(ix, iy), b = cell(ix + 1, iy), c = cell(ix, iy + 1), d = cell(ix + 1, iy + 1);
+			return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+		};
+		return (x, y) => {
+			let v = 0, amp = 1, tot = 0, f = 1 / scale;
+			for (let o = 0; o < octaves; o++) {
+				v += one(x * f, y * f) * amp;
+				tot += amp;
+				amp *= .5;
+				f *= 2;
+			}
+			return v / tot;
+		};
+	}
+	function generateWorld(seed, realNow = Date.now()) {
+		const L = createLedger(seed, realNow), { w, h } = L.size;
+		const elevN = noise(hash(seed, "elev"), 22), moistN = noise(hash(seed, "moist"), 18), warpN = noise(hash(seed, "warp"), 14, 2);
+		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+			const dx = (x - w / 2) / (w / 2), dy = (y - h / 2) / (h / 2), edge = Math.max(0, Math.max(Math.abs(dx), Math.abs(dy * 1.05)) - .78);
+			const elev = Math.max(0, Math.min(1, elevN(x, y) * 1.3 + .02 - edge * 2.2)), moist = moistN(x + 400, y + 400);
+			let biome = "plains";
+			if (elev < .26) biome = "sea";
+			else if (elev < .3) biome = "coast";
+			else if (elev > .74) biome = "mountains";
+			else if (elev > .6) biome = "hills";
+			else if (moist > .64) biome = elev < .42 ? "marsh" : "forest";
+			else if (moist > .5) biome = elev < .46 ? "paddy" : moist > .58 ? "bamboo" : "forest";
+			L.zones.push({
+				x,
+				y,
+				biome,
+				region: -1,
+				kind: biome === "sea" ? "sea" : "wild",
+				road: false
+			});
+		}
+		const land = L.zones.filter((z) => z.biome !== "sea");
+		const r = rngFor(seed, "regions"), seeds = [];
+		for (let minD = 9; seeds.length < 100 && minD > 2; minD -= .5) for (let tries = 0; tries < 4e3 && seeds.length < 100; tries++) {
+			const z = r.pick(land);
+			if (seeds.every((s) => Math.hypot(s.x - z.x, s.y - z.y) >= minD)) seeds.push(z);
+		}
+		for (const z of land) {
+			let best = 0, bd = 1e9;
+			const wx = z.x + (warpN(z.x, z.y) - .5) * 8, wy = z.y + (warpN(z.x + 99, z.y + 99) - .5) * 8;
+			seeds.forEach((s, i) => {
+				const d = Math.hypot(s.x - wx, s.y - wy);
+				if (d < bd) {
+					bd = d;
+					best = i;
+				}
+			});
+			z.region = best;
+		}
+		L.regions = seeds.map((s, i) => ({
+			id: i,
+			name: placeName(rngFor(seed, "rname", i)),
+			culture: -1,
+			seat: null,
+			zones: 0,
+			center: [s.x, s.y]
+		}));
+		for (const z of land) L.regions[z.region].zones++;
+		const adj = L.regions.map(() => /* @__PURE__ */ new Set());
+		for (const z of land) for (const [dx, dy] of [[1, 0], [0, 1]]) {
+			const n = zoneAt(L, z.x + dx, z.y + dy);
+			if (n && n.region >= 0 && n.region !== z.region) {
+				adj[z.region].add(n.region);
+				adj[n.region].add(z.region);
+			}
+		}
+		const cr = rngFor(seed, "cultures"), kinds = [];
+		for (const [kind, k] of Object.entries(KINDS)) for (let i = 0; i < k.count; i++) kinds.push(kind);
+		cr.shuffle(kinds);
+		const starts = [cr.int(0, 99)];
+		while (starts.length < kinds.length) {
+			let best = -1, bd = -1;
+			for (const g of L.regions) {
+				if (starts.includes(g.id)) continue;
+				const d = Math.min(...starts.map((s) => Math.hypot(L.regions[s].center[0] - g.center[0], L.regions[s].center[1] - g.center[1])));
+				if (d > bd) {
+					bd = d;
+					best = g.id;
+				}
+			}
+			starts.push(best);
+		}
+		L.cultures = kinds.map((kind, i) => {
+			return {
+				id: i,
+				kind,
+				name: cultureName(rngFor(seed, "cname", i), kind),
+				regions: [starts[i]],
+				relations: {},
+				hue: Math.round(i * 137.5) % 360
+			};
+		});
+		starts.forEach((g, i) => L.regions[g].culture = i);
+		for (let guard = 0; guard < 1e3 && L.regions.some((g) => g.culture < 0); guard++) {
+			const order = L.cultures.slice().sort((a, b) => a.regions.length / KINDS[a.kind].size - b.regions.length / KINDS[b.kind].size);
+			let grew = false;
+			for (const c of order) {
+				const free = [...new Set(c.regions.flatMap((g) => [...adj[g]]))].filter((g) => L.regions[g].culture < 0);
+				if (free.length) {
+					const g = cr.pick(free);
+					L.regions[g].culture = c.id;
+					c.regions.push(g);
+					grew = true;
+					break;
+				}
+			}
+			if (!grew) {
+				const g = L.regions.find((q) => q.culture < 0), n = [...adj[g.id]].find((q) => L.regions[q].culture >= 0);
+				const c = L.cultures[n != null ? L.regions[n].culture : 0];
+				g.culture = c.id;
+				c.regions.push(g.id);
+			}
+		}
+		const border = /* @__PURE__ */ new Set();
+		for (const g of L.regions) for (const n of adj[g.id]) if (L.regions[n].culture !== g.culture) border.add([g.culture, L.regions[n].culture].sort().join("|"));
+		for (const a of L.cultures) for (const b of L.cultures) if (a.id < b.id) {
+			const hr = rngFor(seed, "rel", a.id, b.id), v = Math.max(-1, Math.min(1, kindRelation(a.kind, b.kind) + (border.has(a.id + "|" + b.id) ? -.2 : 0) + hr.range(-.25, .25)));
+			a.relations[b.id] = b.relations[a.id] = +v.toFixed(2);
+		}
+		const pr = rngFor(seed, "places");
+		const placed = [];
+		const fit = {
+			town: {
+				paddy: 3,
+				plains: 3,
+				coast: 2,
+				forest: 1,
+				bamboo: 1,
+				hills: 1
+			},
+			village: {
+				paddy: 4,
+				plains: 3,
+				coast: 3,
+				forest: 2,
+				bamboo: 2,
+				hills: 1,
+				marsh: 1
+			},
+			camp: {
+				forest: 3,
+				hills: 3,
+				bamboo: 2,
+				marsh: 2,
+				mountains: 1
+			},
+			fort: {
+				hills: 4,
+				plains: 2,
+				mountains: 2
+			},
+			shrine: {
+				hills: 3,
+				mountains: 3,
+				forest: 2,
+				bamboo: 2
+			}
+		};
+		for (const g of L.regions) {
+			const zs = land.filter((z) => z.region === g.id), kind = L.cultures[g.culture].kind;
+			const place = (what, minGap = 4) => {
+				const cands = zs.filter((z) => z.kind === "wild" && fit[what][z.biome] && placed.every((o) => Math.abs(o.x - z.x) + Math.abs(o.y - z.y) >= minGap));
+				if (!cands.length) return null;
+				const z = pr.weighted(cands.map((c) => [c, fit[what][c.biome]]));
+				z.kind = what;
+				placed.push(z);
+				return z;
+			};
+			const seat = place(kind === "bandits" ? "camp" : "town", 5) || zs[0];
+			if (!placed.includes(seat)) placed.push(seat);
+			seat.kind = kind === "bandits" ? "camp" : "town";
+			seat.name = placeName(rngFor(seed, "seat", g.id));
+			g.seat = [seat.x, seat.y];
+			const nv = kind === "bandits" ? pr.int(0, 1) : pr.int(2, Math.min(4, 1 + Math.floor(zs.length / 25)));
+			for (let i = 0; i < nv; i++) {
+				const z = place("village");
+				if (z) z.name = placeName(rngFor(seed, "village", z.x, z.y));
+			}
+			const ncamp = kind === "bandits" ? pr.int(2, 3) : pr.int(0, 2);
+			for (let i = 0; i < ncamp; i++) {
+				const z = place("camp", 3);
+				if (z) z.name = placeName(rngFor(seed, "camp", z.x, z.y)) + " camp";
+			}
+			if (kind === "clan" || kind === "court") {
+				const z = place("fort", 4);
+				if (z) z.name = placeName(rngFor(seed, "fort", z.x, z.y)) + " fort";
+			}
+			if (pr.chance(kind === "monastic" ? 1 : .6)) {
+				const z = place("shrine", 3);
+				if (z) z.name = placeName(rngFor(seed, "shrine", z.x, z.y)) + " shrine";
+			}
+		}
+		const seats = L.regions.map((g) => zoneAt(L, ...g.seat));
+		const linked = [seats[0]], rest = seats.slice(1);
+		while (rest.length) {
+			let bi = 0, bj = 0, bd = 1e9;
+			for (let i = 0; i < linked.length; i++) for (let j = 0; j < rest.length; j++) {
+				const d = Math.hypot(linked[i].x - rest[j].x, linked[i].y - rest[j].y);
+				if (d < bd) {
+					bd = d;
+					bi = i;
+					bj = j;
+				}
+			}
+			road(L, linked[bi], rest[bj]);
+			linked.push(rest.splice(bj, 1)[0]);
+		}
+		for (const z of land) if (z.kind === "village" || z.kind === "fort" || z.kind === "shrine") road(L, z, zoneAt(L, ...L.regions[z.region].seat));
+		populate(L);
+		initSystems(L);
+		return L;
+	}
+	const COST$1 = {
+		sea: 1e9,
+		coast: 1.5,
+		plains: 1,
+		paddy: 1.3,
+		forest: 2,
+		bamboo: 2.2,
+		marsh: 3.5,
+		hills: 2.5,
+		mountains: 6
+	};
+	function road(L, a, b) {
+		if (!a || !b || a === b) return;
+		const { w } = L.size, start = a.y * w + a.x, goal = b.y * w + b.x, g = /* @__PURE__ */ new Map([[start, 0]]), from = /* @__PURE__ */ new Map(), open = [[0, start]];
+		const push = (f, i) => {
+			open.push([f, i]);
+			let k = open.length - 1;
+			while (k > 0) {
+				const p = k - 1 >> 1;
+				if (open[p][0] <= open[k][0]) break;
+				[open[p], open[k]] = [open[k], open[p]];
+				k = p;
+			}
+		};
+		const pop = () => {
+			const top = open[0], last = open.pop();
+			if (open.length) {
+				open[0] = last;
+				let k = 0;
+				for (;;) {
+					const l = 2 * k + 1, r = l + 1;
+					let m = k;
+					if (l < open.length && open[l][0] < open[m][0]) m = l;
+					if (r < open.length && open[r][0] < open[m][0]) m = r;
+					if (m === k) break;
+					[open[m], open[k]] = [open[k], open[m]];
+					k = m;
+				}
+			}
+			return top;
+		};
+		while (open.length) {
+			const [, i] = pop();
+			if (i === goal) break;
+			const x = i % w, y = (i - x) / w;
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			]) {
+				const n = zoneAt(L, x + dx, y + dy);
+				if (!n) continue;
+				const j = n.y * w + n.x;
+				const c = g.get(i) + (n.road ? .35 : COST$1[n.biome]);
+				if (c < (g.get(j) ?? 0xe8d4a51000)) {
+					g.set(j, c);
+					from.set(j, i);
+					push(c + Math.abs(n.x - b.x) + Math.abs(n.y - b.y), j);
+				}
+			}
+		}
+		for (let i = goal; i != null && i !== start; i = from.get(i)) L.zones[i].road = true;
+		L.zones[start].road = true;
+	}
+	function cultureName(r, kind) {
+		const n = familyName(r);
+		return {
+			clan: `the ${n} clan`,
+			court: `the Court of ${placeName(r)}`,
+			rebels: `the free valleys of ${placeName(r)}`,
+			monastic: `the temples of ${placeName(r)}`,
+			bandits: `the ${r.pick([
+				"Red",
+				"Black",
+				"Salt",
+				"Crow",
+				"Iron"
+			])} ${r.pick([
+				"Tide",
+				"Coast",
+				"Knives",
+				"Wake"
+			])}`,
+			shinobi: `the hidden ${n}`,
+			merchants: `the ${n} league`,
+			fishers: `the ${placeName(r)} fisherfolk`,
+			miners: `the ${placeName(r)} mountain folk`
+		}[kind];
+	}
+	const TERRAIN$1 = [
+		"grass",
+		"field",
+		"paddy",
+		"forest",
+		"bamboo",
+		"water",
+		"rock",
+		"sand",
+		"road",
+		"building",
+		"marsh",
+		"shrine",
+		"palisade",
+		"wall"
+	];
+	const T = Object.fromEntries(TERRAIN$1.map((t, i) => [t, i]));
+	const GROUND = {
+		coast: [
+			["sand", 4],
+			["grass", 3],
+			["water", 2],
+			["rock", 1]
+		],
+		plains: [
+			["grass", 6],
+			["field", 3],
+			["forest", 1]
+		],
+		paddy: [
+			["paddy", 6],
+			["grass", 2],
+			["water", 1]
+		],
+		forest: [
+			["forest", 7],
+			["grass", 2],
+			["rock", 1]
+		],
+		bamboo: [
+			["bamboo", 7],
+			["grass", 2],
+			["forest", 1]
+		],
+		marsh: [
+			["marsh", 6],
+			["water", 3],
+			["grass", 1]
+		],
+		hills: [
+			["grass", 4],
+			["rock", 3],
+			["forest", 3]
+		],
+		mountains: [
+			["rock", 7],
+			["forest", 2],
+			["grass", 1]
+		],
+		sea: [["water", 1]]
+	};
+	const cache = /* @__PURE__ */ new Map();
+	function tilesOf(L, zx, zy) {
+		const key = L.seed + ":" + zx + "," + zy;
+		if (cache.has(key)) return cache.get(key);
+		const z = zoneAt(L, zx, zy), r = rngFor(L.seed, "tiles", zx, zy), t = /* @__PURE__ */ new Uint8Array(4096);
+		const g = GROUND[z.biome], cell = [];
+		for (let i = 0; i < 64; i++) cell.push(T[r.weighted(g)]);
+		for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+			const jx = Math.min(7, Math.max(0, x + hash(L.seed, zx, zy, x, y, "j") % 5 - 2 >> 3)), jy = Math.min(7, Math.max(0, y + hash(L.seed, zx, zy, y, x, "k") % 5 - 2 >> 3));
+			t[y * 64 + x] = cell[jy * 8 + jx];
+		}
+		if (z.road) for (const [dx, dy] of [
+			[1, 0],
+			[-1, 0],
+			[0, 1],
+			[0, -1]
+		]) {
+			const n = zoneAt(L, zx + dx, zy + dy);
+			if (!n || !n.road) continue;
+			for (let k = 0; k <= 32; k++) {
+				const x = 32 + dx * k, y = 32 + dy * k;
+				for (const o of [0, 1]) {
+					const xx = Math.min(63, x + (dy ? o : 0)), yy = Math.min(63, y + (dx ? o : 0));
+					t[yy * 64 + xx] = T.road;
+				}
+			}
+		}
+		const mid = 32, ring = (rad, what, gap) => {
+			for (let a = 0; a < 6.283; a += .02) {
+				const x = Math.round(mid + Math.cos(a) * rad), y = Math.round(mid + Math.sin(a) * rad);
+				if (!(gap && Math.abs(Math.sin(a)) < .12 && Math.cos(a) > 0)) t[y * 64 + x] = T[what];
+			}
+		};
+		if (z.kind === "town" || z.kind === "village") {
+			const n = z.kind === "town" ? 26 : 12;
+			for (let i = 0; i < n; i++) {
+				const bx = mid + r.int(-14, 12), by = mid + r.int(-14, 12), bw = r.int(3, 5), bh = r.int(2, 4);
+				for (let y = by; y < by + bh; y++) for (let x = bx; x < bx + bw; x++) if (t[y * 64 + x] !== T.road) t[y * 64 + x] = T.building;
+			}
+			for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+				const i = y * 64 + x;
+				if ((t[i] === T.grass || t[i] === T.forest) && Math.hypot(x - mid, y - mid) > 16 && Math.hypot(x - mid, y - mid) < 28) t[i] = z.biome === "paddy" || z.biome === "marsh" ? T.paddy : T.field;
+			}
+		}
+		if (z.kind === "camp") {
+			ring(9, "palisade", true);
+			for (let i = 0; i < 5; i++) {
+				const x = mid + r.int(-5, 4), y = mid + r.int(-5, 4);
+				t[y * 64 + x] = T.building;
+			}
+		}
+		if (z.kind === "fort") {
+			ring(12, "wall", true);
+			for (let y = 28; y < 36; y++) for (let x = 27; x < 37; x++) t[y * 64 + x] = T.building;
+		}
+		if (z.kind === "shrine") for (let y = 29; y < 35; y++) for (let x = 29; x < 35; x++) t[y * 64 + x] = T.shrine;
+		const out = {
+			w: 64,
+			h: 64,
+			t
+		};
+		cache.set(key, out);
+		if (cache.size > 64) cache.delete(cache.keys().next().value);
+		return out;
+	}
+	const plotId = (zx, zy, n) => `${zx},${zy}:${n}`;
+	const plotAt = (zx, zy, tx, ty) => plotId(zx, zy, Math.floor(ty / 16) * 4 + Math.floor(tx / 16));
+	function ownerOf(L, pid) {
+		if (L.plots[pid]) return L.plots[pid];
+		const [zx, zy] = pid.split(":")[0].split(",").map(Number), z = zoneAt(L, zx, zy), reg = L.regions[z.region];
+		if (z.kind === "town" || z.kind === "village" || z.kind === "fort") return {
+			title: reg ? reg.lord ?? null : null,
+			holder: reg ? reg.lord ?? null : null
+		};
+		if (z.kind === "camp") return {
+			title: null,
+			holder: z.holder ?? null
+		};
+		return {
+			title: null,
+			holder: null
+		};
+	}
+	//#endregion
+	//#region src/sim/dominion/data.js
+	const TIERS = [
+		{
+			id: "homestead",
+			name: "homestead",
+			homes: 1
+		},
+		{
+			id: "hamlet",
+			name: "hamlet",
+			homes: 3,
+			need: { well: 1 }
+		},
+		{
+			id: "village",
+			name: "village",
+			homes: 8,
+			need: {
+				shrine: 1,
+				storehouse: 1
+			},
+			pop: 30
+		},
+		{
+			id: "town",
+			name: "town",
+			homes: 20,
+			need: {
+				market: 1,
+				inn: 1,
+				smithy: 1
+			},
+			pop: 80,
+			road: true
+		},
+		{
+			id: "city",
+			name: "city",
+			homes: 40,
+			need: {
+				wall: 1,
+				temple: 1,
+				magistrate: 1
+			},
+			pop: 200,
+			trade: 3
+		},
+		{
+			id: "castle",
+			name: "castle town",
+			homes: 40,
+			need: { keep: 1 },
+			pop: 200,
+			seat: true
+		}
+	];
+	const tierName = (t) => t < 0 ? "no settlement" : TIERS[t].name;
+	const B = (fam, w, h, cost, labour, o = {}) => ({
+		fam,
+		w,
+		h,
+		cost,
+		labour,
+		workers: 0,
+		upkeep: Math.round((cost.mon || 0) * .02),
+		...o
+	});
+	const BUILDINGS = {
+		hut: B("home", 2, 2, {
+			timber: 3,
+			mon: 20
+		}, 6, {
+			homes: 1,
+			cap: 4,
+			upkeep: 0
+		}),
+		house: B("home", 3, 2, {
+			timber: 6,
+			tiles: 2,
+			mon: 60
+		}, 14, {
+			homes: 1,
+			cap: 6,
+			upkeep: 0
+		}),
+		longhouse: B("home", 5, 2, {
+			timber: 14,
+			tiles: 4,
+			mon: 150
+		}, 30, {
+			homes: 3,
+			cap: 16,
+			tier: 1,
+			upkeep: 0
+		}),
+		manor: B("home", 5, 4, {
+			timber: 24,
+			stone: 8,
+			tiles: 10,
+			mon: 1200
+		}, 80, {
+			homes: 1,
+			cap: 10,
+			tier: 2,
+			standing: .05
+		}),
+		well: B("food", 1, 1, {
+			stone: 4,
+			mon: 20
+		}, 5, { upkeep: 0 }),
+		paddy: B("food", 4, 4, { mon: 30 }, 20, {
+			koku: 12,
+			workers: 3,
+			upkeep: 0,
+			ground: [
+				"grass",
+				"field",
+				"paddy",
+				"marsh"
+			]
+		}),
+		orchard: B("food", 4, 4, {
+			timber: 2,
+			mon: 40
+		}, 12, {
+			koku: 6,
+			workers: 1,
+			upkeep: 0
+		}),
+		granary: B("food", 3, 3, {
+			timber: 10,
+			tiles: 4,
+			mon: 120
+		}, 20, { store: 60 }),
+		weir: B("food", 2, 2, {
+			timber: 6,
+			mon: 40
+		}, 10, {
+			koku: 8,
+			workers: 2,
+			upkeep: 0
+		}),
+		storehouse: B("food", 3, 3, {
+			timber: 8,
+			stone: 4,
+			tiles: 4,
+			mon: 100
+		}, 20, { safe: true }),
+		sawmill: B("craft", 4, 3, {
+			timber: 10,
+			stone: 2,
+			iron: 2,
+			mon: 200
+		}, 30, {
+			workers: 3,
+			labourX: .15,
+			tier: 1
+		}),
+		kiln: B("craft", 3, 3, {
+			stone: 10,
+			mon: 120
+		}, 20, {
+			workers: 2,
+			tier: 1
+		}),
+		smithy: B("craft", 3, 3, {
+			timber: 6,
+			stone: 6,
+			iron: 4,
+			mon: 250
+		}, 25, {
+			workers: 2,
+			equip: .002,
+			tier: 1
+		}),
+		brewery: B("craft", 3, 3, {
+			timber: 8,
+			mon: 180
+		}, 20, {
+			workers: 2,
+			trade: 60,
+			unrest: -.02,
+			tier: 2
+		}),
+		weaver: B("craft", 3, 2, {
+			timber: 6,
+			mon: 120
+		}, 15, {
+			workers: 2,
+			trade: 50,
+			tier: 1
+		}),
+		market: B("trade", 4, 4, {
+			timber: 8,
+			tiles: 4,
+			mon: 300
+		}, 25, {
+			workers: 2,
+			trade: 3,
+			appeal: .08,
+			tier: 2
+		}),
+		inn: B("trade", 4, 3, {
+			timber: 12,
+			tiles: 6,
+			mon: 250
+		}, 30, {
+			workers: 2,
+			trade: 80,
+			appeal: .04,
+			tier: 2
+		}),
+		warehouse: B("trade", 4, 3, {
+			timber: 12,
+			tiles: 6,
+			mon: 300
+		}, 30, {
+			workers: 1,
+			trade: 120,
+			tier: 3
+		}),
+		changer: B("trade", 2, 2, {
+			timber: 4,
+			stone: 4,
+			mon: 500
+		}, 15, {
+			workers: 1,
+			trade: 150,
+			needs: { market: 1 },
+			tier: 3
+		}),
+		tollgate: B("trade", 2, 1, {
+			timber: 4,
+			mon: 80
+		}, 8, {
+			workers: 1,
+			toll: 2,
+			road: true
+		}),
+		shrine: B("faith", 2, 2, {
+			timber: 4,
+			mon: 80
+		}, 10, { unrest: -.03 }),
+		temple: B("faith", 5, 4, {
+			timber: 20,
+			stone: 10,
+			tiles: 12,
+			mon: 1500
+		}, 90, {
+			unrest: -.06,
+			needs: { shrine: 1 },
+			tier: 3,
+			monks: 4,
+			standing: .05
+		}),
+		magistrate: B("order", 4, 3, {
+			timber: 12,
+			stone: 4,
+			tiles: 6,
+			mon: 600
+		}, 40, {
+			workers: 2,
+			unrest: -.05,
+			tier: 3
+		}),
+		board: B("order", 1, 1, {
+			timber: 1,
+			mon: 5
+		}, 1, { upkeep: 0 }),
+		jail: B("order", 3, 2, {
+			timber: 6,
+			stone: 6,
+			iron: 2,
+			mon: 200
+		}, 20, {
+			workers: 1,
+			unrest: -.02,
+			tier: 2
+		}),
+		barracks: B("war", 5, 3, {
+			timber: 14,
+			tiles: 6,
+			mon: 400
+		}, 40, {
+			train: .002,
+			tier: 1
+		}),
+		dojo: B("war", 4, 4, {
+			timber: 12,
+			tiles: 8,
+			mon: 500
+		}, 40, {
+			workers: 1,
+			train: .004,
+			tier: 2
+		}),
+		stable: B("war", 4, 3, {
+			timber: 10,
+			mon: 250
+		}, 25, {
+			workers: 2,
+			speed: .25,
+			tier: 1
+		}),
+		watchtower: B("war", 2, 2, {
+			timber: 6,
+			mon: 80
+		}, 12, { walls: .2 }),
+		palisade: B("war", "ring", 0, {
+			timber: 40,
+			mon: 200
+		}, 60, { walls: 1 }),
+		gate: B("war", 3, 2, {
+			timber: 6,
+			stone: 6,
+			iron: 4,
+			mon: 200
+		}, 20, {
+			walls: .5,
+			needsAny: ["palisade", "wall"]
+		}),
+		wall: B("war", "ring", 0, {
+			stone: 120,
+			mon: 2500
+		}, 240, {
+			walls: 2,
+			tier: 3
+		}),
+		keep: B("war", 8, 8, {
+			stone: 200,
+			timber: 60,
+			tiles: 40,
+			iron: 20,
+			mon: 12e3
+		}, 600, {
+			walls: 1.5,
+			needs: { wall: 1 },
+			tier: 4,
+			standing: .1
+		})
+	};
+	Object.keys(BUILDINGS).filter((t) => BUILDINGS[t].fam === "home");
+	const UNITS = {
+		ashigaru: {
+			pow: 1,
+			wage: 4,
+			rice: 1,
+			cost: 100,
+			weapons: ["yari", "bow"],
+			from: "commoners of your land"
+		},
+		retainer: {
+			pow: 2.6,
+			wage: 25,
+			rice: 1.5,
+			cost: 600,
+			weapons: ["katana", "daisho"],
+			from: "the samurai class, sworn to you"
+		},
+		ronin: {
+			pow: 2,
+			wage: 18,
+			rice: 1,
+			cost: 300,
+			weapons: ["katana", "nodachi"],
+			from: "paid swords at an inn"
+		},
+		monk: {
+			pow: 1.8,
+			wage: 2,
+			rice: .8,
+			cost: 0,
+			weapons: ["naginata", "bo"],
+			from: "a temple's alliance"
+		},
+		shinobi: {
+			pow: 1.2,
+			wage: 30,
+			rice: 1,
+			cost: 800,
+			weapons: ["tanto", "kusarigama"],
+			from: "hired for secret work",
+			siege: .15
+		},
+		bandit: {
+			pow: 1.3,
+			wage: 0,
+			rice: 1,
+			cost: 0,
+			weapons: ["katana", "kanabo"],
+			from: "an outlaw camp"
+		},
+		rebel: {
+			pow: .8,
+			wage: 0,
+			rice: 1,
+			cost: 0,
+			weapons: ["naginata", "kama"],
+			from: "a rising"
+		}
+	};
+	const ORDERS = [
+		"hold",
+		"charge",
+		"follow",
+		"fallback"
+	];
+	const LAWS = {
+		noArms: {
+			name: "ban weapons for commoners",
+			unrest: .02,
+			riot: -.08,
+			rebels: .5
+		},
+		curfew: {
+			name: "curfew",
+			unrest: .03,
+			riot: -.1,
+			yield: -.05
+		},
+		toll: {
+			name: "road toll",
+			unrest: .03,
+			toll: 3,
+			appeal: -.05
+		},
+		amnesty: {
+			name: "amnesty",
+			unrest: -.08,
+			ronin: 2,
+			karma: 2
+		},
+		conscript: {
+			name: "conscription",
+			unrest: .08,
+			levy: 2,
+			yield: -.05
+		}
+	};
+	const OFFICES = [
+		"steward",
+		"magistrate",
+		"general",
+		"envoy"
+	];
+	const TRAIT = {
+		greedy: [
+			"vain",
+			"cocky",
+			"menacing",
+			"drunk"
+		],
+		kind: [
+			"humble",
+			"serene",
+			"monk",
+			"calm",
+			"cheerful"
+		],
+		bold: [
+			"proud",
+			"cocky",
+			"menacing",
+			"brawler",
+			"eager",
+			"duelist",
+			"restless"
+		],
+		steady: [
+			"soldier",
+			"veteran",
+			"stoic",
+			"calm",
+			"grim",
+			"duelist"
+		],
+		poor: [
+			"drunk",
+			"lazy",
+			"nervous",
+			"slouch",
+			"twitchy",
+			"melancholy"
+		],
+		sly: [
+			"shinobi",
+			"shadow",
+			"wary",
+			"glancer",
+			"scholar"
+		]
+	};
+	const r3 = (x) => Math.round(x * 1e3) / 1e3;
+	const traitSum = (a, list) => (a.traits || []).reduce((s, [t, w]) => s + (list.includes(t) ? w : 0), 0);
+	const N = {
+		REACH: 6,
+		YIELD_PER_HEAD: 1.8,
+		EAT: 1,
+		HOME_POP: 5,
+		LABOUR: .05,
+		CREW_WAGE: 8,
+		MATERIAL: {
+			timber: 30,
+			stone: 40,
+			iron: 200,
+			tiles: 15
+		},
+		RICE_PRICE: 1e3,
+		SILVER: 80,
+		TAX: .35,
+		TAX_MIN: .1,
+		TAX_MAX: .7,
+		VASSAL_SHARE: .1,
+		SEASONS: 4,
+		LEVY: .12,
+		UNREST_STEP: .35,
+		PETITION: .5,
+		RIOT: .65,
+		UPRISING: .8,
+		UPRISING_LOYALTY: .35,
+		LOYAL: .55,
+		RESTLESS: .3,
+		TRUCE_DAYS: 224,
+		WAR_MAX_DAYS: 336,
+		PEACE_SCORE: 60,
+		MARCH_ROAD: 3,
+		MARCH_OFF: 1.5,
+		SIEGE_STORE: 30,
+		TRAIN_DECAY: 5e-4,
+		DESERT_AFTER: 7,
+		BANDIT_AFTER: 30,
+		DEATH: [
+			[40, .01],
+			[55, .03],
+			[65, .07],
+			[200, .15]
+		]
+	};
+	//#endregion
+	//#region src/sim/dominion/land.js
+	const D = (L) => L.sys.dominion;
+	const key = (x, y) => x + "," + y;
+	const unkey = (k) => k.split(",").map(Number);
+	const alive = (L, id) => !!(id && L.actors[id] && L.actors[id].alive);
+	function lordOf(L, id) {
+		const d = D(L);
+		if (!id) return null;
+		return d.lords[id] || (d.lords[id] = {
+			id,
+			rice: 0,
+			tax: N.TAX,
+			laws: {},
+			off: {},
+			liege: null,
+			loyalty: .7,
+			zones: [],
+			titles: [],
+			grudges: {},
+			claims: [],
+			koku: 0,
+			kokuAll: 0,
+			next: 0,
+			wars: [],
+			truce: {},
+			tribute: [],
+			seat: null,
+			outlaw: false,
+			since: L.hour
+		});
+	}
+	const TOPS = /* @__PURE__ */ new WeakMap();
+	function top(L, id) {
+		const d = D(L);
+		let c = TOPS.get(L);
+		if (!c || c.h !== L.hour || c.v !== d.lv) TOPS.set(L, c = {
+			h: L.hour,
+			v: d.lv,
+			m: /* @__PURE__ */ new Map()
+		});
+		let t = c.m.get(id);
+		if (t !== void 0) return t;
+		t = id;
+		for (let i = 0; i < 12 && d.lords[t] && d.lords[t].liege; i++) t = d.lords[t].liege;
+		c.m.set(id, t);
+		return t;
+	}
+	const LAND = /* @__PURE__ */ new WeakMap();
+	function landOf(L, x, y) {
+		let m = LAND.get(L.zones);
+		if (!m) {
+			const { w, h } = L.size;
+			m = new Int16Array(w * h).fill(-1);
+			let n = 0;
+			for (let i = 0; i < w * h; i++) {
+				if (m[i] >= 0 || L.zones[i].biome === "sea") continue;
+				const q = [i];
+				m[i] = n;
+				while (q.length) {
+					const c = q.pop(), cx = c % w, cy = (c - cx) / w;
+					for (const [dx, dy] of [
+						[1, 0],
+						[-1, 0],
+						[0, 1],
+						[0, -1]
+					]) {
+						const nx = cx + dx, ny = cy + dy;
+						if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+						const j = ny * w + nx;
+						if (m[j] < 0 && L.zones[j].biome !== "sea") {
+							m[j] = n;
+							q.push(j);
+						}
+					}
+				}
+				n++;
+			}
+			LAND.set(L.zones, m);
+		}
+		return m[y * L.size.w + x];
+	}
+	const landOfKey = (L, k) => {
+		const [x, y] = unkey(k);
+		return landOf(L, x, y);
+	};
+	const fealtyChanged = (L) => {
+		D(L).lv = (D(L).lv || 0) + 1;
+	};
+	const SEATS = /* @__PURE__ */ new WeakMap();
+	function isSeat(L, k) {
+		let c = SEATS.get(L);
+		if (!c || c.h !== L.hour) {
+			c = {
+				h: L.hour,
+				s: /* @__PURE__ */ new Set([...Object.values(D(L).dom).map((m) => m.seat), ...L.regions.map((r) => key(...r.seat))])
+			};
+			SEATS.set(L, c);
+		}
+		return c.s.has(k);
+	}
+	const sameSide = (L, a, b) => a && b && top(L, a) === top(L, b);
+	const lordName = (L, id) => !id ? "nobody" : L.actors[id] ? nameOf(L.actors[id]) : id;
+	function setZone(L, k, { title, holder }, how) {
+		const d = D(L), z = d.zt[k] || (d.zt[k] = {
+			title: null,
+			holder: null
+		}), was = { ...z };
+		if (title !== void 0 && title !== z.title) {
+			drop(L, z.title, "titles", k);
+			z.title = title;
+			add(L, title, "titles", k);
+			const [x, y] = unkey(k), r = zoneAt(L, x, y).region;
+			if (r >= 0 && !d.regZ[r].includes(k)) d.regZ[r].push(k);
+		}
+		if (holder !== void 0 && holder !== z.holder) {
+			drop(L, z.holder, "zones", k);
+			const old = z.holder;
+			z.holder = holder;
+			z.since = L.hour;
+			add(L, holder, "zones", k);
+			const [x, y] = unkey(k);
+			for (let n = 0; n < 16; n++) {
+				const pid = plotId(x, y, n), o = ownerOf(L, pid);
+				if (o.holder === old || o.title && o.title === z.title) {
+					if (o.holder === holder) continue;
+					(L.plots[pid] || (L.plots[pid] = {
+						title: o.title,
+						holder: o.holder
+					})).holder = holder;
+				}
+			}
+		}
+		if (was.title !== z.title && how !== "world") emit(L, "dom.zone", {
+			zone: unkey(k),
+			title: z.title,
+			holder: z.holder,
+			was,
+			how
+		});
+		return z;
+	}
+	function add(L, id, list, k) {
+		if (!id) return;
+		const l = lordOf(L, id);
+		if (!l[list].includes(k)) l[list].push(k);
+	}
+	function drop(L, id, list, k) {
+		const l = id && D(L).lords[id];
+		if (l) {
+			const i = l[list].indexOf(k);
+			if (i >= 0) l[list].splice(i, 1);
+		}
+	}
+	function checkZoneTitle(L, x, y) {
+		const d = D(L), k = key(x, y), z = d.zt[k], titles = /* @__PURE__ */ new Set();
+		for (let n = 0; n < 16; n++) {
+			const t = ownerOf(L, plotId(x, y, n)).title;
+			if (!t) return null;
+			titles.add(d.vas[t] ? d.vas[t].liege : t);
+		}
+		if (titles.size !== 1) return null;
+		const [t] = titles;
+		if (z && z.title === t) return z;
+		return setZone(L, k, {
+			title: t,
+			holder: z && z.holder && z.holder !== z.title ? z.holder : t
+		}, "all plots");
+	}
+	function plotChanged(L, pid) {
+		const [zx, zy] = pid.split(":")[0].split(",").map(Number), o = ownerOf(L, pid);
+		checkZoneTitle(L, zx, zy);
+		if (o.holder) {
+			const e = estatesOf(L, o.holder).find((es) => es.plots.includes(pid));
+			if (e && e.plots.length > 1) emit(L, "dom.estate", {
+				actor: o.holder,
+				plots: e.plots.length,
+				zone: [zx, zy],
+				name: e.name
+			});
+		}
+	}
+	function plotsHeld(L, id) {
+		D(L);
+		const out = /* @__PURE__ */ new Set(), a = L.actors[id];
+		for (const pid of a ? a.holds : []) if (ownerOf(L, pid).holder === id) out.add(pid);
+		for (const pid in L.plots) if (L.plots[pid].holder === id) out.add(pid);
+		return [...out];
+	}
+	function estatesOf(L, id) {
+		const held = new Set(plotsHeld(L, id)), seen = /* @__PURE__ */ new Set(), out = [];
+		const nb = (pid) => {
+			const [zk, n] = pid.split(":"), [zx, zy] = zk.split(",").map(Number), px = n % 4, py = Math.floor(n / 4), res = [];
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			]) {
+				let qx = px + dx, qy = py + dy, ax = zx, ay = zy;
+				if (qx < 0) {
+					qx += 4;
+					ax--;
+				}
+				if (qx >= 4) {
+					qx -= 4;
+					ax++;
+				}
+				if (qy < 0) {
+					qy += 4;
+					ay--;
+				}
+				if (qy >= 4) {
+					qy -= 4;
+					ay++;
+				}
+				res.push(plotId(ax, ay, qy * 4 + qx));
+			}
+			return res;
+		};
+		for (const p of held) {
+			if (seen.has(p)) continue;
+			const plots = [], q = [p];
+			seen.add(p);
+			while (q.length) {
+				const c = q.pop();
+				plots.push(c);
+				for (const n of nb(c)) if (held.has(n) && !seen.has(n)) {
+					seen.add(n);
+					q.push(n);
+				}
+			}
+			plots.sort();
+			const [zx, zy] = plots[0].split(":")[0].split(",").map(Number), z = zoneAt(L, zx, zy);
+			out.push({
+				id: plots[0],
+				plots,
+				zones: [...new Set(plots.map((x) => x.split(":")[0]))],
+				name: `${z.name || cap$1(z.biome)} estate`
+			});
+		}
+		return out.sort((a, b) => b.plots.length - a.plots.length);
+	}
+	const cap$1 = (s) => s[0].toUpperCase() + s.slice(1);
+	function clusters(keys) {
+		const pts = keys.map((k) => [k, ...unkey(k)]), used = new Uint8Array(pts.length), out = [];
+		for (let s = 0; s < pts.length; s++) {
+			if (used[s]) continue;
+			used[s] = 1;
+			const c = [s];
+			for (let i = 0; i < c.length; i++) {
+				const [, x, y] = pts[c[i]];
+				for (let j = 0; j < pts.length; j++) if (!used[j] && Math.max(Math.abs(pts[j][1] - x), Math.abs(pts[j][2] - y)) <= N.REACH) {
+					used[j] = 1;
+					c.push(j);
+				}
+			}
+			out.push(c.map((i) => pts[i][0]));
+		}
+		return out;
+	}
+	const tierAt = (L, k) => {
+		const s = D(L).set[k];
+		return s ? s.tier : -1;
+	};
+	function canFound(L, who, seatK) {
+		const l = D(L).lords[who];
+		if (!l || !l.titles.includes(seatK)) return "the seat must be a zone you hold the title of";
+		if (tierAt(L, seatK) < 3) return "the seat must be a town or a castle town";
+		if (Object.values(D(L).dom).some((m) => m.seat === seatK)) return "it is already a domain's seat";
+		if (clusters(l.titles).find((cl) => cl.includes(seatK)).length < 2) return "you need two or more zones near each other";
+		return null;
+	}
+	function foundDomain(L, who, seatK, name) {
+		const why = canFound(L, who, seatK);
+		if (why) return { error: why };
+		const d = D(L), l = d.lords[who], c = clusters(l.titles).find((cl) => cl.includes(seatK)), id = `han${L.ids.han = (L.ids.han || 0) + 1}`;
+		const [sx, sy] = unkey(seatK), m = {
+			id,
+			name: name || `${zoneAt(L, sx, sy).name || "the"} domain`,
+			seat: seatK,
+			zones: c,
+			title: who,
+			holder: d.zt[seatK].holder,
+			founded: L.hour
+		};
+		for (const o of Object.values(d.dom)) if (o.title === who && o.zones.some((z) => c.includes(z))) delete d.dom[o.id];
+		d.dom[id] = m;
+		l.seat = seatK;
+		emit(L, "dom.domain", {
+			domain: id,
+			name: m.name,
+			zone: [sx, sy],
+			actor: who,
+			how: "founded",
+			zones: c.length
+		});
+		return m;
+	}
+	function refreshDomains(L) {
+		const d = D(L);
+		for (const m of Object.values(d.dom)) {
+			const z = d.zt[m.seat];
+			if (!z || !z.title) {
+				delete d.dom[m.id];
+				emit(L, "dom.domain", {
+					domain: m.id,
+					name: m.name,
+					how: "dissolved"
+				});
+				continue;
+			}
+			if (z.title !== m.title) {
+				emit(L, "dom.domain", {
+					domain: m.id,
+					name: m.name,
+					zone: unkey(m.seat),
+					actor: z.title,
+					was: m.title,
+					how: "passed"
+				});
+				m.title = z.title;
+			}
+			m.holder = z.holder;
+			const c = clusters(lordOf(L, m.title).titles).find((cl) => cl.includes(m.seat)) || [m.seat];
+			const twin = Object.values(d.dom).find((o) => o !== m && o.title === m.title && c.includes(o.seat) && d.dom[o.id] && (o.founded < m.founded || o.founded === m.founded && o.id < m.id));
+			if (twin) {
+				delete d.dom[m.id];
+				emit(L, "dom.domain", {
+					domain: m.id,
+					name: m.name,
+					zone: unkey(m.seat),
+					actor: m.title,
+					how: "merged",
+					into: twin.id
+				});
+				continue;
+			}
+			if (c.length !== m.zones.length) emit(L, "dom.domain", {
+				domain: m.id,
+				name: m.name,
+				zone: unkey(m.seat),
+				actor: m.title,
+				how: c.length > m.zones.length ? "grew" : "shrank",
+				zones: c.length
+			});
+			m.zones = c;
+		}
+		for (const l of Object.values(d.lords)) {
+			if (!l.titles.length || !alive(L, l.id)) continue;
+			for (const c of clusters(l.titles)) {
+				if (c.length < 2 || Object.values(d.dom).some((m) => m.title === l.id && c.includes(m.seat))) continue;
+				const seat = c.filter((k) => tierAt(L, k) >= 3).sort((a, b) => tierAt(L, b) - tierAt(L, a) || (d.set[b]?.pop || 0) - (d.set[a]?.pop || 0))[0];
+				if (!seat) continue;
+				if (l.id === L.player) {
+					if (!l.ready) {
+						l.ready = seat;
+						emit(L, "dom.domainReady", {
+							actor: l.id,
+							zone: unkey(seat)
+						});
+					}
+					continue;
+				}
+				foundDomain(L, l.id, seat);
+			}
+		}
+	}
+	function refreshProvinces(L) {
+		const d = D(L);
+		for (const reg of L.regions) {
+			const sk = key(...reg.seat), zs = d.regZ[reg.id], seat = d.zt[sk], p = d.prov[reg.id] || (d.prov[reg.id] = {
+				title: null,
+				holder: null
+			});
+			if (!seat) continue;
+			const held = zs.filter((k) => d.zt[k].holder === seat.holder).length, titled = zs.filter((k) => d.zt[k].title === seat.title).length;
+			const holder = seat.holder && held * 2 > zs.length ? seat.holder : null, title = seat.title && titled * 2 > zs.length ? seat.title : p.title;
+			if (holder !== p.holder || title !== p.title) {
+				const was = { ...p };
+				p.holder = holder;
+				p.title = title;
+				emit(L, "dom.province", {
+					region: reg.id,
+					name: reg.name,
+					title,
+					holder,
+					was
+				});
+			}
+		}
+	}
+	function refreshRealms(L) {
+		const d = D(L), count = {};
+		for (const [r, p] of Object.entries(d.prov)) if (p.title && alive(L, p.title)) {
+			const t = top(L, p.title);
+			(count[t] || (count[t] = [])).push(+r);
+		}
+		for (const rm of Object.values(d.realms)) {
+			const provs = count[rm.title] || [];
+			if (!alive(L, rm.title) || provs.length < 2) {
+				delete d.realms[rm.id];
+				emit(L, "dom.realm", {
+					realm: rm.id,
+					name: rm.name,
+					actor: rm.title,
+					how: "fell"
+				});
+				continue;
+			}
+			rm.provinces = provs;
+			delete count[rm.title];
+			const cap = d.prov[rm.capital];
+			rm.holder = cap && cap.holder ? top(L, cap.holder) : rm.title;
+			if (!provs.includes(rm.capital)) rm.capital = provs[0];
+		}
+		for (const [t, provs] of Object.entries(count)) {
+			if (provs.length < 2) continue;
+			const l = d.lords[t], capR = l && l.seat ? zoneAt(L, ...unkey(l.seat)).region : provs[0], capital = provs.includes(capR) ? capR : provs[0];
+			const id = `realm${L.ids.realm = (L.ids.realm || 0) + 1}`, rm = {
+				id,
+				name: `the realm of ${L.regions[capital].name}`,
+				title: t,
+				holder: t,
+				capital,
+				provinces: provs,
+				founded: L.hour
+			};
+			d.realms[id] = rm;
+			emit(L, "dom.realm", {
+				realm: id,
+				name: rm.name,
+				actor: t,
+				how: "rose",
+				provinces: provs.length
+			});
+		}
+	}
+	const realmOf = (L, id) => {
+		const t = top(L, id);
+		return Object.values(D(L).realms).find((r) => r.title === t) || null;
+	};
+	function holdingsOf(L, id) {
+		const d = D(L), l = d.lords[id];
+		return {
+			plots: plotsHeld(L, id),
+			estates: estatesOf(L, id),
+			zones: l ? l.zones.slice() : [],
+			titles: l ? l.titles.slice() : [],
+			domains: Object.values(d.dom).filter((m) => m.title === id),
+			provinces: Object.entries(d.prov).filter(([, p]) => p.title === id || p.holder === id).map(([r]) => +r),
+			realm: realmOf(L, id),
+			koku: l ? Math.round(l.kokuAll) : 0,
+			liege: l ? l.liege : null,
+			rank: rankOf(L, id)
+		};
+	}
+	function rankOf(L, id) {
+		const d = D(L), l = d.lords[id];
+		if (!l) return plotsHeld(L, id).length ? estatesOf(L, id).some((e) => e.plots.length > 1) ? "estate" : "plot" : "none";
+		if (Object.values(d.realms).some((r) => r.title === id)) return "realm";
+		if (Object.values(d.prov).some((p) => p.title === id || p.holder === id)) return "province";
+		if (Object.values(d.dom).some((m) => m.title === id)) return "domain";
+		if (l.titles.length || l.zones.length) return "zone";
+		return plotsHeld(L, id).length ? estatesOf(L, id).some((e) => e.plots.length > 1) ? "estate" : "plot" : "none";
+	}
+	//#endregion
+	//#region src/sim/dominion/seams.js
+	function zoneYield(L, s) {
+		let k = s.pop * N.YIELD_PER_HEAD;
+		for (const [t, n] of Object.entries(s.cnt)) if (BUILDINGS[t].koku) k += BUILDINGS[t].koku * n * s.staffed;
+		return k;
+	}
+	const ricePrice = (L, region) => N.RICE_PRICE;
+	const materialPrice = (L, region, mat) => N.MATERIAL[mat] ?? 0;
+	const worth = (a) => a.money.mon + a.money.silver * N.SILVER + a.money.ryo * 1e3;
+	function spend(L, id, mon) {
+		const a = L.actors[id];
+		if (!a || mon <= 0) return mon <= 0;
+		if (worth(a) < mon) return false;
+		const m = a.money;
+		m.mon -= mon;
+		while (m.mon < 0 && m.silver > 0) {
+			const s = Math.min(m.silver, Math.ceil(-m.mon / N.SILVER));
+			m.silver -= s;
+			m.mon += s * N.SILVER;
+		}
+		while (m.mon < 0 && m.ryo > 0) {
+			m.ryo--;
+			m.mon += 1e3;
+		}
+		return true;
+	}
+	function gain(L, id, mon) {
+		const a = L.actors[id];
+		if (!a || !(mon > 0)) return;
+		a.money.mon += Math.round(mon);
+		if (a.money.mon > 6e3) {
+			const r = Math.floor((a.money.mon - 3e3) / 1e3);
+			a.money.ryo += r;
+			a.money.mon -= r * 1e3;
+		}
+	}
+	function heirOf(L, a) {
+		const alive = (id) => L.actors[id] && L.actors[id].alive;
+		const kids = (a.children || []).filter(alive).map((id) => L.actors[id]).filter((c) => ageOf(L, c) >= 14).sort((x, y) => x.born - y.born);
+		if (kids.length) return kids[0].id;
+		if (a.spouse && alive(a.spouse)) return a.spouse;
+		for (const p of a.parents || []) {
+			const par = L.actors[p];
+			if (!par) continue;
+			for (const s of par.children) if (s !== a.id && alive(s) && ageOf(L, L.actors[s]) >= 14) return s;
+		}
+		return null;
+	}
+	function killActor(L, id, cause) {
+		const a = L.actors[id];
+		if (!a || !a.alive) return;
+		a.alive = false;
+		a.died = L.hour;
+		a.cause = cause;
+	}
+	function mortality(L, a, r) {
+		if (L.sys.people) return false;
+		const age = ageOf(L, a), p = N.DEATH.find(([upTo]) => age < upTo)[1];
+		if (r.chance(p)) {
+			killActor(L, a.id, "age");
+			return true;
+		}
+		return false;
+	}
+	function growth(L, s, appeal) {
+		s.grow = (s.grow || 0) + s.pop * .005 * Math.max(0, appeal);
+		const n = Math.floor(s.grow);
+		s.grow -= n;
+		return n;
+	}
+	function migrate(L, s, target, appeal) {
+		if (s.pop < target) return s.pop + Math.min(target - s.pop, growth(L, s, appeal) + (s.pop < 40 && appeal > .6 ? 1 + Math.round(appeal * 2) : 0));
+		return s.pop - Math.ceil((s.pop - target) * .25);
+	}
+	function transferTitle(L, pid, to, how, holderToo = false) {
+		const o = ownerOf(L, pid), rec = L.plots[pid] || (L.plots[pid] = {
+			title: o.title,
+			holder: o.holder
+		});
+		rec.title = to;
+		if (holderToo) rec.holder = to;
+		return rec;
+	}
+	const ripens = (L, z) => !z.title && z.holder && L.hour - (z.since || 0) >= 2 * HOURS_PER_YEAR;
+	function addKarma(L, id, d) {
+		const a = L.actors[id];
+		if (a) a.karma = Math.round((a.karma || 0) + d);
+	}
+	function addStanding(L, id, culture, d) {
+		const a = L.actors[id];
+		if (a && culture != null) a.standing[culture] = Math.max(-1, Math.min(1, (a.standing[culture] || 0) + d));
+	}
+	const BLOCK = /* @__PURE__ */ new Set([
+		"forest",
+		"bamboo",
+		"rock",
+		"water",
+		"marsh",
+		"building",
+		"wall",
+		"palisade",
+		"shrine"
+	]);
+	function tileGround(L, zx, zy, tx, ty) {
+		return TERRAIN$1[tilesOf(L, zx, zy).t[ty * 64 + tx]];
+	}
+	const blocked = (L, zx, zy, tx, ty) => BLOCK.has(tileGround(L, zx, zy, tx, ty));
+	function claimPlot(L, pid, who) {
+		const o = ownerOf(L, pid);
+		if (o.title || o.holder) return false;
+		L.plots[pid] = {
+			title: who,
+			holder: who
+		};
+		const a = L.actors[who];
+		if (a && !a.holds.includes(pid)) a.holds.push(pid);
+		return true;
+	}
+	//#endregion
+	//#region src/sim/dominion/build.js
+	const NEWS = /* @__PURE__ */ new Set([
+		"market",
+		"inn",
+		"temple",
+		"magistrate",
+		"palisade",
+		"wall",
+		"gate",
+		"keep",
+		"dojo",
+		"barracks"
+	]);
+	function costOf(L, type, k) {
+		const b = BUILDINGS[type], s = D(L).set[k], [x, y] = unkey(k), reg = zoneAt(L, x, y).region;
+		let mon = b.cost.mon || 0;
+		for (const [m, n] of Object.entries(b.cost)) if (m !== "mon") {
+			const cheap = s && (m === "timber" && s.cnt.sawmill || (m === "stone" || m === "tiles") && s.cnt.kiln) ? .75 : 1;
+			mon += n * materialPrice(L, reg, m) * cheap;
+		}
+		return Math.round(mon);
+	}
+	function canPlace(L, who, type, zx, zy, tx, ty) {
+		const b = BUILDINGS[type];
+		if (!b) return "no such building";
+		const k = key(zx, zy), s = D(L).set[k], z = zoneAt(L, zx, zy);
+		if (!z || z.biome === "sea") return "not on land";
+		const why = prereq(L, s, type, z);
+		if (why) return why;
+		if (b.w === "ring") return s && lordOfSettlement(L, s) === who ? null : "walls go round a settlement you hold";
+		if (tx < 0 || ty < 0 || tx + b.w > 64 || ty + b.h > 64) return "off the edge of the zone";
+		for (let y = ty; y < ty + b.h; y++) for (let x = tx; x < tx + b.w; x++) {
+			if (ownerOf(L, plotAt(zx, zy, x, y)).holder !== who) return "every tile must be on a plot you hold";
+			if (blocked(L, zx, zy, x, y)) return `a ${tileGround(L, zx, zy, x, y)} tile is in the way (clear it first)`;
+			if (b.ground && !b.ground.includes(tileGround(L, zx, zy, x, y))) return `it needs ${b.ground.join(" or ")} ground`;
+		}
+		if (s) for (const id of s.b) {
+			const o = D(L).bld[id], ob = BUILDINGS[o.t];
+			if (!o.at || ob.w === "ring") continue;
+			if (tx < o.at[0] + ob.w && o.at[0] < tx + b.w && ty < o.at[1] + ob.h && o.at[1] < ty + b.h) return `the ${o.t} is there`;
+		}
+		return null;
+	}
+	function prereq(L, s, type, z) {
+		const b = BUILDINGS[type], tier = s ? s.tier : -1;
+		if ((b.tier ?? -1) > tier) return `needs a ${TIERS[b.tier].name} first`;
+		if (b.road && !z.road) return "needs a road";
+		for (const [t, n] of Object.entries(b.needs || {})) if ((s ? s.cnt[t] || 0 : 0) < n) return `needs a ${t} first`;
+		if (b.needsAny && !b.needsAny.some((t) => s && s.cnt[t])) return `needs a ${b.needsAny.join(" or ")} first`;
+		if (b.w === "ring" && s && s.b.some((id) => D(L).bld[id].t === type && D(L).bld[id].st !== "ruin")) return `there is already a ${type}`;
+		return null;
+	}
+	function plan(L, who, type, zx, zy, tx, ty, { pay = true, at = true } = {}) {
+		const d = D(L), k = key(zx, zy), b = BUILDINGS[type];
+		const why = at ? canPlace(L, who, type, zx, zy, tx, ty) : prereq(L, d.set[k], type, zoneAt(L, zx, zy));
+		if (why) return { error: why };
+		const cost = costOf(L, type, k);
+		if (pay && !spend(L, who, cost)) return { error: `it costs ${cost} mon` };
+		const s = d.set[k] || newSettlement(L, zx, zy, who), id = `b${L.ids.b = (L.ids.b || 0) + 1}`;
+		const rec = {
+			id,
+			t: type,
+			k,
+			at: at && b.w !== "ring" ? [tx, ty] : null,
+			owner: who,
+			st: "build",
+			hp: 0,
+			done: 0,
+			labour: b.labour,
+			got: pay ? true : { ...b.cost },
+			crew: 0,
+			since: L.hour
+		};
+		d.bld[id] = rec;
+		s.b.push(id);
+		d.work.push(id);
+		if (who === L.player) emit(L, "dom.build", {
+			building: id,
+			kind: type,
+			zone: [zx, zy],
+			actor: who,
+			cost
+		});
+		return rec;
+	}
+	function work(L, id, days, by) {
+		const r = D(L).bld[id];
+		if (!r || r.st !== "build" && r.st !== "repair") return r;
+		r.done = Math.min(r.labour, r.done + days);
+		if (by) r.by = by;
+		finishIfDone(L, r);
+		return r;
+	}
+	function finishIfDone(L, r) {
+		if (r.done < r.labour || r.got !== true) return;
+		const d = D(L), i = d.work.indexOf(r.id);
+		if (i >= 0) d.work.splice(i, 1);
+		const was = r.st;
+		r.st = "up";
+		r.hp = 1;
+		r.done = r.labour = BUILDINGS[r.t].labour;
+		recount(L, d.set[r.k]);
+		if (r.owner === L.player || NEWS.has(r.t)) emit(L, was === "repair" ? "dom.repaired" : "dom.built", {
+			building: r.id,
+			kind: r.t,
+			zone: unkey(r.k),
+			actor: r.owner
+		});
+	}
+	function hire(L, id, n) {
+		const r = D(L).bld[id];
+		if (r) r.crew = Math.max(0, n | 0);
+		return r;
+	}
+	function buildDay(L) {
+		const d = D(L), share = {}, day = Math.floor(L.hour / 24);
+		for (const id of d.work) {
+			const r = d.bld[id];
+			share[r.k] = (share[r.k] || 0) + (r.got === true ? 1 : 0);
+		}
+		for (const id of d.work.slice()) {
+			const r = d.bld[id];
+			if (!r || r.got !== true) continue;
+			const daily = r.owner === L.player || r.crew > 0, days = daily ? 1 : 7;
+			if (!daily && (day + r.since) % 7) continue;
+			const s = d.set[r.k], lord = lordOfSettlement(L, s);
+			let lab = 0;
+			if (lord && r.owner === lord && !s.siege) {
+				const st = stewardF(L, lord);
+				lab += days * s.pop * N.LABOUR * st / share[r.k] * (1 + (s.cnt.sawmill ? BUILDINGS.sawmill.labourX : 0));
+			}
+			if (r.crew) {
+				if (spend(L, r.owner, r.crew * N.CREW_WAGE)) lab += r.crew;
+				else {
+					r.crew = 0;
+					emit(L, "dom.crewLeft", {
+						building: id,
+						zone: unkey(r.k),
+						actor: r.owner
+					});
+				}
+			}
+			if (lab > 0) work(L, id, lab, null);
+		}
+	}
+	const stewardF = (L, lord) => {
+		const l = D(L).lords[lord], st = l && l.off.steward;
+		return st && alive(L, st) ? .8 + .4 * L.actors[st].int : .9;
+	};
+	function damage(L, id, amt, why) {
+		const d = D(L), r = d.bld[id];
+		if (!r || r.st === "ruin") return r;
+		if (r.st === "build") {
+			r.done = Math.max(0, r.done - amt * r.labour);
+			return r;
+		}
+		r.hp = Math.max(0, r.hp - amt);
+		if (r.hp <= 0) {
+			r.st = "ruin";
+			const i = d.work.indexOf(id);
+			if (i >= 0) d.work.splice(i, 1);
+		}
+		recount(L, d.set[r.k]);
+		if (r.owner === L.player || r.st === "ruin" || NEWS.has(r.t)) emit(L, r.st === "ruin" ? "dom.ruined" : "dom.damaged", {
+			building: id,
+			kind: r.t,
+			zone: unkey(r.k),
+			why,
+			hp: +r.hp.toFixed(2)
+		});
+		return r;
+	}
+	function upkeepSeason(L) {
+		const d = D(L);
+		for (const s of Object.values(d.set)) {
+			let mon = 0;
+			for (const t in s.cnt) mon += (BUILDINGS[t].upkeep || 0) * s.cnt[t];
+			if (!mon) continue;
+			const who = lordOfSettlement(L, s);
+			if (who && alive(L, who) && spend(L, who, mon)) continue;
+			let low = false;
+			for (const id of s.b) {
+				const r = d.bld[id];
+				if (r.st === "up" && BUILDINGS[r.t].upkeep && r.hp > .3) {
+					r.hp = +(r.hp - .1).toFixed(2);
+					if (r.hp < .5) low = true;
+				}
+			}
+			if (low) recount(L, s);
+		}
+	}
+	function passBuildings(L, k, to) {
+		const s = D(L).set[k];
+		if (s) for (const id of s.b) D(L).bld[id].owner = to;
+	}
+	//#endregion
+	//#region src/sim/dominion/govern.js
+	const FIT = {
+		steward: {
+			good: [
+				"scholar",
+				"calm",
+				"stoic",
+				"humble"
+			],
+			bad: [
+				"lazy",
+				"drunk",
+				"slouch"
+			]
+		},
+		magistrate: {
+			good: [
+				"stoic",
+				"grim",
+				"soldier",
+				"wary"
+			],
+			bad: [
+				"drunk",
+				"lazy",
+				"cheerful"
+			]
+		},
+		general: {
+			good: TRAIT.steady,
+			bad: TRAIT.poor
+		},
+		envoy: {
+			good: TRAIT.sly.concat(["cheerful", "regal"]),
+			bad: [
+				"menacing",
+				"brawler",
+				"drunk"
+			]
+		}
+	};
+	function officeQ(L, a, office) {
+		const f = FIT[office], greed = traitSum(a, TRAIT.greedy);
+		const q = Math.max(0, Math.min(1, .15 + .55 * (a.int ?? .5) + traitSum(a, f.good) * .12 - traitSum(a, f.bad) * .15));
+		const honest = greed < .5 && (a.karma || 0) > -20;
+		return {
+			q: honest || office !== "magistrate" ? q : q * .6,
+			honest,
+			skim: honest || office !== "steward" ? 0 : .05 + .15 * (a.int ?? .5)
+		};
+	}
+	function appoint(L, lord, office, who) {
+		if (!OFFICES.includes(office)) return { error: "no such office" };
+		const l = lordOf(L, lord);
+		if (who && !alive(L, who)) return { error: "they are not alive" };
+		for (const o of OFFICES) if (who && l.off[o] === who) delete l.off[o];
+		if (who) l.off[office] = who;
+		else delete l.off[office];
+		if (lord === L.player) emit(L, "dom.appoint", {
+			actor: lord,
+			office,
+			to: who || null,
+			q: who ? +officeQ(L, L.actors[who], office).q.toFixed(2) : 0
+		});
+		return l;
+	}
+	function candidates(L, lord, homeIndex) {
+		const l = D(L).lords[lord];
+		if (!l) return [];
+		const taken = new Set(Object.values(l.off)), out = [];
+		const idx = homeIndex || indexHomes(L);
+		for (const k of l.zones) for (const id of idx[k] || []) {
+			const a = L.actors[id];
+			if (id === lord || taken.has(id) || D(L).lords[id]?.zones.length || ageOf(L, a) < 16 || a.cls === "outlaw") continue;
+			out.push(id);
+		}
+		return out;
+	}
+	function indexHomes(L) {
+		const idx = {};
+		for (const a of Object.values(L.actors)) if (a.alive && a.home) (idx[a.home[0] + "," + a.home[1]] || (idx[a.home[0] + "," + a.home[1]] = [])).push(a.id);
+		return idx;
+	}
+	function fillOffices(L, lord, idx, r) {
+		const l = D(L).lords[lord], me = L.actors[lord];
+		for (const o of OFFICES) {
+			if (l.off[o] && alive(L, l.off[o])) continue;
+			const c = candidates(L, lord, idx);
+			if (!c.length) return;
+			const pick = c.map((id) => [id, officeQ(L, L.actors[id], o).q + r.range(-.5, .5) * (1 - (me.int ?? .5))]).sort((a, b) => b[1] - a[1])[0][0];
+			appoint(L, lord, o, pick);
+		}
+	}
+	function setTax(L, lord, rate) {
+		const l = lordOf(L, lord), v = +Math.max(N.TAX_MIN, Math.min(N.TAX_MAX, rate)).toFixed(2);
+		if (Math.abs(v - l.tax) >= .05 || lord === L.player) emit(L, "dom.tax", {
+			actor: lord,
+			rate: v,
+			was: l.tax
+		});
+		l.tax = v;
+		return l;
+	}
+	function setLaw(L, lord, law, on) {
+		if (!LAWS[law]) return { error: "no such law" };
+		const l = lordOf(L, lord);
+		if (!!l.laws[law] === !!on) return l;
+		if (on) l.laws[law] = L.hour;
+		else delete l.laws[law];
+		if (on && LAWS[law].karma) addKarma(L, lord, LAWS[law].karma);
+		emit(L, "dom.law", {
+			actor: lord,
+			law,
+			on: !!on,
+			name: LAWS[law].name
+		});
+		return l;
+	}
+	function swear(L, vassal, liege, how) {
+		const l = lordOf(L, vassal);
+		if (vassal === liege || top(L, liege) === vassal) return null;
+		l.liege = liege;
+		l.loyalty = .7;
+		fealtyChanged(L);
+		for (const w of l.wars.slice()) {
+			const war = D(L).wars[w];
+			if (war && (war.a === liege || war.d === liege)) l.wars.splice(l.wars.indexOf(w), 1);
+		}
+		emit(L, "dom.fealty", {
+			actor: vassal,
+			liege,
+			how
+		});
+		return l;
+	}
+	function lordsSeason(L, r) {
+		const d = D(L);
+		for (const l of Object.values(d.lords)) {
+			if (!l.liege || !alive(L, l.id)) continue;
+			if (!alive(L, l.liege)) {
+				l.liege = null;
+				fealtyChanged(L);
+				continue;
+			}
+			const me = L.actors[l.id], lg = L.actors[l.liege], ll = d.lords[l.liege];
+			const env = ll.off.envoy && alive(L, ll.off.envoy) ? officeQ(L, L.actors[ll.off.envoy], "envoy").q : 0;
+			const target = .6 + (me.culture === lg.culture ? .1 : -.1) + ((lg.karma || 0) < -20 ? -.1 : 0) + (ll.glory || 0) * .05 - (l.grudges[l.liege] || 0) * .4 + env * .15 - traitSum(me, [
+				"proud",
+				"restless",
+				"cocky"
+			]) * .1 - (ll.tax - N.TAX) * .5;
+			const was = state(l);
+			l.loyalty = +Math.max(0, Math.min(1, l.loyalty + (target - l.loyalty) * .2 + r.range(-.06, .06))).toFixed(3);
+			if (state(l) !== was) emit(L, "dom.vassal", {
+				actor: l.id,
+				liege: l.liege,
+				state: state(l),
+				lord: true
+			});
+		}
+		for (const l of Object.values(d.lords)) if (l.glory) l.glory = +(l.glory * .8).toFixed(2);
+	}
+	const state = (l) => l.loyalty >= N.LOYAL ? "loyal" : l.loyalty >= N.RESTLESS ? "restless" : "rebellious";
+	const lordState = state;
+	function succeed(L, dead, r) {
+		const d = D(L), l = d.lords[dead];
+		if (!l || alive(L, dead) || l.gone) return null;
+		const da = L.actors[dead];
+		let heir = heirOf(L, da), how = "heir";
+		if (!heir && l.liege && alive(L, l.liege)) {
+			heir = l.liege;
+			how = "escheat";
+		}
+		if (!heir && (l.titles.length || l.zones.length)) {
+			const seat = l.seat || l.titles[0] || l.zones[0], s = d.set[seat];
+			heir = s && s.vas.filter((v) => alive(L, v)).sort((a, b) => worth(L.actors[b]) - worth(L.actors[a]))[0];
+			if (!heir) {
+				const [x, y] = unkey(seat), z = zoneAt(L, x, y), reg = L.regions[z.region];
+				heir = makeActor(L, r, {
+					cls: da.cls === "outlaw" ? "outlaw" : "noble",
+					culture: reg ? reg.culture : da.culture,
+					home: [x, y],
+					age: r.int(22, 45),
+					job: da.job
+				}).id;
+			}
+			how = "rose";
+		}
+		l.gone = true;
+		if (!heir) {
+			for (const k of l.zones.slice()) setZone(L, k, { holder: null }, "no heir");
+			return null;
+		}
+		transferAll(L, dead, heir, how);
+		return heir;
+	}
+	function transferAll(L, from, to, how) {
+		const d = D(L), l = d.lords[from], h = lordOf(L, to), ha = L.actors[to], fa = L.actors[from];
+		for (const k of l.titles.slice()) setZone(L, k, { title: to }, how);
+		for (const k of l.zones.slice()) setZone(L, k, { holder: to }, how);
+		const pids = new Set(fa.holds);
+		for (const k of /* @__PURE__ */ new Set([...h.titles, ...h.zones])) for (let n = 0; n < 16; n++) pids.add(`${k}:${n}`);
+		for (const pid of pids) {
+			const p = L.plots[pid];
+			if (!p) continue;
+			if (p.title === from) {
+				p.title = to;
+				if (!ha.holds.includes(pid)) ha.holds.push(pid);
+			}
+			if (p.holder === from) p.holder = to;
+		}
+		for (const reg of L.regions) if (reg.lord === from) {
+			reg.lord = to;
+			ha.lord = reg.id;
+		}
+		if (fa.lord != null && ha.lord == null) ha.lord = fa.lord;
+		if (how !== "escheat") {
+			ha.job = fa.job === "lord" ? "lord" : ha.job;
+			h.rice += l.rice;
+			h.tax = l.tax;
+			h.laws = { ...l.laws };
+			h.seat = h.seat || l.seat;
+			h.liege = h.liege || (l.liege !== to ? l.liege : null);
+			h.loyalty = l.loyalty;
+			for (const o of OFFICES) if (!h.off[o] && l.off[o] && l.off[o] !== to) h.off[o] = l.off[o];
+			for (const [g, v] of Object.entries(l.grudges)) h.grudges[g] = Math.max(h.grudges[g] || 0, v);
+			h.claims = [.../* @__PURE__ */ new Set([...h.claims, ...l.claims])];
+			h.tribute = h.tribute.concat(l.tribute);
+			const m = fa.money;
+			ha.money.mon += m.mon;
+			ha.money.silver += m.silver;
+			ha.money.ryo += m.ryo;
+			fa.money = {
+				mon: 0,
+				silver: 0,
+				ryo: 0
+			};
+		} else h.rice += l.rice;
+		l.rice = 0;
+		for (const o of Object.values(d.lords)) {
+			if (o.liege === from) o.liege = o.id === to ? null : to;
+			if (o.grudges[from] != null) {
+				o.grudges[to] = Math.max(o.grudges[to] || 0, o.grudges[from]);
+				delete o.grudges[from];
+			}
+			if (o.truce[from] != null) {
+				o.truce[to] = o.truce[from];
+				delete o.truce[from];
+			}
+			for (const t of o.tribute) if (t.to === from) t.to = to;
+		}
+		for (const a of Object.values(d.armies)) if (a.lord === from) a.lord = to;
+		for (const w of Object.values(d.wars)) {
+			if (w.end) continue;
+			if (w.a === from) w.a = to;
+			if (w.d === from) w.d = to;
+			if (w.a === w.d) {
+				w.end = L.hour;
+				w.how = "united";
+			} else if (!h.wars.includes(w.id)) h.wars.push(w.id);
+		}
+		for (const m of Object.values(d.dom)) {
+			if (m.title === from) m.title = to;
+			if (m.holder === from) m.holder = to;
+		}
+		for (const p of Object.values(d.prov)) {
+			if (p.title === from) p.title = to;
+			if (p.holder === from) p.holder = to;
+		}
+		for (const rm of Object.values(d.realms)) {
+			if (rm.title === from) rm.title = to;
+			if (rm.holder === from) rm.holder = to;
+		}
+		for (const v of Object.values(d.vas)) if (v.liege === from) v.liege = to;
+		for (const s of Object.values(d.set)) if (s.founder === from) s.founder = to;
+		for (const k of h.zones) {
+			const s = d.set[k];
+			if (s) {
+				for (const id of s.b) if (d.bld[id].owner === from) d.bld[id].owner = to;
+			}
+		}
+		delete d.vas[to];
+		fealtyChanged(L);
+		emit(L, "dom.succession", {
+			from,
+			to,
+			how,
+			zones: h.zones.length
+		});
+	}
+	function successionYear(L, r) {
+		const d = D(L);
+		for (const l of Object.values(d.lords)) {
+			if (l.gone) continue;
+			if (alive(L, l.id) && (l.zones.length || l.titles.length) && l.id !== L.player) mortality(L, L.actors[l.id], r);
+			if (!alive(L, l.id) && (l.zones.length || l.titles.length || Object.keys(l.off).length)) succeed(L, l.id, r);
+		}
+	}
+	//#endregion
+	//#region src/sim/dominion/army.js
+	const menOf = (a) => a.sq.reduce((s, q) => s + q.n, 0);
+	function strength(L, a) {
+		let p = 0;
+		for (const q of a.sq) {
+			const u = UNITS[q.cls];
+			p += q.n * u.pow * (.5 + q.tr) * (.6 + .4 * q.eq);
+		}
+		return p * (.5 + a.morale) * (a.sup > 0 || a.hungry < 3 ? 1 : .7);
+	}
+	const CACHE = /* @__PURE__ */ new WeakMap();
+	function hourly(L) {
+		let c = CACHE.get(L);
+		if (!c || c.h !== L.hour) {
+			c = {
+				h: L.hour,
+				by: null,
+				side: null,
+				at: null,
+				paths: c ? c.paths : /* @__PURE__ */ new Map()
+			};
+			CACHE.set(L, c);
+		}
+		return c;
+	}
+	function armiesOf(L, lord) {
+		const c = hourly(L), d = D(L);
+		if (!c.by) {
+			c.by = /* @__PURE__ */ new Map();
+			for (const a of Object.values(d.armies)) (c.by.get(a.lord) || c.by.set(a.lord, []).get(a.lord)).push(a);
+		}
+		return (c.by.get(lord) || []).filter((a) => d.armies[a.id] === a && a.lord === lord);
+	}
+	function sideStrength(L, t) {
+		const c = hourly(L);
+		if (!c.side) {
+			c.side = /* @__PURE__ */ new Map();
+			for (const a of Object.values(D(L).armies)) if (alive(L, a.lord)) {
+				const k = top(L, a.lord);
+				c.side.set(k, (c.side.get(k) || 0) + strength(L, a));
+			}
+		}
+		return c.side.get(t) || 0;
+	}
+	function relocate(L, a, x, y) {
+		const c = hourly(L);
+		if (c.at) {
+			const o = a.at[0] + "," + a.at[1], nk = x + "," + y, l = c.at.get(o);
+			if (l) {
+				const i = l.indexOf(a);
+				if (i >= 0) l.splice(i, 1);
+			}
+			(c.at.get(nk) || c.at.set(nk, []).get(nk)).push(a);
+		}
+		a.at = [x, y];
+	}
+	function armiesAt(L, k) {
+		const c = hourly(L), d = D(L);
+		if (!c.at) {
+			c.at = /* @__PURE__ */ new Map();
+			for (const id in d.armies) {
+				const a = d.armies[id], ak = a.at[0] + "," + a.at[1];
+				(c.at.get(ak) || c.at.set(ak, []).get(ak)).push(a);
+			}
+		}
+		const l = c.at.get(k);
+		return l ? l.filter((a) => d.armies[a.id] === a && a.at[0] + "," + a.at[1] === k) : [];
+	}
+	function recruitWhy(L, lord, cls, k) {
+		const s = D(L).set[k];
+		if (!s) return "nobody lives there";
+		if (!UNITS[cls] || cls === "bandit" || cls === "rebel") return "no such troops";
+		const holder = lordOfSettlement(L, s), own = holder === lord || holder && top(L, holder) === top(L, lord) && D(L).lords[holder]?.liege === lord;
+		if ((cls === "ashigaru" || cls === "retainer" || cls === "monk") && !own) return "only on your own land";
+		if ((cls === "ronin" || cls === "shinobi") && holder && !own && atWar(L, lord, holder)) return "held by your enemy";
+		if (!(s.pool[cls] > 0)) return cls === "ronin" ? "no paid swords here (an inn brings them)" : cls === "monk" ? "no monks here (a temple brings them)" : `no ${cls} to be had here this season`;
+		return null;
+	}
+	const atWarAny = (L, id) => D(L).active.some((w) => sameSide(L, D(L).wars[w].a, id) || sameSide(L, D(L).wars[w].d, id));
+	const atWar = (L, a, b) => D(L).active.some((id) => {
+		const w = D(L).wars[id];
+		return sameSide(L, w.a, a) && sameSide(L, w.d, b) || sameSide(L, w.a, b) && sameSide(L, w.d, a);
+	});
+	function recruit(L, lord, cls, n, k, { pay = true, officer = null } = {}) {
+		const why = recruitWhy(L, lord, cls, k);
+		if (why) return { error: why };
+		const s = D(L).set[k];
+		n = Math.min(n, s.pool[cls]);
+		if (n <= 0) return { error: "nobody to recruit" };
+		const cost = n * UNITS[cls].cost;
+		if (pay && !spend(L, lord, cost)) return { error: `${n} ${cls} cost ${cost} mon to recruit` };
+		s.pool[cls] -= n;
+		if (cls === "ashigaru" || cls === "monk") s.pop = Math.max(0, s.pop - n);
+		const a = armiesAt(L, k).find((x) => x.lord === lord && !x.go) || newArmy(L, lord, [s.x, s.y]);
+		addSquad(a, cls, n, officer, k, s);
+		if (lord === L.player || n >= 10) emit(L, "dom.recruit", {
+			actor: lord,
+			army: a.id,
+			cls,
+			n,
+			zone: [s.x, s.y],
+			cost
+		});
+		return a;
+	}
+	function newArmy(L, lord, at, name) {
+		const d = D(L), id = `army${L.ids.army = (L.ids.army || 0) + 1}`, la = L.actors[lord];
+		const a = {
+			id,
+			lord,
+			name: name || `${la ? la.family : "the"} ${armiesOf(L, lord).length ? "second host" : "host"}`,
+			at: [...at],
+			home: key(...at),
+			sq: [],
+			morale: .6,
+			sup: 30,
+			unpaid: 0,
+			hungry: 0,
+			go: null,
+			siege: null,
+			since: L.hour
+		};
+		d.armies[id] = a;
+		lordOf(L, lord);
+		const c = hourly(L);
+		if (c.by) (c.by.get(lord) || c.by.set(lord, []).get(lord)).push(a);
+		if (c.at) (c.at.get(a.home) || c.at.set(a.home, []).get(a.home)).push(a);
+		return a;
+	}
+	function addSquad(a, cls, n, off, home, s) {
+		const q = a.sq.find((x) => x.cls === cls && x.off === off && x.from === home);
+		const eq0 = cls === "retainer" || cls === "ronin" ? .6 : cls === "monk" ? .4 : s && s.cnt.smithy ? .35 : .2;
+		if (q) {
+			q.tr = (q.tr * q.n + .1 * n) / (q.n + n);
+			q.eq = (q.eq * q.n + eq0 * n) / (q.n + n);
+			q.n += n;
+		} else a.sq.push({
+			cls,
+			n,
+			off,
+			tr: cls === "retainer" ? .5 : cls === "monk" || cls === "shinobi" ? .45 : cls === "ronin" ? .4 : .1,
+			eq: eq0,
+			order: "hold",
+			from: home
+		});
+	}
+	function setOrder(L, armyId, i, order) {
+		const a = D(L).armies[armyId];
+		if (a && a.sq[i] && ORDERS.includes(order)) a.sq[i].order = order;
+		return a;
+	}
+	function disband(L, armyId, i = null) {
+		const d = D(L), a = d.armies[armyId];
+		if (!a) return;
+		for (const q of i == null ? a.sq.slice() : [a.sq[i]]) {
+			if (!q) continue;
+			if ((q.cls === "ashigaru" || q.cls === "monk" || q.cls === "rebel") && d.set[q.from]) d.set[q.from].pop += q.n;
+			a.sq.splice(a.sq.indexOf(q), 1);
+		}
+		emit(L, "dom.disband", {
+			actor: a.lord,
+			army: a.id,
+			men: menOf(a)
+		});
+		if (!a.sq.length) delete d.armies[armyId];
+	}
+	const COST = {
+		coast: 1.5,
+		plains: 1,
+		paddy: 1.3,
+		forest: 2,
+		bamboo: 2.2,
+		marsh: 3.5,
+		hills: 2.5,
+		mountains: 6
+	};
+	function pathTo(L, from, to) {
+		const c = hourly(L), pk = from.join() + ">" + to.join();
+		if (c.paths.has(pk)) {
+			const p = c.paths.get(pk);
+			return p && p.slice();
+		}
+		const p = findPath(L, from, to);
+		if (c.paths.size > 3e3) c.paths.clear();
+		c.paths.set(pk, p);
+		return p && p.slice();
+	}
+	let G = null;
+	let PREV = null;
+	let SEEN = null;
+	let STAMP = 0;
+	function findPath(L, from, to) {
+		const { w, h } = L.size, n = w * h, start = from[1] * w + from[0], goal = to[1] * w + to[0];
+		if (!G || G.length !== n) {
+			G = new Float64Array(n);
+			PREV = new Int32Array(n);
+			SEEN = new Uint32Array(n);
+			STAMP = 0;
+		}
+		const stamp = ++STAMP, heapF = [], heapI = [];
+		const push = (f, i) => {
+			heapF.push(f);
+			heapI.push(i);
+			let k = heapF.length - 1;
+			while (k > 0) {
+				const p = k - 1 >> 1;
+				if (heapF[p] <= heapF[k]) break;
+				[heapF[p], heapF[k]] = [heapF[k], heapF[p]];
+				[heapI[p], heapI[k]] = [heapI[k], heapI[p]];
+				k = p;
+			}
+		};
+		const pop = () => {
+			const top = heapI[0], lf = heapF.pop(), li = heapI.pop();
+			if (heapF.length) {
+				heapF[0] = lf;
+				heapI[0] = li;
+				let k = 0;
+				for (;;) {
+					const l = 2 * k + 1, r = l + 1;
+					let m = k;
+					if (l < heapF.length && heapF[l] < heapF[m]) m = l;
+					if (r < heapF.length && heapF[r] < heapF[m]) m = r;
+					if (m === k) break;
+					[heapF[m], heapF[k]] = [heapF[k], heapF[m]];
+					[heapI[m], heapI[k]] = [heapI[k], heapI[m]];
+					k = m;
+				}
+			}
+			return top;
+		};
+		G[start] = 0;
+		SEEN[start] = stamp;
+		PREV[start] = -1;
+		push(0, start);
+		let found = start === goal;
+		for (let it = 0; heapF.length && it < 4e3 && !found; it++) {
+			const i = pop(), x = i % w, y = (i - x) / w;
+			for (let dir = 0; dir < 4; dir++) {
+				const nx = x + (dir === 0 ? 1 : dir === 1 ? -1 : 0), ny = y + (dir === 2 ? 1 : dir === 3 ? -1 : 0);
+				if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+				const j = ny * w + nx, z = L.zones[j];
+				if (z.biome === "sea") continue;
+				const c = G[i] + (z.road ? .35 : COST[z.biome]);
+				if (SEEN[j] === stamp && c >= G[j]) continue;
+				G[j] = c;
+				PREV[j] = i;
+				SEEN[j] = stamp;
+				if (j === goal) {
+					found = true;
+					break;
+				}
+				push(c + (Math.abs(nx - to[0]) + Math.abs(ny - to[1])) * .7, j);
+			}
+		}
+		if (!found) return null;
+		const path = [];
+		for (let i = goal; i !== start && i >= 0; i = PREV[i]) path.push(i);
+		return path.reverse();
+	}
+	function march(L, armyId, to, why = "march", war = null) {
+		const a = D(L).armies[armyId];
+		if (!a) return null;
+		const path = pathTo(L, a.at, to);
+		if (!path) return { error: "no way there" };
+		const again = a.go === null && a.last === key(...to) + why;
+		a.last = key(...to) + why;
+		a.go = {
+			to: key(...to),
+			path,
+			i: 0,
+			prog: 0,
+			why,
+			war
+		};
+		a.siege = null;
+		a.rest = 0;
+		if ((a.lord === L.player || why === "war" && D(L).set[key(...to)] && menOf(a) >= 40) && why !== "home" && why !== "raid" && !again) emit(L, "war.march", {
+			army: a.id,
+			actor: a.lord,
+			from: [...a.at],
+			to,
+			why,
+			war,
+			men: menOf(a)
+		});
+		return a;
+	}
+	function moveDay(L, a) {
+		const g = a.go;
+		if (!g) return false;
+		if (!g.path.length) {
+			a.go = null;
+			return true;
+		}
+		const stable = armyHasStable(L, a) ? 1 + BUILDINGS.stable.speed : 1;
+		g.prog += stable;
+		while (g.prog > 0 && g.i < g.path.length) {
+			const z = L.zones[g.path[g.i]], cost = 1 / (z.road ? N.MARCH_ROAD : N.MARCH_OFF);
+			if (g.prog < cost) break;
+			g.prog -= cost;
+			relocate(L, a, z.x, z.y);
+			g.i++;
+		}
+		if (g.i >= g.path.length) {
+			a.go = null;
+			return true;
+		}
+		return false;
+	}
+	const armyHasStable = (L, a) => {
+		const s = D(L).set[a.home];
+		return !!(s && s.cnt.stable);
+	};
+	function armyDay(L, r) {
+		const d = D(L), smiths = /* @__PURE__ */ new Map(), day = Math.floor(L.hour / 24), warring = /* @__PURE__ */ new Set();
+		for (const w of d.active) {
+			warring.add(d.wars[w].a);
+			warring.add(d.wars[w].d);
+		}
+		for (const id in d.armies) {
+			const a = d.armies[id];
+			if (!a.go && !a.siege && !a.unpaid && !a.hungry && (day + a.since) % 7 && (!warring.size || a.at[0] + "," + a.at[1] === a.home || !warring.has(top(L, a.lord)))) continue;
+			if (!a.sq.length) {
+				delete d.armies[id];
+				continue;
+			}
+			const ak = a.at[0] + "," + a.at[1];
+			if (!alive(L, a.lord)) continue;
+			const home = !a.go && !a.siege && !a.unpaid && !a.hungry && (ak === a.home || !warring.has(top(L, a.lord))), days = home ? 7 : 1;
+			if (!a.go && !a.siege && a.lord !== L.player) {
+				const twin = armiesAt(L, ak).find((b) => b !== a && b.lord === a.lord && !b.go && !b.siege && d.armies[b.id]);
+				if (twin) {
+					for (const q of a.sq) addSquad(twin, q.cls, q.n, q.off, q.from, null);
+					twin.sq.forEach((q) => {
+						const o = a.sq.find((x) => x.cls === q.cls);
+						if (o) {
+							q.tr = Math.max(q.tr, o.tr);
+							q.eq = Math.max(q.eq, o.eq);
+						}
+					});
+					delete d.armies[a.id];
+					continue;
+				}
+				if (!home && ak !== a.home && !atWarAny(L, a.lord)) march(L, a.id, unkey(a.home), "home");
+			}
+			const l = lordOf(L, a.lord), here = d.zt[ak], friendly = here && here.holder && sameSide(L, here.holder, a.lord);
+			let rice = 0, wage = 0;
+			for (const q of a.sq) {
+				rice += q.n * UNITS[q.cls].rice / 112 * days;
+				wage += q.n * UNITS[q.cls].wage * days;
+			}
+			if (friendly && l.rice >= rice) {
+				l.rice -= rice;
+				a.sup = Math.min(30, a.sup + 3);
+				a.hungry = 0;
+			} else if (a.sup >= 1) {
+				a.sup -= 1;
+				a.hungry = 0;
+			} else {
+				a.hungry++;
+				a.morale = Math.max(0, a.morale - .04);
+			}
+			if (wage > 0) {
+				if (spend(L, a.lord, Math.round(wage))) a.unpaid = 0;
+				else {
+					a.unpaid++;
+					a.morale = Math.max(0, a.morale - .02);
+				}
+			}
+			if (!a.unpaid && !a.hungry) {
+				a.morale += (.6 - a.morale) * .02 * days;
+				a.deserting = false;
+			}
+			if (a.unpaid > N.DESERT_AFTER || a.hungry > 3) {
+				let gone = 0;
+				for (const q of a.sq) {
+					if (q.cls === "retainer" && a.unpaid < N.BANDIT_AFTER * 2) continue;
+					const k = Math.max(1, Math.round(q.n * .03));
+					q.n -= k;
+					gone += k;
+					if ((q.cls === "ashigaru" || q.cls === "monk") && d.set[q.from] && a.unpaid <= N.BANDIT_AFTER) d.set[q.from].pop += k;
+				}
+				a.sq = a.sq.filter((q) => q.n > 0);
+				const was = a.deserting;
+				a.deserting = true;
+				if (gone && (!was && gone >= 3 || !a.sq.length)) emit(L, "dom.desert", {
+					army: a.id,
+					actor: a.lord,
+					n: gone,
+					bandits: a.unpaid > N.BANDIT_AFTER,
+					zone: [...a.at]
+				});
+				if (!a.sq.length) {
+					delete d.armies[a.id];
+					continue;
+				}
+			}
+			if (!a.go && ak === a.home) {
+				const s = d.set[a.home], gen = l.off.general && alive(L, l.off.general) ? .8 + .4 * L.actors[l.off.general].int : .8;
+				const tr = s ? (s.cnt.dojo || 0) * BUILDINGS.dojo.train + (s.cnt.barracks || 0) * BUILDINGS.barracks.train + 8e-4 : 0;
+				const smith = smiths.get(a.lord) ?? smiths.set(a.lord, l.zones.reduce((n, k) => n + (d.set[k] ? d.set[k].cnt.smithy || 0 : 0), 0)).get(a.lord);
+				for (const q of a.sq) {
+					q.tr = Math.min(.95, q.tr + tr * gen * days);
+					if (smith) q.eq = Math.min(.5 + .15 * smith, q.eq + BUILDINGS.smithy.equip * Math.min(3, smith) * days);
+				}
+			} else for (const q of a.sq) q.tr = Math.max(0, q.tr - N.TRAIN_DECAY * .2);
+			a.morale = r3(Math.max(0, Math.min(1, a.morale)));
+		}
+	}
+	//#endregion
+	//#region src/sim/dominion/settle.js
+	const settlementAt = (L, x, y) => D(L).set[key(x, y)] || null;
+	function newSettlement(L, x, y, founder) {
+		const z = zoneAt(L, x, y), reg = L.regions[z.region], k = key(x, y);
+		const s = {
+			k,
+			x,
+			y,
+			name: z.name || null,
+			region: z.region,
+			culture: reg ? reg.culture : null,
+			founder: founder || null,
+			tier: -1,
+			pop: 0,
+			b: [],
+			cnt: {},
+			homes: 0,
+			cap: 0,
+			walls: 0,
+			staffed: 1,
+			store: 0,
+			unrest: .15,
+			loyalty: .6,
+			pool: {},
+			hit: -1e9,
+			trade: 0,
+			yield: 0,
+			hunger: 0,
+			vas: [],
+			siege: null
+		};
+		D(L).set[k] = s;
+		return s;
+	}
+	const lordOfSettlement = (L, s) => {
+		const z = D(L).zt[s.k];
+		return z && z.holder ? z.holder : s.founder;
+	};
+	function recount(L, s) {
+		if (!s) return;
+		const d = D(L), cnt = {};
+		let homes = 0, cap = 0, walls = 0, workers = 0;
+		for (const id of s.b) {
+			const r = d.bld[id];
+			if (r.st !== "up" && !(r.st === "repair" && r.hp >= .5)) continue;
+			if (r.hp < .5) continue;
+			const b = BUILDINGS[r.t];
+			cnt[r.t] = (cnt[r.t] || 0) + 1;
+			homes += b.homes || 0;
+			cap += b.cap || 0;
+			walls += b.walls || 0;
+			workers += b.workers || 0;
+		}
+		s.cnt = cnt;
+		s.homes = homes;
+		s.cap = cap;
+		s.walls = +walls.toFixed(2);
+		s.workers = workers;
+		retier(L, s);
+	}
+	function retier(L, s) {
+		s.staffed = s.workers ? Math.min(1, s.pop * .6 / s.workers) : 1;
+		const t = tierFor(L, s);
+		if (t !== s.tier) {
+			const was = s.tier;
+			s.tier = t;
+			const who = lordOfSettlement(L, s);
+			if (Math.max(t, was) >= 2 || who === L.player) emit(L, "dom.tier", {
+				zone: [s.x, s.y],
+				name: s.name,
+				from: tierName(was),
+				to: tierName(t),
+				grew: t > was,
+				actor: lordOfSettlement(L, s)
+			});
+		}
+	}
+	function tierFor(L, s) {
+		const z = zoneAt(L, s.x, s.y);
+		let t = -1;
+		for (let i = 0; i < TIERS.length; i++) {
+			const T = TIERS[i], keep = i <= s.tier ? .9 : 1;
+			if (s.homes < T.homes || s.pop < (T.pop || 0) * keep || T.road && !z.road || s.trade < (T.trade || 0)) break;
+			if (Object.entries(T.need || {}).some(([b, n]) => (s.cnt[b] || 0) < n)) break;
+			if (T.seat && !isSeat(L, s.k)) break;
+			t = i;
+		}
+		return t;
+	}
+	function nextNeeds(L, s) {
+		const T = TIERS[s.tier + 1];
+		if (!T) return null;
+		const out = [], z = zoneAt(L, s.x, s.y);
+		if (s.homes < T.homes) out.push(`${T.homes - s.homes} more home${T.homes - s.homes > 1 ? "s" : ""}`);
+		for (const [b, n] of Object.entries(T.need || {})) if ((s.cnt[b] || 0) < n) out.push(`a ${b}`);
+		if (s.pop < (T.pop || 0)) out.push(`${T.pop} people (${s.pop} now)`);
+		if (T.road && !z.road) out.push("a road");
+		if (s.trade < (T.trade || 0)) out.push(`trade with ${T.trade} towns (${s.trade})`);
+		if (T.seat && !isSeat(L, s.k)) out.push("to be a domain's or province's seat");
+		return {
+			tier: T.name,
+			needs: out
+		};
+	}
+	function tradeYear(L) {
+		const d = D(L), { w } = L.size, towns = new Set(Object.values(d.set).filter((s) => s.tier >= 3).map((s) => s.y * w + s.x));
+		for (const s of Object.values(d.set)) {
+			if (s.tier < 3) {
+				s.trade = 0;
+				continue;
+			}
+			const start = s.y * w + s.x, dist = /* @__PURE__ */ new Map([[start, 0]]), q = [start];
+			let n = 0;
+			for (let i = 0; i < q.length; i++) {
+				const c = q[i], cx = c % w, cy = (c - cx) / w, dc = dist.get(c);
+				if (dc >= 30) continue;
+				for (const [dx, dy] of [
+					[1, 0],
+					[-1, 0],
+					[0, 1],
+					[0, -1]
+				]) {
+					const z = zoneAt(L, cx + dx, cy + dy);
+					if (!z || !z.road) continue;
+					const j = z.y * w + z.x;
+					if (dist.has(j)) continue;
+					dist.set(j, dc + 1);
+					q.push(j);
+					if (towns.has(j)) n++;
+				}
+			}
+			s.trade = n;
+			recount(L, s);
+		}
+	}
+	function settleSeason(L, r) {
+		const d = D(L);
+		for (const l of Object.values(d.lords)) l.koku = 0;
+		for (const s of Object.values(d.set)) {
+			const lord = lordOfSettlement(L, s), l = lord && alive(L, lord) ? lordOf(L, lord) : null, laws = l ? l.laws : {};
+			const lawSum = (f) => Object.keys(laws).reduce((a, n) => a + (laws[n] && LAWS[n][f] || 0), 0);
+			s.yield = zoneYield(L, s) * (1 + lawSum("yield"));
+			if (l) l.koku += s.yield;
+			const rate = l ? l.tax : 0, rebels = s.vas.filter((v) => d.vas[v] && d.vas[v].loyalty < N.RESTLESS).length / Math.max(1, s.vas.length);
+			const riot = s.riot && L.hour - s.riot < 700 ? .5 : 1, season = s.yield / 4;
+			if (l) {
+				let got = season * rate * riot * (1 - .5 * rebels) * (s.siege ? 0 : 1);
+				const st = l.off.steward && alive(L, l.off.steward) ? L.actors[l.off.steward] : null;
+				if (st) {
+					const skim = officeQ(L, st, "steward").skim;
+					if (skim > 0) {
+						const take = got * skim;
+						got -= take;
+						gain(L, st.id, take * ricePrice(L, s.region));
+						l.skimmed = (l.skimmed || 0) + take;
+					}
+				}
+				if (l.liege && alive(L, l.liege)) {
+					const share = got * N.VASSAL_SHARE;
+					got -= share;
+					lordOf(L, l.liege).rice += share;
+				}
+				l.rice += got;
+				let mon = 0;
+				for (const t in s.cnt) {
+					const b = BUILDINGS[t], n = s.cnt[t];
+					if (b.trade) mon += (b.trade > 10 ? b.trade : b.trade * s.pop) * n * s.staffed;
+					if (b.toll) mon += b.toll * s.pop * n;
+				}
+				if (laws.toll && zoneAt(L, s.x, s.y).road) mon += LAWS.toll.toll * s.pop;
+				gain(L, lord, mon);
+			}
+			const kept = season * (1 - rate), eat = s.pop * N.EAT / 4, storeCap = (s.cnt.granary || 0) * BUILDINGS.granary.store + (s.cnt.storehouse ? 10 : 0);
+			let short = eat - kept;
+			if (short < 0) s.store = Math.min(storeCap, s.store - short * .5), short = 0;
+			else {
+				const draw = Math.min(s.store, short);
+				s.store -= draw;
+				short -= draw;
+			}
+			s.hunger = eat > 0 ? Math.min(1, short / eat) : 0;
+			const z = d.zt[s.k], occupied = z && z.title && z.holder && z.title !== z.holder;
+			const ruler = l && L.actors[lord], rel = ruler && ruler.culture != null && s.culture != null && ruler.culture !== s.culture ? L.cultures[s.culture].relations[ruler.culture] ?? 0 : 0;
+			let bUnrest = 0, bAppeal = 0;
+			for (const t in s.cnt) {
+				bUnrest += (BUILDINGS[t].unrest || 0) * s.cnt[t];
+				bAppeal += (BUILDINGS[t].appeal || 0) * s.cnt[t];
+			}
+			const mag = l && l.off.magistrate && alive(L, l.off.magistrate) ? officeQ(L, L.actors[l.off.magistrate], "magistrate").q : 0;
+			const target = Math.max(0, Math.min(1, .1 + (rate - .3) * 1.4 + s.hunger * .8 + (L.hour - s.hit < 700 ? .25 : 0) + (occupied ? .2 : 0) + Math.max(0, -rel) * .3 + lawSum("unrest") + Math.max(-.15, bUnrest) - mag * .15 - (ruler ? Math.max(-.1, Math.min(.1, (ruler.karma || 0) / 200)) : 0)));
+			s.unrest = r3(Math.max(0, Math.min(1, s.unrest + (target - s.unrest) * N.UNREST_STEP + r.range(-.03, .03))));
+			s.loyalty = r3(Math.max(0, Math.min(1, s.loyalty + (1 - target - s.loyalty) * .1)));
+			let appeal = 1 - s.unrest * .5 - s.hunger * .8 - (L.hour - s.hit < 700 ? .3 : 0) + lawSum("appeal");
+			appeal += bAppeal;
+			const pop0 = s.pop, cap = s.cap || s.homes * N.HOME_POP;
+			s.pop = Math.max(0, migrate(L, s, Math.round(cap * Math.max(.2, Math.min(1.1, appeal))), appeal));
+			if (s.pop !== pop0) s.popDelta = s.pop - pop0;
+			const levy = laws.conscript ? LAWS.conscript.levy : 1;
+			s.pool = {
+				ashigaru: Math.floor(s.pop * N.LEVY * levy),
+				retainer: s.tier >= 2 ? Math.floor(s.pop * .02) + (isSeat(L, s.k) ? 2 : 0) : 0,
+				ronin: s.cnt.inn ? 2 + Math.floor(s.pop * .02) + (laws.amnesty ? LAWS.amnesty.ronin : 0) : 0,
+				monk: s.cnt.temple ? BUILDINGS.temple.monks : 0,
+				shinobi: s.tier >= 3 ? 1 : 0
+			};
+			vassalsSeason(L, s, r);
+			trouble(L, s, l, lord, laws, r);
+			if (s.workers == null) recount(L, s);
+			else retier(L, s);
+		}
+		for (const l of Object.values(d.lords)) {
+			if (!alive(L, l.id)) continue;
+			const keep = 10 + armiesOf(L, l.id).reduce((t, a) => t + a.sq.reduce((u, q) => u + q.n, 0), 0) * 1.2;
+			if (l.rice > keep) {
+				const sell = (l.rice - keep) * .8;
+				l.rice -= sell;
+				gain(L, l.id, sell * ricePrice(L, 0));
+			}
+		}
+		for (const l of Object.values(d.lords)) l.kokuAll = l.koku;
+		for (const l of Object.values(d.lords)) {
+			if (!l.liege) continue;
+			let x = l.liege;
+			for (let i = 0; i < 12 && x; i++) {
+				const up = d.lords[x];
+				if (!up) break;
+				up.kokuAll += l.koku;
+				x = up.liege;
+			}
+		}
+	}
+	function trouble(L, s, l, lord, laws, r) {
+		if (!l || s.pop < 3) return;
+		const riotAt = N.RIOT + (laws.curfew ? -LAWS.curfew.riot : 0) + (laws.noArms ? -LAWS.noArms.riot : 0);
+		if (s.unrest > N.UPRISING && s.loyalty < N.UPRISING_LOYALTY && r.chance(.5)) return uprising(L, s, lord, laws, r);
+		if (s.unrest < N.PETITION - .1) s.pet = false;
+		if (s.unrest > riotAt && r.chance(.35)) {
+			s.riot = L.hour;
+			const up = s.b.filter((id) => D(L).bld[id].st === "up");
+			if (up.length) damage(L, r.pick(up), .35, "riot");
+			emit(L, "dom.riot", {
+				zone: [s.x, s.y],
+				name: s.name,
+				actor: lord,
+				unrest: s.unrest
+			});
+			return;
+		}
+		if (s.unrest > N.PETITION && !s.pet) {
+			s.pet = true;
+			emit(L, "dom.petition", {
+				zone: [s.x, s.y],
+				name: s.name,
+				actor: lord,
+				unrest: s.unrest,
+				why: s.hunger > .2 ? "hunger" : l.tax > .45 ? "tax" : "unrest"
+			});
+		}
+	}
+	function uprising(L, s, lord, laws, r) {
+		const d = D(L), z = d.zt[s.k];
+		if (z && z.title && z.title !== lord && alive(L, z.title)) {
+			setZone(L, s.k, { holder: z.title }, "uprising");
+			passBuildings(L, s.k, z.title);
+			emit(L, "dom.uprising", {
+				zone: [s.x, s.y],
+				name: s.name,
+				from: lord,
+				to: z.title,
+				restored: true
+			});
+		} else {
+			let head = s.vas.filter((v) => alive(L, v)).sort((a, b) => (d.vas[a]?.loyalty ?? 1) - (d.vas[b]?.loyalty ?? 1))[0];
+			if (!head) head = makeActor(L, r, {
+				cls: "rebel",
+				culture: s.culture,
+				home: [s.x, s.y],
+				age: r.int(25, 50),
+				job: "rebel"
+			}).id;
+			const n = Math.max(3, Math.round(s.pop * .15 * (laws.noArms ? .5 : 1)));
+			setZone(L, s.k, { holder: head }, "uprising");
+			passBuildings(L, s.k, head);
+			const hl = lordOf(L, head);
+			hl.rebel = true;
+			hl.tax = .2;
+			s.pop -= n;
+			emit(L, "dom.uprising", {
+				zone: [s.x, s.y],
+				name: s.name,
+				from: lord,
+				to: head,
+				rebels: n
+			});
+			return {
+				head,
+				n
+			};
+		}
+		s.unrest = .3;
+		s.loyalty = .5;
+	}
+	const PK = /* @__PURE__ */ new Map();
+	const PROUD = [
+		"proud",
+		"restless",
+		"cocky"
+	];
+	const MEEK = [
+		"humble",
+		"calm",
+		"serene"
+	];
+	const vassalState = (v) => v.loyalty >= N.LOYAL ? "loyal" : v.loyalty >= N.RESTLESS ? "restless" : "rebellious";
+	function vassalsSeason(L, s, r) {
+		const d = D(L), z = d.zt[s.k], liege = lordOfSettlement(L, s);
+		if (!liege) return;
+		const heads = /* @__PURE__ */ new Set();
+		let pk = PK.get(s.k);
+		if (!pk) PK.set(s.k, pk = Array.from({ length: 16 }, (_, n) => `${s.k}:${n}`));
+		for (let n = 0; n < 16; n++) {
+			const p = L.plots[pk[n]];
+			if (p && p.title && p.title !== (z && z.title) && p.title !== liege && alive(L, p.title)) heads.add(p.title);
+		}
+		s.vas = [...heads];
+		for (const id of s.vas) {
+			const a = L.actors[id], v = d.vas[id] || (d.vas[id] = {
+				liege,
+				loyalty: s.loyalty
+			}), was = vassalState(v);
+			if (v.liege !== liege) {
+				v.liege = liege;
+				v.loyalty = Math.min(v.loyalty, .5);
+			}
+			const lean = v.lean ?? (v.lean = r3(traitSum(a, PROUD) * -.08 + traitSum(a, MEEK) * .06));
+			v.loyalty = r3(Math.max(0, Math.min(1, v.loyalty + (1 - s.unrest + lean - v.loyalty) * .25 + r.range(-.05, .05))));
+			const now = vassalState(v);
+			if (now !== was && (liege === L.player || top(L, liege) === L.player)) emit(L, "dom.vassal", {
+				actor: id,
+				liege,
+				state: now,
+				zone: [s.x, s.y]
+			});
+		}
+	}
+	//#endregion
+	//#region src/sim/dominion/init.js
+	function setupWorld(L) {
+		Object.assign(L.sys.dominion, {
+			v: 1,
+			lords: {},
+			zt: {},
+			set: {},
+			bld: {},
+			work: [],
+			dom: {},
+			prov: {},
+			realms: {},
+			armies: {},
+			wars: {},
+			vas: {},
+			pending: {},
+			active: [],
+			adj: L.regions.map(() => []),
+			regZ: Object.fromEntries(L.regions.map((g) => [g.id, []]))
+		});
+		const d = D(L), r = rngFor(L.seed, "dominion", "init");
+		for (const z of L.zones) {
+			if (z.region < 0) continue;
+			for (const [dx, dy] of [[1, 0], [0, 1]]) {
+				const n = zoneAt(L, z.x + dx, z.y + dy);
+				if (n && n.region >= 0 && n.region !== z.region && !d.adj[z.region].includes(n.region)) {
+					d.adj[z.region].push(n.region);
+					d.adj[n.region].push(z.region);
+				}
+			}
+		}
+		const living = {};
+		for (const a of Object.values(L.actors)) if (a.alive && a.home) {
+			const k = key(...a.home);
+			(living[k] || (living[k] = [])).push(a);
+		}
+		for (const z of L.zones) {
+			if (![
+				"town",
+				"village",
+				"fort",
+				"camp"
+			].includes(z.kind)) continue;
+			const reg = L.regions[z.region], k = key(z.x, z.y), seatZone = zoneAt(L, ...reg.seat);
+			const lord = z.kind === "camp" ? z.holder : reg.lord ?? (seatZone.kind === "camp" ? seatZone.holder : null);
+			const titled = z.kind !== "camp" && reg.lord != null;
+			if (lord) setZone(L, k, {
+				title: titled ? lord : null,
+				holder: lord
+			}, "world");
+			else setZone(L, k, {
+				title: null,
+				holder: null
+			}, "world");
+			const s = newSettlement(L, z.x, z.y, lord), here = (living[k] || []).length;
+			const add = (t, n = 1) => {
+				for (let i = 0; i < n; i++) seedBuilding(L, s, t, lord);
+			};
+			if (z.kind === "village") {
+				s.pop = here + r.int(14, 36);
+				add("house", Math.ceil(s.pop / 6) + r.int(0, 2));
+				add("well");
+				if (r.chance(.7)) add("shrine");
+				if (r.chance(.6)) add("storehouse");
+				add("paddy", z.biome === "paddy" ? 2 : r.int(0, 1));
+				if (r.chance(.3)) add("granary");
+				if (z.biome === "coast" || z.biome === "marsh") add("weir");
+			} else if (z.kind === "town") {
+				s.pop = here + r.int(70, 170);
+				add("house", Math.ceil(s.pop / 6) + 2);
+				add("well", 2);
+				add("shrine");
+				add("storehouse");
+				add("market");
+				add("inn");
+				add("smithy");
+				add("granary");
+				add("paddy", 2);
+				add("board");
+				const kind = L.cultures[reg.culture].kind;
+				if (kind === "clan" || kind === "court") {
+					add("barracks");
+					if (r.chance(.5)) add("dojo");
+				}
+				if (r.chance(.3)) add("magistrate");
+				if (r.chance(.3) || kind === "monastic") add("temple");
+				if (r.chance(.5)) add("palisade");
+			} else if (z.kind === "fort") {
+				s.pop = here + r.int(8, 16);
+				add("longhouse", 2);
+				add("well");
+				add("barracks");
+				add("palisade");
+				add("watchtower", 2);
+				if (r.chance(.5)) add("dojo");
+			} else {
+				s.pop = here + r.int(2, 6);
+				add("hut", r.int(3, 5));
+				add("palisade");
+			}
+			recount(L, s);
+		}
+		for (const reg of L.regions) {
+			const sk = key(...reg.seat), holder = d.zt[sk] && d.zt[sk].holder;
+			if (!holder) continue;
+			const l = lordOf(L, holder), a = L.actors[holder];
+			l.seat = l.seat || sk;
+			if (a.cls === "outlaw") l.outlaw = true;
+			l.tax = +Math.max(N.TAX_MIN, Math.min(N.TAX_MAX, N.TAX + traitSum(a, TRAIT.greedy) * .1 - traitSum(a, TRAIT.kind) * .08)).toFixed(2);
+		}
+		for (const z of L.zones) if (z.kind === "camp" && z.holder) {
+			const l = lordOf(L, z.holder);
+			l.outlaw = true;
+			l.seat = l.seat || key(z.x, z.y);
+		}
+		for (const l of Object.values(d.lords)) {
+			l.koku = l.zones.reduce((s, k) => s + (d.set[k] ? zoneYield(L, d.set[k]) : 0), 0);
+			l.kokuAll = l.koku;
+			l.rice = Math.round(l.koku * l.tax * .5);
+		}
+		for (const c of L.cultures) {
+			if (c.kind !== "clan" && c.kind !== "court") continue;
+			const lords = c.regions.map((g) => L.regions[g].lord).filter((id) => id && d.lords[id]).sort((a, b) => d.lords[b].koku - d.lords[a].koku);
+			for (const id of lords.slice(1)) {
+				d.lords[id].liege = lords[0];
+				d.lords[id].loyalty = .75;
+			}
+			fealtyChanged(L);
+		}
+		for (const c of L.cultures) {
+			if (c.kind !== "clan" && c.kind !== "court") continue;
+			const ruler = c.regions.map((g) => L.regions[g].lord).find((id) => id && d.lords[id] && !d.lords[id].liege);
+			if (!ruler) continue;
+			const s = d.set[d.lords[ruler].seat];
+			if (!s) continue;
+			s.pop = Math.max(s.pop, 210 + r.int(0, 60));
+			const more = Math.max(0, 42 - s.homes);
+			for (let i = 0; i < more; i++) seedBuilding(L, s, "house", ruler);
+			for (const t of [
+				"wall",
+				"temple",
+				"magistrate",
+				"keep",
+				"dojo",
+				"barracks"
+			]) if (!s.cnt[t]) seedBuilding(L, s, t, ruler);
+			recount(L, s);
+		}
+		const idx = indexHomes(L);
+		for (const l of Object.values(d.lords)) {
+			const seat = d.set[l.seat];
+			if (!seat) continue;
+			const a = newArmy(L, l.id, [seat.x, seat.y]);
+			if (l.outlaw) {
+				addSquad(a, "bandit", (living[l.seat] || []).length + r.int(2, 6), null, l.seat, seat);
+				continue;
+			}
+			const pop = l.zones.reduce((s, k) => s + (d.set[k] ? d.set[k].pop : 0), 0), sam = l.zones.flatMap((k) => idx[k] || []).map((id) => L.actors[id]).filter((x) => x.cls === "retainer" && x.id !== l.id);
+			addSquad(a, "ashigaru", Math.max(4, Math.round(pop * .05)), null, l.seat, seat);
+			if (sam.length) addSquad(a, "retainer", Math.min(sam.length + 2, 12), sam[0].id, l.seat, seat);
+			for (const q of a.sq) q.tr += r.range(0, .2);
+			fillOffices(L, l.id, idx, r);
+		}
+		tradeYear(L);
+		for (const s of Object.values(d.set)) {
+			s.pool = {
+				ashigaru: Math.floor(s.pop * N.LEVY),
+				retainer: s.tier >= 2 ? 2 : 0,
+				ronin: s.cnt.inn ? 2 : 0,
+				monk: s.cnt.temple ? 4 : 0,
+				shinobi: s.tier >= 3 ? 1 : 0
+			};
+			recount(L, s);
+		}
+		refreshDomains(L);
+		refreshProvinces(L);
+		refreshRealms(L);
+		L.log = L.log.filter((e) => !e.type.startsWith("dom."));
+	}
+	function seedBuilding(L, s, t, owner) {
+		const d = D(L), id = `b${L.ids.b = (L.ids.b || 0) + 1}`, b = BUILDINGS[t];
+		d.bld[id] = {
+			id,
+			t,
+			k: s.k,
+			at: null,
+			owner,
+			st: "up",
+			hp: 1,
+			done: b.labour,
+			labour: b.labour,
+			got: true,
+			crew: 0,
+			since: 0
+		};
+		s.b.push(id);
+		s.cnt[t] = (s.cnt[t] || 0) + 1;
+	}
+	//#endregion
+	//#region src/sim/dominion/war.js
+	const sideOf = (L, w, lord) => sameSide(L, w.a, lord) ? "a" : sameSide(L, w.d, lord) ? "d" : null;
+	const activeWars = (L) => D(L).active.map((id) => D(L).wars[id]);
+	function reasonFor(L, a, b) {
+		const d = D(L), la = d.lords[a], lb = d.lords[b];
+		if (!la || !lb) return null;
+		if (la.liege === b) return "rebellion";
+		if (la.titles.some((k) => d.zt[k].holder && sameSide(L, d.zt[k].holder, b)) || la.claims.some((k) => d.zt[k] && sameSide(L, d.zt[k].holder, b))) return "claim";
+		if ((la.grudges[b] || 0) >= .4 || (la.grudges[top(L, b)] || 0) >= .4) return "grudge";
+		const ca = L.actors[a].culture, cb = L.actors[b].culture;
+		if (ca != null && cb != null && ca !== cb && (L.cultures[ca].relations[cb] ?? 0) <= -.5) return "hatred";
+		return null;
+	}
+	function declareWar(L, a, b, { reason, goal = null, story = false } = {}) {
+		const d = D(L);
+		if (!alive(L, a) || !alive(L, b) || a === b) return { error: "no one to fight" };
+		const la = lordOf(L, a);
+		let ta = top(L, a), tb = top(L, b);
+		const why = reason || reasonFor(L, a, b);
+		if (why === "rebellion" || la.liege === b) {
+			emit(L, "dom.fealty", {
+				actor: a,
+				liege: null,
+				was: la.liege,
+				how: "broke"
+			});
+			la.liege = null;
+			fealtyChanged(L);
+			ta = a;
+			tb = top(L, b);
+		} else if (la.liege) return { error: "a vassal cannot declare war; his liege does" };
+		if (ta === tb) return { error: "they are on the same side" };
+		if (atWar(L, ta, tb)) return { error: "already at war" };
+		if ((la.truce[tb] || 0) > L.hour && !story) return { error: "a truce holds" };
+		if (!why) {
+			addKarma(L, a, -25);
+			addStanding(L, a, L.actors[tb].culture, -.3);
+		}
+		const id = `war${L.ids.war = (L.ids.war || 0) + 1}`, w = {
+			id,
+			a: ta,
+			d: tb,
+			reason: why || "none",
+			goal,
+			started: L.hour,
+			score: 0,
+			battles: [],
+			taken: [],
+			end: null,
+			how: null,
+			treaty: null,
+			story
+		};
+		d.wars[id] = w;
+		d.active.push(id);
+		lordOf(L, ta).wars.push(id);
+		lordOf(L, tb).wars.push(id);
+		const lb = lordOf(L, tb);
+		lb.grudges[ta] = +Math.min(1, (lb.grudges[ta] || 0) + .3).toFixed(2);
+		emit(L, "war.declared", {
+			war: id,
+			a: ta,
+			d: tb,
+			reason: w.reason,
+			goal: goal ? unkey(goal) : null,
+			story,
+			zone: goal ? unkey(goal) : null
+		});
+		return w;
+	}
+	function sideZones(L, t) {
+		const out = [];
+		for (const l of Object.values(D(L).lords)) if (l.zones.length && alive(L, l.id) && top(L, l.id) === t) {
+			for (const k of l.zones) if (D(L).set[k]) out.push(k);
+		}
+		return out;
+	}
+	const dist = (a, [x, y]) => {
+		const [ax, ay] = unkey(a);
+		return Math.abs(ax - x) + Math.abs(ay - y);
+	};
+	function warDay(L, cal, r) {
+		const d = D(L), wars = activeWars(L);
+		let byTop = null;
+		for (const w of wars) {
+			if ((cal.day + hashId$1(w.id)) % 3) continue;
+			if (!byTop) {
+				byTop = /* @__PURE__ */ new Map();
+				for (const id in d.armies) {
+					const a = d.armies[id];
+					if (alive(L, a.lord)) {
+						const t = top(L, a.lord);
+						(byTop.get(t) || byTop.set(t, []).get(t)).push(a);
+					}
+				}
+			}
+			const as = (byTop.get(w.a) || []).concat(byTop.get(w.d) || []), idle = as.filter((a) => !a.go && !a.siege && a.lord !== L.player && !(a.rest > L.hour));
+			if (!idle.length) continue;
+			const side = {};
+			for (const a of as) side[a.id] = sideOf(L, w, a.lord);
+			const lost = {
+				a: [],
+				d: []
+			};
+			for (const k of occupied(L)) {
+				const z = d.zt[k];
+				const ts = sideOf(L, w, z.title), hs = sideOf(L, w, z.holder);
+				if (ts && hs && ts !== hs) lost[ts].push(k);
+			}
+			const ctx = {
+				as,
+				side,
+				lost,
+				targets: {
+					a: sideZones(L, w.d),
+					d: sideZones(L, w.a)
+				}
+			};
+			for (const a of idle) orders(L, w, a, ctx, r);
+		}
+		const moved = new Set(Object.keys(d.pending)), sieges = [];
+		for (const id in d.armies) {
+			const a = d.armies[id];
+			if (a.siege) sieges.push(a);
+			if (a.go) {
+				const was = a.go;
+				const at0 = a.at[0], at1 = a.at[1];
+				const arrived = moveAll(L, a);
+				if (a.at[0] !== at0 || a.at[1] !== at1 || arrived) moved.add(a.at[0] + "," + a.at[1]);
+				if (arrived && was.why === "raid") raid(L, a, key(...a.at), r);
+				else if (arrived && was.why === "war") {
+					const k = key(...a.at), w = d.wars[was.war];
+					if (w && !w.end && d.set[k] && d.zt[k] && d.zt[k].holder && atWar(L, a.lord, d.zt[k].holder) && !a.siege) startSiege(L, w, a, k);
+				}
+			}
+		}
+		meet(L, moved, r);
+		for (const a of sieges) if (a.siege && d.armies[a.id]) siegeDay(L, a, r);
+		for (const w of wars) if (!w.end && (cal.day + hashId$1(w.id)) % 7 === 0) peaceCheck(L, w, r);
+	}
+	const OCC = /* @__PURE__ */ new WeakMap();
+	function occupied(L) {
+		let c = OCC.get(L);
+		if (!c || c.h !== L.hour) {
+			c = {
+				h: L.hour,
+				k: Object.keys(D(L).zt).filter((k) => {
+					const z = D(L).zt[k];
+					return z.title && z.holder && z.title !== z.holder;
+				})
+			};
+			OCC.set(L, c);
+		}
+		return c.k;
+	}
+	const hashId$1 = (id) => {
+		let h = 0;
+		for (const c of id) h = h * 31 + c.charCodeAt(0) >>> 0;
+		return h;
+	};
+	const moveAll = (L, a) => moveDay(L, a);
+	function orders(L, w, a, ctx, r) {
+		const d = D(L), side = ctx.side[a.id], foe = side === "a" ? w.d : w.a;
+		const mine = ctx.as.filter((x) => ctx.side[x.id] === side), theirs = ctx.as.filter((x) => ctx.side[x.id] !== side);
+		const my = mine.reduce((s, x) => s + strength(L, x), 0), their = theirs.reduce((s, x) => s + strength(L, x), 0);
+		a.rest = L.hour + 216;
+		if (menOf(a) < 4 || a.morale < .25) {
+			if (key(...a.at) !== a.home) march(L, a.id, unkey(a.home), "home");
+			return;
+		}
+		const me = L.actors[a.lord], bold = traitSum(me, TRAIT.bold), clever = me.int ?? .5;
+		const inv = theirs.filter((x) => {
+			const z = d.zt[key(...x.at)];
+			return z && z.holder && sameSide(L, z.holder, a.lord) && dist(key(...x.at), a.at) <= 12;
+		}).sort((x, y) => dist(key(...x.at), a.at) - dist(key(...y.at), a.at))[0];
+		if (inv && strength(L, a) * (1 + bold * .3) > strength(L, inv) * (.6 + clever * .6)) return march(L, a.id, [...inv.at], "war", w.id);
+		const isle = landOf(L, ...a.at), reach = (k) => landOfKey(L, k) === isle;
+		const lost = ctx.lost[side].filter(reach).sort((x, y) => dist(x, a.at) - dist(y, a.at))[0];
+		if (lost) return march(L, a.id, unkey(lost), "war", w.id);
+		if (side === "d" && my < their * (1.1 - bold * .2)) {
+			if (key(...a.at) !== a.home) march(L, a.id, unkey(a.home), "home");
+			return;
+		}
+		const goal = w.goal && reach(w.goal) && d.zt[w.goal] && sameSide(L, d.zt[w.goal].holder, foe) ? w.goal : ctx.targets[side].filter(reach).sort((x, y) => dist(x, a.at) - dist(y, a.at))[0];
+		if (goal && dist(goal, a.at) <= 40) march(L, a.id, unkey(goal), "war", w.id);
+	}
+	function meet(L, moved, r) {
+		const d = D(L);
+		if (!d.active.length) return;
+		for (const k of moved) {
+			const list = armiesAt(L, k);
+			if (list.length < 2) continue;
+			for (const w of activeWars(L)) {
+				const A = list.filter((a) => sideOf(L, w, a.lord) === "a" && d.armies[a.id]), B = list.filter((a) => sideOf(L, w, a.lord) === "d" && d.armies[a.id]);
+				if (A.length && B.length) battle(L, w, A, B, k, r);
+			}
+		}
+	}
+	const TERRAIN = {
+		hills: 1.25,
+		mountains: 1.4,
+		forest: 1.15,
+		bamboo: 1.15,
+		marsh: 1.1
+	};
+	const generalF = (L, lord) => {
+		const l = D(L).lords[lord], g = l && l.off.general && alive(L, l.off.general) ? L.actors[l.off.general] : L.actors[lord];
+		return g ? .85 + .3 * officeQ(L, g, "general").q : 1;
+	};
+	function battle(L, w, A, B, k, r) {
+		const d = D(L), [x, y] = unkey(k), z = zoneAt(L, x, y), ground = d.zt[k] && d.zt[k].holder;
+		if (A.concat(B).some((a) => a.lord === L.player) && L.actors[L.player].at && key(...L.actors[L.player].at) === k) {
+			const p = d.pending[k];
+			if (!p) {
+				d.pending[k] = {
+					war: w.id,
+					h: L.hour
+				};
+				emit(L, "war.ready", {
+					war: w.id,
+					zone: [x, y]
+				});
+				return;
+			}
+			if (L.hour - p.h < 24) return;
+			delete d.pending[k];
+		}
+		const s = d.set[k], hold = (side) => ground && sameSide(L, ground, side === "a" ? w.a : w.d) ? (TERRAIN[z.biome] || 1) * (1 + (s ? s.walls * .3 : 0)) : 1;
+		return fight(L, w, A, B, k, A.reduce((t, a) => t + strength(L, a), 0) * generalF(L, A[0].lord) * hold("a"), B.reduce((t, a) => t + strength(L, a), 0) * generalF(L, B[0].lord) * hold("d"), r);
+	}
+	function fight(L, w, A, B, k, pa, pb, r, { siege = false } = {}) {
+		const win = r.next() < pa * pa / (pa * pa + pb * pb + 1e-9) ? "a" : "d";
+		const [W, Lo, pw, pl] = win === "a" ? [
+			A,
+			B,
+			pa,
+			pb
+		] : [
+			B,
+			A,
+			pb,
+			pa
+		];
+		const fierce = 1 + .15 * Math.min(1, traitSum(L.actors[A[0].lord], TRAIT.bold) + traitSum(L.actors[B[0].lord], TRAIT.bold));
+		const lw = hurt(L, W, Math.min(.5, (.06 + .2 * pl / (pw + 1e-9)) * fierce), r), ll = hurt(L, Lo, Math.min(.9, (.3 + .3 * r.next()) * fierce), r);
+		for (const a of W) a.morale = Math.min(1, a.morale + .15);
+		for (const a of Lo) {
+			a.morale = Math.max(0, a.morale - .3);
+			if (D(L).armies[a.id] && !siege) march(L, a.id, unkey(a.home), "home");
+		}
+		lordOf(L, W[0].lord).glory = (lordOf(L, W[0].lord).glory || 0) + 1;
+		const la = win === "a" ? lw : ll, ld = win === "a" ? ll : lw;
+		w.score = Math.max(-100, Math.min(100, w.score + (win === "a" ? 1 : -1) * (10 + Math.min(20, (la + ld) / 5))));
+		w.battles.push({
+			h: L.hour,
+			k,
+			win,
+			la,
+			ld
+		});
+		if (w.battles.length > 20) w.battles.shift();
+		emit(L, "war.battle", {
+			war: w.id,
+			zone: unkey(k),
+			winner: win === "a" ? w.a : w.d,
+			a: {
+				lord: A[0].lord,
+				men: A.reduce((t, a) => t + menOf(a), 0) + la,
+				lost: la
+			},
+			d: {
+				lord: B[0].lord,
+				men: B.reduce((t, a) => t + menOf(a), 0) + ld,
+				lost: ld
+			},
+			siege
+		});
+		return win;
+	}
+	function hurt(L, armies, frac, r) {
+		let lost = 0;
+		for (const a of armies) {
+			if (!D(L).armies[a.id]) continue;
+			for (const q of a.sq) {
+				const k = Math.round(q.n * frac * r.range(.8, 1.2));
+				q.n -= Math.min(q.n, k);
+				lost += Math.min(q.n + k, k);
+				if (q.off && r.chance(frac * .4)) {
+					killActor(L, q.off, "battle");
+					emit(L, "war.fallen", {
+						actor: q.off,
+						army: a.id
+					});
+					q.off = null;
+				}
+			}
+			a.sq = a.sq.filter((q) => q.n > 0);
+			if (!a.sq.length) delete D(L).armies[a.id];
+		}
+		return lost;
+	}
+	function startSiege(L, w, a, k) {
+		const s = D(L).set[k];
+		a.siege = k;
+		a.siegeDays = 0;
+		s.siege = a.id;
+		s.hit = L.hour;
+		if ((w.sieged || (w.sieged = [])).includes(k)) return;
+		w.sieged.push(k);
+		emit(L, "war.siege", {
+			war: w.id,
+			army: a.id,
+			actor: a.lord,
+			zone: unkey(k),
+			name: s.name,
+			walls: s.walls
+		});
+	}
+	function siegeDay(L, a, r) {
+		const d = D(L), k = a.siege, s = d.set[k], z = d.zt[k], w = activeWars(L).find((x) => sideOf(L, x, a.lord) && z && z.holder && sideOf(L, x, z.holder) && sideOf(L, x, a.lord) !== sideOf(L, x, z.holder));
+		if (!s || !w || key(...a.at) !== k) {
+			a.siege = null;
+			if (s && s.siege === a.id) s.siege = null;
+			return;
+		}
+		a.siegeDays++;
+		s.hit = L.hour;
+		a.sup = Math.min(30, a.sup + .5);
+		const store = N.SIEGE_STORE + (s.cnt.granary || 0) * 30 + s.store * 2, starving = a.siegeDays > store;
+		const garrison = Math.max(1, s.pop * .1 * .5 * (starving ? Math.max(.2, 1 - (a.siegeDays - store) * .05) : 1)) + armiesAt(L, k).filter((x) => x.lord !== a.lord && sameSide(L, x.lord, z.holder)).reduce((t, x) => t + strength(L, x), 0);
+		const shin = a.sq.filter((q) => q.cls === "shinobi").reduce((t, q) => t + q.n, 0);
+		const walls = 1 + s.walls * .6 / (1 + Math.min(1, shin * .15)), pa = strength(L, a) * generalF(L, a.lord), pd = garrison * walls;
+		if (pa > pd * 1.5 || starving && pa > pd || a.siegeDays > 60) {
+			if (r.next() < pa * pa / (pa * pa + pd * pd)) {
+				emit(L, "war.assault", {
+					war: w.id,
+					zone: unkey(k),
+					actor: a.lord,
+					held: false
+				});
+				take(L, w, k, a.lord, r);
+			} else {
+				a.morale = Math.max(0, a.morale - .1);
+				for (const q of a.sq) q.n = Math.max(0, q.n - Math.ceil(q.n * .12));
+				a.sq = a.sq.filter((q) => q.n > 0);
+				w.score += sideOf(L, w, a.lord) === "a" ? -5 : 5;
+				emit(L, "war.assault", {
+					war: w.id,
+					zone: unkey(k),
+					actor: a.lord,
+					held: true
+				});
+				if (!a.sq.length) {
+					delete d.armies[a.id];
+					s.siege = null;
+				}
+			}
+		} else if (a.hungry > 5) {
+			a.siege = null;
+			s.siege = null;
+			march(L, a.id, unkey(a.home), "home");
+			emit(L, "war.siegeLifted", {
+				war: w.id,
+				zone: unkey(k),
+				actor: a.lord
+			});
+		}
+	}
+	function take(L, w, k, lord, r) {
+		const d = D(L), s = d.set[k], z = d.zt[k], from = z.holder;
+		setZone(L, k, { holder: lord }, "conquest");
+		passBuildings(L, k, lord);
+		const a = Object.values(d.armies).find((x) => x.siege === k);
+		if (a) a.siege = null;
+		if (s) {
+			s.siege = null;
+			s.hit = L.hour;
+			s.unrest = Math.min(1, s.unrest + .3);
+			gain(L, lord, s.pop * 15);
+			s.pop = Math.round(s.pop * .85);
+			for (const id of s.b) if (r.chance(.15)) damage(L, id, r.range(.3, 1), "sack");
+		}
+		if (w) {
+			w.taken.push(k);
+			w.score = Math.max(-100, Math.min(100, w.score + (sideOf(L, w, lord) === "a" ? 1 : -1) * (k === w.goal ? 30 : 15)));
+		}
+		if (from) {
+			const lf = lordOf(L, from);
+			lf.grudges[lord] = +Math.min(1, (lf.grudges[lord] || 0) + .3).toFixed(2);
+		}
+		emit(L, "war.taken", {
+			war: w ? w.id : null,
+			zone: unkey(k),
+			name: s ? s.name : null,
+			from,
+			to: lord,
+			title: z.title
+		});
+	}
+	function raid(L, a, k, r) {
+		const d = D(L), s = d.set[k];
+		if (!s) return;
+		const pd = s.pop * .1 * .5 * (1 + s.walls * .6) + armiesAt(L, k).filter((x) => x.lord !== a.lord).reduce((t, x) => t + strength(L, x), 0), pa = strength(L, a);
+		s.hit = L.hour;
+		if (r.next() < pa * pa / (pa * pa + pd * pd + 1e-9)) {
+			const loot = Math.round(s.pop * 8 + (s.cnt.storehouse ? 0 : 200));
+			gain(L, a.lord, loot);
+			s.pop = Math.round(s.pop * .95);
+			for (const id of s.b) if (r.chance(.08)) damage(L, id, r.range(.3, 1), "raid");
+			const seize = pa > pd * 2.5 && s.tier <= 2;
+			if (seize) take(L, null, k, a.lord, r);
+			emit(L, "war.raid", {
+				zone: unkey(k),
+				name: s.name,
+				actor: a.lord,
+				won: true,
+				loot,
+				seized: seize
+			});
+		} else {
+			for (const q of a.sq) q.n = Math.max(0, q.n - Math.ceil(q.n * .2));
+			a.sq = a.sq.filter((q) => q.n > 0);
+			if (!a.sq.length) delete d.armies[a.id];
+			emit(L, "war.raid", {
+				zone: unkey(k),
+				name: s.name,
+				actor: a.lord,
+				won: false
+			});
+		}
+		if (d.armies[a.id]) march(L, a.id, unkey(a.home), "home");
+	}
+	function peaceCheck(L, w, r) {
+		const d = D(L), as = Object.values(d.armies).filter((a) => sideOf(L, w, a.lord));
+		const pa = as.filter((a) => sideOf(L, w, a.lord) === "a").reduce((t, a) => t + strength(L, a), 0), pd = as.filter((a) => sideOf(L, w, a.lord) === "d").reduce((t, a) => t + strength(L, a), 0);
+		if (!alive(L, w.a) || !alive(L, w.d)) return endWar(L, w, "white", null);
+		const days = (L.hour - w.started) / 24;
+		let winner = null;
+		if (w.score >= N.PEACE_SCORE || pd < pa * .15 && w.score > 20) winner = "a";
+		else if (w.score <= -N.PEACE_SCORE || pa < pd * .15 && w.score < -10 && days > 30) winner = "d";
+		if (winner) {
+			const lord = winner === "a" ? w.a : w.d;
+			if (lord === L.player || (winner === "a" ? w.d : w.a) === L.player) {
+				if (!w.offered) {
+					w.offered = L.hour;
+					emit(L, "war.peaceOffered", {
+						war: w.id,
+						winner: lord
+					});
+				}
+				if (lord === L.player && L.hour - w.offered < 336) return;
+			}
+			return makePeace(L, w.id, termsFor(L, w, winner, r));
+		}
+		if (days > N.WAR_MAX_DAYS || days > 120 && pa + pd < 5) endWar(L, w, "exhausted", null);
+	}
+	function termsFor(L, w, winner, r) {
+		const d = D(L), W = winner === "a" ? w.a : w.d, Lo = winner === "a" ? w.d : w.a, lw = d.lords[W], ll = d.lords[Lo], la = L.actors[Lo];
+		const env = ll.off.envoy && alive(L, ll.off.envoy) ? officeQ(L, L.actors[ll.off.envoy], "envoy").q : 0;
+		let cede = [...new Set(w.taken)].filter((k) => d.zt[k].holder && sameSide(L, d.zt[k].holder, W) && d.zt[k].title && sameSide(L, d.zt[k].title, Lo));
+		if (env > .6 && cede.length > 1) cede = cede.slice(0, -1);
+		const t = {
+			winner: W,
+			loser: Lo,
+			cede,
+			tribute: null,
+			hostage: null,
+			marriage: null,
+			vassal: false
+		};
+		if (ll.kokuAll < lw.kokuAll * .35 && traitSum(la, ["proud"]) < .5 && ll.titles.length) t.vassal = true;
+		if (worth(la) > 2e3) t.tribute = {
+			mon: Math.round(worth(la) * .1 * (1 - env * .5)),
+			seasons: 4
+		};
+		const kid = (id, sex) => (L.actors[id].children || []).map((c) => L.actors[c]).find((c) => c && c.alive && !c.spouse && ageOf(L, c) >= 14 && (!sex || c.sex === sex));
+		const hk = kid(Lo);
+		if (hk && !t.vassal) t.hostage = hk.id;
+		const wk = kid(W);
+		if (wk) {
+			const lk = kid(Lo, wk.sex === "m" ? "f" : "m");
+			if (lk && r.chance(.5)) t.marriage = [wk.id, lk.id];
+		}
+		return t;
+	}
+	function makePeace(L, warId, t) {
+		const d = D(L), w = d.wars[warId];
+		if (!w || w.end) return null;
+		const W = t.winner, Lo = t.loser;
+		for (const k of t.cede || []) {
+			const z = d.zt[k], to = sameSide(L, z.holder, W) ? z.holder : W, [x, y] = unkey(k);
+			for (let n = 0; n < 16; n++) {
+				const pid = plotId(x, y, n), p = L.plots[pid];
+				if (p && p.title && sameSide(L, p.title, Lo) && !d.vas[p.title]) transferTitle(L, pid, to, "treaty");
+			}
+			setZone(L, k, { title: to }, "treaty");
+		}
+		for (const [k, z] of Object.entries(d.zt)) if (z.title && z.holder && z.title !== z.holder && !(t.cede || []).includes(k) && (sameSide(L, z.title, W) && sameSide(L, z.holder, Lo) || sameSide(L, z.title, Lo) && sameSide(L, z.holder, W))) {
+			setZone(L, k, { holder: z.title }, "treaty");
+			passBuildings(L, k, z.title);
+		}
+		if (t.tribute) lordOf(L, Lo).tribute.push({
+			to: W,
+			mon: t.tribute.mon,
+			left: t.tribute.seasons
+		});
+		if (t.hostage && alive(L, t.hostage)) {
+			const h = L.actors[t.hostage];
+			h.hostage = W;
+			const lw = d.lords[W];
+			if (lw.seat) h.home = unkey(lw.seat);
+		}
+		if (t.marriage && t.marriage.every((id) => alive(L, id) && !L.actors[id].spouse)) marry(L.actors[t.marriage[0]], L.actors[t.marriage[1]]);
+		if (t.vassal) swear(L, Lo, W, "treaty");
+		const ll = lordOf(L, Lo);
+		ll.grudges[W] = +Math.min(1, (ll.grudges[W] || 0) + .4).toFixed(2);
+		endWar(L, w, "treaty", t);
+		emit(L, "war.treaty", {
+			war: w.id,
+			winner: W,
+			loser: Lo,
+			cede: (t.cede || []).map(unkey),
+			tribute: t.tribute,
+			hostage: t.hostage,
+			marriage: t.marriage,
+			vassal: t.vassal
+		});
+		return w;
+	}
+	function endWar(L, w, how, t) {
+		const d = D(L);
+		w.end = L.hour;
+		w.how = how;
+		w.treaty = t;
+		d.active = d.active.filter((id) => id !== w.id);
+		for (const id of [w.a, w.d]) {
+			const l = d.lords[id];
+			if (l) {
+				l.wars = l.wars.filter((x) => x !== w.id);
+				l.truce[id === w.a ? w.d : w.a] = L.hour + N.TRUCE_DAYS * 24 * (how === "treaty" ? 1 : .5);
+			}
+		}
+		for (const a of Object.values(d.armies)) if (a.go && a.go.war === w.id) march(L, a.id, unkey(a.home), "home");
+		for (const a of Object.values(d.armies)) if (a.siege) {
+			const z = d.zt[a.siege];
+			if (!z || !atWar(L, a.lord, z.holder)) {
+				const s = d.set[a.siege];
+				if (s) s.siege = null;
+				a.siege = null;
+				march(L, a.id, unkey(a.home), "home");
+			}
+		}
+		emit(L, "war.peace", {
+			war: w.id,
+			a: w.a,
+			d: w.d,
+			how,
+			score: Math.round(w.score),
+			days: Math.round((L.hour - w.started) / 24)
+		});
+	}
+	function tributeSeason(L) {
+		for (const l of Object.values(D(L).lords)) {
+			l.tribute = l.tribute.filter((t) => t.left > 0 && alive(L, t.to));
+			for (const t of l.tribute) {
+				t.left--;
+				if (spend(L, l.id, t.mon)) gain(L, t.to, t.mon);
+				else {
+					const lt = lordOf(L, t.to);
+					lt.grudges[l.id] = Math.min(1, (lt.grudges[l.id] || 0) + .5);
+				}
+			}
+		}
+	}
+	//#endregion
+	//#region src/sim/dominion/ai.js
+	const hashId = (id) => {
+		let h = 0;
+		for (const c of id) h = h * 31 + c.charCodeAt(0) >>> 0;
+		return h;
+	};
+	function lordsDay(L, cal, r) {
+		const d = D(L);
+		for (const id in d.lords) {
+			const l = d.lords[id];
+			if (l.gone || l.id === L.player || cal.day < (l.next ?? hashId(l.id) % 14) || !alive(L, l.id)) continue;
+			l.next = cal.day + (!l.outlaw && atWarAny(L, l.id) ? 7 : 14);
+			if (!l.zones.length) {
+				for (const a of armiesOf(L, l.id)) if (!a.go) disband(L, a.id);
+				continue;
+			}
+			if (l.outlaw) outlaw(L, l, r);
+			else decide(L, l, cal, r);
+		}
+	}
+	const setsOf = (L, l) => l.zones.map((k) => D(L).set[k]).filter(Boolean);
+	const upkeepPerDay = (L, lord) => armiesOf(L, lord).reduce((s, a) => s + a.sq.reduce((t, q) => t + q.n * (UNITS[q.cls].wage + UNITS[q.cls].rice / 112 * ricePrice(L, 0)), 0), 0);
+	function decide(L, l, cal, r) {
+		D(L);
+		const me = L.actors[l.id], sets = setsOf(L, l), clever = me.int ?? .5, bold = traitSum(me, TRAIT.bold), greedy = traitSum(me, TRAIT.greedy), kind = traitSum(me, TRAIT.kind);
+		const war = atWarAny(L, l.id), unrest = sets.reduce((s, x) => s + x.unrest, 0) / Math.max(1, sets.length);
+		let want = N.TAX + greedy * .1 - kind * .08 + (war ? .05 : 0) - (unrest > .5 ? .12 * clever : 0) + (worth(me) < 300 ? .05 : 0);
+		want = Math.max(N.TAX_MIN, Math.min(N.TAX_MAX, want));
+		if (Math.abs(want - l.tax) >= .05) setTax(L, l.id, l.tax + Math.sign(want - l.tax) * .05);
+		if (r.chance(.25)) {
+			const riots = sets.some((s) => s.riot && L.hour - s.riot < 1400);
+			if (war && (clever < .5 || bold > .5)) setLaw(L, l.id, "conscript", true);
+			else if (!war && l.laws.conscript) setLaw(L, l.id, "conscript", false);
+			if (riots && !kind) setLaw(L, l.id, "curfew", true);
+			else if (!riots && l.laws.curfew) setLaw(L, l.id, "curfew", false);
+			if (unrest > .6 && kind > .3) setLaw(L, l.id, "amnesty", true);
+			else if (unrest < .3 && l.laws.amnesty) setLaw(L, l.id, "amnesty", false);
+			if (greedy > .5 && sets.some((s) => zoneAt(L, s.x, s.y).road)) setLaw(L, l.id, "toll", true);
+		}
+		build(L, l, sets, war, r);
+		army(L, l, sets, war, bold, r);
+		if (!war && cal.day >= (l.dip || 0)) {
+			l.dip = cal.day + 28;
+			diplomacy(L, l, sets, bold, kind, clever, r);
+		}
+	}
+	function build(L, l, sets, war, r) {
+		const d = D(L), me = L.actors[l.id];
+		if (d.work.filter((id) => d.bld[id].owner === l.id).length >= 1 + (l.off.steward && alive(L, l.off.steward) ? 1 : 0) + (l.kokuAll > 600 ? 1 : 0)) return;
+		if (worth(me) - 300 - upkeepPerDay(L, l.id) * 20 < 100) return;
+		const choice = [];
+		for (const s of sets) {
+			if (s.siege) continue;
+			const next = TIERS[s.tier + 1], z = zoneAt(L, s.x, s.y), w = s.pop / Math.max(1, s.pop + 20);
+			const want = (t, p) => {
+				if (!BUILDINGS[t] || (BUILDINGS[t].tier ?? -1) > s.tier) return;
+				choice.push([
+					s,
+					t,
+					p
+				]);
+			};
+			if (s.pop >= (s.cap || 1) * .85 || next && s.homes < next.homes && s.pop >= (next.pop || 0) * .7) want(s.tier >= 1 && r.chance(.4) ? "longhouse" : "house", 5 + w * 3);
+			if (next) {
+				for (const [t, n] of Object.entries(next.need || {})) if ((s.cnt[t] || 0) < n && (!next.pop || s.pop >= next.pop * .6)) want(t, 6 + s.tier);
+			}
+			if (s.tier >= 1 && !s.cnt.granary) want("granary", 3);
+			if ((z.biome === "paddy" || z.biome === "plains" || z.biome === "marsh") && (s.cnt.paddy || 0) < 1 + s.tier) want("paddy", 3);
+			if (war && s.tier >= 1 && !s.cnt.palisade && !s.cnt.wall) want("palisade", 5);
+			if (s.k === l.seat) {
+				if (!s.cnt.barracks) want("barracks", 2 + (war ? 3 : 0));
+				if (!s.cnt.dojo) want("dojo", 1.5 + (war ? 2 : 0));
+				if (s.tier >= 2 && !s.cnt.smithy) want("smithy", 2);
+			}
+			if (s.tier >= 2 && !s.cnt.market) want("market", 2);
+			if (s.tier >= 2 && !s.cnt.shrine) want("shrine", 2);
+			if (s.unrest > .5 && !s.cnt.shrine) want("shrine", 4);
+		}
+		if (!choice.length) return;
+		choice.sort((a, b) => b[2] - a[2]);
+		for (const [s, t] of choice.slice(0, 3)) {
+			const res = plan(L, l.id, t, s.x, s.y, 0, 0, { at: false });
+			if (!res.error) return res;
+		}
+	}
+	function army(L, l, sets, war, bold, r) {
+		const me = L.actors[l.id], men = armiesOf(L, l.id).reduce((s, a) => s + menOf(a), 0);
+		const income = l.koku * l.tax * ricePrice(L, 0) / 112 + 5, afford = Math.floor(income / 12);
+		const want = Math.min(afford, Math.round(l.koku * .08 * (1 + bold * .5) * (war ? 1.8 : 1)) + 4);
+		if (men > afford * 1.3 && men > 6) {
+			const a = armiesOf(L, l.id).find((x) => !x.go && x.sq.some((q) => q.cls === "ashigaru"));
+			if (a) {
+				const i = a.sq.findIndex((q) => q.cls === "ashigaru");
+				a.sq[i].n = Math.max(0, a.sq[i].n - Math.ceil(men - afford));
+				if (!a.sq[i].n) a.sq.splice(i, 1);
+			}
+			return;
+		}
+		if (men >= want) return;
+		const seat = l.seat && D(L).set[l.seat] ? l.seat : sets[0] && sets[0].k;
+		if (!seat) return;
+		let need = want - men;
+		const home = armiesOf(L, l.id).find((a) => a.home === seat) || newArmy(L, l.id, unkey(seat));
+		for (const s of [D(L).set[seat], ...sets.filter((x) => x.k !== seat)]) {
+			if (need <= 0 || !s) break;
+			for (const cls of worth(me) > 4e3 ? [
+				"retainer",
+				"ashigaru",
+				"ronin"
+			] : ["ashigaru", "retainer"]) {
+				const n = Math.min(need, s.pool[cls] || 0, cls === "retainer" ? 3 : cls === "ronin" ? 4 : 99);
+				if (n <= 0) continue;
+				const res = recruit(L, l.id, cls, n, s.k);
+				if (res.error) continue;
+				need -= n;
+				if (res.id !== home.id && !res.go && !home.go) {
+					for (const q of res.sq) addSquad(home, q.cls, q.n, q.off, q.from, s);
+					delete D(L).armies[res.id];
+				}
+			}
+		}
+		if (!home.sq.length) delete D(L).armies[home.id];
+	}
+	function diplomacy(L, l, sets, bold, kind, clever, r) {
+		const d = D(L), mine = sideStrength(L, top(L, l.id));
+		if (l.liege) {
+			if (lordState(l) === "rebellious" && mine > sideStrength(L, top(L, l.liege)) * (.8 - bold * .2) && r.chance(.3)) declareWar(L, l.id, l.liege, { reason: "rebellion" });
+			return;
+		}
+		if (l.rebel && l.zones.length < 2) return;
+		const regs = new Set(sets.map((s) => s.region)), near = /* @__PURE__ */ new Set();
+		for (const g of [...regs]) for (const n of d.adj[g] || []) regs.add(n);
+		const isles = new Set(sets.map((s) => landOf(L, s.x, s.y)));
+		for (const g of regs) for (const k of d.regZ[g] || []) {
+			const h = d.zt[k].holder;
+			if (h && alive(L, h) && !sameSide(L, h, l.id) && isles.has(landOfKey(L, k))) near.add(top(L, h));
+		}
+		let best = null;
+		for (const t of near) {
+			if ((l.truce[t] || 0) > L.hour || atWar(L, l.id, t)) continue;
+			const why = reasonFor(L, l.id, t);
+			const ratio = mine / (sideStrength(L, t) * (1 + r.range(-.5, .5) * (1 - clever)) + 1), need = 1.6 - bold * .4 - (why ? .25 : 0) + kind * .4;
+			const score = ratio - need + (why ? .3 : 0);
+			if (ratio >= need + (why ? 0 : .6) && (why || bold > .8) && (!best || score > best.score)) best = {
+				t,
+				why,
+				score
+			};
+			if (ratio < .3 && traitSum(L.actors[l.id], ["proud"]) < .5 && l.kokuAll < 400 && r.chance(.04 + .06 * clever)) {
+				const lt = d.lords[t];
+				if (lt && !lt.outlaw && !lt.rebel && (L.actors[t].culture === L.actors[l.id].culture || r.chance(.3))) return swear(L, l.id, t, "envoy");
+			}
+		}
+		if (best && r.chance((best.why ? .3 : .1) * (1 - kind * .5))) {
+			const t = best.t, goal = l.titles.find((k) => d.zt[k].holder && sameSide(L, d.zt[k].holder, t)) || Object.values(d.lords).filter((x) => top(L, x.id) === t).flatMap((x) => x.zones).filter((k) => d.set[k]).sort((a, b) => dz(a, sets) - dz(b, sets))[0];
+			declareWar(L, l.id, t, {
+				reason: best.why,
+				goal: goal || null
+			});
+		}
+	}
+	const dz = (k, sets) => {
+		const [x, y] = unkey(k);
+		return Math.min(...sets.map((s) => Math.abs(s.x - x) + Math.abs(s.y - y)));
+	};
+	const NEAR = /* @__PURE__ */ new WeakMap();
+	function nearSets(L, seat) {
+		let m = NEAR.get(L.zones);
+		if (!m) NEAR.set(L.zones, m = /* @__PURE__ */ new Map());
+		let l = m.get(seat);
+		if (l) return l;
+		const [cx, cy] = unkey(seat), isle = landOf(L, cx, cy);
+		l = Object.values(D(L).set).filter((s) => s.k !== seat && Math.abs(s.x - cx) + Math.abs(s.y - cy) <= 8 && landOf(L, s.x, s.y) === isle).map((s) => s.k);
+		m.set(seat, l);
+		return l;
+	}
+	function outlaw(L, l, r) {
+		const d = D(L), camp = d.set[l.seat];
+		if (!camp) return;
+		let band = armiesOf(L, l.id)[0] || newArmy(L, l.id, unkey(l.seat), "the band");
+		if (menOf(band) < 12 && r.chance(.5)) addSquad(band, "bandit", 1, null, l.seat, camp);
+		if (band.go || menOf(band) < 5 || !r.chance(.2)) return;
+		const targets = nearSets(L, l.seat).map((k) => d.set[k]).filter((s) => s && s.pop > 5 && !(d.zt[s.k] && d.zt[s.k].holder && d.lords[d.zt[s.k].holder]?.outlaw));
+		if (!targets.length) return;
+		const t = r.pick(targets);
+		march(L, band.id, [t.x, t.y], "raid");
+	}
+	//#endregion
+	//#region src/sim/dominion/index.js
+	system({
+		id: "dominion",
+		order: 60,
+		init: setupWorld,
+		onDay(L, cal, r) {
+			buildDay(L);
+			armyDay(L, r);
+			warDay(L, cal, r);
+			lordsDay(L, cal, r);
+		},
+		onSeason(L, cal, r) {
+			settleSeason(L, r);
+			upkeepSeason(L);
+			tributeSeason(L);
+			lordsSeason(L, r);
+			refreshDomains(L);
+			refreshProvinces(L);
+			refreshRealms(L);
+		},
+		onYear(L, cal, r) {
+			successionYear(L, r);
+			tradeYear(L);
+			for (const [k, z] of Object.entries(D(L).zt)) if (ripens(L, z) && !D(L).lords[z.holder]?.outlaw) setZone(L, k, { title: z.holder }, "held");
+			const idx = indexHomes(L), d = D(L);
+			for (const l of Object.values(d.lords)) {
+				if (l.gone || l.id === L.player || !l.zones.length || !L.actors[l.id].alive) continue;
+				fillOffices(L, l.id, idx, r);
+				for (const g of Object.keys(l.grudges)) {
+					l.grudges[g] = +(l.grudges[g] * .8).toFixed(2);
+					if (l.grudges[g] < .05) delete l.grudges[g];
+				}
+			}
+		}
+	});
+	const ok = (L) => L && L.sys && L.sys.dominion && L.sys.dominion.lords;
+	function storyWar(e, L) {
+		if (!ok(L)) return;
+		const [ca, cb] = e.cultures || [e.a, e.b];
+		if (ca == null || cb == null) return;
+		const best = (c) => Object.values(D(L).lords).filter((l) => !l.gone && l.zones.length && L.actors[l.id].alive && L.actors[l.id].culture === c).sort((x, y) => y.kokuAll - x.kokuAll)[0];
+		const la = best(ca), lb = best(cb);
+		if (la && lb) declareWar(L, top(L, la.id), top(L, lb.id), {
+			reason: "hatred",
+			story: true
+		});
+	}
+	on("story.war", storyWar);
+	on("event.war", storyWar);
+	on("econ.famine", (e, L) => {
+		if (!ok(L)) return;
+		for (const s of Object.values(D(L).set)) if (e.zone && key(...e.zone) === s.k || !e.zone && s.region === e.region) {
+			s.store = 0;
+			s.hunger = Math.max(s.hunger, .5);
+			s.unrest = Math.min(1, s.unrest + .15);
+		}
+	});
+	const died = (e, L) => {
+		if (!ok(L)) return;
+		const id = e.actor;
+		if (D(L).lords[id] && !L.actors[id].alive) succeed(L, id, rngish(L, id));
+	};
+	on("people.death", died);
+	on("people.died", died);
+	on("people.settlers", (e, L) => {
+		if (!ok(L) || !e.zone) return;
+		const s = D(L).set[key(...e.zone)];
+		if (s) s.pop += e.n || 1;
+	});
+	const plot = (e, L) => {
+		if (ok(L) && e.plot) plotChanged(L, e.plot);
+	};
+	on("crime.transfer", plot);
+	on("land.claimed", plot);
+	on("land.claim", plot);
+	const rngish = (L, id) => rngFor(L.seed, "dominion", "death", id, L.hour);
+	//#endregion
+	//#region prototypes-src/42-dominion/main.js
+	const $ = (id) => document.getElementById(id);
+	const L = generateWorld(12345, 0);
+	const P = L.player;
+	const me = L.actors[P];
+	const d = () => D(L);
+	const Z = 6;
+	const TZ = 5;
+	const cap = (s) => s[0].toUpperCase() + s.slice(1);
+	const zname = (x, y) => {
+		const z = zoneAt(L, x, y);
+		return z.name || `${cap(z.biome)} ${x},${y}`;
+	};
+	const who = (id) => id === P ? `<span class="mine">${lordName(L, id)} (you)</span>` : lordName(L, id);
+	function pickHome() {
+		let best = null;
+		for (let dy = -3; dy <= 3; dy++) for (let dx = -3; dx <= 3; dx++) {
+			const z = zoneAt(L, me.at[0] + dx, me.at[1] + dy);
+			if (!z || z.kind !== "wild" || z.biome === "sea" || z.biome === "mountains") continue;
+			const T = tilesOf(L, z.x, z.y);
+			for (let py = 0; py < 3; py++) for (let px = 0; px < 3; px++) {
+				let free = 0;
+				for (let y = py * 16; y < (py + 2) * 16; y++) for (let x = px * 16; x < (px + 2) * 16; x++) {
+					const t = TERRAIN$1[T.t[y * 64 + x]];
+					if (t === "grass" || t === "field" || t === "road" || t === "sand") free++;
+				}
+				const score = free + (z.road ? 150 : 0) - (Math.abs(dx) + Math.abs(dy)) * 20;
+				if (!best || score > best.score) best = {
+					score,
+					x: z.x,
+					y: z.y,
+					px,
+					py
+				};
+			}
+		}
+		return best;
+	}
+	const H = pickHome();
+	const hk = key(H.x, H.y);
+	for (const [ox, oy] of [
+		[0, 0],
+		[1, 0],
+		[0, 1],
+		[1, 1]
+	]) {
+		const pid = plotId(H.x, H.y, (H.py + oy) * 4 + H.px + ox);
+		claimPlot(L, pid, P);
+		plotChanged(L, pid);
+	}
+	lordOf(L, P);
+	gain(L, P, 5e3);
+	const chron = [];
+	const zn = (z) => z ? zname(z[0], z[1]) : "somewhere";
+	function say(e) {
+		const t = e.type, mine = [
+			e.actor,
+			e.a,
+			e.d,
+			e.winner,
+			e.loser,
+			e.to,
+			e.from
+		].includes(P);
+		let s = null;
+		switch (t) {
+			case "war.declared":
+				s = `${who(e.a)} declares war on ${who(e.d)}${e.reason !== "none" ? ` (${e.reason})` : ", without a reason"}`;
+				break;
+			case "war.battle":
+				s = `Battle at ${zn(e.zone)}: ${who(e.winner)} wins${e.a && e.a.lost != null ? `; ${e.a.lost + e.d.lost} fall` : ""}`;
+				break;
+			case "war.taken":
+				s = `${who(e.to)} takes ${e.name || zn(e.zone)}${e.from ? ` from ${who(e.from)}` : ""}`;
+				break;
+			case "war.treaty":
+				s = `Peace: ${who(e.loser)} yields to ${who(e.winner)}${e.cede.length ? `, ceding ${e.cede.length} zone${e.cede.length > 1 ? "s" : ""}` : ""}${e.tribute ? ", with tribute" : ""}${e.hostage ? ", a hostage" : ""}${e.marriage ? ", a marriage" : ""}${e.vassal ? ", and swears fealty" : ""}`;
+				break;
+			case "war.peace":
+				if (e.how !== "treaty") s = `The war between ${who(e.a)} and ${who(e.d)} ends: ${e.how}`;
+				break;
+			case "war.siege":
+				s = `${who(e.actor)} besieges ${e.name || zn(e.zone)}`;
+				break;
+			case "war.raid":
+				if (e.seized) s = `Outlaws seize ${e.name || zn(e.zone)}`;
+				break;
+			case "dom.tier":
+				if (e.actor === P || TIERS.findIndex((t) => t.name === e.to) >= 3 || TIERS.findIndex((t) => t.name === e.from) >= 3) s = `${e.name || zn(e.zone)} ${e.grew ? "grows to" : "falls to"} a ${e.to}`;
+				break;
+			case "dom.realm":
+				s = e.how === "rose" ? `${cap(e.name)} rises under ${who(e.actor)}` : `${cap(e.name)} falls apart`;
+				break;
+			case "dom.domain":
+				if (e.how === "founded" || e.how === "passed") s = `${e.name} ${e.how === "founded" ? "is founded by" : "passes to"} ${who(e.actor)}`;
+				break;
+			case "dom.succession":
+				s = `${who(e.to)} succeeds ${lordName(L, e.from)}${e.how === "rose" ? " (a local family rises)" : e.how === "escheat" ? " (no heir: the land goes to his liege)" : ""}`;
+				break;
+			case "dom.uprising":
+				s = `${e.name || zn(e.zone)} rises${e.restored ? ` for ${who(e.to)}` : ` under ${who(e.to)}`}`;
+				break;
+			case "dom.fealty":
+				s = e.liege ? `${who(e.actor)} swears fealty to ${who(e.liege)}` : `${who(e.actor)} breaks with ${who(e.was)}`;
+				break;
+			case "dom.estate":
+				if (e.actor === P) s = `His ${e.plots} plots side by side merge into ${e.name}`;
+				break;
+			case "dom.built":
+			case "dom.build":
+				if (e.actor === P) s = `${t === "dom.build" ? "Work starts on" : "Finished:"} a ${e.kind}${t === "dom.build" ? ` (${e.cost} mon)` : ""}`;
+				break;
+			case "dom.recruit":
+				if (e.actor === P) s = `${e.n} ${e.cls} join his host`;
+				break;
+			case "dom.petition":
+			case "dom.riot":
+				if (e.actor === P) s = `${e.name || zn(e.zone)}: ${t === "dom.riot" ? "riots" : "a petition"} (${e.why || "unrest"})`;
+				break;
+			case "dom.desert":
+				if (e.actor === P) s = `${e.n} men desert his host (unpaid or hungry)`;
+				break;
+			case "dom.crewLeft": if (e.actor === P) s = "His hired hands walk off: he could not pay them";
+		}
+		if (!s) return;
+		const c = calendar(e.h);
+		chron.unshift(`<div${mine ? " class=\"mine\"" : ""}><span class="d">Y${c.year} ${c.season.slice(0, 3)} ${c.dayOfSeason}</span>${s}</div>`);
+		if (chron.length > 120) chron.pop();
+	}
+	on("*", (e) => {
+		if (e.type.startsWith("dom.") || e.type.startsWith("war.")) say(e);
+	});
+	const battles = [];
+	on("war.battle", (e) => battles.push({
+		h: e.h,
+		z: e.zone
+	}));
+	const map = $("map");
+	const mg = map.getContext("2d");
+	const tip = $("tip");
+	const BIOME = {
+		sea: "#1d2a33",
+		coast: "#5a5646",
+		plains: "#474e3c",
+		paddy: "#415440",
+		forest: "#2f4033",
+		bamboo: "#3f4a30",
+		marsh: "#3a4234",
+		hills: "#46453a",
+		mountains: "#57564f"
+	};
+	let view = "realm";
+	const hue = (id) => {
+		let h = 0;
+		for (const c of String(id)) h = h * 31 + c.charCodeAt(0) >>> 0;
+		return h % 360;
+	};
+	const ruler = (id) => id ? top(L, id) : null;
+	const col = (id) => !id ? null : id === P || top(L, id) === P ? "#6ff3e4" : L.actors[id] && d().lords[id]?.outlaw ? "#7a3035" : `hsl(${hue(id)} 42% 46%)`;
+	function zoneColor(z) {
+		if (z.biome === "sea") return BIOME.sea;
+		if (view === "land") return BIOME[z.biome];
+		const k = key(z.x, z.y), zt = d().zt[k];
+		if (view === "realm") {
+			const r = zt && zt.holder ? ruler(zt.holder) : null;
+			if (r) return col(r);
+			const p = d().prov[z.region], pr = p && p.holder ? ruler(p.holder) : null;
+			return pr ? shade(col(pr)) : BIOME[z.biome];
+		}
+		if (view === "prov") {
+			const p = d().prov[z.region];
+			const r = p && p.holder ? ruler(p.holder) : null;
+			return r ? shade(col(r)) : BIOME[z.biome];
+		}
+		return BIOME[z.biome];
+	}
+	const shade = (c) => c.startsWith("hsl") ? c.replace(/(\d+)%\)$/, "30%)") : c === "#6ff3e4" ? "#2f6f68" : "#4a2427";
+	const TIERC = [
+		"#8a8f8c",
+		"#b8b39a",
+		"#d9c9a0",
+		"#f1ede2",
+		"#ffffff",
+		"#6ff3e4"
+	];
+	function draw() {
+		mg.fillStyle = BIOME.sea;
+		mg.fillRect(0, 0, 600, 600);
+		for (const z of L.zones) {
+			mg.fillStyle = zoneColor(z);
+			mg.fillRect(z.x * Z, z.y * Z, Z, Z);
+		}
+		for (const s of Object.values(d().set)) {
+			const t = s.tier, sz = t < 0 ? 2 : [
+				2,
+				2,
+				3,
+				4,
+				4,
+				5
+			][t];
+			if (view === "tier" || t >= 2 || view !== "land") {
+				mg.fillStyle = "#0b0d0e";
+				mg.fillRect(s.x * Z + (Z - sz) / 2 - 1, s.y * Z + (Z - sz) / 2 - 1, sz + 2, sz + 2);
+				mg.fillStyle = t < 0 ? "#5a5f5c" : TIERC[t];
+				mg.fillRect(s.x * Z + (Z - sz) / 2, s.y * Z + (Z - sz) / 2, sz, sz);
+			}
+		}
+		if ($("armies").checked) for (const a of Object.values(d().armies)) {
+			const n = menOf(a);
+			if (n < 5 && a.lord !== P) continue;
+			const war = !!a.go || !!a.siege;
+			const s = n > 300 ? 4 : n > 80 ? 3 : 2;
+			mg.fillStyle = a.lord === P ? "#6ff3e4" : war ? "#ff6b6b" : "#e8ece9";
+			mg.fillRect(a.at[0] * Z + Z - s, a.at[1] * Z, s, s);
+		}
+		for (const b of battles) if (L.hour - b.h < 672) {
+			const x = b.z[0] * Z + 3, y = b.z[1] * Z + 3;
+			mg.strokeStyle = "#ff6b6b";
+			mg.lineWidth = 1.5;
+			mg.beginPath();
+			mg.moveTo(x - 4, y - 4);
+			mg.lineTo(x + 4, y + 4);
+			mg.moveTo(x + 4, y - 4);
+			mg.lineTo(x - 4, y + 4);
+			mg.stroke();
+		}
+		mg.strokeStyle = "#6ff3e4";
+		mg.lineWidth = 2;
+		mg.strokeRect(H.x * Z - 3, H.y * Z - 3, 12, 12);
+		legend();
+	}
+	function legend() {
+		const items = view === "realm" ? [
+			["#6ff3e4", "yours"],
+			["hsl(40 42% 46%)", "each ruler (with his vassals) his own colour; darker: the rest of a province he holds"],
+			["#7a3035", "outlaws"],
+			[BIOME.plains, "nobody's"]
+		] : view === "prov" ? [["hsl(200 42% 30%)", "a province, coloured by its holder's ruler"], [BIOME.plains, "no one holds it"]] : view === "tier" ? TIERS.map((t, i) => [TIERC[i], t.name]) : Object.entries(BIOME).map(([k, c]) => [c, k]);
+		$("legend").innerHTML = items.concat([["#ff6b6b", "an army on campaign, a battle this month"], ["#e8ece9", "an army at rest"]]).map(([c, t]) => `<span class="row"><span class="sw" style="background:${c}"></span>${t}</span>`).join("");
+	}
+	map.addEventListener("mousemove", (e) => {
+		const r = map.getBoundingClientRect(), k = 600 / r.width, x = Math.floor((e.clientX - r.left) * k / Z), y = Math.floor((e.clientY - r.top) * k / Z), z = zoneAt(L, x, y);
+		if (!z || z.biome === "sea") {
+			tip.hidden = true;
+			return;
+		}
+		const zt = d().zt[key(x, y)], s = d().set[key(x, y)], reg = L.regions[z.region], p = d().prov[z.region];
+		tip.innerHTML = `<b>${zname(x, y)}</b> · ${x}, ${y}${s ? `<br>${cap(tierName(s.tier))}, ${s.pop} people` : ""}${zt ? `<br>Title: ${who(zt.title)}<br>Held by: ${who(zt.holder)}` : ""}<br>Province of ${reg.name}${p && p.holder ? `, held by ${who(p.holder)}` : ", no one holds it"}`;
+		tip.hidden = false;
+		tip.style.left = Math.min(e.clientX - r.left + 14, r.width - 290) + "px";
+		tip.style.top = Math.min(e.clientY - r.top + 14, r.height - 120) + "px";
+	});
+	map.addEventListener("mouseleave", () => tip.hidden = true);
+	for (const el of document.querySelectorAll("input[name=view]")) el.addEventListener("change", () => {
+		view = el.value;
+		draw();
+	});
+	$("armies").addEventListener("change", draw);
+	const zc = $("zone");
+	const zg = zc.getContext("2d");
+	const TILE = {
+		grass: "#5f6a4c",
+		field: "#857750",
+		paddy: "#557a5e",
+		forest: "#2e4633",
+		bamboo: "#4f5f35",
+		water: "#27404c",
+		rock: "#6b6961",
+		sand: "#958a69",
+		road: "#a8966e",
+		building: "#2a2624",
+		marsh: "#465040",
+		shrine: "#b5484e",
+		palisade: "#5a3b2c",
+		wall: "#8a8a86"
+	};
+	const FAM = {
+		home: "#c9b58a",
+		food: "#8fbf7a",
+		craft: "#b08a6a",
+		trade: "#d9c9a0",
+		faith: "#c96a6a",
+		order: "#9aa3c9",
+		war: "#8a8f99"
+	};
+	let pick = "hut";
+	let hover = null;
+	function drawZone() {
+		const T = tilesOf(L, H.x, H.y), s = settlementAt(L, H.x, H.y);
+		for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+			zg.fillStyle = TILE[TERRAIN$1[T.t[y * 64 + x]]];
+			zg.fillRect(x * TZ, y * TZ, TZ, TZ);
+		}
+		for (let n = 0; n < 16; n++) {
+			const px = n % 4 * 16 * TZ, py = Math.floor(n / 4) * 16 * TZ, mine = ownerOf(L, plotId(H.x, H.y, n)).holder === P;
+			if (!mine) {
+				zg.fillStyle = "#0b0d0e66";
+				zg.fillRect(px, py, 80, 80);
+			}
+			zg.strokeStyle = mine ? "#6ff3e4" : "#0b0d0e99";
+			zg.lineWidth = 1;
+			zg.strokeRect(px + .5, py + .5, 79, 79);
+		}
+		if (s) for (const id of s.b) {
+			const b = d().bld[id], B = BUILDINGS[b.t];
+			if (B.w === "ring") {
+				zg.strokeStyle = b.st === "up" ? "#8a8f99" : "#8a8f9966";
+				zg.lineWidth = 2;
+				(H.px + 1) * 16 * TZ;
+				const rr = 76;
+				zg.beginPath();
+				zg.arc((H.px + 1) * 16 * TZ, (H.py + 1) * 16 * TZ, rr, 0, 7);
+				zg.stroke();
+				continue;
+			}
+			if (!b.at) continue;
+			zg.globalAlpha = b.st === "up" ? 1 : .35 + .5 * b.done / b.labour;
+			zg.fillStyle = b.st === "ruin" ? "#3a2a26" : FAM[B.fam];
+			zg.fillRect(b.at[0] * TZ, b.at[1] * TZ, B.w * TZ, B.h * TZ);
+			zg.globalAlpha = 1;
+			zg.strokeStyle = "#0b0d0e";
+			zg.strokeRect(b.at[0] * TZ + .5, b.at[1] * TZ + .5, B.w * TZ - 1, B.h * TZ - 1);
+		}
+		if (hover && BUILDINGS[pick].w !== "ring") {
+			const B = BUILDINGS[pick], ok = !canPlace(L, P, pick, H.x, H.y, hover[0], hover[1]);
+			zg.fillStyle = ok ? "#6ff3e455" : "#e0737a55";
+			zg.fillRect(hover[0] * TZ, hover[1] * TZ, B.w * TZ, B.h * TZ);
+			zg.strokeStyle = ok ? "#6ff3e4" : "#e0737a";
+			zg.strokeRect(hover[0] * TZ + .5, hover[1] * TZ + .5, B.w * TZ - 1, B.h * TZ - 1);
+		}
+	}
+	const tileFrom = (e) => {
+		const r = zc.getBoundingClientRect(), k = 320 / r.width;
+		return [Math.floor((e.clientX - r.left) * k / TZ), Math.floor((e.clientY - r.top) * k / TZ)];
+	};
+	zc.addEventListener("mousemove", (e) => {
+		hover = tileFrom(e);
+		const why = BUILDINGS[pick].w === "ring" ? null : canPlace(L, P, pick, H.x, H.y, ...hover);
+		$("zhint").textContent = why ? `${cap(pick)} here: ${why}.` : `${cap(pick)}: click to build here.`;
+		drawZone();
+	});
+	zc.addEventListener("mouseleave", () => {
+		hover = null;
+		drawZone();
+	});
+	zc.addEventListener("click", (e) => place(...tileFrom(e)));
+	function place(tx, ty) {
+		const res = plan(L, P, pick, H.x, H.y, tx, ty);
+		if (res.error) {
+			$("zhint").innerHTML = `<span class="bad">${cap(pick)}: ${res.error}.</span>`;
+			return;
+		}
+		hire(L, res.id, +$("crew").value);
+		refresh();
+	}
+	function buildList() {
+		const s = settlementAt(L, H.x, H.y), z = zoneAt(L, H.x, H.y), fams = {};
+		for (const [t, B] of Object.entries(BUILDINGS)) (fams[B.fam] || (fams[B.fam] = [])).push(t);
+		$("blist").innerHTML = Object.entries(fams).map(([f, ts]) => `<div class="fam">${f}</div>` + ts.map((t) => {
+			const B = BUILDINGS[t], why = prereq(L, s, t, z), cost = costOf(L, t, hk);
+			return `<button type="button" class="b${t === pick ? " sel" : ""}" data-t="${t}"><span class="n">${t}</span><span class="c">${cost} mon · ${B.labour} labour-days${B.w === "ring" ? " · round the settlement" : ` · ${B.w}×${B.h}`}</span>${why ? `<span class="why">${cap(why)}</span>` : worth(me) < cost ? "<span class=\"why\">Not enough money</span>" : ""}</button>`;
+		}).join("")).join("");
+		for (const b of $("blist").querySelectorAll("button")) b.addEventListener("click", () => {
+			pick = b.dataset.t;
+			if (BUILDINGS[pick].w === "ring") place(0, 0);
+			buildList();
+			drawZone();
+		});
+	}
+	function settlePanel() {
+		const s = settlementAt(L, H.x, H.y), es = estatesOf(L, P)[0], hd = holdingsOf(L, P);
+		$("hname").textContent = es ? es.name : "His land";
+		$("hsub").innerHTML = `${plotsHeld(L, P).length} plots in ${zname(H.x, H.y)}, near ${zname(...me.at)}. Rank: <b>${hd.rank}</b>${hd.koku ? `, ${hd.koku} koku` : ""}. The plots were claimed for him here as a stand-in for the land lane's claiming.`;
+		if (!s) {
+			$("settle").innerHTML = "<h3>No settlement yet</h3><p class=\"note\">A settlement starts with its first home. A hut is the cheapest.</p>";
+			return;
+		}
+		const nx = nextNeeds(L, s);
+		$("settle").innerHTML = `<h3>${cap(tierName(s.tier))}</h3><div class="tier">${TIERS.map((t, i) => `<span class="${i <= s.tier ? "lit" : ""}" title="${t.name}"></span>`).join("")}</div>
+    <dl><dt>People</dt><dd>${s.pop} of room for ${s.cap}</dd><dt>Homes</dt><dd>${s.homes}</dd><dt>Unrest</dt><dd class="${s.unrest > .5 ? "bad" : s.unrest > .3 ? "warn" : "good"}">${Math.round(s.unrest * 100)}%</dd>
+    <dt>Yield</dt><dd>${Math.round(s.yield)} koku a year</dd><dt>Can recruit</dt><dd>${Object.entries(s.pool).filter(([, n]) => n > 0).map(([c, n]) => `${n} ${c}`).join(", ") || "nobody yet"}</dd></dl>
+    ${nx ? `<p class="note">For a <b>${nx.tier}</b>: ${nx.needs.join(", ") || "the next season will tell"}.</p>` : ""}`;
+		const mine = s.b.map((id) => d().bld[id]).filter((b) => b.st !== "up" && b.owner === P);
+		$("work").innerHTML = mine.length ? `<h3>Being built</h3>` + mine.map((b) => `<div><div class="row"><span>${b.t}</span><span class="stat" style="margin-left:auto">${Math.floor(b.done)}/${b.labour} days · ${b.crew} hands</span>
+    <button type="button" data-h="${b.id}" data-n="-2" aria-label="Fewer hands">−</button><button type="button" data-h="${b.id}" data-n="2" aria-label="More hands">+</button></div><div class="prog"><i style="width:${100 * b.done / b.labour}%"></i></div></div>`).join("") : "";
+		for (const btn of $("work").querySelectorAll("button")) btn.addEventListener("click", () => {
+			const b = d().bld[btn.dataset.h];
+			hire(L, b.id, b.crew + +btn.dataset.n);
+			settlePanel();
+		});
+	}
+	const helpers = Object.values(L.actors).filter((a) => a.alive && a.home && a.home[0] === me.at[0] && a.home[1] === me.at[1] && a.job !== "lord" && (L.hour - a.born) / (TIME.HOURS_PER_DAY * 112) >= 16).slice(0, 8);
+	function governPanel() {
+		const l = lordOf(L, P);
+		$("govern").innerHTML = `<h3>Rule</h3>
+    <label for="tax" class="stat">Tax on his land: <b id="taxv">${Math.round(l.tax * 100)}%</b></label><input type="range" id="tax" min="10" max="70" step="5" value="${Math.round(l.tax * 100)}">
+    <div class="list">${Object.entries(LAWS).map(([k, w]) => `<label for="law-${k}" class="stat"><input type="checkbox" id="law-${k}" data-law="${k}" ${l.laws[k] ? "checked" : ""}> ${cap(w.name)}</label>`).join("")}</div>
+    <h3>Offices</h3>${OFFICES.map((o) => `<label for="off-${o}" class="stat" style="display:grid;gap:2px">${cap(o)}<select id="off-${o}" data-off="${o}"><option value="">nobody</option>${helpers.map((a) => {
+			const q = officeQ(L, a, o);
+			return `<option value="${a.id}" ${l.off[o] === a.id ? "selected" : ""}>${nameOf(a)} · wits ${Math.round(a.int * 100)} · ${Math.round(q.q * 100)}%${q.honest ? "" : " · dishonest"}</option>`;
+		}).join("")}</select></label>`).join("")}
+    <p class="note">Wits (intelligence) decide how well; traits decide whether they are honest.</p>`;
+		$("tax").addEventListener("input", (e) => {
+			setTax(L, P, e.target.value / 100);
+			$("taxv").textContent = e.target.value + "%";
+		});
+		for (const c of $("govern").querySelectorAll("[data-law]")) c.addEventListener("change", () => setLaw(L, P, c.dataset.law, c.checked));
+		for (const c of $("govern").querySelectorAll("[data-off]")) c.addEventListener("change", () => appoint(L, P, c.dataset.off, c.value || null));
+	}
+	const inn = () => Object.values(d().set).filter((s) => s.pool.ronin > 0 && !recruitWhy(L, P, "ronin", s.k)).sort((a, b) => Math.hypot(a.x - H.x, a.y - H.y) - Math.hypot(b.x - H.x, b.y - H.y))[0];
+	function armyPanel() {
+		const s = settlementAt(L, H.x, H.y), town = inn(), as = armiesOf(L, P);
+		const a1 = s ? recruitWhy(L, P, "ashigaru", hk) : "no settlement yet", r1 = town ? null : "no paid swords within reach";
+		$("army").innerHTML = `<h3>His host</h3>
+    <div class="bar"><button type="button" id="r-ash" ${a1 ? "disabled" : ""}>Raise 5 ashigaru</button><button type="button" id="r-ron" ${r1 ? "disabled" : ""}>Hire 3 ronin${town ? ` at ${town.name || zname(town.x, town.y)}` : ""}</button></div>
+    <p class="note">${a1 ? `Ashigaru: ${a1}.` : `Ashigaru cost ${UNITS.ashigaru.cost} mon each, ${UNITS.ashigaru.wage} mon a day.`} Ronin: ${UNITS.ronin.cost} mon each, ${UNITS.ronin.wage} a day.</p>
+    ${as.map((a) => `<div class="box" style="padding:10px"><div class="row"><b>${a.name}</b><span class="stat" style="margin-left:auto">${menOf(a)} men at ${zname(...a.at)}${a.go ? " (marching)" : ""}</span></div>
+      <div class="stat">Morale ${Math.round(a.morale * 100)}% · ${a.unpaid ? `<span class="bad">unpaid ${a.unpaid} days</span>` : "paid"} · ${a.sq.reduce((t, q) => t + q.n * UNITS[q.cls].wage, 0)} mon a day</div>
+      ${a.sq.map((q, i) => `<div class="row stat">${q.n} ${q.cls} · trained ${Math.round(q.tr * 100)}% · kit ${Math.round(q.eq * 100)}%<select data-a="${a.id}" data-i="${i}" aria-label="Order" style="margin-left:auto">${ORDERS.map((o) => `<option ${q.order === o ? "selected" : ""}>${o}</option>`).join("")}</select></div>`).join("")}
+      <div class="bar">${key(...a.at) !== hk ? `<button type="button" data-home="${a.id}">March home</button>` : ""}<button type="button" data-dis="${a.id}">Disband</button></div></div>`).join("") || "<p class=\"note\">No men yet.</p>"}
+    <p class="note">Squad orders (hold, charge, follow, fall back) are for battles he is at; in the ledger they fight on their own.</p>`;
+		$("r-ash").addEventListener("click", () => {
+			const r = recruit(L, P, "ashigaru", 5, hk);
+			if (r.error) alertNote(r.error);
+			a1Home(r);
+			refresh();
+		});
+		$("r-ron").addEventListener("click", () => {
+			const r = recruit(L, P, "ronin", 3, town.k);
+			if (r.error) alertNote(r.error);
+			else r.home = hk;
+			refresh();
+		});
+		for (const b of $("army").querySelectorAll("[data-home]")) b.addEventListener("click", () => {
+			march(L, b.dataset.home, [H.x, H.y], "march");
+			refresh();
+		});
+		for (const b of $("army").querySelectorAll("[data-dis]")) b.addEventListener("click", () => {
+			disband(L, b.dataset.dis);
+			refresh();
+		});
+		for (const c of $("army").querySelectorAll("select[data-a]")) c.addEventListener("change", () => setOrder(L, c.dataset.a, +c.dataset.i, c.value));
+	}
+	const a1Home = (r) => {
+		if (r && !r.error) r.home = hk;
+	};
+	const alertNote = (msg) => {
+		chron.unshift(`<div class="bad">${msg}</div>`);
+	};
+	function lordsPanel() {
+		const rulers = Object.values(d().lords).filter((l) => !l.gone && !l.liege && !l.outlaw && L.actors[l.id].alive && l.zones.length).sort((a, b) => b.kokuAll - a.kokuAll).slice(0, 10);
+		$("lords").innerHTML = `<table><tr><th></th><th>Ruler</th><th>Koku</th><th>Zones</th><th>Vassals</th><th>Men</th></tr>${rulers.map((l) => {
+			const h = holdingsOf(L, l.id);
+			const men = Object.values(d().armies).filter((a) => top(L, a.lord) === l.id).reduce((t, a) => t + menOf(a), 0), vass = Object.values(d().lords).filter((x) => x.liege === l.id && !x.gone).length;
+			return `<tr><td><span class="sw" style="background:${col(l.id)}"></span></td><td>${who(l.id)}<br><span class="stat">${h.realm ? cap(h.realm.name) : cap(h.rank)}</span></td><td>${Math.round(l.kokuAll).toLocaleString()}</td><td>${l.zones.length}</td><td>${vass}</td><td>${men}</td></tr>`;
+		}).join("")}</table>`;
+		const ws = activeWars(L);
+		$("wars").innerHTML = ws.length ? ws.map((w) => `<div>${who(w.a)} against ${who(w.d)} <span class="stat">(${w.reason}, score ${Math.round(w.score)}, ${w.battles.length} battles, ${w.taken.length} taken)</span></div>`).join("") : "<p class=\"note\">The land is at peace.</p>";
+	}
+	function status() {
+		const c = calendar(L.hour), hd = holdingsOf(L, P), m = me.money, rulers = Object.values(d().lords).filter((l) => !l.gone && !l.liege && !l.outlaw && L.actors[l.id].alive && l.zones.length).length;
+		$("date").textContent = `Year ${c.year}, ${c.season} ${c.dayOfSeason}`;
+		$("purse").innerHTML = `Purse <b>${m.ryo} ryō ${m.mon} mon</b>`;
+		$("rank").innerHTML = `Rank <b>${hd.rank}</b>`;
+		$("world").innerHTML = `<b>${rulers}</b> rulers · <b>${Object.keys(d().realms).length}</b> realms · <b>${activeWars(L).length}</b> wars`;
+	}
+	function refresh() {
+		status();
+		draw();
+		drawZone();
+		settlePanel();
+		buildList();
+		governPanel();
+		armyPanel();
+		lordsPanel();
+		$("chron").innerHTML = chron.join("") || "<div>Nothing yet.</div>";
+	}
+	const days = (n) => {
+		advance(L, n * 24);
+		refresh();
+	};
+	$("t-day").addEventListener("click", () => days(1));
+	$("t-season").addEventListener("click", () => days(28));
+	$("t-year").addEventListener("click", () => days(112));
+	let running = null;
+	function runSeasons(n, btn) {
+		if (running) {
+			clearTimeout(running.t);
+			running = null;
+			$("t-play").textContent = "Play";
+			$("t-play").classList.remove("on");
+			if (btn === $("t-play")) return;
+		}
+		let left = n;
+		const step = () => {
+			advance(L, 672);
+			refresh();
+			if (--left > 0) running = { t: setTimeout(step, 60) };
+			else {
+				running = null;
+				$("t-play").textContent = "Play";
+				$("t-play").classList.remove("on");
+			}
+		};
+		if (btn === $("t-play")) {
+			$("t-play").textContent = "Pause";
+			$("t-play").classList.add("on");
+		}
+		step();
+	}
+	$("t-5").addEventListener("click", () => runSeasons(20, $("t-5")));
+	$("t-play").addEventListener("click", () => runSeasons(400, $("t-play")));
+	$("gift").addEventListener("click", () => {
+		gain(L, P, 5e3);
+		refresh();
+	});
+	refresh();
+	window.__world = () => L;
+	window.__proto = {
+		build(t) {
+			pick = t;
+			for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) if (!canPlace(L, P, t, H.x, H.y, x, y)) {
+				place(x, y);
+				return true;
+			}
+			if (BUILDINGS[t].w === "ring") {
+				place(0, 0);
+				return true;
+			}
+			return false;
+		},
+		days
+	};
+	//#endregion
+})();
+
+</script>
