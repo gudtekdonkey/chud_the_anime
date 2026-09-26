@@ -60,5 +60,5 @@ Decisions made in the design sessions so far, newest last.
    - **Lamellar and samurai armour may be coloured, but only faintly** (muted, low-saturation tints over the blacks). Cloth stays shades of black, never bright red.
    - Still open: the default outfit; his true left side or a mirror when facing left; whether the hat brim shows more of its top when he faces the camera.
    - Earlier: the mantle was flattened because it read as a hump.
-4. **Front, back and diagonal views** for every move. Everything uses the side view today. The 8-direction rig (`prototypes/19-rig-v2-and-clothing.html`) is the path: port each move's key poses onto it, starting with walk, idle and the stances. Harvest facing north waits on this.
+4. **Front, back and diagonal views** for every move: **the port system is built** (`src/rig/port.js`, `prototypes/27-port-system.html`, `docs/port-system.md`). It turns every existing side-view animation, and every personality bake, into all eight directions on rig v2 automatically. Wiring it into the game waits on the clothing branch, which brings rig v2's skeleton into `src/wardrobe/`. Harvest facing north waits on that too.
 5. **Real enemies** with health, needed by K.
