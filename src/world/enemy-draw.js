@@ -11,7 +11,7 @@ const cv = document.createElement('canvas'); cv.width = FW; cv.height = FH;
 const cg = cv.getContext('2d'), sheet = { img: cv, fw: FW, fh: FH, n: 1, ox: OX, oy: OY };
 
 export function drawEnemy(e) {
-  if (e.alpha <= 0) return;
+  if (e.alpha <= 0 || e.held || e.state === 'gone') return;
   cg.clearRect(0, 0, FW, FH); rig(cg, 0, e.body.out, eyeDark(e.body) ? PAL_OUT : PAL);
   const x = e.x + (e.shk > 0 ? ((e.shk * 60 | 0) % 2 ? 1 : -1) : 0);   // he shakes in the hit pause
   const down = e.body.out.hy >= 8;
