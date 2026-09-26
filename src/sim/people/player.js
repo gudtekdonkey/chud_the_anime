@@ -13,15 +13,23 @@ export function recordDeed(L, id, text) {
   (a.deeds || (a.deeds = [])).push({ h: L.hour, text });
   if (a.deeds.length > 40) a.deeds.splice(0, a.deeds.length - 40);
 }
-// who could carry on after him, in order (owner 2026-09-26: his children and grandchildren, maybe a brother): the heir he named (if one of
-// these), then his sons, his daughters, his grandchildren, his brothers
+// who could carry on after him, in order (owner 2026-09-26: his sons and grandsons, a brother, a sworn companion; never a daughter):
+// the heir he named (if one of these), then his sons, his grandsons, his brothers, the companions sworn to him
 export function playableHeirs(L, p) {
-  const kids = livingChildren(L, p).filter(c => c.cls !== 'monk'), sons = kids.filter(c => c.sex === 'm'), daughters = kids.filter(c => c.sex === 'f');
-  const brothers = siblings(L, p).filter(s => s.alive && s.sex === 'm' && s.cls !== 'monk');
-  const out = [...sons, ...daughters, ...grandchildren(L, p, false), ...brothers];
+  const men = x => x.alive && x.sex === 'm' && x.cls !== 'monk';
+  const out = [...livingChildren(L, p).filter(men), ...grandchildren(L, p, false).filter(men), ...siblings(L, p).filter(men), ...sworn(L, p)];
   const named = alive(L, p.heir);
   if (named && out.includes(named)) { out.splice(out.indexOf(named), 1); out.unshift(named); }
   return out;
+}
+// the companions who swore to carry on his name if he falls (the party lane calls swear() for a companion who is an actor in the ledger)
+export const sworn = (L, p) => (p.oaths || []).map(id => alive(L, id)).filter(Boolean);
+export function swear(L, id) {
+  const p = L.actors[L.player], c = alive(L, id);
+  if (!p || !c || c === p) return false;
+  (p.oaths || (p.oaths = [])).includes(c.id) || p.oaths.push(c.id); c.swornTo = p.id;
+  recordDeed(L, p.id, `took the oath of ${c.given} ${c.family}`); emit(L, 'people.sworn', { actor: c.id, to: p.id });
+  return true;
 }
 // he names his heir (any of the above): they take everything when he dies
 export function nameHeir(L, id) {

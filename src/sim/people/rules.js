@@ -55,6 +55,8 @@ export const KEEP = { fort: [5, 8], camp: [5, 8], shrine: [1, 3] };
 export const BRIDE_PRICE = { royal: 500000, noble: 60000, retainer: 12000, shinobi: 3000, ashigaru: 2000, ronin: 1500, commoner: 1000, rebel: 800, outlaw: 500, monk: 0 };
 // the long dead who were nobody in particular are forgotten after this many years (owner 2026-09-26: ok); see life.js fadeTheDead
 export const FADE_AFTER = 20;
+// marrying into a people raises their standing of him (owner 2026-09-26)
+export const WED_STANDING = .25;
 export const SILVER_MON = 16, RYO_MON = 1000;   // 60 monme to the ryō, 1 ryō = 1,000 mon (docs/foundations.md)
 export const worth = m => (m.mon || 0) + (m.silver || 0) * SILVER_MON + (m.ryo || 0) * RYO_MON;
 
@@ -64,6 +66,7 @@ export const worth = m => (m.mon || 0) + (m.silver || 0) * SILVER_MON + (m.ryo |
 //   son       eldest living son          daughter  eldest living daughter      child  eldest living child
 //   grandson  eldest son of a dead son (the line runs through the sons)          grandchild  eldest child of a dead child
 //   widow     his living wife (or her living husband): holds in her own right   brother / sibling  eldest living one
+//   grandsons eldest grandson through any dead child                           sworn     the first living companion sworn to him (player.js)
 // split: 'heir' (the heir takes the money too, the widow keeps a third), 'equal' (money split among the living children and the widow)
 // A minor heir takes the title at once, but the plot's holder is a regent (the widow, else the eldest adult kin) until he comes of age.
 // No heir: the land goes to the lord above (the region's lord), or to nature where no lord rules.
@@ -77,8 +80,9 @@ export const INHERIT = {
   rebels:    { order: ['named', 'widow', 'child', 'grandchild', 'sibling'], split: 'equal' },
   monastic:  { order: ['named', 'child', 'widow', 'grandchild', 'sibling'], split: 'equal' },
   bandits:   { order: ['son', 'child', 'widow', 'sibling'], split: 'equal' },
-  // the ronin's line (he has no culture): whom he names, else his children, grandchildren, a brother; a widow holds for a child but never plays
-  player:    { order: ['named', 'son', 'child', 'grandchild', 'brother'], split: 'heir' },
+  // the ronin's line (he has no culture; owner 2026-09-26): whom he names, his sons, grandsons, brothers, a sworn companion; a daughter or the
+  // widow takes the land only when none of those lives, and never plays
+  player:    { order: ['named', 'son', 'grandsons', 'brother', 'sworn', 'daughter', 'widow'], split: 'heir' },
 };
 
 // ---- daily lives, run only near him (onHour): [from hour, what, where] ----

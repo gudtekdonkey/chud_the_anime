@@ -27,6 +27,7 @@ on('*', (e, W) => {
     'people.married': () => `<b>${nm(e.actor)}</b> married <b>${nm(e.spouse)}</b>${e.adopted ? ', taken into her house as its heir' : ''}${e.price ? ` (bride price ${e.price} mon)` : ''}`,
     'people.born': () => `<b>${nm(e.actor)}</b> was born to ${nm(e.mother)}`,
     'people.heir': () => `<b>${nm(e.actor)}</b>, ${e.age}, takes up the name of ${nm(e.from)}${e.regent ? `; ${nm(e.regent)} is regent` : ''}`,
+    'people.sworn': () => `<b>${nm(e.actor)}</b> swore to carry on the name of ${nm(e.to)}`,
     'people.graveLooted': () => e.kin ? `<b>${nm(e.actor)}</b> took up ${nm(e.from)}'s ${e.weapon || 'purse'} from his grave` : `<b>${nm(e.actor)}</b> robbed the grave of ${nm(e.from)}`,
     'people.lineEnded': () => `<b>${nm(e.actor)}</b> died with no heir. The line has ended.`,
     'people.cameOfAge': () => `<b>${nm(e.actor)}</b> came of age and holds ${plural(e.plots, 'plot')}`,
@@ -154,7 +155,7 @@ function renderRonin() {
   const box = $('ronin'), p = L.actors[L.player];
   if (P.over) {
     const g = P.over.grave;
-    box.innerHTML = `<div class="death"><h2>The line has ended</h2><p>${esc(nm(P.over.actor))} died (${esc(P.over.cause)}) with no child to carry the name. His grave lies at zone ${g ? g.zone : '?'}${g ? `, tile ${g.tile}` : ''}. The world goes on without him.</p>
+    box.innerHTML = `<div class="death"><h2>The line has ended</h2><p>${esc(nm(P.over.actor))} died (${esc(P.over.cause)}) with no son, grandson, brother or sworn companion to carry the name. His grave lies at zone ${g ? g.zone : '?'}${g ? `, tile ${g.tile}` : ''}. The world goes on without him.</p>
       <div class="row"><button id="again" class="hot">Start a new world</button></div></div>`;
     return;
   }
@@ -169,7 +170,7 @@ function renderRonin() {
   const last = P.lineage.length && L.actors[P.lineage.at(-1).actor], goods = last && last.grave && last.grave.goods, gw = goods ? PEOPLE_RULES.worth(goods.money) : 0;
   if (goods && (goods.weapon || gw)) html += `<div class="row"><button id="loot" class="hot">Go to ${esc(last.given)}'s grave</button><p style="font-size:13px">His ${esc(goods.weapon || 'purse')} and ${gw} mon lie with him at zone ${last.grave.zone}. Finders keepers.</p></div>`;
   if (kids.length) html += `<h3>Children</h3><div class="brides">${kids.map(c => `<div class="bride"><span><button class="p dyn" data-f="${c.id}"><span class="ag">${ageOf(c)}</span><span class="nm">${esc(c.given)}</span><span class="job">${c.sex === 'm' ? 'son' : 'daughter'}</span></button></span>
-      <span class="acts">${heirs[0] === c ? '<span class="tag c">heir</span>' : `<button data-heir="${c.id}">Name heir</button>`}</span></div>`).join('')}</div>`;
+      <span class="acts">${heirs[0] === c ? '<span class="tag c">heir</span>' : heirs.includes(c) ? `<button data-heir="${c.id}">Name heir</button>` : '<span class="tag m">cannot inherit the name</span>'}</span></div>`).join('')}</div>`;
   if (!sp || !sp.alive) {
     const bs = minor ? [] : brides(L, p.id).slice(0, 6);
     html += `<h3>Court a bride near ${esc(zoneOfKey(keyOf(p.at || p.home)).name)}</h3>`;
