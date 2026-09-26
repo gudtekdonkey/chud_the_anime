@@ -1,0 +1,829 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Deaths Pass, Batch 1</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1100px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 26px; }
+  header { display: grid; gap: 8px; max-width: 72ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 19px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 18px; }
+  @media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--rule); display: grid; }
+  .card canvas { width: 100%; aspect-ratio: 200 / 100; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--rule); }
+  .card div { padding: 14px 16px 16px; display: grid; gap: 6px; }
+  .num { font: 700 13px/1 "Pixelify Sans", monospace; color: var(--cyan); letter-spacing: .06em; }
+  .bar { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; }
+  .bar label { display: inline-flex; gap: 8px; align-items: center; cursor: pointer; color: var(--muted); font-size: 14px; }
+  .bar input { accent-color: var(--cyan); width: 16px; height: 16px; }
+  .ask { background: var(--panel); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; max-width: 72ch; }
+  .ask b { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">K · deaths pass · batch 1</div>
+    <h1>Eight assassinations</h1>
+    <p><b style="color:var(--ink)">Deaths pass.</b> The same batch 1 executions, with one change to how the enemy's body works, applied to every kill at once. His joints chase their poses on springs, so the hips lead, the chest follows and the arms, blade and head trail and overshoot, and as he dies they go loose. A body going down speeds up into the floor and stops dead on it; the rest of him flops on, dust comes up, a twitch or two, and the red eye goes out. Sword hits knock him away from the blade, he shakes through the hit pause, light and blood leave out the far side, and a killing blow gets two impact frames. Untick <b style="color:var(--ink)">Death pass</b> to see the batch as it was on the same loop.</p>
+    <p>Every enemy now moves in one continuous, eased performance that fits where and when he is hit: a jolt, a stumbling step, a hand going to the wound, a knee dropping, curling over. His body only breaks apart once it is already falling, and the pieces carry that motion on. Whole bodies crumple through the joints (knees, hands, face down) instead of tipping over like a plank, a body cut in two keeps its legs, which fold under on their own, and everything ends lying on the ground. Reworked from your notes, and more realistic: the enemy reacts to everything (he flinches when the ronin appears, raises his guard, turns after him and reels from each hit), and when he's cut the pieces drop right away and twist the way his body was moving, landing heavy without bouncing. The enemies are now samurai built like him, bare-headed with a topknot. Kills are shorter and more brutal, and the enemy comes apart into real pieces cut from his own pixels, which tumble and fall. Most of the motion happens between frames. The few poses you do see lean into where he is going and where he has just been.</p>
+    <div class="bar"><label for="slow"><input type="checkbox" id="slow"> Half speed</label></div>
+  </header>
+  <div class="grid" id="grid"></div>
+  <div class="ask">
+    <h2>Your call</h2>
+    <p><b>Keep, tweak or cut</b> each one. Once batch 1 is settled, batch 2 comes next.</p>
+  </div>
+</div>
+
+<script>
+// ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
+const FW = 48, FH = 48, OX = 24, OY = 40;
+const RC = { K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', H: '#2a2f37', G: '#3b424c', B: '#1a1d24',
+  E: '#6ff3e4', W: '#e9eeee', S: '#7d868e', s: '#2c3037' };
+const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
+// angles in radians: limbs 0 = straight down, + swings forward; knee + folds the shin back; elbow + folds the forearm forward
+const REST = { hx: 0, hy: 0, lean: .04, chest: 0, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
+  sword: null, bsword: null, sheathing: false, bare: false, noHead: false, noUpper: false, headFlip: false, hat: 0, flutter: 0 };
+const pz = o => ({ ...REST, ...o });
+const HILT = [.42, 1.0];          // front hand resting on the hilt at the hip
+const lerpP = (a, b, k) => { const o = {}; for (const key in a) {
+  const x = a[key], y = b[key];
+  o[key] = Array.isArray(x) ? x.map((v, i) => v + (y[i] - v) * k) : typeof x === 'number' && typeof y === 'number' ? x + (y - x) * k : k < .5 ? x : y; }
+  return o; };
+
+function rig(g, fx, p) {
+  const put = (x, y, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
+  const blob = (x, y, w, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
+  const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
+    for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
+  const poly = (pts, c) => {
+    const xs = pts.map(q => q[0]), ys = pts.map(q => q[1]);
+    for (let y = Math.floor(Math.min(...ys)); y <= Math.ceil(Math.max(...ys)); y++)
+      for (let x = Math.floor(Math.min(...xs)); x <= Math.ceil(Math.max(...xs)); x++) {
+        let inside = false;
+        for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+          const [xi, yi] = pts[i], [xj, yj] = pts[j];
+          if ((yi > y + .5) !== (yj > y + .5) && x + .5 < (xj - xi) * (y + .5 - yi) / (yj - yi) + xi) inside = !inside;
+        }
+        if (inside) put(x, y, c);
+      }
+  };
+  const hip = [OX + p.hx, OY - 11 + p.hy];
+  const up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
+  // breath lifts the chest, shoulders and head but not the hips, so it reads as breathing, not bobbing
+  // the chest pivots at the waist (u = 4), so a cut can be driven by the hips and then the chest
+  const up2 = [Math.sin(p.lean + p.chest), -Math.cos(p.lean + p.chest)], fw2 = [Math.cos(p.lean + p.chest), Math.sin(p.lean + p.chest)];
+  const L = (u, v) => { const b = u > 4 ? p.breath * Math.min(1, (u - 4) / 3) : 0;
+    if (u <= 4) return [hip[0] + up[0] * u + fw[0] * v, hip[1] + up[1] * u + fw[1] * v];
+    const w = [hip[0] + up[0] * 4, hip[1] + up[1] * 4];
+    return [w[0] + up2[0] * (u - 4) + fw2[0] * v, w[1] + up2[1] * (u - 4) + fw2[1] * v - b]; };
+  const dir = a => [Math.sin(a), Math.cos(a)];
+  const add = (a, d, k) => [a[0] + d[0] * k, a[1] + d[1] * k];
+  const leg = ([th, kn], c, off) => { const h = L(0, off), k = add(h, dir(th), 5), f = add(k, dir(th - kn), 6);
+    seg(h, k, 2, c); seg(k, f, 2, c); seg(f, [f[0] + 2, f[1]], 1, c); };
+  const arm = ([sh, el], c) => { const s = L(7, 0), e = add(s, dir(sh), 4), h = add(e, dir(sh + el), 4);
+    seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
+  const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
+
+  if (p.noUpper) {   // cut in two: only the pelvis and legs are left, and they fold on their own
+    leg(p.bl, 'D', -.5); poly([L(0, -2), L(0, 2), L(2.6, 2.2), L(2.6, -2.2)], 'K'); leg(p.fl, 'K', .5); return;
+  }
+  // far side first: scabbard, far arm, far leg
+  seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
+  // the back hand can carry the blade too, for the counter stance
+  const bh = arm(p.ba, 'D');
+  if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
+  leg(p.bl, 'D', -.5);
+  // torso, near leg
+  poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
+  for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
+  leg(p.fl, 'K', .5);
+  // head and hat
+  const hc = p.neck ? (([x, y], [cx, cy]) => { const c = Math.cos(p.neck), s = Math.sin(p.neck); return [cx + (x - cx) * c - (y - cy) * s, cy + (x - cx) * s + (y - cy) * c]; })(L(10, .6), L(8, .3)) : L(10, .6);
+  if (!p.noHead) {   // noHead: the head has come off and is its own piece now
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
+  const hf = p.headFlip ? -1 : 1;   // headFlip: the head is wrenched round to face backward
+  put(hc[0] + 1.5 * hf, hc[1], 'E');
+  if (p.bare) { for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] - 2, 'K'); put(hc[0] - 1 * hf, hc[1] - 3, 'K'); put(hc[0] - 2 * hf, hc[1] - 4, 'K'); put(hc[0] - 2 * hf, hc[1] - 3, 'D'); }
+  }
+  const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
+  if (!p.bare) HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x - fx + fx, hy0 + y, ch); }));
+  // mantle over the shoulders, its back tip lifting a hair with the flutter
+  const f = p.flutter;
+  // it drapes flat down the back instead of standing off it, so it no longer reads as a hump
+  if (!p.bare) { poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M');
+    seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
+    if (f > .5) put(...L(2.6, -3.4), 'M'); }
+  // near arm and the sword
+  const hand = arm(p.fa, 'K');
+  if (p.sword === null && !p.sheathing && p.bsword == null) {                    // sheathed: hilt pokes forward-up out of the scabbard
+    put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W');
+  } else if (p.sheathing) {                                  // sliding home: blade runs from the hand into the scabbard mouth
+    seg(hand, mouth, 1, 'W'); put(...hand, 'S'); put(...add(hand, [hand[0] - mouth[0], hand[1] - mouth[1]].map(v => v / (Math.hypot(hand[0] - mouth[0], hand[1] - mouth[1]) || 1)), 2), 'K');
+  } else if (p.sword !== null) {
+    const d = [Math.cos(p.sword), Math.sin(p.sword)];
+    seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S');
+    seg(add(hand, d, 1), add(hand, d, 13), 1, 'W');
+  }
+}
+
+// ---- Poses, one per frame ----
+const run8 = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2, s = Math.sin(a), c = Math.cos(a);
+  return pz({ lean: .32, hy: Math.round(.5 - .5 * Math.cos(2 * a)), fl: [.95 * s, .3 + 1.1 * Math.max(0, c)], bl: [-.95 * s, .3 + 1.1 * Math.max(0, -c)],
+    fa: [-.7 * s + .3, .9], ba: [.7 * s - .5, .5], flutter: (i % 4) / 2 }); });
+// a calm breath: 16 frames, eased, with long rests at the top and bottom
+const BREATH = [0, 0, 0, .15, .45, .75, .95, 1, 1, 1, .85, .6, .3, .1, 0, 0];
+const FLUT = [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0];
+const idle16 = BREATH.map((b, i) => pz({ breath: b, fa: [.12 + b * .03, .18], ba: [-.08 - b * .03, .12], flutter: FLUT[i] }));
+const ease = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, lin = k => k;
+// sample eased keyframes [time, pose, easing?] into frames
+function keyed(keys, fps) {
+  const n = Math.round(keys[keys.length - 1][0] * fps) + 1;
+  return Array.from({ length: n }, (_, i) => { const t = i / fps; let j = 0;
+    while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+    const [t0, a] = keys[j], [t1, b, e] = keys[j + 1];
+    return lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0))))); });
+}
+// his battle stance: feet wide, hips low, both hands on the hilt, blade angled up at the enemy
+const GUARD = pz({ hy: 3, lean: .14, chest: .06, fl: [.6, 1.0], bl: [-.65, .4], fa: [1.2, .55], ba: [1.05, .75], sword: -.85 });
+const J1_WIND = pz({ hx: -1, hy: 4, lean: -.1, chest: -.4, fl: [.6, 1.05], bl: [-.75, .45], fa: [2.6, .6], ba: [2.3, .8], sword: -2.45 });
+const J1_FOLLOW = pz({ hx: 2, hy: 4, lean: .6, chest: .5, fl: [1.1, 1.25], bl: [-1.1, .1], fa: [1.0, .2], sword: 1.3, ba: [.6, .2], hat: 1 });
+const J1_TAIL = [
+  [.16, pz({ hx: 2, hy: 3, lean: .45, chest: .35, fl: [1.0, 1.1], bl: [-1.0, .1], fa: [1.8, .1], sword: .1, ba: [1.2, .3], hat: 1, flutter: 1 }), lin],
+  [.22, J1_FOLLOW],
+  [.36, pz({ ...J1_FOLLOW, lean: .56, chest: .46 })],
+  [.5, GUARD]];
+const LUNGE = pz({ hx: 3, hy: 2, lean: .55, fl: [1.0, .9], bl: [-.95, .1] });
+
+
+function at(keys, t) {
+  if (t <= keys[0][0]) return keys[0][1];
+  let j = 0; while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+  const [t0, a] = keys[j], [t1, b, e] = keys[j + 1];
+  return lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0)))));
+}
+const hold = k => 0;   // easing that stays on the first pose until the next key: a hard cut, no in-betweens
+const CY = '#6ff3e4', CY2 = '#b8fff6', WH = '#ffffff';
+const rr = (a, b) => a + Math.random() * (b - a), sgn = () => Math.random() < .5 ? -1 : 1;
+
+// ---------- drawing a rig figure (ronin or enemy) ----------
+const ENEMY_RC = { K: '#3a2e31', D: '#5a4a4e', E: '#ff5a4a', W: '#cfd4d6', S: '#7d868e', s: '#3a3033' };
+const off = document.createElement('canvas'); off.width = off.height = 48; const og = off.getContext('2d', { willReadFrequently: true });
+const tint = document.createElement('canvas'); tint.width = tint.height = 48; const tg = tint.getContext('2d');
+function paint(pose, enemy) {
+  og.clearRect(0, 0, 48, 48);
+  if (enemy) { const saved = { ...RC }; Object.assign(RC, ENEMY_RC); rig(og, 0, { ...pose, bare: true }); Object.assign(RC, saved); }
+  else rig(og, 0, pose);
+  return off;
+}
+function figure(g, R, alpha = 1) {
+  let img = paint(R.pose, R.enemy);
+  if (R.col) { tg.clearRect(0, 0, 48, 48); tg.drawImage(img, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = R.col; tg.fillRect(0, 0, 48, 48); tg.globalCompositeOperation = 'source-over'; img = tint; }
+  g.save(); g.globalAlpha *= alpha; g.translate(Math.round(R.x), Math.round(R.y - (R.z || 0))); if (R.face < 0) g.scale(-1, 1);
+  if (R.glitch) { for (let y = 0; y < 48;) { const h = 1 + (Math.random() * 3 | 0), o = Math.random() < R.glitch ? Math.round(rr(-5, 5) * R.glitch) : 0; g.drawImage(img, 0, y, 48, h, -24 + o, y - 40, 48, h); y += h; } }
+  else g.drawImage(img, -24, -40);
+  g.restore();
+}
+const ronin = figure;   // the effects code draws ghosts through this name
+function withShadow(g, R) {
+  g.save(); g.globalAlpha = .17; g.translate(0, 2 * R.y + 1); g.scale(1, -1); figure(g, { ...R, glitch: 0, col: R.flash ? null : R.col }); g.restore();
+  g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(Math.round(R.x) - 5, Math.round(R.y) + 1, 10, 1);
+  figure(g, R.flash ? { ...R, col: WH } : R);
+}
+
+// ---------- pieces: the enemy cut apart along lines, each chunk tumbling and falling ----------
+function pixelsOf(E) {
+  const img = paint(E.pose, true), d = og.getImageData(0, 0, 48, 48).data, out = [];
+  for (let y = 0; y < 48; y++) for (let x = 0; x < 48; x++) { const i = (y * 48 + x) * 4; if (d[i + 3] < 10) continue;
+    out.push([E.x + E.face * (x - 24) + (E.face < 0 ? -1 : 0), E.y - (E.z || 0) + (y - 40), `rgb(${d[i]},${d[i + 1]},${d[i + 2]})`]); }
+  return out;
+}
+const side = (L, x, y) => (L[2] - L[0]) * (y - L[1]) - (L[3] - L[1]) * (x - L[0]) > 0 ? 1 : 0;
+function toPieces(pts, lines, floorY, push) {
+  const groups = new Map();
+  for (const p of pts) { const k = lines.map(L => side(L, p[0], p[1])).join(''); (groups.get(k) || groups.set(k, []).get(k)).push(p); }
+  const out = [];
+  for (const g of groups.values()) { if (g.length < 3) continue;
+    const cx = g.reduce((s, p) => s + p[0], 0) / g.length, cy = g.reduce((s, p) => s + p[1], 0) / g.length;
+    const P = { pts: g.map(p => [p[0] - cx, p[1] - cy, p[2]]), x: cx, fy: floorY, z: floorY - cy, vx: 0, vy: 0, vz: 0, a: 0, va: 0, rest: 0, life: 9 };
+    push(P, cx, cy); out.push(P); }
+  return out;
+}
+function splitPiece(S, P, L, kick) {   // cut an airborne chunk in two along a world line
+  const pts = P.pts.map(([dx, dy, c]) => { const ca = Math.cos(P.a), sa = Math.sin(P.a); return [P.x + dx * ca - dy * sa, P.fy - P.z + dx * sa + dy * ca, c]; });
+  const i = S.pieces.indexOf(P); if (i >= 0) S.pieces.splice(i, 1);
+  toPieces(pts, [L], P.fy, (Q, cx, cy) => { const s = side(L, cx, cy) ? 1 : -1; Q.vx = P.vx + s * kick * .6 + rr(-10, 10); Q.vz = P.vz + rr(-20, 30); Q.va = P.va + s * rr(4, 9); S.pieces.push(Q); });
+}
+function updatePieces(S, dt) {
+  for (const P of S.pieces) {
+    if (P.script) { P.st = (P.st || 0) + dt; const o = P.script(P.st); P.x = P.x0 + o.dx; P.a = o.a;
+      const low = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
+      P.z = Math.max(low, (P.z0 + (o.dz || 0)));
+      if (o.done) P.life -= dt; continue; }
+    if (P.rest < 1) { P.x += P.vx * dt; P.z += P.vz * dt; P.vz -= 320 * dt; P.a += P.va * dt;
+      if (P.maxA != null && Math.abs(P.a) > P.maxA) { P.a = Math.sign(P.a) * P.maxA; P.va = 0; }
+      const low = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
+      if (P.z - low <= 0 && P.vz < 0) { P.z = low; P.vz = -P.vz * .06; P.vx *= .55; P.va *= .3; if (Math.abs(P.vz) < 25) { P.vz = 0; P.va = 0; P.vx *= .6; P.rest += .34; } } }
+    else {
+      if (P.flatA == null) { const xs = P.pts.map(q => q[0]), ys = P.pts.map(q => q[1]), w = Math.max(...xs) - Math.min(...xs), h = Math.max(...ys) - Math.min(...ys);
+        const q = h > w * 1.2 ? Math.PI / 2 : Math.PI; P.flatA = Math.round(P.a / q) * q; if (h > w * 1.2 && Math.abs(Math.round(P.a / Math.PI) * Math.PI - P.a) < .01) P.flatA = P.a >= 0 ? Math.PI / 2 : -Math.PI / 2; }
+      P.a += (P.flatA - P.a) * Math.min(1, dt * 10);   // tip over onto its long side
+      P.z = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
+      P.life -= dt;
+    }
+  }
+  for (let i = S.pieces.length - 1; i >= 0; i--) if (S.pieces[i].life <= 0) S.pieces.splice(i, 1);
+}
+function drawPieces(g, S) {
+  for (const P of S.pieces) { const ca = Math.cos(P.a), sa = Math.sin(P.a); g.globalAlpha = Math.min(1, P.life * 2);
+    for (const [dx, dy, c] of P.pts) { g.fillStyle = c; g.fillRect(Math.round(P.x + dx * ca - dy * sa), Math.round(P.fy - P.z + dx * sa + dy * ca), 1, 1); } }
+  g.globalAlpha = 1;
+}
+const fallScript = (dir, turn, delay = 0) => t => { const u = Math.max(0, t - delay), g = Math.min(1, u / .42);
+  return { dx: dir * (u * 9 + g * 4), dz: -46 * g * g, a: turn * 1.55 * ease(Math.min(1, u / .5)), done: t > 1.3 + delay }; };
+const buckle = (dir, delay = .06) => t => { const k = ease(Math.min(1, Math.max(0, (t - delay) / .5))); return { dx: dir * 2 * k, dz: -40, a: dir * 1.45 * k, done: t > 1.3 }; };
+function shatter(S, E, lines, push) { S.pieces.push(...toPieces(pixelsOf(E), lines, E.y, push)); E.gone = true; }
+
+// ---------- per-scene effects ----------
+function FX() { return { sparks: [], frags: [], zaps: [], cuts: [], rings: [], cres: [], ghosts: [], cracks: [], dust: [] }; }
+function line(out, x0, y0, x1, y1) { if (!isFinite(x0 + y0 + x1 + y1)) { console.log('BADLINE', new Error().stack.split('\n').slice(1, 4).join(' | ')); return; } x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
+  const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy;
+  for (;;) { out.push(x0, y0); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } } }
+function bolt(x0, y0, x1, y1, jit) { const out = [], L = Math.hypot(x1 - x0, y1 - y0) || 1, nx = -(y1 - y0) / L, ny = (x1 - x0) / L, n = Math.max(2, Math.round(L / 4)); let px = x0, py = y0;
+  for (let i = 1; i <= n; i++) { const t = i / n, o = i === n ? 0 : sgn() * rr(1, jit); const qx = x0 + (x1 - x0) * t + nx * o, qy = y0 + (y1 - y0) * t + ny * o; line(out, px, py, qx, qy); px = qx; py = qy; } return out; }
+const F = {
+  spark(S, x, y, vx, vy, life, col, streak) { S.fx.sparks.push({ x, y, vx, vy, life, max: life, col, streak }); },
+  burst(S, x, y, n, sp = 140) { for (let i = 0; i < n; i++) { const a = rr(0, 6.28), v = rr(sp * .5, sp); F.spark(S, x, y, Math.cos(a) * v, Math.sin(a) * v * .7, rr(.1, .22), [WH, CY2, CY][i % 3], true); } },
+  slivers(S, x, y, n, spread = 8) { for (let i = 0; i < n; i++) { const life = rr(.5, .9); S.fx.frags.push({ x: x + rr(-spread, spread), y: y - rr(0, 16), w: 1 + (Math.random() * 3 | 0), col: [CY, CY2, WH, '#0d1012'][i % 4], vx: rr(-6, 6), vy: rr(-12, -2), life, max: life }); } },
+  speed(S, x0, x1, y, n) { for (let i = 0; i < n; i++) { const life = rr(.07, .15); S.fx.frags.push({ x: rr(Math.min(x0, x1), Math.max(x0, x1)), y: y - rr(2, 24), w: 4 + (Math.random() * 10 | 0), col: i % 3 ? WH : CY2, vx: Math.sign(x1 - x0) * rr(20, 60), vy: 0, life, max: life }); } },
+  zap(S, x0, y0, x1, y1, life, jit = 2, col = CY) { S.fx.zaps.push({ x0, y0, x1, y1, life, max: life, jit, col, pts: bolt(x0, y0, x1, y1, jit), tick: 0 }); },
+  cut(S, x0, y0, x1, y1, life) { const pts = []; line(pts, x0, y0, x1, y1); S.fx.cuts.push({ pts, life, max: life }); },
+  ring(S, x, y, rx, ry, life, grow = 0) { S.fx.rings.push({ x, y, rx, ry, life, max: life, grow }); },
+  cres(S, x, y, face, R, rot, flip, life = .2) { S.fx.cres.push({ x, y, face, R, rot, flip, life, max: life }); },
+  ghost(S, R, col = CY, life = .22) { S.fx.ghosts.push({ R: { ...R, pose: R.pose, col }, life, max: life }); },
+  crack(S, x, y) { for (let i = 0; i < 6; i++) { const a = i / 6 * 6.28 + rr(-.3, .3), out = []; let px = x, py = y;
+    for (let k = 0; k < 3; k++) { const nx = px + Math.cos(a) * rr(4, 7), ny = py + Math.sin(a) * rr(2, 3); line(out, px, py, nx, ny); px = nx; py = ny; } S.fx.cracks.push({ pts: out, life: 1, max: 1 }); } },
+  dust(S, x, y, n) { for (let i = 0; i < n; i++) F.spark(S, x + rr(-5, 5), y, rr(-60, 60), -rr(4, 16), rr(.3, .5), '#8f9692'); },
+  hit(S, E, stop = .06, shake = 1 / 60) { E.flashT = .05; S.stop = Math.max(S.stop, stop); S.shake = Math.max(S.shake, shake); },
+};
+function updateFx(S, dt) {
+  const L = S.fx;
+  for (const q of L.sparks) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 40 * dt; q.life -= dt; }
+  for (const q of L.frags) { q.x += q.vx * dt; q.y += q.vy * dt; q.life -= dt; q.on = Math.random() < .35 + .6 * q.life / q.max; }
+  for (const z of L.zaps) { z.life -= dt; if (--z.tick <= 0) { z.pts = bolt(z.x0, z.y0, z.x1, z.y1, z.jit); z.tick = 2; } z.on = Math.random() < .8; }
+  for (const k of ['cuts', 'rings', 'cres', 'ghosts', 'cracks']) for (const q of L[k]) q.life -= dt;
+  for (const k in L) for (let i = L[k].length - 1; i >= 0; i--) if (L[k][i].life <= 0) L[k].splice(i, 1);
+}
+function drawCres(g, c) {
+  const k = 1 - c.life / c.max, R = c.R, d = Math.max(1, 5 * (1 - k)), cs = Math.cos(c.rot), sn = Math.sin(c.rot);
+  g.globalAlpha = 1 - k * .6;
+  for (let py = -R - 1; py <= R + 1; py++) for (let px = -R - 1; px <= R + 1; px++) {
+    const lx0 = px * c.face, dy = py / .8, lx = lx0 * cs + dy * sn, ly = (-lx0 * sn + dy * cs) * c.flip, ro = Math.hypot(lx, ly);
+    if (ro > R || Math.hypot(lx + d, ly - d * .35) <= R) continue;
+    if (k > .4 && ((Math.atan2(ly, lx) * R / 5 + c.x) % 1 + 1) % 1 < (k - .4) * 1.6) continue;
+    g.fillStyle = R - ro < 1.2 ? CY : WH; g.fillRect(Math.round(c.x + px), Math.round(c.y + py), 1, 1);
+  }
+  g.globalAlpha = 1;
+}
+function drawFx(g, S, layer) {
+  const L = S.fx;
+  if (layer === 'floor') { for (const c of L.cracks) { g.globalAlpha = Math.min(1, c.life * 2); g.fillStyle = '#24282a'; for (let i = 0; i < c.pts.length; i += 2) g.fillRect(c.pts[i], c.pts[i + 1], 1, 1); } g.globalAlpha = 1; return; }
+  for (const gh of L.ghosts) ronin(g, gh.R, .55 * gh.life / gh.max);
+  for (const c of L.cuts) { const k = c.life / c.max; g.globalAlpha = Math.min(1, k * 1.5); g.fillStyle = k > .6 ? WH : CY2; for (let i = 0; i < c.pts.length; i += 2) g.fillRect(c.pts[i], c.pts[i + 1], 1, 1); }
+  g.globalAlpha = 1;
+  for (const c of L.cres) drawCres(g, c);
+  for (const r of L.rings) { const k = 1 - r.life / r.max, rx = r.rx + r.grow * k, ry = r.ry + r.grow * k * .5; g.globalAlpha = 1 - k; g.fillStyle = WH;
+    for (let a = 0; a < 6.28; a += .5 / rx) g.fillRect(Math.round(r.x + Math.cos(a) * rx), Math.round(r.y + Math.sin(a) * ry), 1, 1); }
+  for (const z of L.zaps) { if (!z.on) continue; g.globalAlpha = Math.min(1, z.life / z.max * 1.8); g.fillStyle = z.col; for (let i = 0; i < z.pts.length; i += 2) g.fillRect(z.pts[i], z.pts[i + 1], 1, 1); }
+  for (const f of L.frags) { if (!f.on) continue; g.globalAlpha = Math.min(1, f.life / f.max * 1.5); g.fillStyle = f.col; g.fillRect(Math.round(f.x), Math.round(f.y), f.w, 1); }
+  for (const q of L.sparks) { g.globalAlpha = Math.min(1, q.life / q.max * 1.6); g.fillStyle = q.col; g.fillRect(Math.round(q.x), Math.round(q.y), 1, 1); if (q.streak) g.fillRect(Math.round(q.x - q.vx * .012), Math.round(q.y - q.vy * .012), 1, 1); }
+  g.globalAlpha = 1;
+}
+
+
+// ---------- poses ----------
+const IDLE = pz({ fa: [.15, .2] });
+const ROLL = (o) => pz(o);
+const EG = pz({ hy: 2, lean: .1, fl: [.4, .6], bl: [-.45, .3], fa: [1.2, .55], ba: [1.05, .75], sword: -.7 });   // enemy guard
+const EGUARD_BREATH = (t) => pz({ ...EG, breath: Math.sin(t * 3) * .5 + .5 });
+// how a man moves when things go wrong. lean + is toward where he faces
+const RX = {
+  flinch:  pz({ ...EG, hx: -1, lean: -.15, chest: -.22, fa: [1.55, .35], sword: -1.15 }),
+  guardUp: pz({ ...EG, lean: -.05, chest: -.12, fa: [1.4, .45], sword: -1.0, hy: 3 }),
+  turning: pz({ hy: 3, lean: 0, chest: 0, fl: [.2, .4], bl: [-.2, .4], fa: [.6, .9], ba: [.4, .9], sword: .4 }),   // mid-turn: arms in, square to us
+  jolt:    pz({ hy: 2, lean: -.25, chest: -.5, fl: [.3, .4], bl: [-.35, .3], fa: [1.0, .3], ba: [-.8, .2] }),       // struck from behind: the back arches
+  doubled: pz({ hx: 2, hy: 4, lean: .45, chest: .45, fl: [.9, 1.0], bl: [-.8, .35], fa: [.6, .3], ba: [-.9, .2], sword: .9 }),   // struck in front: folds over the cut
+  reach:   pz({ hy: 3, lean: -.05, chest: -.25, fl: [.5, .6], bl: [-.5, .3], fa: [1.6, .15], sword: -.3, ba: [.9, .9] }),   // reaching after him
+  clutch:  pz({ hy: 4, lean: .3, chest: .45, fl: [.45, .75], bl: [-.45, .45], fa: [.8, .3], sword: .9, ba: [1.2, 1.7] }),     // the free hand goes to the wound
+  touch:   pz({ hy: 3, lean: -.05, chest: -.2, fa: [1.3, .4], sword: -.8, ba: [1.9, 1.75] }),       // a hand rising to his face: did something just happen?
+  handsLook: pz({ hy: 3, lean: .2, chest: .35, fa: [1.25, 1.15], ba: [1.2, 1.2], sword: null }),    // looking down at his own hands
+  sag:     pz({ hy: 5, lean: .35, chest: .45, fl: [.9, 1.5], bl: [-.35, 1.2], fa: [.45, .25], ba: [.2, .3], sword: 1.3 }),    // the legs start to go
+  kneel:   pz({ hy: 7, lean: .45, chest: .5, fl: [1.3, 2.05], bl: [-.1, 2.4], fa: [.9, 1.6], ba: [.3, .6], sword: null }),   // down on one knee
+  curl:    pz({ hy: 8, lean: .8, chest: .6, fl: [1.4, 2.2], bl: [.2, 2.4], fa: [1.1, 1.9], ba: [1.3, 1.7], sword: null }),   // curled over the wound
+  handsDown: pz({ hy: 8, lean: .95, chest: .35, fl: [1.4, 2.2], bl: [.1, 2.4], fa: [.75, .2], ba: [.55, .3], sword: null }),   // the hands catch the floor
+  prone:   pz({ hy: 9, lean: 1.52, chest: .03, fl: [-1.45, 0], bl: [-1.5, .05], fa: [1.45, .1], ba: [1.3, .2], sword: null }),      // face down on the ground
+  handsBack: pz({ hy: 7, lean: -.9, chest: -.3, fl: [1.2, 1.6], bl: [.6, 1.9], fa: [-.9, .3], ba: [-1.1, .3], sword: null }),   // going over backward, arms flung back
+  supine:  pz({ hy: 9, lean: -1.52, chest: -.03, fl: [1.45, 0], bl: [1.5, .05], fa: [-1.2, .2], ba: [-1.45, .2], sword: null }),   // flat on his back
+  legsSag: pz({ hy: 5, fl: [.9, 1.5], bl: [-.35, 1.2], noUpper: true }),
+  legsKneel: pz({ hy: 7, fl: [1.3, 2.05], bl: [-.1, 2.4], noUpper: true }),
+  legsDown: pz({ hy: 10, fl: [1.45, .5], bl: [1.25, .8], noUpper: true }),     // the hips hit the floor, the legs fold out in front
+  stiff:   pz({ hy: 1, lean: -.25, chest: -.35, fl: [.3, .35], bl: [-.35, .3], fa: [.35, .3], sword: 1.4, ba: [-.1, .2] }),
+};
+// the enemy's own swing cutting nothing: a thin pale arc where the ronin just was
+const whiff = (S, E, dir = -1) => F.cres(S, E.x + dir * 7, E.y - 12, dir, 9, .55, 1, .1);
+Object.assign(RX, {
+  windup:  pz({ hx: -1, hy: 2, lean: -.18, chest: -.32, fl: [.5, .6], bl: [-.5, .35], fa: [2.9, -.1], ba: [2.6, .2], sword: -1.62 }),   // sword up, about to strike
+  swung:   pz({ hx: 2, hy: 4, lean: .55, chest: .45, fl: [.95, 1.05], bl: [-.85, .3], fa: [1.15, 0], ba: [1.0, .2], sword: 1.15 }),   // swung through, overextended
+});
+// a diagonal cut: the top piece slides down the slope of the cut, then drops off and falls flat
+const slideOff = (dir, slope) => t => { const a1 = Math.min(1, t / .42), s = 7 * a1 * a1, u = Math.max(0, t - .36), g = Math.min(1, u / .45);
+  return { dx: dir * (s + u * 10), dz: -s * slope - 46 * g * g, a: dir * 1.55 * g * g, done: t > 1.7 }; };
+// a body going over: gravity-like, slow to start and quick to finish, pivoting at the feet, then still
+function sever(S, E, L, push) {
+  const up = side(L, E.x, E.y - 40);
+  S.pieces.push(...toPieces(pixelsOf(E).filter(q => side(L, q[0], q[1]) === up), [], E.y, push));
+  E.legs = true;
+}
+function topple(S, E, dir, dur = .5, slide = 3) {
+  shatter(S, E, [], P => { P.x0 = P.x; P.z0 = P.z; P.script = tt => { const k = Math.min(1, tt / dur), g = k * k;
+    return { dx: dir * slide * g, dz: -40, a: dir * 1.52 * g, done: tt > dur + .9 }; }; });
+}
+// his sword leaves his hand as its own piece, cut from his pixels, and clatters down
+function dropSword(S, E, pose, dir = -1) {
+  const withS = pixelsOf({ ...E, pose }), without = new Set(pixelsOf({ ...E, pose: pz({ ...pose, sword: null }) }).map(q => q[0] + ',' + q[1]));
+  S.pieces.push(...toPieces(withS.filter(q => !without.has(q[0] + ',' + q[1])), [], E.y, P => { P.x0 = P.x; P.z0 = P.z;
+    P.script = tt => { const k = Math.min(1, tt / .3); return { dx: dir * k * 3, dz: -k * k * 40, a: -dir * k * 1.1, done: tt > 1.6 }; }; }));
+}
+// each execution: side (where he lands), gap, dur, run(S, t, R, E). The ronin always ends sheathed and the kill lands on the click.
+const quickSheathe = (t0, from) => [[t0, from], [t0 + .08, pz({ hy: 2, lean: .2, fa: [1.45, .05], sword: 1.2, ba: [-.4, .3] }), lin],
+  [t0 + .2, pz({ hy: 1, lean: .12, fa: [1.0, .6], sheathing: true, ba: [.45, 1.1] })], [t0 + .34, pz({ hy: 1, lean: .06, fa: HILT, ba: [.3, 1.0] })], [t0 + .6, IDLE]];
+const EXECS = [
+  { name: 'Behind the back', note: 'He lands back to back with him. The enemy never turns: he knows. His shoulders drop, his head goes down, his arms open and his sword falls from his hand, and as it drops the blade sweeps back behind the ronin at neck height. The head flies off forward. The body stands a beat longer, sags, and on the click its knees give and it folds down onto the floor.',
+    side: +1, gap: 10, dur: 2.2,
+    run(S, t, R, E) {
+      const wait = pz({ hy: 3, lean: .25, chest: .15, fl: [.55, .85], bl: [-.5, .3], fa: HILT, ba: [-.3, .6] });
+      const stab = pz({ hx: 1, hy: 3, lean: .38, chest: .36, fl: [.75, 1.05], bl: [-.65, .3], fa: [-2.25, .05], sword: Math.PI + .3, ba: [-.5, .5], hat: 1, flutter: 1 });   // the blade swept back, high: neck height
+      const SLICE = .5;
+      R.face = 1; R.pose = at([[0, wait], [SLICE - .02, wait], [SLICE, stab, lin], [.95, pz({ ...stab, lean: .4, flutter: 0 })], ...quickSheathe(.95, stab).slice(1)], t);
+      // the enemy, still facing away: resignation, then his arms open and the sword slips out of his hand
+      const slump = pz({ hy: 3, lean: .2, chest: .38, fl: [.3, .45], bl: [-.3, .3], fa: [.55, .25], ba: [.35, .35], sword: 1.25 });
+      const open = pz({ hy: 3, lean: .16, chest: .34, fl: [.3, .45], bl: [-.3, .3], fa: [1.2, -.1], ba: [-1.05, 0], sword: .9 });
+      E.face = -1;
+      // resignation, the sword slips, the blade goes in: his back arches, he looks down and finds the wound with his hand, his knees go, and he tips forward
+      const opened = pz({ ...open, sword: null });
+      const nh = o => pz({ ...o, noHead: true });
+      E.pose = t < SLICE ? at([[0, EG], [.18, slump], [.4, open], [SLICE, opened]], t)
+        : at([[SLICE, nh(opened)], [SLICE + .06, nh({ ...RX.jolt, fa: [1.3, .1], ba: [-1.2, .1] }), lin], [.9, nh({ ...RX.stiff, fa: [.9, .6], ba: [-.3, .5], sword: null })],
+              [1.2, nh({ ...RX.sag, sword: null })], [1.45, nh(RX.kneel)], [1.68, nh(RX.handsDown)], [1.92, nh(RX.prone)]], t);
+      S.once('drop', t >= SLICE - .05, () => dropSword(S, E, open, 1));
+      S.once('stab', t >= SLICE, () => { F.hit(S, E, .1, .05); F.ghost(S, { ...R, pose: stab }, WH, .1); F.cut(S, E.x - 10, E.y - 18, E.x + 12, E.y - 19, .2);
+        // the head, and it flies forward and up, away from the blade that took it
+        const all = pixelsOf({ ...E, pose: opened }), rest = new Set(pixelsOf({ ...E, pose: pz({ ...opened, noHead: true }) }).map(q => q[0] + ',' + q[1]));
+        S.pieces.push(...toPieces(all.filter(q => !rest.has(q[0] + ',' + q[1])), [], E.y, P => { P.vz = 165; P.vx = -46; P.va = -10; }));
+        F.burst(S, E.x, E.y - 18, 12); });
+      if (t >= SLICE && t < 1.1 && Math.random() < .3) F.spark(S, E.x + rr(-1, 1), E.y - 17, rr(-15, 15), -rr(10, 30), .2, Math.random() < .5 ? CY2 : WH);
+      S.once('click', t >= 1.3, () => F.slivers(S, E.x, E.y, 6));
+    } },
+  { name: 'Through and past', note: 'Almost no wind-up. A crouch, and he is already on the far side, low, the blade reaching past, his whole body still falling forward. The enemy saw him crouch and raises his sword to time a strike, but the swing comes down on empty air. He turns after him with his guard up. On the click his top half drops as he turns and pitches over, and his legs fold back under it.',
+    side: -1, gap: 22, dur: 1.4,
+    run(S, t, R, E) {
+      const crouch = pz({ hy: 4, lean: .6, chest: .15, fl: [.85, 1.45], bl: [-.85, .5], fa: HILT, ba: [-.05, .8] });
+      const past = pz({ hx: 2, hy: 6, lean: .85, chest: .5, fl: [1.4, 1.6], bl: [-1.35, .05], fa: [1.5, -.05], sword: .25, ba: [-1.85, 0], hat: 1, flutter: 1 });
+      const settle = pz({ hx: 1, hy: 5, lean: .7, chest: .4, fl: [1.3, 1.5], bl: [-1.2, .1], fa: [1.45, 0], sword: .35, ba: [-1.7, .05], hat: 1 });
+      R.face = 1; R.pose = at([[0, crouch], [.07, past, hold], [.1, past], [.2, settle], [.42, settle], ...quickSheathe(.42, settle).slice(1)], t);
+      if (t >= .07) R.x = E.x + 28;
+      S.once('pass', t >= .07, () => { const x0 = E.x - 22;
+        for (let k = 0; k < 3; k++) F.ghost(S, { x: x0 + (E.x + 28 - x0) * (k + 1) / 4, y: R.y, face: 1, pose: lerpP(crouch, past, (k + 1) / 3) }, k % 2 ? CY2 : WH, .14 + k * .02);
+        F.speed(S, x0, E.x + 28, R.y, 10); F.cut(S, E.x - 9, E.y - 16, E.x + 9, E.y - 7, .75); F.hit(S, E, .08, 1 / 60); });
+      S.once('whiff2', t >= .1, () => whiff(S, E, -1));
+      S.once('click', t >= .76, () => { F.burst(S, E.x, E.y - 11, 12);
+        // the top half slides down the cut, then tips over and settles; the legs buckle a moment later. Eased, no bounce.
+        // he was turning after the ronin: the top half drops at once and pitches the way he turned, the legs fold back under it
+        sever(S, E, [E.x - 9, E.y - 16, E.x + 9, E.y - 7], P => { P.x0 = P.x; P.z0 = P.z; P.script = fallScript(1, 1); }); });
+      // cut as the ronin passes: he folds over it, turns after him reaching, a hand goes to the wound, the legs start to go, and the top half breaks away mid-fall
+      if (!E.gone) E.pose = at([[0, EG], [.05, RX.windup], [.07, RX.windup], [.11, RX.swung, lin], [.2, RX.doubled], [.3, RX.turning], [.36, RX.reach], [.58, RX.clutch], [.76, RX.sag], [.77, RX.legsSag], [1.0, RX.legsKneel], [1.3, RX.legsDown]], t);
+      E.face = t >= .32 ? 1 : -1;
+    } },
+  { name: 'Rising launch', note: 'One rising cut from the kneel and the enemy\'s top half goes up. He goes after it, gone from the ground. Cuts flash in the air, and the pieces split and split again as they fall. Then he drops back down, blade low, into the rain of pieces.',
+    side: -1, gap: 9, dur: 1.5,
+    run(S, t, R, E) {
+      const low = pz({ hy: 6, lean: .55, chest: .2, fl: [1.2, 1.9], bl: [-.2, 2.3], fa: [.4, .3], sword: 2.2, ba: [-.4, .5] });
+      const up = pz({ hy: 0, lean: -.3, chest: -.45, fl: [.8, .3], bl: [-.8, .15], fa: [2.8, -.05], sword: -1.5, ba: [2.3, .2], hat: 1, flutter: 1 });
+      const land = pz({ hx: 1, hy: 6, lean: .7, chest: .35, fl: [1.3, 1.7], bl: [-1.1, .2], fa: [1.05, .05], sword: 1.3, ba: [-1.2, .1], hat: 1 });
+      R.face = 1; R.pose = at([[0, low], [.05, up, lin], [.14, up], [.62, land, hold], [.9, pz({ ...land, hy: 5, lean: .6 })], ...quickSheathe(.9, land).slice(1)], t);
+      R.hidden = t >= .13 && t < .62;
+      R.z = t >= .62 && t < .68 ? (1 - (t - .62) / .06) * 40 : 0;
+      S.once('rise', t >= .05, () => { F.hit(S, E, .05, 1 / 60); F.cres(S, E.x - 3, E.y - 12, 1, 12, -1.2, 1, .14);
+        sever(S, E, [E.x - 10, E.y - 9, E.x + 10, E.y - 11], P => { P.vz = 150; P.vx = 6; P.va = 5; }); });
+      if (t >= .05) E.pose = at([[.05, pz({ ...RX.legsSag, hy: 2, fl: [.4, .5], bl: [-.45, .35] })], [.35, pz({ ...RX.legsSag, hx: 2 })], [.65, RX.legsKneel], [.95, RX.legsDown]], t);
+      S.once('gone', t >= .13, () => F.slivers(S, R.x, R.y, 10));
+      // the air: cut flashes on whatever is flying
+      for (let i = 0; i < 5; i++) S.once('air' + i, t >= .2 + i * .075, () => {
+        const air = S.pieces.filter(P => P.z > 12); if (!air.length) return;
+        const P = air[Math.random() * air.length | 0], a = rr(0, 3.14), cx = P.x, cy = P.fy - P.z, L = [cx - Math.cos(a) * 9, cy - Math.sin(a) * 9, cx + Math.cos(a) * 9, cy + Math.sin(a) * 9];
+        F.cut(S, L[0], L[1], L[2], L[3], .1); F.burst(S, cx, cy, 5, 110); splitPiece(S, P, L, 40); S.stop = Math.max(S.stop, .025); });
+      S.once('down', t >= .68, () => { S.shake = .15; F.dust(S, R.x, R.y, 14); F.ring(S, R.x, R.y, 5, 2, .25, 20); F.crack(S, R.x + 4, R.y); });
+      S.once('click', t >= 1.24, () => { for (const P of S.pieces) P.rest = 1, P.life = Math.min(P.life, .4); F.slivers(S, E.x, E.y + 4, 10); });
+    } },
+  { name: 'Whirlwind', note: 'Six cuts from six places in half a second: a low sweep in front, a high cut from behind, a rising cut, one from above, a thrust from behind, and a wide final cut in front. Each frame shows him mid-motion, leaning into where he is going, with an afterimage left where he was. His body gives wherever each cut lands: his legs go out, his back arches, he is lifted onto his toes, crushed down, driven forward; and the last one lands so hard it throws him off his feet: he flies back, comes apart in the air, and the pieces tumble and skid across the floor.',
+    side: -1, gap: 12, dur: 1.5,
+    run(S, t, R, E) {
+      const steps = [
+        { t: 0,   dx: -11, dy: 2,  f: 1,  p: pz({ hy: 6, lean: .55, chest: .3, fl: [1.35, 1.6], bl: [-.45, 2.1], fa: [1.45, 0], sword: .4, ba: [-1.3, .2], flutter: 1 }), rot: .5 },
+        { t: .08, dx: 11,  dy: -3, f: -1, p: pz({ hy: 3, lean: .75, chest: .45, fl: [1.1, 1.2], bl: [-1.0, .15], fa: [1.15, 0], sword: 1.15, ba: [-1.5, 0], hat: 1, flutter: 1 }), rot: -.9 },
+        { t: .16, dx: -9,  dy: -4, f: 1,  p: pz({ hy: 1, lean: -.25, chest: -.45, fl: [.85, .35], bl: [-.85, .2], fa: [2.75, 0], sword: -1.35, ba: [2.2, .2], hat: 1 }), rot: -1.3 },
+        { t: .24, dx: 2,   dy: 1,  f: -1, z: 12, p: pz({ lean: .6, chest: .35, fl: [1.2, 1.7], bl: [.3, 1.9], fa: [1.2, 0], sword: 1.35, ba: [-.9, .3], flutter: 1 }), rot: 1.4 },
+        { t: .32, dx: 12,  dy: 3,  f: -1, p: pz({ hx: 2, hy: 4, lean: .6, chest: .3, fl: [1.2, 1.3], bl: [-1.2, .1], fa: [1.6, 0], sword: 0, ba: [-1.8, 0], flutter: 1 }), rot: 0 },
+        { t: .42, dx: -14, dy: 0,  f: 1,  p: pz({ hx: 2, hy: 5, lean: .72, chest: .5, fl: [1.3, 1.45], bl: [-1.25, .1], fa: [1.35, .05], sword: .95, ba: [-1.7, .05], hat: 1 }), rot: .2, big: true },
+      ];
+      let i = steps.length - 1; while (i > 0 && t < steps[i].t) i--;
+      const st = steps[i];
+      R.x = E.x + st.dx; R.y = E.y + 1 + st.dy; R.face = st.f; R.z = st.z || 0;
+      R.pose = t < .42 ? st.p : at([[.42, st.p], [.75, st.p], ...quickSheathe(.75, st.p).slice(1)], t);
+      steps.forEach((s, k) => S.once('w' + k, t >= s.t, () => {
+        if (k) { const q = steps[k - 1]; F.ghost(S, { x: E.x + q.dx, y: E.y + 1 + q.dy, z: q.z || 0, face: q.f, pose: q.p }, k % 2 ? CY : WH, .16); }
+        F.cres(S, E.x, E.y - 10, s.f, s.big ? 17 : 11, s.rot, sgn(), s.big ? .24 : .12);
+        F.hit(S, E, s.big ? .1 : .03, s.big ? .06 : 0); F.burst(S, E.x, E.y - 10, s.big ? 12 : 4, 110); E.jit = sgn(); }));
+      // every cut knocks him the way it came from, so he reels from side to side
+      E.face = -1;
+      // every hit lands somewhere and the body gives there: legs swept, back struck, lifted from below, crushed from above, run through from behind
+      const IMPACT = [
+        pz({ hx: 1, hy: 4, lean: .35, chest: .2, fl: [.2, 1.6], bl: [-1.1, .6], fa: [1.9, .3], ba: [-.8, .4], sword: -.2 }),                  // low sweep in front: the legs go out from under him
+        pz({ hx: 2, hy: 2, lean: -.25, chest: -.6, fl: [.55, .5], bl: [-.35, .3], fa: [.4, .8], ba: [1.6, .6], sword: .8 }),                    // high cut from behind: the back arches, the head snaps back
+        pz({ hx: -1, hy: 0, lean: -.4, chest: -.5, fl: [.3, .2], bl: [-.6, .2], fa: [2.8, .2], ba: [2.5, .3], sword: -1.4 }),                   // rising cut: lifted onto his toes, arms thrown up
+        pz({ hy: 6, lean: .45, chest: .6, fl: [1.0, 1.7], bl: [-.3, 1.5], fa: [.3, .6], ba: [.2, .6], sword: 1.3 }),                            // from above: crushed down, knees folding
+        pz({ hx: 3, hy: 3, lean: .65, chest: .5, fl: [.9, .8], bl: [-1.0, .3], fa: [1.2, .2], ba: [.9, .8], sword: 1.0 }),                      // thrust from behind: driven forward, doubled over
+        pz({ hx: 2, hy: 3, lean: .5, chest: .45, fl: [.7, .9], bl: [-.8, .4], fa: [.9, .3], ba: [.6, .5], sword: .8 }),
+      ];
+      const reel = k => IMPACT[k];
+      if (!E.gone && t < .42) E.pose = at([[0, EG], ...steps.flatMap((q, k) => [[q.t + .001, k ? reel(k - 1) : EG], [q.t + .04, reel(k), lin]])], t);
+      // the wide final cut hits hard enough to throw him: off his feet, flung back, coming apart in the air, pieces tumbling and skidding to rest
+      if (t >= .42 && !E.gone) { const u = t - .42; if (S.fx0 == null) S.fx0 = E.x;
+        E.x = S.fx0 + 80 * u; E.z = Math.max(0, 115 * u - 160 * u * u);
+        E.pose = at([[.42, reel(4)], [.47, pz({ hy: 1, lean: -.95, chest: -.45, fl: [1.3, .9], bl: [.7, 1.3], fa: [-1.9, .3], ba: [-2.4, .2], sword: null }), lin]], t); }
+      S.once('fling', t >= .42, () => { S.fx0 = E.x; dropSword(S, E, reel(4), 1); });
+      S.once('apart', t >= .51, () => { const x = E.x, y = E.y - (E.z || 0), vz = 115 - 320 * .09;
+        shatter(S, E, [[x - 10, y - 18, x + 8, y - 3], [x + 10, y - 16, x - 8, y - 4], [x - 12, y - 10, x + 12, y - 9]], (P, cx) => { P.vx = 62 + (cx - x) * 3 + rr(-12, 12); P.vz = vz + rr(-20, 25); P.va = rr(3, 8) * sgn(); });
+        F.burst(S, x, y - 10, 14); F.slivers(S, x, E.y, 8); S.shake = .12; });
+      if (t > .5) E.jit = 0;
+    } },
+  { name: 'Far behind', note: 'He is simply somewhere else: far behind the enemy, low, blade out, the cut line glowing through the space between them. The enemy flinches, raises his guard and starts turning toward him. He flicks the blade and sheathes, and a hand goes to his chest as if he felt something. On the click a line opens from shoulder to hip, the top of him slides down along it and off, and the legs left standing fold to the floor.',
+    side: +1, gap: 52, dur: 1.4,
+    run(S, t, R, E) {
+      const after = pz({ hx: 1, hy: 6, lean: .8, chest: .45, fl: [1.35, 1.6], bl: [-1.3, .05], fa: [1.45, -.05], sword: .3, ba: [-1.85, 0], hat: 1, flutter: 1 });
+      R.face = 1; R.pose = at([[0, after], [.1, pz({ ...after, hy: 5, lean: .72, flutter: 0 })], [.5, pz({ ...after, hy: 5, lean: .7, flutter: 0 })], ...quickSheathe(.5, pz({ ...after, hy: 5, lean: .7 })).slice(1)], t);
+      S.once('line', true, () => { F.cut(S, E.x - 30, E.y - 11, R.x - 4, E.y - 11, .5); F.speed(S, E.x - 30, R.x, R.y, 12); F.hit(S, E, .06, 1 / 60); });
+      const chestTouch = pz({ ...RX.guardUp, fa: [.9, .4], sword: .6, ba: [1.25, 1.55], lean: .08, chest: .15 });   // he feels something across his chest
+      if (!E.gone) E.pose = at([[0, EG], [.1, RX.flinch], [.28, RX.turning], [.4, RX.guardUp], [.62, chestTouch], [.84, pz({ ...chestTouch, hy: 4 })], [.85, pz({ ...RX.legsSag, hy: 3 })], [1.15, RX.legsKneel], [1.45, RX.legsDown]], t);
+      E.face = t >= .32 ? 1 : -1;
+      S.once('click', t >= .84, () => { const x = E.x;
+        // shoulder to hip: the top slides down the slope of the cut and off him, the legs are left to fold
+        sever(S, E, [x - 9, E.y - 21, x + 9, E.y - 7], P => { P.x0 = P.x; P.z0 = P.z; P.script = slideOff(-1, .78); });
+        F.cut(S, x - 9, E.y - 21, x + 9, E.y - 7, .5); F.burst(S, x, E.y - 13, 8); });
+    } },
+  { name: 'Peek-a-boo', note: 'He glitches in beside the enemy. The enemy raises his sword and swings at him, and the blade cuts empty air: he is already gone. He glitches back to where he started, already sliding the blade home. On the click the enemy falls to pieces all at once.',
+    side: -1, gap: 9, dur: 1.8, stay: true,
+    run(S, t, R, E) {
+      const beside = pz({ fa: [.2, .25], lean: .02 });
+      const home = pz({ hy: 2, lean: .2, fa: [1.45, .05], sword: 1.2, ba: [-.4, .3] });
+      R.face = 1;
+      if (t < .32) { R.pose = beside; R.glitch = t > .24 ? (t - .24) * 18 : 0; }
+      else { R.x = START.x; R.y = START.y; R.pose = at([[.32, home], [.42, pz({ hy: 1, lean: .12, fa: [1.0, .6], sheathing: true, ba: [.45, 1.1] })], [.56, pz({ hy: 1, lean: .06, fa: HILT, ba: [.3, 1.0] })], [.9, IDLE]], t);
+        R.glitch = t < .38 ? (.38 - t) * 18 : 0; }
+      S.once('back', t >= .32, () => { F.slivers(S, E.x - 9, E.y, 8); F.slivers(S, START.x, START.y, 6); });
+      if (!E.gone) E.pose = at([[0, EG], [.06, RX.flinch], [.22, RX.windup], [.3, RX.windup], [.36, RX.swung, lin], [.48, pz({ ...RX.swung, lean: .35, hy: 3 })], [.56, RX.turning], [.7, RX.handsLook]], t);
+      S.once('whiff6', t >= .35, () => whiff(S, E, -1));
+      E.face = t >= .56 && t < .64 ? 1 : -1;
+      S.once('drop6', t >= .6, () => dropSword(S, E, RX.guardUp, 1));
+      S.once('click', t >= .56, () => { const x = E.x, y = E.y;
+        for (let k = 0; k < 5; k++) { const a = rr(0, 3.14); F.cut(S, x - Math.cos(a) * 12, y - 10 - Math.sin(a) * 12, x + Math.cos(a) * 12, y - 10 + Math.sin(a) * 12, .3); } });
+      // the cuts glow on him while he looks down at his hands; then he comes apart as he sinks
+      S.once('apart', t >= .82, () => { const x = E.x, y = E.y;
+        shatter(S, E, [[x - 10, y - 20, x + 10, y], [x + 10, y - 20, x - 10, y], [x - 12, y - 12, x + 12, y - 8], [x - 3, y - 22, x + 2, y + 2]], (P, cx, cy) => { P.vx = (cx - x) * 2.2; P.vz = rr(-25, -5); P.va = (cx - x) * .35 + rr(-1, 1); });
+        S.shake = .08; F.burst(S, x, y - 10, 12); });
+    } },
+  { name: 'Peek-a-boo, from behind', note: 'He glitches in right behind the enemy, takes his head in both hands and snaps it round. No blade at all. He glitches back to where he started and lets his hands fall. His head is left facing the wrong way, and his body follows it: he staggers back toward the twist, his knees go, and he falls onto his back.',
+    side: +1, gap: 6, dur: 1.9, stay: true,
+    run(S, t, R, E) {
+      const reach = pz({ hy: 1, lean: .12, fl: [.3, .3], bl: [-.35, .3], fa: [2.0, .9], ba: [1.8, 1.0] });
+      const grip = pz({ hy: 2, lean: .2, chest: .1, fl: [.4, .5], bl: [-.45, .4], fa: [2.25, 1.15], ba: [2.05, 1.25] });
+      const twist = pz({ hy: 2, lean: .05, chest: -.3, fl: [.45, .5], bl: [-.5, .4], fa: [1.9, 1.3], ba: [2.5, .7], flutter: 1 });
+      R.face = -1;
+      if (t < .34) { R.pose = at([[0, reach], [.07, grip], [.15, twist, lin], [.34, twist]], t); R.glitch = t > .27 ? (t - .27) * 20 : 0; }
+      else { R.x = START.x; R.y = START.y; R.face = 1; R.pose = at([[.34, pz({ fa: [.8, .9], ba: [.6, .9] })], [.6, IDLE]], t); R.glitch = t < .4 ? (.4 - t) * 18 : 0; }
+      S.once('snap', t >= .15, () => { S.stop = .1; S.shake = 1 / 60; E.flashT = .05;
+        for (let k = 0; k < 4; k++) F.spark(S, E.x + rr(-2, 2), E.y - 18, rr(-40, 40), rr(-30, 0), .1, WH, true); });
+      // his head yanked round, then limp
+      E.face = t >= .15 && t < .2 ? 1 : -1;
+      // the head is wrenched round to face backward; the body is dragged after it: a stagger back toward the twist, the knees go, over onto his back
+      const hf = o => pz({ ...o, headFlip: true });
+      const wrenched = hf({ hx: -1, hy: 2, lean: -.3, chest: -.55, fl: [.35, .4], bl: [-.45, .35], fa: [.5, .5], ba: [-.6, .3], sword: 1.1 });
+      if (!E.gone) E.pose = t < .19 ? at([[0, EG], [.06, RX.flinch], [.15, RX.flinch]], t)
+        : at([[.19, wrenched, lin], [.36, hf({ ...wrenched, hx: -3, lean: -.42, chest: -.62, fl: [.15, .3], bl: [-.75, .4] })],
+              [.54, hf({ hx: -4, hy: 5, lean: -.55, chest: -.55, fl: [.85, 1.35], bl: [-.25, 1.15], fa: [.2, .4], ba: [-.9, .3], sword: null })],
+              [.74, hf({ ...RX.handsBack, hx: -5 })], [.96, hf({ ...RX.supine, hx: -5 })]], t);
+      S.once('drop7', t >= .45, () => dropSword(S, E, wrenched, 1));
+      S.once('back', t >= .34, () => { F.slivers(S, E.x + 6, E.y, 8); F.slivers(S, START.x, START.y, 6); });
+    } },
+  { name: 'Decapitation', note: 'A glitch slice at neck height: he is through and past in a blink. The head pops off, spinning up, and lands far behind the enemy. The body does not know yet: it drops its sword and reaches around for a neck that is not there, stumbles back, sinks to a knee, catches itself on its hands and slumps face down.',
+    side: -1, gap: 22, dur: 2.1,
+    run(S, t, R, E) {
+      const crouch = pz({ hy: 4, lean: .6, chest: .15, fl: [.85, 1.45], bl: [-.85, .5], fa: HILT, ba: [-.05, .8] });
+      const past = pz({ hx: 2, hy: 3, lean: .55, chest: .35, fl: [1.2, 1.3], bl: [-1.2, .1], fa: [1.75, 0], sword: -.1, ba: [-1.8, 0], hat: 1, flutter: 1 });
+      const settle = pz({ ...past, hy: 4, lean: .5, flutter: 0 });
+      R.face = 1; R.pose = at([[0, crouch], [.07, past, hold], [.1, past], [.25, settle], [.75, settle], ...quickSheathe(.75, settle).slice(1)], t);
+      if (t >= .07) R.x = E.x + 30;
+      S.once('pass', t >= .07, () => { const x0 = E.x - 22;
+        for (let k = 0; k < 3; k++) F.ghost(S, { x: x0 + (E.x + 30 - x0) * (k + 1) / 4, y: R.y, face: 1, pose: lerpP(crouch, past, (k + 1) / 3) }, k % 2 ? CY2 : WH, .14 + k * .02);
+        F.speed(S, x0, E.x + 30, R.y, 10); F.cut(S, E.x - 11, E.y - 18, E.x + 11, E.y - 18, .25); F.hit(S, E, .1, .05);
+        // the head: the pixels the headless pose no longer has, sent spinning up and back
+        const all = pixelsOf({ ...E, pose: RX.flinch }), rest = new Set(pixelsOf({ ...E, pose: pz({ ...RX.flinch, noHead: true }) }).map(q => q[0] + ',' + q[1]));
+        S.pieces.push(...toPieces(all.filter(q => !rest.has(q[0] + ',' + q[1])), [], E.y, P => { P.vz = 175; P.vx = 44; P.va = 11; }));
+        F.burst(S, E.x, E.y - 18, 12); });
+      if (t >= .1 && t < .7 && Math.random() < .35) F.spark(S, E.x + rr(-1, 1), E.y - 17 - rr(0, 2), rr(-15, 15), -rr(10, 35), .2, Math.random() < .5 ? CY2 : WH);
+      // the body: a stiffening jolt, the sword falls, both hands go up around the neck, a stumble back, a knee, then over
+      E.face = -1;
+      const noH = o => pz({ ...o, noHead: true });
+      const grab = noH({ hy: 3, lean: -.1, chest: -.2, fl: [.45, .55], bl: [-.45, .35], fa: [2.5, 2.0], ba: [2.4, 1.9] });
+      if (!E.gone) E.pose = t < .07 ? at([[0, EG], [.05, RX.flinch]], t)
+        : at([[.07, noH(RX.flinch)], [.13, noH({ ...RX.jolt, sword: null }), lin], [.36, grab], [.62, pz({ ...grab, hx: 2, lean: -.25, hy: 4 })], [.88, noH({ ...RX.sag, sword: null, fa: [2.2, 1.9], ba: [2.0, 1.8] })], [1.12, noH({ ...RX.kneel, fa: [1.2, 1.2], ba: [1.0, 1.1] })], [1.36, noH(RX.handsDown)], [1.6, noH(RX.prone)]], t);
+      S.once('drop', t >= .1, () => dropSword(S, E, RX.flinch, 1));
+      S.once('click', t >= 1.1, () => F.slivers(S, E.x, E.y, 6));
+    } },
+];
+
+// ================= DEATHS PASS =================
+// Sits on top of the batch's own code and changes how the enemy's body moves, falls and takes a hit, for every execution at once.
+// Untick "Death pass" and the page plays exactly as the batch did, so the two can be compared on the same loop.
+const PASS = { on: true, blood: true, impact: true };
+(() => { const bar = document.querySelector('.bar');
+  const add = (id, label, key) => { const l = document.createElement('label'); l.htmlFor = id;
+    l.innerHTML = `<input type="checkbox" id="${id}" checked> ${label}`; bar.append(l); l.querySelector('input').addEventListener('change', e => PASS[key] = e.target.checked); };
+  add('pass', 'Death pass (untick for before)', 'on'); add('blood', 'Blood', 'blood'); add('impact', 'Impact frames', 'impact'); })();
+let CUR = null, DTP = 0;   // the scene being stepped, and its time step (0 while the hit pause holds)
+const clp = (v, a, b) => Math.min(b, Math.max(a, v));
+const EYE_ON = 'rgb(255,90,74)', EYE_OFF = '#2b2023', EYE_OFF_RGB = 'rgb(43,32,35)';
+const BLOOD = ['#7a1b24', '#5a121a', '#931f2c'], STAIN = ['#4c1f24', '#55222a', '#43191e'];
+
+// ---- 1. Motion that flows through its poses. The batch eases in and out of every key, so the body comes to a dead stop at each pose, like a puppet
+// being set. The enemy's timeline is re-read here as one curve per joint: it keeps its speed through a pose when the motion carries on, and only
+// settles where the motion turns back. A body going down to the floor falls under gravity (slow off the mark, fastest at the floor), then stops dead ----
+const lying = p => typeof p.hy === 'number' && (p.hy >= 9 || (p.hy >= 8 && (Math.abs(p.lean) >= 1.2 || p.noUpper)));
+const at0 = at;
+at = function (keys, t) {   // same result as before; it just remembers where it came from, so the enemy's drawn pose can be re-read smoothly
+  const r = at0(keys, t);
+  if (PASS.on && t > keys[0][0] && r !== keys[0][1]) Object.defineProperties(r, { __k: { value: keys }, __t: { value: t } });
+  return r;
+};
+function smoothAt(keys, t) {
+  if (t <= keys[0][0]) return keys[0][1];
+  let j = 0; while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+  const [t0, a] = keys[j], [t1, b, e] = keys[j + 1], k = clp((t - t0) / (t1 - t0), 0, 1);
+  if (e || k >= 1) return lerpP(a, b, (e || ease)(k));   // hard cuts and linear moves stay as authored
+  const land = lying(b) && !lying(a), dT = t1 - t0;
+  const soft = i => i > 0 && i < keys.length - 1 && !keys[i][2] && !keys[i + 1][2];
+  const tan = (i, get) => { const p = get(i - 1), c = get(i), n = get(i + 1);
+    if (![p, c, n].every(Number.isFinite)) return 0;
+    const d0 = (c - p) / Math.max(1e-3, keys[i][0] - keys[i - 1][0]), d1 = (n - c) / Math.max(1e-3, keys[i + 1][0] - keys[i][0]);
+    return d0 * d1 <= 0 ? 0 : 2 * d0 * d1 / (d0 + d1); };
+  const k2 = k * k, k3 = k2 * k, h00 = 2 * k3 - 3 * k2 + 1, h10 = k3 - 2 * k2 + k, h01 = 3 * k2 - 2 * k3, h11 = k3 - k2;
+  const val = (va, vb, get) => { const m0 = soft(j) ? tan(j, get) * dT : 0, m1 = land ? 2 * (vb - va) : soft(j + 1) ? tan(j + 1, get) * dT : 0;
+    return h00 * va + h10 * m0 + h01 * vb + h11 * m1; };
+  const o = {};
+  for (const key in a) { const x = a[key], y = b[key];
+    if (Array.isArray(x) && Array.isArray(y)) o[key] = x.map((v, i) => val(v, y[i], ii => { const q = keys[ii][1][key]; return Array.isArray(q) ? q[i] : NaN; }));
+    else if (typeof x === 'number' && typeof y === 'number') o[key] = val(x, y, ii => keys[ii][1][key]);
+    else o[key] = k < .5 ? x : y; }
+  return o;
+}
+
+// ---- 2. A body, not a puppet. Every joint chases its keyed pose on a spring: the hips lead, the chest follows, the arms, blade and head trail and
+// overshoot. As he goes down the muscles let go (softer, floppier springs); the floor stops him hard and the rest of him flops on; then a twitch or two, and still ----
+// [natural frequency, damping ratio]
+const CH = { hx: [38, .8], hy: [40, .8], lean: [30, .62], chest: [22, .5], fl: [46, .85], bl: [46, .85], fa: [19, .42], ba: [17, .4], sword: [17, .36] };
+const CH2 = ['fl', 'bl', 'fa', 'ba'];
+function spState(S) {
+  if (!S.__sp || S.__sp.E !== S.E) S.__sp = { E: S.E, x: null, v: {}, neck: 0, nv: 0, prevAng: null, prevAv: 0, t: 0, thudT: null, lastThud: -9, tw: 0, frame: -1, out: null, tgt: null };
+  return S.__sp;
+}
+function flat(p) { const o = { hx: p.hx, hy: p.hy, lean: p.lean, chest: p.chest, sword: p.sword };
+  for (const k of CH2) { o[k + '0'] = p[k][0]; o[k + '1'] = p[k][1]; } return o; }
+// on the floor the trunk is where it landed, now, with no spring left in it
+function X0(sp, T) { for (const k of ['hy', 'lean', 'hx']) { sp.x[k] = T[k]; sp.v[k] = 0; } }
+function thud(S, sp, speed) {
+  if (sp.t - sp.lastThud < .14) return; sp.lastThud = sp.t; if (sp.thudT == null) sp.thudT = sp.t;
+  const E = S.E, k = clp(speed, .4, 1.4);
+  // the rest of him is still moving when the trunk stops: arms slap down, the head knocks
+  sp.v.fa0 += sgn() * rr(3, 6) * k; sp.v.ba0 += sgn() * rr(3, 6) * k; sp.v.fa1 += rr(2, 5) * k; sp.nv += sgn() * 7 * k;
+  F.dust(S, E.x, E.y, Math.round(4 + 6 * k)); S.shake = Math.max(S.shake, .03 + .03 * k);
+  F.ring(S, E.x, E.y + 1, 2, 1, .12, 4 + 3 * k);
+  if (PASS.blood && sp.lastPool == null) { sp.lastPool = 1; S.fx.pools.push({ x: E.x + rr(-3, 3), y: E.y + 1, r: 0, max: rr(3.5, 5.5), t: -.35 }); }
+}
+function sprung(S, raw) {
+  const sp = spState(S);
+  if (sp.frame === S.__frame) return sp.tgt === raw ? sp.out : raw;   // drawn twice this frame: step once
+  sp.frame = S.__frame; sp.tgt = raw;
+  const tgt = raw.__k ? smoothAt(raw.__k, raw.__t) : raw, T = flat(tgt), dt = DTP;
+  if (!sp.x) { sp.x = { ...T }; for (const k in T) sp.v[k] = 0; }
+  // the trunk hitting the floor: the hips or the chest were coming down fast and now they have stopped
+  if (dt > 0 && sp.pT) { const vy = (T.hy - sp.pT.hy) / dt, vl = Math.abs(T.lean - sp.pT.lean) / dt;
+    if (sp.pv && lying(tgt) && ((sp.pv.hy > 14 && vy < sp.pv.hy * .3) || (sp.pv.l > 2 && vl < sp.pv.l * .3))) {
+      thud(S, sp, Math.max(sp.pv.hy / 40, sp.pv.l / 5)); X0(sp, T); }
+    sp.pv = { hy: vy, l: vl }; }
+  if (dt > 0) sp.pT = T;
+  const X = sp.x, V = sp.v, limp = clp(((tgt.hy || 0) - 4) / 4, 0, 1);
+  if (T.sword == null) X.sword = null; else if (X.sword == null) { X.sword = T.sword; V.sword = 0; }
+  sp.t += dt;
+  const steps = Math.ceil(dt / (1 / 240)), h = dt / Math.max(1, steps);
+  for (let s = 0; s < steps; s++) {
+    for (const k in T) { if (T[k] == null || X[k] == null) continue;
+      const base = CH[k.replace(/[01]$/, '')]; let [w, z] = base;
+      if (/^(fa|ba|sword)/.test(k)) { w *= 1 - .45 * limp; z *= 1 - .3 * limp; }   // the arms let go first
+      else if (/^(fl|bl)/.test(k)) w *= 1 - .3 * limp;                                  // then the legs
+      else if (/^(hy|lean|hx)$/.test(k)) w *= 1 + limp;                                  // a falling trunk is carried by its weight, not held back
+      V[k] += (w * w * (T[k] - X[k]) - 2 * z * w * V[k]) * h; X[k] += V[k] * h; }
+    // the floor is hard: nothing sinks through it
+    if (lying(tgt) && X.hy > T.hy) { X.hy = T.hy; V.hy = Math.min(0, V.hy); }
+    // the head is carried by the chest: it lags when the chest whips, and drops as he loses his strength
+    const ang = X.lean + X.chest, av = sp.prevAng == null ? 0 : (ang - sp.prevAng) / h, aa = (av - sp.prevAv) / h; sp.prevAng = ang; sp.prevAv = av;
+    const nw = 22 - 8 * limp, nz = .38, nT = Math.abs(X.lean) < 1 ? limp * .45 : 0;
+    sp.nv += (nw * nw * (nT - sp.neck) - 2 * nz * nw * sp.nv - clp(aa, -900, 900) * .5) * h; sp.neck = clp(sp.neck + sp.nv * h, -.9, .9);
+  }
+  // lying still: the last of him goes out of him. One twitch, a smaller one, then nothing
+  if (sp.thudT != null && tgt.hy >= 8) { const u = sp.t - sp.thudT;
+    if (sp.tw === 0 && u > .5) { sp.tw = 1; V.fl1 += rr(5, 8); V.bl1 -= rr(2, 4); V.fa1 += rr(3, 5); }
+    if (sp.tw === 1 && u > 1.05) { sp.tw = 2; V.fa1 += rr(2, 3.5); sp.nv += .8; } }
+  // the eye: it flickers and goes out once he is down
+  S.__eyeDark = sp.thudT != null && (sp.t - sp.thudT > .45 || (sp.t - sp.thudT > .12 && (sp.t * 30 | 0) % 3 === 0));
+  const out = { ...tgt, hx: X.hx, hy: X.hy, lean: X.lean, chest: X.chest, sword: X.sword, neck: sp.neck };
+  for (const k of CH2) out[k] = [X[k + '0'], X[k + '1']];
+  sp.out = out; return out;
+}
+
+// the rig reads p.neck; the frame loop draws the enemy through withShadow
+const withShadow0 = withShadow;
+withShadow = function (g, R) {
+  const S = CUR;
+  if (!PASS.on || !S || !R.enemy || S.E == null || R.pose !== S.E.pose) return withShadow0(g, R);
+  const pose = sprung(S, R.pose); S.__disp = pose;
+  let x = R.x;
+  if (S.stop > 0 && S.__frame - (S.__hitF || -99) < 14) x += S.__frame & 1 ? 1 : -1;   // he shakes in the hit pause
+  return withShadow0(g, { ...R, pose, x });
+};
+// pieces are cut from the body as it is seen, not from where it is headed
+const pixelsOf0 = pixelsOf;
+pixelsOf = function (E) {
+  const S = CUR;
+  if (PASS.on && S && S.__disp && S.__sp && S.__sp.E === S.E && S.__E2 && E.pose === S.__E2.pose) return pixelsOf0({ ...E, pose: S.__disp });
+  return pixelsOf0(E);
+};
+const paint0 = paint;
+paint = function (pose, enemy, eye) {
+  if (!(PASS.on && enemy && CUR && CUR.__eyeDark)) return paint0(pose, enemy, eye);
+  const e = ENEMY_RC.E; ENEMY_RC.E = EYE_OFF; try { return paint0(pose, enemy, eye); } finally { ENEMY_RC.E = e; }
+};
+
+// ---- 3. The sword lands. The body is knocked away from the blade, it shakes through the hit pause, light and blood leave out the far side,
+// and a killing blow gets two impact frames (black, then white) ----
+const hit0 = F.hit;
+F.hit = function (S, E, stop = .06, shake = 1 / 60) {
+  hit0.call(F, S, E, stop, shake);
+  if (!PASS.on) return;
+  const R = S.__R, dir = R && Math.abs(E.x - R.x) > .5 ? Math.sign(E.x - R.x) : -E.face, mag = clp(stop / .1, .4, 1.4);
+  const cx = E.x, cy = E.y - (E.z || 0) - 13;
+  S.__hitF = S.__frame;
+  for (let i = 0; i < 4 + 8 * mag; i++) { const a = (dir > 0 ? 0 : Math.PI) + rr(-.5, .5), v = rr(110, 230) * mag;
+    F.spark(S, cx + dir * 2, cy + rr(-5, 5), Math.cos(a) * v, Math.sin(a) * v * .6, rr(.07, .15), i % 2 ? WH : CY2, true); }
+  if (PASS.blood) for (let i = 0; i < 5 + 12 * mag; i++) S.fx.drops.push({ x: cx + dir * rr(0, 3), y: E.y + rr(-2, 2), z: E.y - cy + rr(-5, 5) + (E.z || 0),
+    vx: dir * rr(15, 65) * mag, vy: rr(-8, 8), vz: rr(5, 45), c: BLOOD[i % 3], big: Math.random() < .3 });
+  const sp = S.__sp;
+  if (sp && sp.E === S.E && sp.x) { const p = dir * E.face, V = sp.v;   // p = +1: knocked toward where he faces
+    V.lean += p * 5 * mag; V.chest += p * 8 * mag; V.hx += p * 30 * mag; sp.nv += p * 9 * mag;
+    V.fa0 -= p * 7 * mag; V.ba0 -= p * 6 * mag; if (sp.x.sword != null) V.sword -= p * 9 * mag; }
+  if (PASS.impact && stop >= .09) S.__impact = 2;
+};
+function impactFrame(g, second) {
+  const im = g.getImageData(0, 0, W, H), d = im.data, bg = second ? 235 : 10, fg = second ? 12 : 245;
+  for (let i = 0; i < d.length; i += 4) { const l = .3 * d[i] + .59 * d[i + 1] + .11 * d[i + 2], on = l < 58 || l > 165;
+    d[i] = d[i + 1] = d[i + 2] = on ? fg : bg; }
+  g.putImageData(im, 0, 0);
+}
+
+// ---- 4. Pieces land with weight: a thud, dust, blood where they fall, a trail while they fly; the eye in a severed head goes out ----
+const lowOf = P => { let m = -1e9; const s = Math.sin(P.a), c = Math.cos(P.a); for (const [dx, dy] of P.pts) m = Math.max(m, dx * s + dy * c); return m; };
+const updatePieces0 = updatePieces;
+updatePieces = function (S, dt) {
+  const h0 = PASS.on ? new Map(S.pieces.map(P => [P, P.z - lowOf(P)])) : null;
+  updatePieces0(S, dt);
+  if (!PASS.on) return;
+  for (const P of S.pieces) {
+    P.__age = (P.__age || 0) + dt; const n = P.pts.length, hNow = P.z - lowOf(P), hb = h0.get(P);
+    if (!P.__landed && hb != null && hb > .6 && hNow <= .3) { P.__landed = true;
+      F.dust(S, P.x, P.fy, clp(Math.round(n / 14), 2, 10)); if (n > 60) S.shake = Math.max(S.shake, .04);
+      if (PASS.blood && n > 12) S.fx.pools.push({ x: P.x + rr(-2, 2), y: P.fy + 1, r: 0, max: clp(n / 40, 1.5, 4.5), t: -.15 }); }
+    if (PASS.blood && !P.__landed && n > 20 && P.__age < .9 && Math.random() < .5)
+      S.fx.drops.push({ x: P.x + rr(-2, 2), y: P.fy + rr(-1, 1), z: P.z, vx: rr(-15, 15), vy: 0, vz: rr(-10, 10), c: BLOOD[Math.random() * 3 | 0] });
+    if (P.__age > .35 && !P.__eyeOut && (P.__age > .6 || (P.__age * 30 | 0) % 3 === 0)) { P.__eyeOut = P.__age > .6;
+      for (const q of P.pts) if (q[2] === EYE_ON) q[2] = EYE_OFF_RGB; }
+  }
+};
+const updateFx0 = updateFx;
+updateFx = function (S, dt) {
+  CUR = S; DTP = S.stop > 0 ? 0 : dt; S.__frame = (S.__frame || 0) + 1;
+  if (!S.fx.drops) Object.assign(S.fx, { drops: [], stains: [], pools: [] });
+  updateFx0(S, dt);
+  if (!PASS.on) return;
+  const L = S.fx;
+  for (let i = L.drops.length - 1; i >= 0; i--) { const q = L.drops[i]; q.x += q.vx * dt; q.y += q.vy * dt; q.z += q.vz * dt; q.vz -= 320 * dt;
+    if (q.z <= 0) { L.stains.push({ x: Math.round(q.x), y: Math.round(q.y), c: STAIN[Math.random() * 3 | 0], w: q.big ? 2 : 1 }); if (q.big && Math.abs(q.vx) > 40) L.stains.push({ x: Math.round(q.x + Math.sign(q.vx)), y: Math.round(q.y), c: STAIN[0], w: 1 }); L.drops.splice(i, 1); } }
+  for (const p of L.pools) { p.t += dt; if (p.t > 0) p.r = p.max * (1 - Math.exp(-p.t * 1.6)); }
+};
+const drawFx0 = drawFx;
+drawFx = function (g, S, layer) {
+  if (PASS.on && S.fx.stains && layer === 'floor') {
+    for (const p of S.fx.pools) if (p.r >= .5) { g.fillStyle = STAIN[1];
+      for (let y = -Math.ceil(p.r * .5); y <= Math.ceil(p.r * .5); y++) { const w = Math.round(p.r * Math.sqrt(Math.max(0, 1 - (y / (p.r * .5 + .01)) ** 2))); g.fillRect(Math.round(p.x) - w, Math.round(p.y) + y, 2 * w + 1, 1); } }
+    for (const s of S.fx.stains) { g.fillStyle = s.c; g.fillRect(s.x, s.y, s.w, 1); }
+  }
+  drawFx0(g, S, layer);
+  if (PASS.on && S.fx.drops && layer !== 'floor') for (const q of S.fx.drops) { g.fillStyle = q.c; g.fillRect(Math.round(q.x), Math.round(q.y - q.z), 1, q.big ? 2 : 1); }
+  if (PASS.on && PASS.impact && layer !== 'floor' && S.__impact > 0) { impactFrame(g, S.__impact === 1); S.__impact--; }
+};
+
+// every execution: note who is where, for the direction of each hit
+for (const ex of EXECS) { const run0 = ex.run; ex.run = function (S, t, R, E) { S.__R = R; S.__E2 = E; return run0.call(this, S, t, R, E); }; }
+// ================= END DEATHS PASS =================
+
+// ---------- scenes ----------
+const W = 200, H = 100;
+function floor(seed) { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); let r = seed;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  g.fillStyle = '#474c4a'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < W * H / 40; i++) { g.fillStyle = rnd() < .5 ? '#434846' : '#4b504e'; g.fillRect(rnd() * W | 0, rnd() * H | 0, 2, 1); } return c; }
+const START = { x: 40, y: 64 }, EPOS = { x: 120, y: 62 }, PRE = .75, POST = .8;
+const scenes = EXECS.map((ex, i) => {
+  const card = document.createElement('section'); card.className = 'card';
+  card.innerHTML = `<canvas width="${W}" height="${H}" role="img" aria-label="Execution ${i + 1}: ${ex.name}, looping"></canvas><div><span class="num">${String(i + 1).padStart(2, '0')}</span><h2>${ex.name}</h2><p>${ex.note}</p></div>`;
+  document.getElementById('grid').append(card);
+  return { g: card.querySelector('canvas').getContext('2d'), ex, floor: floor(19 + i * 41), clock: -i * .3, stop: 0, shake: 0, fx: FX(), pieces: [], ev: new Set() };
+});
+let slow = false, last = performance.now();
+document.getElementById('slow').addEventListener('change', e => slow = e.target.checked);
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function frame(now) {
+  let dt = Math.min(.05, (now - last) / 1000); last = now; if (slow) dt /= 2; if (still) dt = 0;
+  for (const S of scenes) {
+    const { g, ex } = S;
+    S.once = (k, cond, fn) => { if (cond && !S.ev.has(k)) { S.ev.add(k); fn(); } };
+    updateFx(S, dt); updatePieces(S, dt); S.shake = Math.max(0, S.shake - dt);
+    if (S.stop > 0) S.stop -= dt; else S.clock += dt;
+    if (S.clock > PRE + ex.dur + POST) { S.clock = 0; S.ev.clear(); S.fx = FX(); S.pieces = []; S.E = null; S.fx0 = null; }
+    const c = Math.max(0, S.clock);
+    if (!S.E) S.E = { x: EPOS.x, y: EPOS.y, face: -1, pose: EG, enemy: true };
+    const E = S.E, R = { x: START.x, y: START.y, face: 1, pose: IDLE };
+    E.flash = (S.flashUntil || 0) > c; E.pose = E.gone ? E.pose : pz({ ...EG, breath: Math.sin(c * 3) * .5 + .5 });
+    const locked = c > .15 && c < PRE + .05;
+    if (c < PRE) {
+      R.pose = c < .4 ? pz({ fa: [.15, .2], breath: Math.sin(c * 3) * .5 + .5 }) : pz({ hy: 2, lean: .4, fl: [.5, .9], bl: [-.5, .3], fa: HILT, ba: [-.9, .2] });
+      if (c > .45) R.glitch = (c - .45) / .25 * 1.6;
+      S.once('out', c >= .7, () => F.slivers(S, R.x, R.y, 10));
+      if (c >= .7) R.hidden = true;
+    } else {
+      const t = c - PRE;
+      R.x = EPOS.x + ex.side * ex.gap; R.y = EPOS.y + 1;
+      S.once('in', true, () => { F.slivers(S, R.x, R.y, 8); for (let k = 0; k < 5; k++) { const a = rr(0, 6.28); F.zap(S, R.x + Math.cos(a) * 6, R.y - 10 + Math.sin(a) * 8, R.x + Math.cos(a + 1) * 9, R.y - 10 + Math.sin(a + 1) * 10, rr(.05, .1), 1.6, [CY, CY2, WH][k % 3]); } });
+      const E2 = { ...E, flashT: 0 };
+      // unless the execution says otherwise, the enemy reacts: a flinch, the guard comes up, he starts turning toward the ronin
+      const toward = Math.sign(R.x - E.x) || -1;
+      E2.pose = at([[0, EG], [.1, RX.flinch], [.3, RX.guardUp]], t);
+      if (t >= .22 && toward !== E.face) E2.face = toward;
+      ex.run(S, t, R, E2);
+      if (E2.flashT) S.flashUntil = c + E2.flashT;
+      Object.assign(E, E2); E.flash = (S.flashUntil || 0) > c;
+      if (t < .05 && !ex.stay) R.glitch = (.05 - t) * 24;
+    }
+    g.save();
+    if (S.shake > 0) g.translate(sgn() * 2, sgn());
+    g.drawImage(S.floor, 0, 0);
+    drawFx(g, S, 'floor');
+    if (locked) { const p = c < .3 ? (1 - (c - .15) / .15) * 8 : Math.round(Math.sin(c * 6) * .6 + .6); g.fillStyle = CY;
+      const x0 = EPOS.x - 8 - p, x1 = EPOS.x + 8 + p, y0 = EPOS.y - 27 - p, y1 = EPOS.y + 2 + p;
+      for (const [x, y, sx, sy] of [[x0, y0, 1, 1], [x1, y0, -1, 1], [x0, y1, 1, -1], [x1, y1, -1, -1]]) { g.fillRect(Math.round(sx > 0 ? x : x - 2), Math.round(y), 3, 1); g.fillRect(Math.round(x), Math.round(sy > 0 ? y : y - 2), 1, 3); } }
+    const items = [];
+    if (!E.gone) items.push({ y: E.y, d: () => withShadow(g, { ...E, x: E.x + (E.jit || 0) }) });
+    if (!R.hidden) items.push({ y: R.y, d: () => withShadow(g, R) });
+    items.push({ y: EPOS.y + .5, d: () => drawPieces(g, S) });
+    items.sort((a, b) => a.y - b.y).forEach(i => i.d());
+    drawFx(g, S, 'top');
+    g.restore();
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
