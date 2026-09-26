@@ -53,9 +53,8 @@
   <div class="ask">
     <h2>Your call</h2>
     <ol>
-      <li><b>Blade Recall:</b> A, B or C?</li>
-      <li><b>Time Slice:</b> is the pass fast enough, and are the three zone sizes right?</li>
-      <li><b>Iai Focus:</b> is the stance deep enough?</li>
+      <li><b>Blade Recall:</b> picked. Tapping R calls the blade back, alternating home to the sheath and the catch. Is holding R for the anchor right?</li>
+            <li><b>Iai Focus:</b> is the stance deep enough?</li>
       <li><b>Breath of Qi:</b> which take, and do the power layers read?</li>
     </ol>
   </div>
@@ -496,7 +495,7 @@ const E_SITUP = pz({ hy: 7, hx: -1, lean: .35, chest: .2, fl: [1.3, 2.3], bl: [-
 
 // ---------- the skills ----------
 const SKILLS = [
-  { name: 'Blade Recall', vr: 'A · Home to the sheath', sec: 'new', tag: 'ACTIVE', key: '<kbd>R</kbd> to throw · <kbd>R</kbd> again to call it home',
+  { name: 'Blade Recall', vr: 'A · Home to the sheath', sec: 'new', tag: 'ACTIVE', key: '<kbd>R</kbd> to throw · tap <kbd>R</kbd> to call it back · <b>picked</b>: alternates with the catch, one recall each',
     note: 'He throws the katana point-first. It flies straight over their heads, stops in the air and turns slowly, tip up and over, until it points back at him: at the mouth of his scabbard. Then it hangs there, still, drifting a pixel up, down, left and right, a faint thread running from its tip to his hip. The two samurai see him empty-handed and come for him. He puts his hand on the empty scabbard and calls: the blade comes home point-first along the thread, through both of them, and slides into the sheath with the click. They fall on the click.',
     rx: 30, ry: 68, dur: 3.2, REC: 1.9, TR: .1,
     CALL: pz({ hx: -1, hy: 3, lean: -.08, chest: -.12, fl: [.6, .7], bl: [-.65, .45], fa: HILT, ba: [1.5, -.15], empty: true, flutter: 1 }),
@@ -535,7 +534,7 @@ const SKILLS = [
       if (t > 1.05 && t < sk.REC) thread(g, t, tip, v.M, kk(t, 1.05, 1.35));
       brDraw(g, b, t, { clip: b.clip }); } },
 
-  { name: 'Blade Recall', vr: 'B · The catch', sec: 'new', tag: 'ACTIVE', key: '<kbd>R</kbd> to throw · <kbd>R</kbd> again to call it back',
+  { name: 'Blade Recall', vr: 'B · The catch', sec: 'new', tag: 'ACTIVE', key: '<kbd>R</kbd> to throw · tap <kbd>R</kbd> to call it back · <b>picked</b>: alternates with home to the sheath, one recall each',
     note: 'The same throw, point-first over their heads. It stops, turns tip up and over, and sinks to chest height pointing straight back at him, and hangs there, still, drifting a pixel at a time. The far samurai edges up to it and reaches out to take it. He opens his hand and calls: the blade leaves the samurai\'s fingers and runs both of them through at the chest, and he turns side-on to let it pass and snatches the grip as it goes by. Its weight swings his arm back and slides him a step. He flicks it clean and sheathes, and on the click they fall.',
     rx: 36, ry: 68, dur: 3.4, REC: 1.85, TR: .12,
     CALL: pz({ hx: -1, hy: 3, lean: -.14, chest: -.25, fl: [.6, .75], bl: [-.65, .45], fa: [.9, .5], ba: [-.6, .4], empty: true }),
@@ -572,7 +571,7 @@ const SKILLS = [
     },
     draw(S, g, layer, t) { if (layer !== 'top') return; const b = this.blade(S, t); if (b) brDraw(g, b, t); } },
 
-  { name: 'Blade Recall', vr: 'C · The anchor', sec: 'new', tag: 'ACTIVE', key: '<kbd>R</kbd> to throw · <kbd>R</kbd> again to go to it',
+  { name: 'Blade Recall', vr: 'C · The anchor', sec: 'new', tag: 'ACTIVE', key: '<kbd>R</kbd> to throw · <b>hold</b> <kbd>R</kbd> to go to it (proposed): a gap-closer, or an escape if you throw it away from danger',
     note: 'He throws it and it hangs beyond them the same way, still and drifting, pointing back at him, with a thread of light from its tip to his open hand. They see him unarmed and rush him. As the first one swings he calls, and instead of the blade coming to him he goes to the blade: a flash along the thread, through both of them, and he is standing past it with the grip already in his hand and the blade over his shoulder, pointing back at them. He does not turn round. He flicks it, sheathes, and on the click they fall.',
     rx: 30, ry: 68, dur: 3.3, REC: 1.8,
     OPEN: pz({ ...BR_WAIT, lean: -.04, ba: [1.45, -.05] }),
@@ -609,7 +608,7 @@ const SKILLS = [
       if (t > 1.05 && t < sk.REC) { const tip = [b.c[0] - 9, b.c[1]]; thread(g, t, tip, joints(S.R).bh, kk(t, 1.05, 1.35) * (t > sk.REC - .3 ? 1.6 : 1)); }
       brDraw(g, b, t); } },
 
-  { name: 'Time Slice', sec: 'new', tag: 'ULTIMATE', key: '<kbd>X</kbd> · needs a full Qi meter · the zone grows with your power',
+  { name: 'Time Slice', sec: 'new', tag: 'ULTIMATE', key: '<kbd>X</kbd> · needs a full Qi meter · the zone grows with your power · <b>approved</b>',
     note: 'He drops into the iai crouch and a zone opens round him; the world drains of colour and all but stops. Everyone inside the zone is taken, however many there are: he flickers from one to the next along the shortest path, one cut each, and the pass takes as long as it needs and no longer, a few frames for a handful, about a second and a half for a hundred. Then he is back where he started, kneeling, sliding the blade home. On the click colour snaps back and every cut fires at once. Those outside the zone flinch and hold. The loop steps through power I, II and III, and the zone grows with each.',
     W: 400, H: 140, wide: true, rx: 200, ry: 92, dur: 99, ZONE: [48, 96, 178],
     POSES: [
