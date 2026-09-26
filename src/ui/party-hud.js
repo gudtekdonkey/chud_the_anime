@@ -8,7 +8,7 @@ import { allies, PS, downNear, drawPartyWorld } from '../party/companions.js';
 import { nearSpot, verb } from '../party/recruit.js';
 import { X, pairCandidate } from '../party/paired.js';
 
-// ---- The party on the HUD: one small bar per companion, ten to a row, under the skill bar; the order; the prompts over the world ----
+// ---- The party on the HUD: one small bar per companion, ten to a row, under the skill bar and Flow; the order; the prompts over the world ----
 const WH = '#ffffff', CY = '#6ff3e4', INK = '#e9eeee';
 // a key cap and its word, centred on x (the items' E prompt, with any key)
 function keyCap(x, y, k, word, col) {
@@ -26,7 +26,7 @@ export function drawPartyPrompts() {
   const s = nearSpot(); if (s) keyCap(s.x, s.y - (s.kind === 'camp' ? 32 : 36), 'E', verb(s), INK);
 }
 export function drawPartyHud() {
-  const n = allies.length, rows = Math.max(1, Math.ceil(n / 10)), y0 = 48, hold = party.order === 'hold';
+  const n = allies.length, rows = Math.max(1, Math.ceil(n / 10)), y0 = 58, hold = party.order === 'hold';
   panel(5, y0, 80, 12 + rows * 4);
   text('PARTY ' + n, 9, y0 + 3, '#a9b1b6'); const o = hold ? 'HOLD' : 'FOLLOW'; text(o, 81 - textW(o), y0 + 3, hold ? CY : '#565e66');
   allies.forEach((a, i) => { const x = 9 + (i % 10) * 7, y = y0 + 10 + Math.floor(i / 10) * 4;

@@ -129,7 +129,8 @@ try {
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
   await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
     // out of every samurai's reach first (the top-left corner), so K is the plain teleport, not an assassination
-    await kb.down('a'); await kb.down('w'); await sleep(5500); await kb.up("a"); await kb.up("w"); await reach(FREE);
+    // walked to by position, not for a fixed time: on a slow machine the game runs slower and a timed walk falls short
+    await walkTo(24, 60, 15000); await reach(FREE);
     await kb.press('k'); await reach(/^tele$/); await reach(FREE);
     await until('K on cooldown', () => window.__game.P.cd.tele > 0);
     await kb.press('k'); await until('the refused press', () => window.__game.P.cdDeny.tele > 0);
@@ -151,20 +152,36 @@ try {
     if (cd.tele !== 0) fail(`K is still cooling down (${cd.tele})`);
     await shot('08-skill-bar'); });
   await run('walk into coins: they fly to him and mon goes up', async () => {
-    const m0 = (await inv()).mon; await walkTo(388, 150); await until('a coin collected', m => window.__game.INV.mon > m, m0); await shot('09-coins'); });
+    // the three coins, wherever he picked them up (a dash through them on the way counts too)
+    await walkTo(388, 150); await until('the coins collected', () => window.__game.INV.mon >= 3); await shot('09-coins'); });
   await run('E at the shrine: brackets, pray, health full', async () => {
     await walkTo(78, 98); await sleep(250); await shot('10-lock-on'); await kb.press('e'); await reach(/^pray$/); await sleep(700); await shot('11-pray'); await reach(FREE);
     const v = await inv(); if (v.hp !== 1) fail(`health is ${v.hp} after praying`); });
+  await run('E at the prayed shrine: offer 3 shards for an upgrade, power II', async () => {
+    if ((await inv()).shards < 3) fail('not enough shards picked up on the way');
+    await kb.press('e'); await reach(/^pray$/); await reach(FREE);
+    const v = await inv(); if (v.upgrades !== 1 || v.power !== 2) fail(`upgrades ${v.upgrades}, power ${v.power}`); await shot('11b-power'); });
   await run('E at the grave: take the Grave Nodachi, then cut with it', async () => {
     await walkTo(203, 100); await kb.press('e'); await reach(/^take$/); await sleep(300); await shot('12-new-weapon'); await reach(FREE);
     if ((await inv()).weapon !== 'nodachi') fail('the weapon slot did not swap');
     await kb.press('j'); await reach(/^slash1$/); await reach(FREE); });
   await run('1: throw a static bomb from the quick slot', async () => {
     const n0 = (await inv()).quick[0].n; await kb.press('1'); await reach(/^bomb$/); await sleep(250); await shot('13-bomb'); await reach(FREE);
-    if ((await inv()).quick[0].n !== n0 - 1) fail('the bomb count did not drop'); });
+    if ((await inv()).quick[0].n !== n0 - 1) fail('the bomb count did not drop');
+    if (!(await page.evaluate(() => window.__game.S.smoke > 0))) fail('the smoke is not up'); });
   await run('hold E by the fallen: Harvest turns them to EXP', async () => {
-    await walkTo(160, 152); await kb.down('e'); await reach(/^harvest$/); await until('EXP', () => window.__game.INV.exp > 10 || window.__game.INV.lv > 1);
+    const body = await page.evaluate(() => { const e = window.__game.E.find(e => !e.alive); return e && [e.x, e.y]; });
+    if (!body) fail('no fallen samurai to harvest');
+    await walkTo(body[0] + (body[0] > 240 ? -24 : 24), body[1]); await kb.down('e'); await reach(/^harvest$/); await until('EXP', () => window.__game.INV.exp > 10 || window.__game.INV.lv > 1);
     await shot('14-harvest'); await kb.up('e'); await reach(FREE); });
+  await run('power III (the test picker): the Crescent Moon comes with its twin and the slam with its pillars', async () => {
+    await page.selectOption('#power', '3'); await until('power III', () => window.__game.INV.power === 3);
+    await until('O ready', () => !(window.__game.P.cd.moon > 0), null, 12000);
+    await kb.down('o'); await reach(/^moonHold$/); await until('the O charge', () => window.__game.P.charge > .9);
+    await kb.up('o'); await reach(/^moon$/); await sleep(200); await shot('15-power-III-moon'); await reach(FREE);
+    await until('U ready', () => !(window.__game.P.cd.sweep > 0), null, 10000);
+    await kb.press('u'); await reach(/^sweep$/); await until('the slam', () => window.__game.P.t > 1.9); await shot('16-power-III-slam'); await reach(FREE, 8000);
+    await page.selectOption('#power', '0'); });
   await run('C: sit, then a key to stand', async () => {
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });
@@ -185,6 +202,8 @@ try {
     await page.locator('[data-outfit="Default"]').click();
     if (!await has('mantle') || await has('coat')) fail('the default outfit did not come back'); });
   await run('basic skill 6: J chains six cuts; six landed cuts earn Flow, and a skill on cooldown casts anyway', async () => {
+    // at power I: power's damage would kill a samurai before six cuts can land on him
+    await page.selectOption('#power', '1'); await until('power I', () => window.__game.INV.power === 1);
     await page.selectOption('#basic', '450'); await until('a six-cut combo', () => window.__game.INV.basic >= 450); await page.locator('#game').click();
     await page.evaluate(() => { window.__log = []; });
     for (let i = 0; i < 40 && !await page.evaluate(() => window.__game.P.flow > 0); i++) {
