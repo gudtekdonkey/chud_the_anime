@@ -93,6 +93,43 @@ The measure of power in this world is land and what it grows, the way feudal Jap
 - Should carried money have weight, so a fortune has to be moved, stored or banked?
 - What is lost on death: carried coin only, or more?
 
+## People, work, quests and world events (proposed, for the owner to confirm)
+
+All four run on the same ledger as ownership and wealth: the world keeps going whether or not he is there, and what he sees in a zone is that ledger made visible.
+
+### NPCs are people with lives
+- Every NPC is the same actor as the ronin (body, clothes by class and rank, personality, inventory, faction, karma, standing), plus:
+  - **a job** (below), a **home** (a plot, a house, a barracks, a camp) and **a daily schedule**: work by day, eat, drink, sleep; guards change watch; bandits move at night.
+  - **needs**: food, money, safety. A hungry village steals; a broke ronin turns bandit.
+  - **relationships**: family, master and servant, friends, rivals, grudges. Kill a man and his brother remembers.
+  - **an ambition**, for the ones who matter: a farmer wants more land, a retainer wants his lord's seat, a bandit chief wants a zone.
+  - **memory** of the ronin: what they saw him do, what they heard.
+- Most NPCs live only in the ledger until he walks into their zone. Named ones (lords, elders, rivals, companions) are always tracked in full.
+
+### Jobs
+- **NPC jobs** by class: farmer, fisher, woodcutter, miner, smith, merchant, innkeeper, monk, retainer, ashigaru, guard, magistrate, tax collector, courier, bandit, bounty hunter, shinobi, lord. A job decides where they go, what they carry, what they fight with, and what they produce into the ledger.
+- **His jobs** (contracts): posted at inns, shrines and magistrates, or offered by NPCs who need something: escort a caravan, hunt a bandit, kill a man, guard a village through a raid, recover a stolen blade, collect a debt, carry a message through enemy land, win a duel for someone's honour.
+- **His own work** on his land runs through the land session's plans and recipes; companions can be hired into any job he can give them.
+
+### Quests: made by the world, plus a few written by hand
+- **Most quests come from the ledger**, out of what is actually happening: a village is starving (bring rice or raid the lord's storehouse), a lord is dying and his two sons both want the seat (pick one), a bandit camp keeps raiding a road (clear it), a merchant was robbed (find who). Each one is real: ignore it and it plays out without him.
+- **A few are written**: his own story as a ronin, each region's main tale, and named rivals who come back.
+- **Every quest can be solved more than one way** (fight, stealth, bribe, betray), and each way moves karma, standing and money differently.
+
+### World events
+Events are the ledger's big moves, felt in every zone they reach:
+- **Seasons and the calendar:** planting, harvest, festivals (Obon, the New Year), winter scarcity.
+- **Nature:** typhoons, floods, drought, famine, plague, a comet, an earthquake.
+- **Politics:** a lord dies and his sons fight; a kingdom declares war; a peasant uprising; a new tax; a royal procession passes (colour on the road: rare loot, and death to anyone who touches it).
+- **Crime and order:** a famous bounty is posted; a bandit army gathers; a crackdown in a region he has made hostile.
+- **The otherworld:** glitch storms, where reality tears (the ronin's own glitch powers are part of this world's secret); a shrine goes dark; the dead walk for a night.
+- Events are announced in the world (a messenger, a notice board, smoke on the horizon, a bell) and on the world map, and they change prices, danger, standing and who owns what.
+
+### Open, for the owner
+- How much story is written by hand, and how much comes from the world?
+- Does the otherworld (glitch storms, the ronin's powers) have a story behind it?
+- Should NPCs age, marry and have heirs, so land passes down the generations and the world changes over years of play?
+
 ## Engineering decisions (Claude's, unless the owner objects)
 - **One actor for everyone**: the ronin, enemies, companions, villagers, lords and animals are the same entity: body (rig, clothes, weapon), personality, inventory, a brain (player, AI or orders), a faction, karma and standing.
 - **Everything is data with stable IDs** (items, weapons, clothes, cultures, recipes, actions, executions), so saves and new content never break each other.
