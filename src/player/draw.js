@@ -1,0 +1,58 @@
+import { COL } from '../config.js';
+import { g } from '../screen.js';
+import { P } from '../state.js';
+import { GLITCHY } from '../anims/anims.js';
+import { SHEETS } from '../anims/sheets.js';
+import { frameOf } from './actions.js';
+import { glowK } from './body.js';
+import { spriteTo, solid } from '../world/sprite.js';
+
+// ---- Drawing him: shadow, reflection, afterimages, the charge rim, the strike flash, the glitch slice; and his mirror images ----
+const buf = document.createElement('canvas'), bg2 = buf.getContext('2d');
+// his silhouette dilated by a pixel, in cyan at low alpha, flickering behind him; a second, paler pixel once the charge is high
+function rim(sheet, f, x, y, face, k) {
+  const fl = .7 + Math.random() * .3, sh = solid(sheet, f, COL.fx);
+  for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) spriteTo(g, sh, 0, x + ox, y + oy, face, (.14 + .5 * k) * fl);
+  if (k > .6) { const s2 = solid(sheet, f, COL.fx2); for (const [ox, oy] of [[2, 0], [-2, 0], [0, -2], [1, -1], [-1, -1]]) spriteTo(g, s2, 0, x + ox, y + oy, face, (k - .6) * .4 * fl); }
+}
+export function drawPlayer() {
+  const sheet = SHEETS[P.state], f = frameOf();
+  const glitchy = (GLITCHY.has(P.state) && sheet.custom) || P.glitchNow > 0;
+  // shadow and reflection
+  g.fillStyle = 'rgba(20,24,24,.35)';
+  const sw = Math.max(4, 12 - P.z / 4);
+  g.fillRect(Math.round(P.x - sw / 2), Math.round(P.y), Math.round(sw), 2);
+  g.save(); g.globalAlpha = .17; g.translate(0, 2 * P.y + 1); g.scale(1, -1);
+  spriteTo(g, sheet, f, P.x, P.y + P.z, P.face); g.restore();
+  // afterimages
+  for (const gh of P.ghosts)
+    spriteTo(g, solid(SHEETS[gh.state], gh.f, gh.white > 0 ? '#ffffff' : COL.fx), 0, gh.x, gh.y, gh.face, (gh.white > 0 ? 1 : .45) * Math.min(1, 1 - (gh.age - gh.hold) / .25));
+  // the charge glow (and the meditation aura): a flickering cyan rim behind him
+  const px = P.x + P.trem, gk = glowK();
+  if (gk > 0) rim(sheet, f, px, P.y - P.z, P.face, gk);
+  // strike frames: the whole body as a white silhouette for ~2 frames
+  if (P.flash > 0) { spriteTo(g, solid(sheet, f, '#ffffff'), 0, px, P.y - P.z, P.face); return; }
+  // the sprite; dropped-in glitch animations get the engine's slice effect on top
+  if (!glitchy) { spriteTo(g, sheet, f, px, P.y - P.z, P.face); return; }
+  buf.width = sheet.fw; buf.height = sheet.fh;
+  bg2.drawImage(sheet.img, f * sheet.fw, 0, sheet.fw, sheet.fh, 0, 0, sheet.fw, sheet.fh);
+  const sl = document.createElement('canvas'); sl.width = sheet.fw; sl.height = sheet.fh;
+  const sg = sl.getContext('2d'); let y = 0;
+  while (y < sheet.fh) { const h = 1 + (Math.random() * 3 | 0), off = Math.random() < .35 ? Math.round((Math.random() - .5) * 8) : 0; sg.drawImage(buf, 0, y, sheet.fw, h, off, y, sheet.fw, h); y += h; }
+  spriteTo(g, { img: sl, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy }, 0, P.x, P.y - P.z, P.face);
+}
+// a mirror image: a pale 1px rim, then his frame tinted cyan and sliced into rows that jump sideways (glitchy edges)
+const mcv = document.createElement('canvas'), mg = mcv.getContext('2d');
+export function drawMirror(m) {
+  const sh = SHEETS[m.st], f = Math.min(sh.n - 1, m.f), a = m.a * .8; if (a <= 0) return;
+  g.fillStyle = 'rgba(20,24,24,.2)'; g.fillRect(Math.round(m.x - 5), Math.round(m.y), 10, 1);
+  if (m.white > 0) { spriteTo(g, solid(sh, f, '#ffffff'), 0, m.x, m.y, m.face, .9); return; }
+  const rimg = solid(sh, f, COL.fx2);
+  for (const [ox, oy] of [[1, 0], [-1, 0], [0, -1]]) spriteTo(g, rimg, 0, m.x + ox, m.y + oy, m.face, a * .3);
+  buf.width = sh.fw; buf.height = sh.fh; bg2.drawImage(sh.img, f * sh.fw, 0, sh.fw, sh.fh, 0, 0, sh.fw, sh.fh);
+  bg2.globalCompositeOperation = 'source-atop'; bg2.globalAlpha = .42; bg2.fillStyle = COL.fx; bg2.fillRect(0, 0, sh.fw, sh.fh);
+  bg2.globalAlpha = 1; bg2.globalCompositeOperation = 'source-over';
+  mcv.width = sh.fw; mcv.height = sh.fh; let y = 0;
+  while (y < sh.fh) { const h = 1 + (Math.random() * 3 | 0), off = Math.random() < .25 * m.glitch ? Math.round((Math.random() - .5) * 4 * m.glitch) : 0; mg.drawImage(buf, 0, y, sh.fw, h, off, y, sh.fw, h); y += h; }
+  spriteTo(g, { img: mcv, fw: sh.fw, fh: sh.fh, ox: sh.ox, oy: sh.oy }, 0, m.x, m.y, m.face, a);
+}

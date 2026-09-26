@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ronin Engine</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<link rel="stylesheet" href="/src/styles.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Ronin engine, <span>skills build</span></h1>
+    <p>The game engine at 480×270, top-down, with our own rigged ronin: every move is a real pose (wind-up, lean, lunge, follow-through). He keeps the katana sheathed until he attacks, waits in guard after, and resheathes when calm. Now with charged skills: tap <kbd>I</kbd> for the glitch double slash or hold it for Thousand Cuts, hold <kbd>O</kbd> for the Crescent Moon, <kbd>P</kbd> for the Cross Rift, <kbd>N</kbd> for Mirror Meditation. Every hit feeds his Qi (bottom left); when it fills, Storm Chain wakes for 8 s and every hit chains lightning through the training dummies.</p>
+  </header>
+
+  <section>
+    <canvas id="game" width="480" height="270" tabindex="0" aria-label="Game screen. Click, then use the keys listed below."></canvas>
+    <div class="hud" id="hud"></div>
+    <div class="keys">
+      <span><kbd>WASD</kbd> / <kbd>←↑↓→</kbd> move</span>
+      <span><kbd>J</kbd> slash (press twice to combo)</span>
+      <span><kbd>Space</kbd> jump</span>
+      <span><kbd>Shift</kbd> / <kbd>L</kbd> ground slide</span>
+      <span><kbd>K</kbd> glitch teleport</span>
+      <span><kbd>I</kbd> tap: glitch double slash</span>
+      <span>Hold <kbd>I</kbd>: Thousand Cuts</span>
+      <span>Hold <kbd>O</kbd>, release: Crescent Moon</span>
+      <span><kbd>P</kbd> Cross Rift (hold to charge)</span>
+      <span><kbd>N</kbd> Mirror Meditation</span>
+      <span><kbd>U</kbd> storm slam</span>
+      <span><kbd>C</kbd> sit and rest</span>
+      <span><kbd>X</kbd> die (to test)</span>
+    </div>
+    <label class="clear" for="clear"><input type="checkbox" id="clear"> Room is clear: the dummies don't count as enemies, so after an attack he sheathes at once</label>
+    <div class="pad" aria-label="Touch controls">
+      <button data-k="left" aria-label="Move left">←</button><button data-k="up" aria-label="Move up">↑</button>
+      <button data-k="down" aria-label="Move down">↓</button><button data-k="right" aria-label="Move right">→</button>
+      <button data-k="slash" class="act">Slash</button><button data-k="jump" class="act">Jump</button>
+      <button data-k="slide" class="act">Slide</button><button data-k="tele" class="act">Glitch</button>
+      <button data-k="double" class="act">Double (hold)</button><button data-k="sweep" class="act">Sweep</button>
+      <button data-k="moon" class="act">Moon (hold)</button><button data-k="rift" class="act">Rift (hold)</button>
+      <button data-k="mirror" class="act">Mirror</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Test a sprite strip</h2>
+    <div class="drop" id="drop">
+      <p>For testing new art: choose a sprite strip PNG (frames side by side in one row), pick which animation it is, and set the frame width. It replaces that placeholder at once. Nothing leaves your browser.</p>
+      <div class="form">
+        <label for="file">Strip PNG<input type="file" id="file" accept="image/png,image/gif,image/webp"></label>
+        <label for="anim">Animation<select id="anim"></select></label>
+        <label for="fw">Frame width, px<input type="number" id="fw" min="1" step="1"></label>
+        <label for="fps">Frames / sec<input type="number" id="fps" min="1" max="60" step="1" value="12"></label>
+        <label for="footY">Feet from bottom, px<input type="number" id="footY" min="0" step="1" value="0"></label>
+        <button id="apply" disabled>Use this strip</button>
+      </div>
+      <div class="loaded" id="loaded">Using placeholders for every animation.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>The moveset</h2>
+    <div class="tbl"><table>
+      <thead><tr><th>Animation</th><th>Top-down behaviour</th></tr></thead>
+      <tbody id="moves"></tbody>
+    </table></div>
+  </section>
+</div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

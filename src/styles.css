@@ -1,0 +1,45 @@
+/* the page around the game: dark ground, one cyan accent, pixel headings */
+body { margin: 0; }
+:root {
+  color-scheme: dark;
+  --ground: #121416;
+  --panel: #1b1e21;
+  --rule: #30353a;
+  --ink: #eef1f0;
+  --muted: #9aa3a1;
+  --cyan: #6ff3e4;
+}
+body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+.wrap { max-width: 1000px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 24px; }
+header { display: grid; gap: 8px; max-width: 66ch; }
+h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+h1 span { color: var(--cyan); }
+h2 { font: 700 20px/1.1 "Pixelify Sans", monospace; margin: 0; }
+p { margin: 0; color: var(--muted); }
+#game { width: 100%; max-width: 960px; aspect-ratio: 16 / 9; image-rendering: pixelated; display: block; outline: 1px solid var(--rule); cursor: pointer; background: #474c4a; }
+#game:focus-visible { outline: 2px solid var(--cyan); }
+.hud { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 500 14px/1.3 "Pixelify Sans", monospace; color: var(--muted); }
+.hud b { color: var(--cyan); font-weight: 500; }
+.keys { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 18px; color: var(--muted); font-size: 14px; }
+kbd { font: 500 13px/1 "Pixelify Sans", monospace; background: var(--panel); border: 1px solid var(--rule); padding: 3px 6px; color: var(--ink); }
+.clear { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 14px; cursor: pointer; }
+.clear input { accent-color: var(--cyan); width: 16px; height: 16px; }
+.pad { display: flex; flex-wrap: wrap; gap: 8px; }
+.pad button { font: 500 15px/1 "Pixelify Sans", monospace; background: var(--panel); color: var(--ink); border: 1px solid var(--rule); min-width: 48px; height: 44px; padding-inline: 12px; touch-action: none; user-select: none; }
+.pad .act { border-color: var(--cyan); }
+@media (pointer: fine) { .pad { display: none; } }
+section { display: grid; gap: 12px; }
+.drop { border: 1px dashed var(--rule); background: var(--panel); padding: 18px; display: grid; gap: 14px; }
+.drop.over { border-color: var(--cyan); }
+.form { display: flex; flex-wrap: wrap; gap: 12px 16px; align-items: end; }
+.form label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.form select, .form input { font: 15px Figtree, system-ui, sans-serif; background: var(--ground); color: var(--ink); border: 1px solid var(--rule); height: 38px; padding-inline: 8px; min-width: 0; }
+.form input[type=number] { width: 90px; }
+.form button { font: 500 15px "Pixelify Sans", monospace; background: var(--cyan); color: #0c1413; border: 0; height: 38px; padding-inline: 16px; cursor: pointer; }
+.form button:disabled { background: var(--rule); color: var(--muted); cursor: default; }
+.loaded { color: var(--muted); font-size: 14px; }
+table { border-collapse: collapse; font-size: 14px; width: 100%; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { color: var(--muted); font-weight: 600; }
+td:first-child { font-family: "Pixelify Sans", monospace; color: var(--ink); white-space: nowrap; }
+.tbl { overflow-x: auto; }
