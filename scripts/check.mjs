@@ -71,6 +71,8 @@ try {
     await until('the Old master\'s slower walk', () => window.__game.P.gait.walk < 40);
     await page.locator('#game').click(); await kb.down('v'); await kb.down('a'); await reach(/^walk$/); await sleep(300); await shot('01c-old-master');
     await kb.up('a'); await kb.up('v'); await reach(/^idle$/);
+    await page.selectOption('#pz-preset', 'culture:shinobi');
+    await until('a shadow villager\'s traits', () => (window.__game.P.personality || []).some(([id]) => id === 'shadow'));
     await page.selectOption('#pz-preset', 'The ronin (as he is)'); await until('his own walk again', () => window.__game.P.gait.walk === 40);
     await page.locator('#game').click(); });
   await run('J, J: slash 1 flows into slash 2', async () => {

@@ -65,6 +65,7 @@ Decisions made in the design sessions so far, newest last.
 - Only idle, walk and run take the personality; attacks, skills and stances stay as drawn. With no traits he is exactly the ronin as before.
 - In the game: a picker under the screen, and hold **V** to walk (new). The samurai can take the same traits, since they share his rig.
 - **Approved:** keep all 52 traits as they are ("they're all great"). Merged to main.
+- **Cultures (owner):** every culture and place uses the trait system for its people's mannerisms and movement. A culture is a shared trait mix plus a pool of personal traits, one drawn per person, so a crowd shares a manner but no two move alike (`src/traits/cultures.js`). Seven starter cultures (court, clan, monastery, port, bandit hills, farming village, shadow village) until the cultures work names its own.
 - **Decided:** the ronin keeps the personality he has: no traits by default, so he stands, walks and runs as drawn. The picker stays for trying mixes.
 
 ## HUD
