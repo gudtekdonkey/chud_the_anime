@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ledger Tales</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root {
+  color-scheme: dark;
+  --ink: #131517; --ink2: #1b1e20; --slate: #474c4a; --line: #2c3130; --mute: #8d9693; --text: #dfe4e2;
+  --cyan: #6ff3e4; --cyan2: #52e8d6; --pale: #b8fff6; --washi: #d8d1bf; --washi2: #c9c0aa; --sumi: #22201c; --seal: #b3412f; --gold: #c9a45a;
+  --display: 'Shippori Mincho', 'Hiragino Mincho ProN', Georgia, serif;
+  --body: 'Zen Kaku Gothic New', 'Hiragino Sans', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ink); color: var(--text); font: 14px/1.5 var(--body); }
+body { padding-inline: 16px; padding-block: 14px 40px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 800; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+button, input { font: inherit; }
+button { background: var(--ink2); color: var(--text); border: 1px solid var(--slate); padding: 5px 11px; cursor: pointer; border-radius: 2px; }
+button:hover { border-color: var(--cyan2); color: var(--pale); }
+button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+button.primary { border-color: var(--cyan2); color: var(--cyan); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.label { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--mute); }
+
+header { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 28px; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 14px; }
+header h1 { font-size: 30px; line-height: 1; }
+header h1 small { display: block; font: 400 12px var(--body); color: var(--mute); letter-spacing: .04em; margin-top: 6px; }
+.clock { font-family: var(--display); font-size: 20px; color: var(--pale); }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.controls input { width: 80px; background: var(--ink2); color: var(--text); border: 1px solid var(--slate); padding: 5px 8px; border-radius: 2px; }
+.him { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: baseline; margin-left: auto; }
+.him b { font-family: var(--display); font-size: 16px; color: var(--text); }
+.him .num { color: var(--pale); }
+
+main { display: grid; grid-template-columns: minmax(280px, 400px) minmax(0, 1fr) minmax(0, 1.05fr); gap: 18px; align-items: start; }
+@media (max-width: 1180px) { main { grid-template-columns: minmax(260px, 400px) minmax(0, 1fr); } #questCol { grid-column: 1 / -1; } }
+@media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+section > h2 { font-size: 18px; margin-bottom: 8px; }
+.panel { border-top: 1px solid var(--line); padding-top: 10px; }
+
+#map { width: 100%; max-width: 400px; aspect-ratio: 1; image-rendering: pixelated; display: block; cursor: crosshair; background: #0e1112; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--mute); margin-top: 6px; }
+.legend i { display: inline-block; width: 9px; height: 9px; margin-right: 5px; vertical-align: -1px; }
+#chart { width: 100%; height: 150px; display: block; margin-top: 6px; }
+.feed { max-height: 300px; overflow-y: auto; font-size: 13px; margin-top: 6px; }
+.feed div { padding: 4px 0; border-bottom: 1px dotted var(--line); display: grid; grid-template-columns: 74px 1fr; gap: 8px; }
+.feed .when { color: var(--mute); font-family: var(--mono); font-size: 11px; padding-top: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.chip { font-size: 11px; padding: 2px 8px; border: 1px solid var(--slate); border-radius: 10px; cursor: pointer; background: none; }
+.chip.on { border-color: var(--cyan2); color: var(--cyan); }
+
+/* the board: a wooden frame with washi slips pinned to it */
+.board { background: #2a241c; border: 6px solid #3a3025; padding: 14px; box-shadow: inset 0 0 0 1px #4a3d2e; }
+.board h2 { color: var(--washi); font-size: 22px; }
+.board .sub { color: #a89d86; font-size: 12px; margin-bottom: 10px; }
+.tale { background: var(--washi); color: var(--sumi); padding: 10px 12px; margin-bottom: 12px; border-left: 4px solid var(--seal); }
+.tale h3 { font-size: 17px; }
+.tale p { margin: 4px 0 0; }
+.tale .also { font-size: 12px; color: #6a6252; margin-top: 4px; }
+.signs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.sign { font-size: 12px; padding: 2px 8px; background: #3a3025; color: #cfc4ab; border-radius: 2px; }
+.sign.hot { background: var(--seal); color: #fff1e8; }
+.mood { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px 14px; margin-bottom: 12px; }
+.meter { font-size: 11px; color: #cfc4ab; }
+.meter .bar { display: block; height: 5px; background: #3a3025; margin-top: 3px; }
+.meter .bar i { display: block; height: 100%; background: var(--washi2); }
+.meter.bad .bar i { background: var(--seal); }
+.slips { display: grid; gap: 8px; }
+.slip { background: var(--washi); color: var(--sumi); padding: 9px 11px; cursor: pointer; text-align: left; border: 0; border-radius: 0; position: relative; width: 100%; }
+.slip:hover, .slip.sel { outline: 2px solid var(--cyan); outline-offset: 1px; color: var(--sumi); }
+.slip h4 { margin: 0; font: 700 14px var(--body); }
+.slip .meta { font-size: 11px; color: #6a6252; display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 2px; }
+.slip .seal { position: absolute; right: 8px; top: 8px; font: 600 11px var(--mono); color: var(--seal); }
+.news { margin-top: 12px; font-size: 13px; color: #d9cfb8; }
+.news p { margin: 0; padding: 5px 0; border-bottom: 1px dashed #4a3d2e; }
+.news .h { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #a89d86; margin-right: 6px; }
+.empty { color: #a89d86; font-style: italic; font-size: 13px; }
+
+#quest h2 { font-size: 22px; }
+#quest .q-text { max-width: 62ch; }
+.who { font-size: 12px; color: var(--mute); }
+.ways { display: grid; gap: 8px; margin-top: 12px; }
+.way { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; border: 1px solid var(--line); padding: 8px 10px; background: var(--ink2); }
+.way h4 { margin: 0; font: 700 14px var(--body); }
+.way .tag { font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--cyan2); margin-right: 6px; }
+.way p { margin: 0; font-size: 12px; color: var(--mute); grid-column: 1; }
+.way .fx { grid-column: 1; font: 12px var(--mono); display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.way button { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
+.up { color: var(--cyan); } .down { color: #e2826f; }
+.outcome { border-left: 3px solid var(--cyan); padding: 8px 12px; background: var(--ink2); margin-top: 12px; }
+.outcome.world { border-color: var(--slate); }
+.cmp { overflow-x: auto; margin-top: 12px; }
+.cmp table { border-collapse: collapse; font-size: 12px; min-width: 680px; }
+.cmp th, .cmp td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.cmp th { font-weight: 400; color: var(--mute); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.cmp td.num { text-align: right; white-space: nowrap; }
+.cmp td.story { min-width: 220px; max-width: 300px; }
+.cmp td:first-child { min-width: 120px; }
+.hint { font-size: 12px; color: var(--mute); margin-top: 6px; max-width: 62ch; }
+.busy { color: var(--cyan); font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Ledger Tales<small>Prototype 40 · quests and world events, made by the world</small></h1>
+  <div><div class="label">Now</div><div class="clock" id="clock">…</div></div>
+  <div class="controls">
+    <label class="label" for="seed">Seed</label><input id="seed" value="12345" inputmode="numeric">
+    <button id="regen">New world</button>
+    <button id="d7">+7 days</button><button id="season" class="primary">+1 season</button><button id="year">+1 year</button><button id="ten">+10 years</button>
+  </div>
+  <div class="him" id="him"></div>
+</header>
+<main>
+  <section>
+    <h2>The land</h2>
+    <canvas id="map" width="400" height="400" tabindex="0" aria-label="World map: click a region to read its notice board"></canvas>
+    <div class="legend"><span><i style="background:#e0864f"></i>smoke (raid, battle)</span><span><i style="background:#6ff3e4"></i>bell (disaster, death)</span><span><i style="background:#b3412f"></i>war front</span><span><i style="background:#fff"></i>the ronin</span></div>
+    <div class="panel" style="margin-top:14px">
+      <div class="label">World events per season</div>
+      <canvas id="chart" width="800" height="300"></canvas>
+      <div class="chips" id="cats"></div>
+      <div class="feed" id="feed"></div>
+    </div>
+  </section>
+  <section id="boardCol"><div class="board" id="board"></div></section>
+  <section id="questCol"><div id="quest"></div></section>
+</main>
+<!-- BUNDLE -->
+</body>
+</html>

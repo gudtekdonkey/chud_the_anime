@@ -1,0 +1,4999 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ledger Tales</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@600;800&family=Zen+Kaku+Gothic+New:wght@400;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+:root {
+  color-scheme: dark;
+  --ink: #131517; --ink2: #1b1e20; --slate: #474c4a; --line: #2c3130; --mute: #8d9693; --text: #dfe4e2;
+  --cyan: #6ff3e4; --cyan2: #52e8d6; --pale: #b8fff6; --washi: #d8d1bf; --washi2: #c9c0aa; --sumi: #22201c; --seal: #b3412f; --gold: #c9a45a;
+  --display: 'Shippori Mincho', 'Hiragino Mincho ProN', Georgia, serif;
+  --body: 'Zen Kaku Gothic New', 'Hiragino Sans', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, Menlo, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--ink); color: var(--text); font: 14px/1.5 var(--body); }
+body { padding-inline: 16px; padding-block: 14px 40px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 800; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+button, input { font: inherit; }
+button { background: var(--ink2); color: var(--text); border: 1px solid var(--slate); padding: 5px 11px; cursor: pointer; border-radius: 2px; }
+button:hover { border-color: var(--cyan2); color: var(--pale); }
+button:focus-visible, input:focus-visible, canvas:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+button.primary { border-color: var(--cyan2); color: var(--cyan); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.mono, .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.label { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--mute); }
+
+header { display: flex; flex-wrap: wrap; align-items: end; gap: 12px 28px; border-bottom: 1px solid var(--line); padding-bottom: 12px; margin-bottom: 14px; }
+header h1 { font-size: 30px; line-height: 1; }
+header h1 small { display: block; font: 400 12px var(--body); color: var(--mute); letter-spacing: .04em; margin-top: 6px; }
+.clock { font-family: var(--display); font-size: 20px; color: var(--pale); }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.controls input { width: 80px; background: var(--ink2); color: var(--text); border: 1px solid var(--slate); padding: 5px 8px; border-radius: 2px; }
+.him { display: flex; flex-wrap: wrap; gap: 4px 18px; align-items: baseline; margin-left: auto; }
+.him b { font-family: var(--display); font-size: 16px; color: var(--text); }
+.him .num { color: var(--pale); }
+
+main { display: grid; grid-template-columns: minmax(280px, 400px) minmax(0, 1fr) minmax(0, 1.05fr); gap: 18px; align-items: start; }
+@media (max-width: 1180px) { main { grid-template-columns: minmax(260px, 400px) minmax(0, 1fr); } #questCol { grid-column: 1 / -1; } }
+@media (max-width: 760px) { main { grid-template-columns: 1fr; } }
+section > h2 { font-size: 18px; margin-bottom: 8px; }
+.panel { border-top: 1px solid var(--line); padding-top: 10px; }
+
+#map { width: 100%; max-width: 400px; aspect-ratio: 1; image-rendering: pixelated; display: block; cursor: crosshair; background: #0e1112; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--mute); margin-top: 6px; }
+.legend i { display: inline-block; width: 9px; height: 9px; margin-right: 5px; vertical-align: -1px; }
+#chart { width: 100%; height: 150px; display: block; margin-top: 6px; }
+.feed { max-height: 300px; overflow-y: auto; font-size: 13px; margin-top: 6px; }
+.feed div { padding: 4px 0; border-bottom: 1px dotted var(--line); display: grid; grid-template-columns: 74px 1fr; gap: 8px; }
+.feed .when { color: var(--mute); font-family: var(--mono); font-size: 11px; padding-top: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.chip { font-size: 11px; padding: 2px 8px; border: 1px solid var(--slate); border-radius: 10px; cursor: pointer; background: none; }
+.chip.on { border-color: var(--cyan2); color: var(--cyan); }
+
+/* the board: a wooden frame with washi slips pinned to it */
+.board { background: #2a241c; border: 6px solid #3a3025; padding: 14px; box-shadow: inset 0 0 0 1px #4a3d2e; }
+.board h2 { color: var(--washi); font-size: 22px; }
+.board .sub { color: #a89d86; font-size: 12px; margin-bottom: 10px; }
+.tale { background: var(--washi); color: var(--sumi); padding: 10px 12px; margin-bottom: 12px; border-left: 4px solid var(--seal); }
+.tale h3 { font-size: 17px; }
+.tale p { margin: 4px 0 0; }
+.tale .also { font-size: 12px; color: #6a6252; margin-top: 4px; }
+.signs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.sign { font-size: 12px; padding: 2px 8px; background: #3a3025; color: #cfc4ab; border-radius: 2px; }
+.sign.hot { background: var(--seal); color: #fff1e8; }
+.mood { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px 14px; margin-bottom: 12px; }
+.meter { font-size: 11px; color: #cfc4ab; }
+.meter .bar { display: block; height: 5px; background: #3a3025; margin-top: 3px; }
+.meter .bar i { display: block; height: 100%; background: var(--washi2); }
+.meter.bad .bar i { background: var(--seal); }
+.slips { display: grid; gap: 8px; }
+.slip { background: var(--washi); color: var(--sumi); padding: 9px 11px; cursor: pointer; text-align: left; border: 0; border-radius: 0; position: relative; width: 100%; }
+.slip:hover, .slip.sel { outline: 2px solid var(--cyan); outline-offset: 1px; color: var(--sumi); }
+.slip h4 { margin: 0; font: 700 14px var(--body); }
+.slip .meta { font-size: 11px; color: #6a6252; display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 2px; }
+.slip .seal { position: absolute; right: 8px; top: 8px; font: 600 11px var(--mono); color: var(--seal); }
+.news { margin-top: 12px; font-size: 13px; color: #d9cfb8; }
+.news p { margin: 0; padding: 5px 0; border-bottom: 1px dashed #4a3d2e; }
+.news .h { font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: #a89d86; margin-right: 6px; }
+.empty { color: #a89d86; font-style: italic; font-size: 13px; }
+
+#quest h2 { font-size: 22px; }
+#quest .q-text { max-width: 62ch; }
+.who { font-size: 12px; color: var(--mute); }
+.ways { display: grid; gap: 8px; margin-top: 12px; }
+.way { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; border: 1px solid var(--line); padding: 8px 10px; background: var(--ink2); }
+.way h4 { margin: 0; font: 700 14px var(--body); }
+.way .tag { font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--cyan2); margin-right: 6px; }
+.way p { margin: 0; font-size: 12px; color: var(--mute); grid-column: 1; }
+.way .fx { grid-column: 1; font: 12px var(--mono); display: flex; flex-wrap: wrap; gap: 2px 12px; }
+.way button { grid-column: 2; grid-row: 1 / span 3; align-self: center; }
+.up { color: var(--cyan); } .down { color: #e2826f; }
+.outcome { border-left: 3px solid var(--cyan); padding: 8px 12px; background: var(--ink2); margin-top: 12px; }
+.outcome.world { border-color: var(--slate); }
+.cmp { overflow-x: auto; margin-top: 12px; }
+.cmp table { border-collapse: collapse; font-size: 12px; min-width: 680px; }
+.cmp th, .cmp td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.cmp th { font-weight: 400; color: var(--mute); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.cmp td.num { text-align: right; white-space: nowrap; }
+.cmp td.story { min-width: 220px; max-width: 300px; }
+.cmp td:first-child { min-width: 120px; }
+.hint { font-size: 12px; color: var(--mute); margin-top: 6px; max-width: 62ch; }
+.busy { color: var(--cyan); font-size: 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Ledger Tales<small>Prototype 40 · quests and world events, made by the world</small></h1>
+  <div><div class="label">Now</div><div class="clock" id="clock">…</div></div>
+  <div class="controls">
+    <label class="label" for="seed">Seed</label><input id="seed" value="12345" inputmode="numeric">
+    <button id="regen">New world</button>
+    <button id="d7">+7 days</button><button id="season" class="primary">+1 season</button><button id="year">+1 year</button><button id="ten">+10 years</button>
+  </div>
+  <div class="him" id="him"></div>
+</header>
+<main>
+  <section>
+    <h2>The land</h2>
+    <canvas id="map" width="400" height="400" tabindex="0" aria-label="World map: click a region to read its notice board"></canvas>
+    <div class="legend"><span><i style="background:#e0864f"></i>smoke (raid, battle)</span><span><i style="background:#6ff3e4"></i>bell (disaster, death)</span><span><i style="background:#b3412f"></i>war front</span><span><i style="background:#fff"></i>the ronin</span></div>
+    <div class="panel" style="margin-top:14px">
+      <div class="label">World events per season</div>
+      <canvas id="chart" width="800" height="300"></canvas>
+      <div class="chips" id="cats"></div>
+      <div class="feed" id="feed"></div>
+    </div>
+  </section>
+  <section id="boardCol"><div class="board" id="board"></div></section>
+  <section id="questCol"><div id="quest"></div></section>
+</main>
+<script>
+(function() {
+	//#region src/sim/rng.js
+	function hash(...parts) {
+		let h = 2166136261;
+		for (const p of parts) {
+			const s = String(p);
+			for (let i = 0; i < s.length; i++) {
+				h ^= s.charCodeAt(i);
+				h = Math.imul(h, 16777619) >>> 0;
+			}
+			h ^= 40503;
+			h = Math.imul(h, 16777619) >>> 0;
+		}
+		return h >>> 0;
+	}
+	function rng(seed) {
+		let a = seed >>> 0;
+		const next = () => {
+			a = a + 1831565813 >>> 0;
+			let t = a;
+			t = Math.imul(t ^ t >>> 15, t | 1);
+			t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+			return ((t ^ t >>> 14) >>> 0) / 4294967296;
+		};
+		return {
+			next,
+			range: (lo, hi) => lo + next() * (hi - lo),
+			int: (lo, hi) => lo + Math.floor(next() * (hi - lo + 1)),
+			chance: (p) => next() < p,
+			pick: (arr) => arr[Math.floor(next() * arr.length)],
+			weighted: (pairs) => {
+				let t = 0;
+				for (const [, w] of pairs) t += w;
+				let x = next() * t;
+				for (const [v, w] of pairs) if ((x -= w) < 0) return v;
+				return pairs[pairs.length - 1][0];
+			},
+			shuffle: (arr) => {
+				for (let i = arr.length - 1; i > 0; i--) {
+					const j = Math.floor(next() * (i + 1));
+					[arr[i], arr[j]] = [arr[j], arr[i]];
+				}
+				return arr;
+			}
+		};
+	}
+	const rngFor = (seed, ...keys) => rng(hash(seed, ...keys));
+	//#endregion
+	//#region src/sim/time.js
+	const TIME = {
+		REAL_MS_PER_HOUR: 1e5,
+		HOURS_PER_DAY: 24,
+		DAYS_PER_SEASON: 28,
+		SEASONS: [
+			"spring",
+			"summer",
+			"autumn",
+			"winter"
+		],
+		DAWN: 5,
+		DUSK: 19
+	};
+	const HOURS_PER_SEASON = TIME.HOURS_PER_DAY * TIME.DAYS_PER_SEASON;
+	const HOURS_PER_YEAR = HOURS_PER_SEASON * TIME.SEASONS.length;
+	function calendar(h) {
+		const day = Math.floor(h / TIME.HOURS_PER_DAY), hour = h % TIME.HOURS_PER_DAY, si = Math.floor(h / HOURS_PER_SEASON) % 4;
+		return {
+			h,
+			hour,
+			day,
+			dayOfSeason: day % TIME.DAYS_PER_SEASON + 1,
+			seasonIndex: si,
+			season: TIME.SEASONS[si],
+			year: Math.floor(h / HOURS_PER_YEAR) + 1,
+			night: hour >= TIME.DUSK || hour < TIME.DAWN
+		};
+	}
+	const SYSTEMS = [];
+	function system(def) {
+		const i = SYSTEMS.findIndex((s) => s.id === def.id);
+		if (i >= 0) SYSTEMS.splice(i, 1);
+		SYSTEMS.push({
+			order: 50,
+			...def
+		});
+		SYSTEMS.sort((a, b) => a.order - b.order);
+		return def;
+	}
+	function createLedger(seed, realNow = Date.now()) {
+		return {
+			v: 1,
+			seed: seed >>> 0,
+			hour: 0,
+			realAt: realNow,
+			size: {
+				w: 100,
+				h: 100
+			},
+			zones: [],
+			regions: [],
+			cultures: [],
+			plots: {},
+			actors: {},
+			player: null,
+			log: [],
+			ids: {},
+			sys: {}
+		};
+	}
+	function initSystems(L) {
+		for (const s of SYSTEMS) if (s.init && !L.sys[s.id]) {
+			L.sys[s.id] = {};
+			s.init(L);
+		}
+	}
+	function newId(L, kind) {
+		const n = (L.ids[kind] || 0) + 1;
+		L.ids[kind] = n;
+		return kind + n;
+	}
+	const zoneAt = (L, x, y) => x < 0 || y < 0 || x >= L.size.w || y >= L.size.h ? null : L.zones[y * L.size.w + x];
+	const LISTENERS = /* @__PURE__ */ new Map();
+	function on(type, fn) {
+		(LISTENERS.get(type) || LISTENERS.set(type, []).get(type)).push(fn);
+		return () => {
+			const a = LISTENERS.get(type);
+			a.splice(a.indexOf(fn), 1);
+		};
+	}
+	const LOG_CAP = 4e3;
+	function emit(L, type, data = {}) {
+		const e = {
+			h: L.hour,
+			type,
+			...data
+		};
+		L.log.push(e);
+		if (L.log.length > 4e3) L.log.splice(0, L.log.length - LOG_CAP);
+		for (const fn of LISTENERS.get(type) || []) fn(e, L);
+		for (const fn of LISTENERS.get("*") || []) fn(e, L);
+		return e;
+	}
+	const HOURLY_CATCHUP = 48;
+	function advance(L, hours, live = false) {
+		const hourly = live || hours <= HOURLY_CATCHUP;
+		for (let i = 0; i < hours; i++) {
+			L.hour++;
+			const cal = calendar(L.hour);
+			if (hourly) {
+				for (const s of SYSTEMS) if (s.onHour) s.onHour(L, cal, rngFor(L.seed, "h", L.hour, s.id));
+			}
+			if (cal.hour === 0) {
+				if (cal.dayOfSeason === 1) {
+					if (cal.seasonIndex === 0) {
+						for (const s of SYSTEMS) if (s.onYear) s.onYear(L, cal, rngFor(L.seed, "y", cal.year, s.id));
+					}
+					for (const s of SYSTEMS) if (s.onSeason) s.onSeason(L, cal, rngFor(L.seed, "s", cal.day, s.id));
+				}
+				for (const s of SYSTEMS) if (s.onDay) s.onDay(L, cal, rngFor(L.seed, "d", cal.day, s.id));
+			}
+		}
+	}
+	//#endregion
+	//#region src/sim/cultures.js
+	const CLASSES = {
+		royal: {
+			rank: 6,
+			dress: "royal",
+			weapons: [
+				["katana", 3],
+				["daisho", 2],
+				["tessen", 1]
+			],
+			jobs: ["lord"]
+		},
+		noble: {
+			rank: 5,
+			dress: "dark",
+			weapons: [
+				["katana", 3],
+				["daisho", 2],
+				["tessen", 1]
+			],
+			jobs: [
+				"lord",
+				"magistrate",
+				"steward"
+			]
+		},
+		retainer: {
+			rank: 4,
+			dress: "dark",
+			weapons: [
+				["katana", 5],
+				["daisho", 2],
+				["nodachi", 1]
+			],
+			jobs: [
+				"retainer",
+				"guard",
+				"magistrate",
+				"tax collector"
+			]
+		},
+		ronin: {
+			rank: 3,
+			dress: "black",
+			weapons: [
+				["katana", 5],
+				["nodachi", 2],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"ronin",
+				"bounty hunter",
+				"guard"
+			]
+		},
+		ashigaru: {
+			rank: 2,
+			dress: "earth",
+			weapons: [
+				["yari", 5],
+				["katana", 1],
+				["tetsubo", 1]
+			],
+			jobs: [
+				"ashigaru",
+				"guard",
+				"courier"
+			]
+		},
+		monk: {
+			rank: 3,
+			dress: "black",
+			weapons: [["naginata", 3], ["bo", 3]],
+			jobs: [
+				"monk",
+				"abbot",
+				"healer"
+			]
+		},
+		commoner: {
+			rank: 1,
+			dress: "earth",
+			weapons: [
+				["kama", 3],
+				["bo", 1],
+				["tanto", 1],
+				["nunchaku", 1]
+			],
+			jobs: [
+				"farmer",
+				"farmer",
+				"farmer",
+				"fisher",
+				"woodcutter",
+				"miner",
+				"smith",
+				"merchant",
+				"innkeeper",
+				"carpenter",
+				"weaver",
+				"brewer",
+				"courier"
+			]
+		},
+		rebel: {
+			rank: 1,
+			dress: "earth",
+			weapons: [
+				["naginata", 3],
+				["yari", 3],
+				["kama", 3],
+				["nunchaku", 1],
+				["katana", 1]
+			],
+			jobs: ["farmer", "rebel"]
+		},
+		outlaw: {
+			rank: 0,
+			dress: "earth",
+			weapons: [
+				["katana", 2],
+				["tanto", 2],
+				["kanabo", 2],
+				["tetsubo", 1],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"bandit",
+				"smuggler",
+				"thief"
+			]
+		},
+		shinobi: {
+			rank: 2,
+			dress: "black",
+			weapons: [
+				["tanto", 3],
+				["kusarigama", 3],
+				["wakizashi", 1]
+			],
+			jobs: [
+				"shinobi",
+				"spy",
+				"courier"
+			]
+		}
+	};
+	const KINDS$1 = {
+		clan: {
+			count: 7,
+			size: 7,
+			label: "clan",
+			classes: [
+				["noble", 1],
+				["retainer", 6],
+				["ashigaru", 8],
+				["commoner", 30],
+				["monk", 1]
+			],
+			traits: [
+				"soldier",
+				"stoic",
+				"proud",
+				"veteran",
+				"calm"
+			],
+			despise: [
+				"drunk",
+				"lazy",
+				"slouch"
+			],
+			royalty: true
+		},
+		court: {
+			count: 1,
+			size: 2,
+			label: "court",
+			classes: [
+				["royal", 2],
+				["noble", 5],
+				["retainer", 6],
+				["commoner", 20]
+			],
+			traits: [
+				"regal",
+				"vain",
+				"serene",
+				"scholar"
+			],
+			despise: [
+				"drunk",
+				"scratcher",
+				"brawler"
+			],
+			royalty: true
+		},
+		rebels: {
+			count: 3,
+			size: 5,
+			label: "free valleys",
+			classes: [
+				["rebel", 12],
+				["commoner", 20],
+				["monk", 2],
+				["ronin", 1]
+			],
+			traits: [
+				"restless",
+				"grim",
+				"weary",
+				"eager"
+			],
+			despise: [
+				"regal",
+				"vain",
+				"cocky"
+			]
+		},
+		monastic: {
+			count: 2,
+			size: 3,
+			label: "temple lands",
+			classes: [["monk", 8], ["commoner", 14]],
+			traits: [
+				"serene",
+				"monk",
+				"humble",
+				"calm"
+			],
+			despise: [
+				"menacing",
+				"vain",
+				"drunk"
+			]
+		},
+		bandits: {
+			count: 2,
+			size: 4,
+			label: "outlaw coast",
+			classes: [
+				["outlaw", 14],
+				["ronin", 3],
+				["commoner", 6]
+			],
+			traits: [
+				"menacing",
+				"cocky",
+				"brawler",
+				"drunk",
+				"twitchy"
+			],
+			despise: [
+				"soldier",
+				"regal",
+				"monk"
+			]
+		},
+		shinobi: {
+			count: 1,
+			size: 2,
+			label: "hidden villages",
+			classes: [["shinobi", 8], ["commoner", 10]],
+			traits: [
+				"shinobi",
+				"wary",
+				"nimble",
+				"shadow"
+			],
+			despise: [
+				"cocky",
+				"hummer",
+				"vain"
+			]
+		},
+		merchants: {
+			count: 2,
+			size: 4,
+			label: "merchant league",
+			classes: [
+				["commoner", 24],
+				["ronin", 3],
+				["ashigaru", 3]
+			],
+			traits: [
+				"cheerful",
+				"glancer",
+				"eager",
+				"vain"
+			],
+			despise: ["menacing", "brawler"]
+		},
+		fishers: {
+			count: 1,
+			size: 4,
+			label: "fishing folk",
+			classes: [["commoner", 24], ["ronin", 1]],
+			traits: [
+				"weary",
+				"cheerful",
+				"calm",
+				"hummer"
+			],
+			despise: ["regal", "cocky"]
+		},
+		miners: {
+			count: 1,
+			size: 4,
+			label: "mountain folk",
+			classes: [
+				["commoner", 22],
+				["ashigaru", 2],
+				["outlaw", 1]
+			],
+			traits: [
+				"heavy",
+				"lumbering",
+				"grim",
+				"stoic"
+			],
+			despise: ["vain", "nimble"]
+		}
+	};
+	const REL = {
+		"clan|clan": -.3,
+		"clan|court": .4,
+		"clan|rebels": -.8,
+		"clan|monastic": .2,
+		"clan|bandits": -.9,
+		"clan|shinobi": -.3,
+		"clan|merchants": .3,
+		"clan|fishers": .1,
+		"clan|miners": .1,
+		"court|rebels": -1,
+		"court|monastic": .3,
+		"court|bandits": -.9,
+		"court|shinobi": -.5,
+		"court|merchants": .4,
+		"court|fishers": .1,
+		"court|miners": .1,
+		"rebels|monastic": .3,
+		"rebels|bandits": -.4,
+		"rebels|shinobi": .1,
+		"rebels|merchants": -.2,
+		"rebels|fishers": .4,
+		"rebels|miners": .4,
+		"monastic|bandits": -.6,
+		"monastic|shinobi": -.2,
+		"monastic|merchants": .1,
+		"monastic|fishers": .3,
+		"monastic|miners": .2,
+		"bandits|shinobi": -.2,
+		"bandits|merchants": -.9,
+		"bandits|fishers": -.5,
+		"bandits|miners": -.3,
+		"shinobi|merchants": 0,
+		"shinobi|fishers": 0,
+		"shinobi|miners": 0,
+		"merchants|fishers": .3,
+		"merchants|miners": .3,
+		"fishers|miners": .2,
+		"court|court": .5,
+		"rebels|rebels": .4,
+		"monastic|monastic": .5,
+		"bandits|bandits": -.2,
+		"merchants|merchants": -.1,
+		"shinobi|shinobi": .3,
+		"fishers|fishers": .5,
+		"miners|miners": .5
+	};
+	const kindRelation = (a, b) => REL[a + "|" + b] ?? REL[b + "|" + a] ?? 0;
+	const ON = [
+		"ka",
+		"ta",
+		"na",
+		"ma",
+		"sa",
+		"ha",
+		"ya",
+		"ra",
+		"wa",
+		"ki",
+		"shi",
+		"chi",
+		"ni",
+		"mi",
+		"ri",
+		"ku",
+		"tsu",
+		"nu",
+		"mu",
+		"yu",
+		"ru",
+		"ko",
+		"to",
+		"no",
+		"mo",
+		"yo",
+		"ro",
+		"se",
+		"te",
+		"ne",
+		"me",
+		"re",
+		"ga",
+		"ji",
+		"zu",
+		"do",
+		"bo",
+		"go",
+		"hi",
+		"fu",
+		"ho",
+		"o",
+		"a",
+		"i",
+		"u",
+		"e"
+	];
+	const PLACE_END = [
+		"mura",
+		"hara",
+		"yama",
+		"kawa",
+		"zawa",
+		"saka",
+		"no",
+		"ta",
+		"shima",
+		"oka",
+		"tani",
+		"hama",
+		"mori",
+		"ishi",
+		"se"
+	];
+	const GIVEN_M = [
+		"rō",
+		"ta",
+		"suke",
+		"maru",
+		"zō",
+		"nobu",
+		"mune",
+		"hide",
+		"kichi",
+		"emon",
+		"bei",
+		"shirō",
+		"jirō"
+	];
+	const GIVEN_F = [
+		"ko",
+		"e",
+		"yo",
+		"no",
+		"mi",
+		"ne",
+		"ha",
+		"ka",
+		"ri",
+		"sa"
+	];
+	const cap = (s) => s[0].toUpperCase() + s.slice(1);
+	const placeName = (r) => cap(r.pick(ON) + r.pick(ON) + r.pick(PLACE_END));
+	const familyName = (r) => cap(r.pick(ON) + r.pick(ON) + r.pick([
+		"moto",
+		"da",
+		"yama",
+		"kawa",
+		"no",
+		"mura",
+		"saki",
+		"ta",
+		"hara",
+		"gawa"
+	]));
+	const givenName = (r, sex) => cap(r.pick(ON) + (sex === "f" ? r.pick(GIVEN_F) : r.pick(ON) + r.pick(GIVEN_M)));
+	//#endregion
+	//#region src/sim/actors.js
+	const nameOf = (a) => `${a.given} ${a.family}`;
+	function makeActor(L, r, o) {
+		const cls = CLASSES[o.cls], sex = o.sex || (r.chance(.5) ? "m" : "f");
+		const a = {
+			id: newId(L, "a"),
+			given: givenName(r, sex),
+			family: o.family || familyName(r),
+			sex,
+			born: L.hour - Math.round((o.age ?? 30) * HOURS_PER_YEAR) - r.int(0, HOURS_PER_YEAR - 1),
+			alive: true,
+			culture: o.culture,
+			cls: o.cls,
+			job: o.job || r.pick(cls.jobs),
+			rank: cls.rank,
+			home: o.home || null,
+			spouse: null,
+			parents: [],
+			children: [],
+			household: o.household || null,
+			weapon: r.weighted(cls.weapons),
+			traits: [],
+			karma: 0,
+			standing: {},
+			money: purse(r, o.cls),
+			holds: []
+		};
+		const kind = o.culture != null && L.cultures[o.culture] ? KINDS$1[L.cultures[o.culture].kind] : null;
+		if (kind) a.traits.push([r.pick(kind.traits), +r.range(.5, 1).toFixed(2)]);
+		if (r.chance(.4)) a.traits.push([r.pick([
+			"calm",
+			"nervous",
+			"cheerful",
+			"grim",
+			"lazy",
+			"eager",
+			"wary",
+			"proud",
+			"humble",
+			"weary"
+		]), +r.range(.3, .8).toFixed(2)]);
+		L.actors[a.id] = a;
+		return a;
+	}
+	function purse(r, cls) {
+		const m = {
+			royal: [
+				0,
+				0,
+				[20, 60]
+			],
+			noble: [
+				[500, 2e3],
+				[5, 30],
+				[2, 10]
+			],
+			retainer: [
+				[200, 900],
+				[0, 5],
+				0
+			],
+			ronin: [
+				[20, 400],
+				0,
+				0
+			],
+			ashigaru: [
+				[30, 200],
+				0,
+				0
+			],
+			monk: [
+				[0, 60],
+				0,
+				0
+			],
+			commoner: [
+				[30, 300],
+				0,
+				0
+			],
+			rebel: [
+				[10, 120],
+				0,
+				0
+			],
+			outlaw: [
+				[20, 500],
+				[0, 3],
+				0
+			],
+			shinobi: [
+				[100, 600],
+				[0, 4],
+				0
+			]
+		}[cls] || [
+			[0, 50],
+			0,
+			0
+		];
+		const v = (x) => Array.isArray(x) ? r.int(x[0], x[1]) : x;
+		return {
+			mon: v(m[0]),
+			silver: v(m[1]),
+			ryo: v(m[2])
+		};
+	}
+	function marry(a, b) {
+		a.spouse = b.id;
+		b.spouse = a.id;
+		b.family = a.sex === "m" ? a.family : b.family;
+		if (b.sex === "m") a.family = b.family;
+	}
+	function bear(L, r, mother, father, o = {}) {
+		const c = makeActor(L, r, {
+			cls: o.cls || father.cls,
+			culture: father.culture,
+			family: father.family,
+			home: father.home,
+			household: father.household,
+			age: o.age ?? 0,
+			job: o.job
+		});
+		c.parents = [father.id, mother.id];
+		father.children.push(c.id);
+		mother.children.push(c.id);
+		return c;
+	}
+	const HOUSES = {
+		town: 8,
+		village: 4
+	};
+	function populate(L) {
+		for (const z of L.zones) {
+			if (z.kind === "sea" || z.kind === "wild") continue;
+			const reg = L.regions[z.region], cult = L.cultures[reg.culture], kind = KINDS$1[cult.kind], r = rngFor(L.seed, "people", z.x, z.y), home = [z.x, z.y];
+			const commonCls = kind.classes.filter(([c]) => CLASSES[c].rank <= 3 && c !== "monk");
+			if (z.kind === "town" || z.kind === "village") {
+				if (z.kind === "town") {
+					const lordCls = cult.kind === "court" ? "royal" : cult.kind === "clan" ? "noble" : cult.kind === "monastic" ? "monk" : "commoner";
+					const lord = household(L, r, cult.id, lordCls, home, {
+						age: r.int(34, 60),
+						job: "lord",
+						kids: r.int(1, 4)
+					});
+					lord.lord = reg.id;
+					reg.lord = lord.id;
+				}
+				for (let i = 0; i < HOUSES[z.kind]; i++) household(L, r, cult.id, r.weighted(commonCls), home, { plot: `${z.x},${z.y}:${i + 1}` });
+			} else if (z.kind === "camp") {
+				const chief = makeActor(L, r, {
+					cls: "outlaw",
+					culture: cult.id,
+					home,
+					age: r.int(28, 50),
+					job: "bandit"
+				});
+				chief.chief = true;
+				z.holder = chief.id;
+				for (let i = 0; i < r.int(4, 7); i++) makeActor(L, r, {
+					cls: r.chance(.8) ? "outlaw" : "ronin",
+					culture: cult.id,
+					home,
+					age: r.int(17, 45),
+					household: chief.id
+				});
+			} else if (z.kind === "fort") for (let i = 0; i < r.int(5, 8); i++) makeActor(L, r, {
+				cls: r.chance(.4) ? "retainer" : "ashigaru",
+				culture: cult.id,
+				home,
+				age: r.int(18, 45),
+				sex: "m"
+			});
+			else if (z.kind === "shrine") for (let i = 0; i < r.int(1, 3); i++) makeActor(L, r, {
+				cls: "monk",
+				culture: cult.id,
+				home,
+				age: r.int(20, 70)
+			});
+		}
+		const r = rngFor(L.seed, "player");
+		const start = L.zones.filter((z) => z.kind === "village").sort((a, b) => Math.hypot(a.x - 50, a.y - 50) - Math.hypot(b.x - 50, b.y - 50))[0];
+		const p = makeActor(L, r, {
+			cls: "ronin",
+			culture: null,
+			home: null,
+			age: 28,
+			sex: "m",
+			job: "ronin"
+		});
+		p.weapon = "katana";
+		p.traits = [];
+		p.money = {
+			mon: 120,
+			silver: 0,
+			ryo: 0
+		};
+		p.at = [start.x, start.y];
+		L.player = p.id;
+	}
+	function household(L, r, culture, cls, home, o = {}) {
+		const sex = r.chance(.85) ? "m" : "f", head = makeActor(L, r, {
+			cls,
+			culture,
+			home,
+			sex,
+			age: o.age ?? r.int(22, 55),
+			job: o.job
+		});
+		head.household = head.id;
+		let spouse = null;
+		if (r.chance(.8)) {
+			spouse = makeActor(L, r, {
+				cls,
+				culture,
+				home,
+				sex: sex === "m" ? "f" : "m",
+				age: Math.max(18, ageish(L, head) + r.int(-6, 4)),
+				household: head.id
+			});
+			marry(head, spouse);
+		}
+		const kids = o.kids ?? r.int(0, 4);
+		for (let i = 0; i < kids && spouse; i++) {
+			const age = Math.max(0, ageish(L, head) - r.int(18, 35));
+			if (age <= 0 && i > 0) break;
+			bear(L, r, head.sex === "f" ? head : spouse, head.sex === "m" ? head : spouse, {
+				age,
+				cls
+			});
+		}
+		if (r.chance(.2)) {
+			const elder = makeActor(L, r, {
+				cls,
+				culture,
+				home,
+				family: head.family,
+				age: ageish(L, head) + r.int(20, 30),
+				household: head.id
+			});
+			head.parents.push(elder.id);
+			elder.children.push(head.id);
+		}
+		if (o.plot) {
+			L.plots[o.plot] = {
+				title: head.id,
+				holder: head.id
+			};
+			head.holds.push(o.plot);
+		}
+		return head;
+	}
+	const ageish = (L, a) => Math.floor((L.hour - a.born) / HOURS_PER_YEAR);
+	//#endregion
+	//#region src/sim/worldgen.js
+	function noise(seed, scale, octaves = 4) {
+		const cache = /* @__PURE__ */ new Map(), cell = (ix, iy) => {
+			const k = ix + "," + iy;
+			let v = cache.get(k);
+			if (v == null) {
+				v = hash(seed, ix, iy) % 1e5 / 1e5;
+				cache.set(k, v);
+			}
+			return v;
+		};
+		const sm = (t) => t * t * (3 - 2 * t);
+		const one = (x, y) => {
+			const ix = Math.floor(x), iy = Math.floor(y), fx = sm(x - ix), fy = sm(y - iy);
+			const a = cell(ix, iy), b = cell(ix + 1, iy), c = cell(ix, iy + 1), d = cell(ix + 1, iy + 1);
+			return a + (b - a) * fx + (c - a) * fy + (a - b - c + d) * fx * fy;
+		};
+		return (x, y) => {
+			let v = 0, amp = 1, tot = 0, f = 1 / scale;
+			for (let o = 0; o < octaves; o++) {
+				v += one(x * f, y * f) * amp;
+				tot += amp;
+				amp *= .5;
+				f *= 2;
+			}
+			return v / tot;
+		};
+	}
+	function generateWorld(seed, realNow = Date.now()) {
+		const L = createLedger(seed, realNow), { w, h } = L.size;
+		const elevN = noise(hash(seed, "elev"), 22), moistN = noise(hash(seed, "moist"), 18), warpN = noise(hash(seed, "warp"), 14, 2);
+		for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+			const dx = (x - w / 2) / (w / 2), dy = (y - h / 2) / (h / 2), edge = Math.max(0, Math.max(Math.abs(dx), Math.abs(dy * 1.05)) - .78);
+			const elev = Math.max(0, Math.min(1, elevN(x, y) * 1.3 + .02 - edge * 2.2)), moist = moistN(x + 400, y + 400);
+			let biome = "plains";
+			if (elev < .26) biome = "sea";
+			else if (elev < .3) biome = "coast";
+			else if (elev > .74) biome = "mountains";
+			else if (elev > .6) biome = "hills";
+			else if (moist > .64) biome = elev < .42 ? "marsh" : "forest";
+			else if (moist > .5) biome = elev < .46 ? "paddy" : moist > .58 ? "bamboo" : "forest";
+			L.zones.push({
+				x,
+				y,
+				biome,
+				region: -1,
+				kind: biome === "sea" ? "sea" : "wild",
+				road: false
+			});
+		}
+		const land = L.zones.filter((z) => z.biome !== "sea");
+		const r = rngFor(seed, "regions"), seeds = [];
+		for (let minD = 9; seeds.length < 100 && minD > 2; minD -= .5) for (let tries = 0; tries < 4e3 && seeds.length < 100; tries++) {
+			const z = r.pick(land);
+			if (seeds.every((s) => Math.hypot(s.x - z.x, s.y - z.y) >= minD)) seeds.push(z);
+		}
+		for (const z of land) {
+			let best = 0, bd = 1e9;
+			const wx = z.x + (warpN(z.x, z.y) - .5) * 8, wy = z.y + (warpN(z.x + 99, z.y + 99) - .5) * 8;
+			seeds.forEach((s, i) => {
+				const d = Math.hypot(s.x - wx, s.y - wy);
+				if (d < bd) {
+					bd = d;
+					best = i;
+				}
+			});
+			z.region = best;
+		}
+		L.regions = seeds.map((s, i) => ({
+			id: i,
+			name: placeName(rngFor(seed, "rname", i)),
+			culture: -1,
+			seat: null,
+			zones: 0,
+			center: [s.x, s.y]
+		}));
+		for (const z of land) L.regions[z.region].zones++;
+		const adj = L.regions.map(() => /* @__PURE__ */ new Set());
+		for (const z of land) for (const [dx, dy] of [[1, 0], [0, 1]]) {
+			const n = zoneAt(L, z.x + dx, z.y + dy);
+			if (n && n.region >= 0 && n.region !== z.region) {
+				adj[z.region].add(n.region);
+				adj[n.region].add(z.region);
+			}
+		}
+		const cr = rngFor(seed, "cultures"), kinds = [];
+		for (const [kind, k] of Object.entries(KINDS$1)) for (let i = 0; i < k.count; i++) kinds.push(kind);
+		cr.shuffle(kinds);
+		const starts = [cr.int(0, 99)];
+		while (starts.length < kinds.length) {
+			let best = -1, bd = -1;
+			for (const g of L.regions) {
+				if (starts.includes(g.id)) continue;
+				const d = Math.min(...starts.map((s) => Math.hypot(L.regions[s].center[0] - g.center[0], L.regions[s].center[1] - g.center[1])));
+				if (d > bd) {
+					bd = d;
+					best = g.id;
+				}
+			}
+			starts.push(best);
+		}
+		L.cultures = kinds.map((kind, i) => {
+			return {
+				id: i,
+				kind,
+				name: cultureName(rngFor(seed, "cname", i), kind),
+				regions: [starts[i]],
+				relations: {},
+				hue: Math.round(i * 137.5) % 360
+			};
+		});
+		starts.forEach((g, i) => L.regions[g].culture = i);
+		for (let guard = 0; guard < 1e3 && L.regions.some((g) => g.culture < 0); guard++) {
+			const order = L.cultures.slice().sort((a, b) => a.regions.length / KINDS$1[a.kind].size - b.regions.length / KINDS$1[b.kind].size);
+			let grew = false;
+			for (const c of order) {
+				const free = [...new Set(c.regions.flatMap((g) => [...adj[g]]))].filter((g) => L.regions[g].culture < 0);
+				if (free.length) {
+					const g = cr.pick(free);
+					L.regions[g].culture = c.id;
+					c.regions.push(g);
+					grew = true;
+					break;
+				}
+			}
+			if (!grew) {
+				const g = L.regions.find((q) => q.culture < 0), n = [...adj[g.id]].find((q) => L.regions[q].culture >= 0);
+				const c = L.cultures[n != null ? L.regions[n].culture : 0];
+				g.culture = c.id;
+				c.regions.push(g.id);
+			}
+		}
+		const border = /* @__PURE__ */ new Set();
+		for (const g of L.regions) for (const n of adj[g.id]) if (L.regions[n].culture !== g.culture) border.add([g.culture, L.regions[n].culture].sort().join("|"));
+		for (const a of L.cultures) for (const b of L.cultures) if (a.id < b.id) {
+			const hr = rngFor(seed, "rel", a.id, b.id), v = Math.max(-1, Math.min(1, kindRelation(a.kind, b.kind) + (border.has(a.id + "|" + b.id) ? -.2 : 0) + hr.range(-.25, .25)));
+			a.relations[b.id] = b.relations[a.id] = +v.toFixed(2);
+		}
+		const pr = rngFor(seed, "places");
+		const placed = [];
+		const fit = {
+			town: {
+				paddy: 3,
+				plains: 3,
+				coast: 2,
+				forest: 1,
+				bamboo: 1,
+				hills: 1
+			},
+			village: {
+				paddy: 4,
+				plains: 3,
+				coast: 3,
+				forest: 2,
+				bamboo: 2,
+				hills: 1,
+				marsh: 1
+			},
+			camp: {
+				forest: 3,
+				hills: 3,
+				bamboo: 2,
+				marsh: 2,
+				mountains: 1
+			},
+			fort: {
+				hills: 4,
+				plains: 2,
+				mountains: 2
+			},
+			shrine: {
+				hills: 3,
+				mountains: 3,
+				forest: 2,
+				bamboo: 2
+			}
+		};
+		for (const g of L.regions) {
+			const zs = land.filter((z) => z.region === g.id), kind = L.cultures[g.culture].kind;
+			const place = (what, minGap = 4) => {
+				const cands = zs.filter((z) => z.kind === "wild" && fit[what][z.biome] && placed.every((o) => Math.abs(o.x - z.x) + Math.abs(o.y - z.y) >= minGap));
+				if (!cands.length) return null;
+				const z = pr.weighted(cands.map((c) => [c, fit[what][c.biome]]));
+				z.kind = what;
+				placed.push(z);
+				return z;
+			};
+			const seat = place(kind === "bandits" ? "camp" : "town", 5) || zs[0];
+			if (!placed.includes(seat)) placed.push(seat);
+			seat.kind = kind === "bandits" ? "camp" : "town";
+			seat.name = placeName(rngFor(seed, "seat", g.id));
+			g.seat = [seat.x, seat.y];
+			const nv = kind === "bandits" ? pr.int(0, 1) : pr.int(2, Math.min(4, 1 + Math.floor(zs.length / 25)));
+			for (let i = 0; i < nv; i++) {
+				const z = place("village");
+				if (z) z.name = placeName(rngFor(seed, "village", z.x, z.y));
+			}
+			const ncamp = kind === "bandits" ? pr.int(2, 3) : pr.int(0, 2);
+			for (let i = 0; i < ncamp; i++) {
+				const z = place("camp", 3);
+				if (z) z.name = placeName(rngFor(seed, "camp", z.x, z.y)) + " camp";
+			}
+			if (kind === "clan" || kind === "court") {
+				const z = place("fort", 4);
+				if (z) z.name = placeName(rngFor(seed, "fort", z.x, z.y)) + " fort";
+			}
+			if (pr.chance(kind === "monastic" ? 1 : .6)) {
+				const z = place("shrine", 3);
+				if (z) z.name = placeName(rngFor(seed, "shrine", z.x, z.y)) + " shrine";
+			}
+		}
+		const seats = L.regions.map((g) => zoneAt(L, ...g.seat));
+		const linked = [seats[0]], rest = seats.slice(1);
+		while (rest.length) {
+			let bi = 0, bj = 0, bd = 1e9;
+			for (let i = 0; i < linked.length; i++) for (let j = 0; j < rest.length; j++) {
+				const d = Math.hypot(linked[i].x - rest[j].x, linked[i].y - rest[j].y);
+				if (d < bd) {
+					bd = d;
+					bi = i;
+					bj = j;
+				}
+			}
+			road(L, linked[bi], rest[bj]);
+			linked.push(rest.splice(bj, 1)[0]);
+		}
+		for (const z of land) if (z.kind === "village" || z.kind === "fort" || z.kind === "shrine") road(L, z, zoneAt(L, ...L.regions[z.region].seat));
+		populate(L);
+		initSystems(L);
+		return L;
+	}
+	const COST = {
+		sea: 1e9,
+		coast: 1.5,
+		plains: 1,
+		paddy: 1.3,
+		forest: 2,
+		bamboo: 2.2,
+		marsh: 3.5,
+		hills: 2.5,
+		mountains: 6
+	};
+	function road(L, a, b) {
+		if (!a || !b || a === b) return;
+		const { w } = L.size, start = a.y * w + a.x, goal = b.y * w + b.x, g = /* @__PURE__ */ new Map([[start, 0]]), from = /* @__PURE__ */ new Map(), open = [[0, start]];
+		const push = (f, i) => {
+			open.push([f, i]);
+			let k = open.length - 1;
+			while (k > 0) {
+				const p = k - 1 >> 1;
+				if (open[p][0] <= open[k][0]) break;
+				[open[p], open[k]] = [open[k], open[p]];
+				k = p;
+			}
+		};
+		const pop = () => {
+			const top = open[0], last = open.pop();
+			if (open.length) {
+				open[0] = last;
+				let k = 0;
+				for (;;) {
+					const l = 2 * k + 1, r = l + 1;
+					let m = k;
+					if (l < open.length && open[l][0] < open[m][0]) m = l;
+					if (r < open.length && open[r][0] < open[m][0]) m = r;
+					if (m === k) break;
+					[open[m], open[k]] = [open[k], open[m]];
+					k = m;
+				}
+			}
+			return top;
+		};
+		while (open.length) {
+			const [, i] = pop();
+			if (i === goal) break;
+			const x = i % w, y = (i - x) / w;
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			]) {
+				const n = zoneAt(L, x + dx, y + dy);
+				if (!n) continue;
+				const j = n.y * w + n.x;
+				const c = g.get(i) + (n.road ? .35 : COST[n.biome]);
+				if (c < (g.get(j) ?? 0xe8d4a51000)) {
+					g.set(j, c);
+					from.set(j, i);
+					push(c + Math.abs(n.x - b.x) + Math.abs(n.y - b.y), j);
+				}
+			}
+		}
+		for (let i = goal; i != null && i !== start; i = from.get(i)) L.zones[i].road = true;
+		L.zones[start].road = true;
+	}
+	function cultureName(r, kind) {
+		const n = familyName(r);
+		return {
+			clan: `the ${n} clan`,
+			court: `the Court of ${placeName(r)}`,
+			rebels: `the free valleys of ${placeName(r)}`,
+			monastic: `the temples of ${placeName(r)}`,
+			bandits: `the ${r.pick([
+				"Red",
+				"Black",
+				"Salt",
+				"Crow",
+				"Iron"
+			])} ${r.pick([
+				"Tide",
+				"Coast",
+				"Knives",
+				"Wake"
+			])}`,
+			shinobi: `the hidden ${n}`,
+			merchants: `the ${n} league`,
+			fishers: `the ${placeName(r)} fisherfolk`,
+			miners: `the ${placeName(r)} mountain folk`
+		}[kind];
+	}
+	Object.fromEntries([
+		"grass",
+		"field",
+		"paddy",
+		"forest",
+		"bamboo",
+		"water",
+		"rock",
+		"sand",
+		"road",
+		"building",
+		"marsh",
+		"shrine",
+		"palisade",
+		"wall"
+	].map((t, i) => [t, i]));
+	//#endregion
+	//#region src/sim/save.js
+	const serialize = (L) => JSON.stringify(L);
+	function deserialize(json) {
+		const L = JSON.parse(json);
+		if (L.v !== 1) throw new Error(`save is version ${L.v}, this game reads 1`);
+		initSystems(L);
+		return L;
+	}
+	//#endregion
+	//#region src/sim/story/state.js
+	const ST = (L) => L.sys.story;
+	const today$1 = (L) => Math.floor(L.hour / 24);
+	const clamp = (v, lo = 0, hi = 1) => Math.max(lo, Math.min(hi, v));
+	const actor = (L, id) => (id != null ? L.actors[id] : null) || null;
+	const alive = (L, id) => !!(id != null && L.actors[id] && L.actors[id].alive);
+	const who$1 = (L, id) => {
+		const a = actor(L, id);
+		return a ? nameOf(a) : "someone";
+	};
+	const ageIn = (L, a) => (L.hour - a.born) / HOURS_PER_YEAR;
+	const regName = (L, r) => L.regions[r] ? L.regions[r].name : "?";
+	const zoneName = (L, [x, y]) => {
+		const z = zoneAt(L, x, y);
+		return z && z.name || `the wilds of ${regName(L, z ? z.region : -1)}`;
+	};
+	const cultName = (L, c) => L.cultures[c] ? L.cultures[c].name : "no people";
+	const villagesOf = (L, r) => (L.sys.story.villages[r] || []).map(([x, y]) => L.zones[y * L.size.w + x]);
+	function initState(L) {
+		const S = L.sys.story;
+		Object.assign(S, {
+			v: 1,
+			reg: L.regions.map(() => ({
+				harvest: 1,
+				hunger: 0,
+				unrest: 0,
+				danger: 0,
+				sick: 0,
+				tax: .4,
+				war: null
+			})),
+			adj: [],
+			geo: [],
+			quests: {},
+			questOrder: [],
+			keys: {},
+			news: [],
+			ill: {},
+			disputes: {},
+			wars: {},
+			uprisings: {},
+			armies: {},
+			plague: null,
+			processions: {},
+			chiefs: {},
+			bounties: {},
+			grudges: [],
+			rivals: {},
+			arc: {
+				chapter: 1,
+				renown: 0,
+				done: 0,
+				ways: {},
+				since: 0
+			},
+			stats: {
+				events: {},
+				quests: {},
+				endings: {}
+			}
+		});
+	}
+	const NEWS_CAP = 1500;
+	function announce(L, type, data, text, heralds = ["board"], regions = null) {
+		const S = ST(L), e = emit(L, type, {
+			...data,
+			text,
+			heralds,
+			regions: regions || (data.region != null ? [data.region] : [])
+		});
+		S.news.push({
+			d: today$1(L),
+			type,
+			text,
+			heralds,
+			regions: e.regions,
+			zone: data.zone || null
+		});
+		if (S.news.length > NEWS_CAP) S.news.splice(0, S.news.length - NEWS_CAP);
+		S.stats.events[type] = (S.stats.events[type] || 0) + 1;
+		return e;
+	}
+	function kill(L, id, cause, by = null) {
+		const a = actor(L, id);
+		if (!a || !a.alive) return false;
+		a.alive = false;
+		a.died = L.hour;
+		emit(L, "story.killed", {
+			actor: id,
+			cause,
+			by,
+			zone: a.home || a.at || null,
+			culture: a.culture
+		});
+		if (a.lord != null && L.regions[a.lord] && L.regions[a.lord].lord === id) lordFell(L, a.lord, id, cause);
+		return true;
+	}
+	const HOOKS = { lordFell: null };
+	const setLordFell = (fn) => {
+		HOOKS.lordFell = fn;
+	};
+	function lordFell(L, region, id, cause) {
+		if (HOOKS.lordFell) HOOKS.lordFell(L, region, id, cause);
+	}
+	function seize(L, pid, by, cause) {
+		const was = L.plots[pid] || ownerOfDefault(L, pid);
+		L.plots[pid] = {
+			...was,
+			holder: by
+		};
+		emit(L, "story.seized", {
+			plot: pid,
+			holder: by,
+			was: was.holder,
+			title: was.title,
+			cause,
+			zone: pid.split(":")[0].split(",").map(Number)
+		});
+	}
+	function ownerOfDefault(L, pid) {
+		const [zx, zy] = pid.split(":")[0].split(",").map(Number), z = zoneAt(L, zx, zy), reg = L.regions[z.region];
+		if (z.kind === "town" || z.kind === "village" || z.kind === "fort") return {
+			title: reg.lord ?? null,
+			holder: reg.lord ?? null
+		};
+		return {
+			title: null,
+			holder: z.holder ?? null
+		};
+	}
+	function pay(L, from, to, mon) {
+		const a = actor(L, from), b = actor(L, to);
+		let n = Math.max(0, Math.round(mon));
+		if (a) {
+			n = Math.min(n, a.money.mon);
+			a.money.mon -= n;
+		}
+		if (b) b.money.mon += n;
+		return n;
+	}
+	function grant(L, id, { karma = 0, standing = {}, mon = 0 }) {
+		const a = actor(L, id);
+		if (!a) return;
+		a.karma = +((a.karma || 0) + karma).toFixed(2);
+		for (const [c, v] of Object.entries(standing)) a.standing[c] = +clamp((a.standing[c] || 0) + v, -1, 1).toFixed(2);
+		a.money.mon = Math.max(0, a.money.mon + Math.round(mon));
+	}
+	const dedupe = (L, key, days) => {
+		const S = ST(L), k = S.keys[key];
+		if (k != null && today$1(L) - k < days) return false;
+		S.keys[key] = today$1(L);
+		return true;
+	};
+	const CENSUS = /* @__PURE__ */ new WeakMap();
+	function census(L) {
+		const c = CENSUS.get(L);
+		const wk = L.hour - L.hour % 168;
+		if (c && c.h === wk) return c;
+		const w = L.size.w, zones = L.zones, byZone = {}, byRegion = L.regions.map(() => ({
+			heads: [],
+			merchants: [],
+			fighters: [],
+			nobles: [],
+			monks: [],
+			outlaws: [],
+			all: []
+		})), byCulture = L.cultures.map(() => 0);
+		const actors = L.actors;
+		for (const id in actors) {
+			const a = actors[id];
+			if (!a.alive || !a.home || id === L.player) continue;
+			const z = zones[a.home[1] * w + a.home[0]], k = a.home[0] + "," + a.home[1];
+			(byZone[k] || (byZone[k] = [])).push(id);
+			if (z.region < 0) continue;
+			const R = byRegion[z.region];
+			R.all.push(id);
+			if (a.household === id && a.holds.length) R.heads.push(id);
+			const job = a.job, cls = a.cls;
+			if (job === "merchant" || job === "innkeeper" || job === "brewer") R.merchants.push(id);
+			if (cls === "retainer" || cls === "ashigaru" || cls === "noble") {
+				R.fighters.push(id);
+				if (a.culture != null) byCulture[a.culture]++;
+			}
+			if (cls === "noble" || cls === "royal") R.nobles.push(id);
+			else if (cls === "monk") R.monks.push(id);
+			else if (cls === "outlaw") R.outlaws.push(id);
+		}
+		const out = {
+			h: wk,
+			byZone,
+			byRegion,
+			fightersOf: byCulture
+		};
+		CENSUS.set(L, out);
+		return out;
+	}
+	//#endregion
+	//#region src/sim/story/nature.js
+	function initNature(L) {
+		const S = ST(L), adj = L.regions.map(() => /* @__PURE__ */ new Set()), geo = L.regions.map(() => ({
+			n: 0,
+			coast: 0,
+			wet: 0,
+			high: 0,
+			road: 0
+		}));
+		for (const z of L.zones) {
+			if (z.region < 0) continue;
+			const g = geo[z.region];
+			g.n++;
+			if (z.biome === "coast") g.coast++;
+			if (z.biome === "paddy" || z.biome === "marsh") g.wet++;
+			if (z.biome === "hills" || z.biome === "mountains") g.high++;
+			if (z.road) g.road++;
+			for (const [dx, dy] of [[1, 0], [0, 1]]) {
+				const n = zoneAt(L, z.x + dx, z.y + dy);
+				if (n && n.region >= 0 && n.region !== z.region) {
+					adj[z.region].add(n.region);
+					adj[n.region].add(z.region);
+				}
+			}
+		}
+		S.adj = adj.map((s) => [...s].sort((a, b) => a - b));
+		S.geo = geo.map((g) => ({
+			coast: +(g.coast / g.n).toFixed(2),
+			wet: +(g.wet / g.n).toFixed(2),
+			high: +(g.high / g.n).toFixed(2),
+			road: +(g.road / g.n).toFixed(2)
+		}));
+		S.villages = L.regions.map(() => []);
+		for (const z of L.zones) if (z.kind === "village") S.villages[z.region].push([z.x, z.y]);
+		for (const z of L.zones) if (z.kind === "camp") S.reg[z.region].danger = clamp(S.reg[z.region].danger + .15);
+	}
+	const ALL = (L) => L.regions.map((r) => r.id);
+	function toll(L, r, region, n, cause, cen) {
+		const pool = cen.byRegion[region].all;
+		let dead = 0;
+		for (let i = 0; i < n * 3 && dead < n && pool.length; i++) {
+			const id = r.pick(pool), a = L.actors[id];
+			const age = (L.hour - a.born) / HOURS_PER_YEAR;
+			if ((age > 55 || age < 6 || r.chance(.25)) && kill(L, id, cause)) dead++;
+		}
+		return dead;
+	}
+	function natureDay(L, cal, r) {
+		const S = ST(L), d = cal.dayOfSeason, s = cal.seasonIndex;
+		if (s === 0 && d === 1) {
+			for (const g of S.reg) {
+				g.harvest = 1;
+				g.unrest = clamp(g.unrest - .05);
+			}
+			announce(L, "event.festival", {
+				name: "New Year",
+				year: cal.year
+			}, `The New Year, year ${cal.year}: bells at every shrine, debts called in, the first sunrise watched from the hills.`, ["bell"], ALL(L));
+		}
+		if (s === 0 && d === 8) announce(L, "event.planting", {
+			year: cal.year,
+			effects: { labour: 1.3 }
+		}, "Planting: every hand is in the paddies; the roads are quiet and the inns half empty.", ["bell"], ALL(L));
+		if (s === 1 && d === 13) {
+			const dead = L.log.filter((e) => e.type === "story.killed" && L.hour - e.h < HOURS_PER_YEAR).length;
+			announce(L, "event.festival", {
+				name: "Obon",
+				year: cal.year,
+				days: 3
+			}, `Obon: lanterns on the rivers for the dead${dead ? `, ${dead} of them this year by sword, hunger or sickness` : ""}. Feuds rest for three days.`, ["bell"], ALL(L));
+		}
+		if (s === 2 && d === 14) harvest(L, cal);
+		if (s === 3 && (d === 1 || d === 15)) winter(L, cal, r, d === 1);
+	}
+	function harvest(L, cal) {
+		const S = ST(L), poor = [], rich = [];
+		S.reg.forEach((g, i) => {
+			const war = g.war ? .1 : 0;
+			g.hunger = +clamp((1 - g.harvest) * 1.4 + (g.tax - .4) * .6 + war).toFixed(2);
+			if (g.harvest <= .72) poor.push(i);
+			else if (g.harvest >= 1.08) rich.push(i);
+		});
+		announce(L, "event.harvest", {
+			year: cal.year,
+			yields: Object.fromEntries(S.reg.map((g, i) => [i, +g.harvest.toFixed(2)])),
+			poor,
+			rich,
+			effects: { prices: { rice: poor.length > 20 ? .25 : 0 } }
+		}, `The harvest is in: ${poor.length ? `thin in ${poor.length} region${poor.length > 1 ? "s" : ""}` : "fair everywhere"}${rich.length ? `, heavy in ${rich.length}` : ""}.`, ["board"], ALL(L));
+		for (const i of poor) announce(L, "event.poorHarvest", {
+			region: i,
+			yield: +S.reg[i].harvest.toFixed(2),
+			effects: { prices: { rice: +(1 - S.reg[i].harvest).toFixed(2) } }
+		}, `${regName(L, i)}: the crop came in at ${Math.round(S.reg[i].harvest * 100)}%. Rice will be dear this winter.`, ["board", "messenger"]);
+	}
+	function winter(L, cal, r, first) {
+		const S = ST(L);
+		S.reg.forEach((g, i) => {
+			if (first && g.harvest < .9) g.hunger = +clamp(g.hunger + .1).toFixed(2);
+			if (g.hunger >= .5 && S.keys["famine:" + i + ":" + cal.year] == null) {
+				S.keys["famine:" + i + ":" + cal.year] = today$1(L);
+				announce(L, "event.famine", {
+					region: i,
+					severity: g.hunger,
+					effects: {
+						prices: { rice: +g.hunger.toFixed(2) },
+						unrest: .2
+					}
+				}, `Famine in ${regName(L, i)}: the storehouses are empty before midwinter. People eat bark and seed rice.`, ["messenger", "bell"], [i, ...S.adj[i]]);
+			}
+		});
+		if (first) announce(L, "event.winter", {
+			year: cal.year,
+			hungry: S.reg.map((g, i) => g.hunger >= .3 ? i : -1).filter((i) => i >= 0),
+			effects: { travel: .7 }
+		}, "Winter: snow on the passes, fewer travellers, wolves come down to the villages.", ["bell"], ALL(L));
+	}
+	function natureSeason(L, cal, r) {
+		const S = ST(L), s = cal.seasonIndex, cen = census(L), n = L.regions.length;
+		const hit = (i, f) => {
+			S.reg[i].harvest = +(S.reg[i].harvest * f).toFixed(3);
+		};
+		if (s === 1 && r.chance(.45)) {
+			const a = r.int(0, n - 1), rs = [a, ...r.shuffle(S.adj[a].slice()).slice(0, r.int(0, 2))];
+			for (const i of rs) {
+				hit(i, r.range(.5, .7));
+				S.reg[i].unrest = clamp(S.reg[i].unrest + .05);
+			}
+			announce(L, "event.drought", {
+				region: a,
+				regions: rs,
+				effects: {
+					harvest: .6,
+					prices: {
+						rice: .3,
+						water: .5
+					}
+				}
+			}, `Drought over ${rs.map((i) => regName(L, i)).join(", ")}: the paddies crack, wells go dry, the crop withers on the stalk.`, ["messenger", "board"], rs);
+		}
+		if (s <= 1) for (let k = 0; k < 2; k++) {
+			const i = r.int(0, n - 1);
+			if (!r.chance(.15 + S.geo[i].wet)) continue;
+			hit(i, r.range(.65, .8));
+			const dead = toll(L, r, i, r.int(0, 2), "flood", cen);
+			announce(L, "event.flood", {
+				region: i,
+				dead,
+				effects: {
+					harvest: .7,
+					travel: .5
+				}
+			}, `The river rose over ${regName(L, i)}: fields under water${dead ? `, ${dead} drowned` : ""}, the ford closed.`, ["bell", "messenger"]);
+		}
+		if ((s === 1 || s === 2) && r.chance(.4)) {
+			const coast = S.geo.map((g, i) => g.coast > .08 ? i : -1).filter((i) => i >= 0);
+			if (coast.length) {
+				let i = r.pick(coast);
+				const path = [i];
+				for (let k = r.int(1, 4); k > 0; k--) {
+					const next = S.adj[i].filter((j) => S.geo[j].coast > .05 && !path.includes(j));
+					if (!next.length) break;
+					i = r.pick(next);
+					path.push(i);
+				}
+				let dead = 0;
+				for (const j of path) {
+					hit(j, r.range(.75, .9));
+					S.reg[j].danger = clamp(S.reg[j].danger + .05);
+					dead += toll(L, r, j, r.int(0, 2), "typhoon", cen);
+				}
+				announce(L, "event.typhoon", {
+					region: path[0],
+					regions: path,
+					dead,
+					effects: {
+						harvest: .8,
+						travel: .3,
+						prices: { timber: .3 }
+					}
+				}, `A typhoon came ashore at ${regName(L, path[0])} and tore inland over ${path.length} region${path.length > 1 ? "s" : ""}: roofs gone, boats smashed${dead ? `, ${dead} dead` : ""}.`, ["bell", "smoke"], path);
+			}
+		}
+		if (r.chance(.035)) {
+			const a = r.int(0, n - 1), rs = [a, ...S.adj[a].slice(0, 2)];
+			let dead = 0;
+			for (const i of rs) {
+				dead += toll(L, r, i, r.int(1, 3), "earthquake", cen);
+				S.reg[i].unrest = clamp(S.reg[i].unrest + .1);
+			}
+			announce(L, "event.earthquake", {
+				region: a,
+				regions: rs,
+				dead,
+				effects: { prices: {
+					timber: .4,
+					labour: .3
+				} }
+			}, `The earth shook under ${regName(L, a)}: ${dead} dead under fallen beams, a shrine gate split in two. Priests say the land is angry.`, ["bell"], rs);
+		}
+		plague(L, cal, r, cen);
+		if (s === 3 && r.chance(.025)) {
+			for (const g of S.reg) g.unrest = clamp(g.unrest + .08);
+			announce(L, "event.comet", { year: cal.year }, "A comet hangs over the land for nine nights. Lords consult priests; peasants whisper that the Mandate is ending.", ["bell"], ALL(L));
+		}
+		for (const g of S.reg) {
+			g.unrest = +clamp(g.unrest - .08 + g.hunger * .3 + Math.max(0, g.tax - .4) * .4 + (g.war ? .1 : 0)).toFixed(2);
+			g.hunger = +clamp(g.hunger - (s === 0 ? .15 : 0)).toFixed(2);
+			g.danger = +clamp(g.danger - .03 + (g.war ? .05 : 0)).toFixed(2);
+		}
+	}
+	function plague(L, cal, r, cen) {
+		const S = ST(L);
+		if (!S.plague && r.chance(.025)) {
+			const towns = L.regions.filter((g) => S.geo[g.id].road > .15).map((g) => g.id);
+			if (!towns.length) return;
+			const i = r.pick(towns);
+			S.plague = {
+				since: today$1(L),
+				regions: [i],
+				seasons: 0
+			};
+			S.reg[i].sick = .6;
+			announce(L, "event.plague", {
+				region: i,
+				effects: {
+					travel: .4,
+					prices: { medicine: .8 }
+				}
+			}, `Plague in ${regName(L, i)}: the sick are carried to the shrine and the roads are watched.`, ["bell", "messenger"], [i, ...S.adj[i]]);
+			return;
+		}
+		const P = S.plague;
+		if (!P) return;
+		P.seasons++;
+		const now = [];
+		for (const i of P.regions) {
+			const g = S.reg[i];
+			if (g.sick <= 0) continue;
+			const dead = toll(L, r, i, Math.round(g.sick * r.int(2, 6)), "plague", cen);
+			g.harvest = +(g.harvest * .92).toFixed(3);
+			g.unrest = clamp(g.unrest + .05);
+			if (dead) now.push(`${dead} in ${regName(L, i)}`);
+			for (const j of S.adj[i]) if (!P.regions.includes(j) && r.chance(g.sick * .5)) {
+				P.regions.push(j);
+				S.reg[j].sick = +(g.sick * .8).toFixed(2);
+			}
+			g.sick = +clamp(g.sick - r.range(.15, .3)).toFixed(2);
+		}
+		const live = P.regions.filter((i) => S.reg[i].sick > 0);
+		if (!live.length) {
+			announce(L, "event.plagueEnds", {
+				regions: P.regions,
+				seasons: P.seasons
+			}, `The plague has burnt out after ${P.seasons} season${P.seasons > 1 ? "s" : ""} and ${P.regions.length} region${P.regions.length > 1 ? "s" : ""}.`, ["bell"], P.regions);
+			S.plague = null;
+		} else if (now.length) announce(L, "event.plagueSpreads", {
+			region: live[0],
+			regions: live,
+			effects: { travel: .5 }
+		}, `The plague goes on: dead this season, ${now.join("; ")}.`, ["bell"], live);
+	}
+	function onEconFamine(e, L) {
+		const S = ST(L);
+		if (e.region == null || !S.reg[e.region]) return;
+		S.reg[e.region].hunger = Math.max(S.reg[e.region].hunger, e.severity ?? .6);
+	}
+	//#endregion
+	//#region src/sim/story/quests.js
+	const KINDS = {};
+	const defineQuest = (kind, def) => {
+		KINDS[kind] = def;
+		return def;
+	};
+	function post(L, kind, o) {
+		const S = ST(L), def = KINDS[kind];
+		if (o.key && S.keys[o.key] != null && S.quests[S.keys[o.key]] && S.quests[S.keys[o.key]].state !== "done") return null;
+		const q = {
+			id: newId(L, "q"),
+			kind,
+			key: o.key || null,
+			region: o.region,
+			zone: o.zone || L.regions[o.region].seat,
+			giver: o.giver ?? null,
+			target: o.target ?? null,
+			other: o.other ?? null,
+			culture: o.culture ?? L.regions[o.region].culture,
+			tculture: o.tculture ?? null,
+			posted: today$1(L),
+			due: today$1(L) + (o.days || 28),
+			state: "open",
+			reward: Math.round(o.reward || 0),
+			stake: o.stake || {},
+			source: o.source || null,
+			board: o.board || def.board,
+			title: o.title,
+			text: o.text,
+			tries: 0,
+			outcome: null
+		};
+		S.quests[q.id] = q;
+		S.questOrder.push(q.id);
+		if (o.key) S.keys[o.key] = q.id;
+		S.stats.quests[kind] = (S.stats.quests[kind] || 0) + 1;
+		announce(L, "story.questPosted", {
+			quest: q.id,
+			kind,
+			region: q.region,
+			zone: q.zone,
+			giver: q.giver,
+			reward: q.reward,
+			due: q.due
+		}, q.title, [q.board === "person" ? "messenger" : "board"]);
+		return q;
+	}
+	const quest = (L, id) => ST(L).quests[id] || null;
+	const openQuests = (L, region = null) => ST(L).questOrder.map((id) => ST(L).quests[id]).filter((q) => q && q.state !== "done" && (region == null || q.region === region));
+	function waysOf(L, q, by = L.player) {
+		const p = actor(L, by);
+		return KINDS[q.kind].ways.map((w) => {
+			const cost = w.cost ? w.cost(L, q) : 0;
+			const why = cost > (p ? p.money.mon : 0) ? `needs ${cost} mon` : w.needs ? w.needs(L, q, p) : null;
+			return {
+				id: w.id,
+				as: w.as || w.id,
+				label: w.label,
+				blurb: w.blurb,
+				karma: w.karma || 0,
+				standing: w.standing ? w.standing(L, q) : {},
+				mon: offered(L, q, w) - cost,
+				cost,
+				can: !why,
+				why
+			};
+		});
+	}
+	const offered = (L, q, w) => {
+		if (!w.mon || !w.from) return 0;
+		const a = actor(L, q[w.from]);
+		return a ? Math.min(Math.round(w.mon(L, q)), a.money.mon) : 0;
+	};
+	function takeQuest(L, id) {
+		const q = quest(L, id);
+		if (!q || q.state !== "open") return false;
+		q.state = "taken";
+		q.taken = today$1(L);
+		announce(L, "story.questTaken", {
+			quest: id,
+			kind: q.kind,
+			region: q.region
+		}, `The ronin took up: ${q.title}`, ["board"]);
+		return true;
+	}
+	function resolveQuest(L, id, way, { by = L.player, ok = true } = {}) {
+		const S = ST(L), q = quest(L, id);
+		if (!q || q.state === "done") return null;
+		const w = KINDS[q.kind].ways.find((x) => x.id === way);
+		if (!w) return null;
+		const r = rngFor(L.seed, "quest", id, way, L.hour), him = by === L.player;
+		if (!ok) {
+			q.tries++;
+			if (him) grant(L, by, { standing: {
+				[q.culture]: -.03,
+				...way === "stealth" && q.tculture != null ? { [q.tculture]: -.1 } : {}
+			} });
+			announce(L, "story.questFailed", {
+				quest: id,
+				kind: q.kind,
+				way,
+				by,
+				region: q.region
+			}, `${him ? "The ronin" : "Someone"} tried to ${w.label.toLowerCase()} and failed: ${q.title}`, ["board"]);
+			return { failed: true };
+		}
+		const cost = w.cost ? w.cost(L, q) : 0;
+		if (him && cost > actor(L, by).money.mon) return null;
+		const before = him ? snap(actor(L, by)) : null;
+		if (cost) pay(L, by, w.payTo ? q[w.payTo] : null, cost);
+		const got = w.from ? pay(L, q[w.from], by, offered(L, q, w)) : 0;
+		let text = w.act(L, q, r, by);
+		if (!him) {
+			const R = S.rivals[by], name = R ? `${actor(L, by).given} ${R.epithet}` : who$1(L, by);
+			text = text.replace(/\b[Tt]he ronin\b/g, name);
+		}
+		const deltas = {
+			karma: w.karma || 0,
+			standing: w.standing ? w.standing(L, q) : {},
+			mon: got - cost
+		};
+		const as = w.as || w.id;
+		if (him) {
+			grant(L, by, {
+				karma: deltas.karma,
+				standing: deltas.standing
+			});
+			const A = S.arc;
+			A.done++;
+			A.renown += q.stake.renown || 1;
+			A.ways[as] = (A.ways[as] || 0) + 1;
+		} else if (S.rivals[by]) S.rivals[by].renown += q.stake.renown || 1;
+		q.state = "done";
+		q.outcome = {
+			by,
+			way,
+			as,
+			text,
+			day: today$1(L),
+			deltas
+		};
+		if (him) q.outcome.change = diff(before, snap(actor(L, by)));
+		const ek = him ? as : "rival";
+		S.stats.endings[ek] = (S.stats.endings[ek] || 0) + 1;
+		announce(L, "story.questResolved", {
+			quest: id,
+			kind: q.kind,
+			way,
+			by,
+			region: q.region,
+			zone: q.zone,
+			deltas: q.outcome.deltas
+		}, text, ["board", "messenger"]);
+		return q.outcome;
+	}
+	const snap = (a) => ({
+		karma: a.karma,
+		mon: a.money.mon,
+		standing: { ...a.standing }
+	});
+	function diff(a, b) {
+		const s = {};
+		for (const k of /* @__PURE__ */ new Set([...Object.keys(a.standing), ...Object.keys(b.standing)])) {
+			const d = +((b.standing[k] || 0) - (a.standing[k] || 0)).toFixed(2);
+			if (d) s[k] = d;
+		}
+		return {
+			karma: +(b.karma - a.karma).toFixed(2),
+			mon: b.mon - a.mon,
+			standing: s
+		};
+	}
+	function questsDay(L, cal, r, rivalTakes) {
+		const S = ST(L), d = today$1(L);
+		for (const id of S.questOrder) {
+			const q = S.quests[id];
+			if (!q || q.state === "done") continue;
+			const def = KINDS[q.kind];
+			const gone = def.check ? def.check(L, q) : q.target != null && !alive(L, q.target) ? "The one it was about is dead; nothing is left to do." : null;
+			if (gone) {
+				end(L, q, gone, "overtaken");
+				continue;
+			}
+			if (d < q.due) continue;
+			const rival = rivalTakes && rivalTakes(L, q, r);
+			if (rival) {
+				resolveQuest(L, id, rival.way, { by: rival.id });
+				continue;
+			}
+			end(L, q, def.untouched(L, q, rngFor(L.seed, "untouched", id)), "world");
+		}
+		if (cal.dayOfSeason === 1) {
+			const keep = [];
+			for (const id of S.questOrder) {
+				const q = S.quests[id];
+				if (q && q.state === "done" && d - q.outcome.day > 224) delete S.quests[id];
+				else if (q) keep.push(id);
+			}
+			S.questOrder = keep;
+		}
+	}
+	function end(L, q, text, how) {
+		const S = ST(L);
+		q.state = "done";
+		q.outcome = {
+			by: null,
+			way: how,
+			text,
+			day: today$1(L)
+		};
+		S.stats.endings[how] = (S.stats.endings[how] || 0) + 1;
+		announce(L, "story.questEnded", {
+			quest: q.id,
+			kind: q.kind,
+			how,
+			region: q.region,
+			zone: q.zone
+		}, text, ["board"]);
+	}
+	//#endregion
+	//#region src/sim/story/politics.js
+	const MALE_HEIR_AGE = 15;
+	const sonsOf = (L, a) => a.children.map((id) => actor(L, id)).filter((c) => c && c.alive && c.sex === "m" && ageIn(L, c) >= MALE_HEIR_AGE).sort((x, y) => x.born - y.born);
+	setLordFell((L, region, id, cause) => succession(L, region, id, cause));
+	function onPeopleDied(e, L) {
+		const id = e.actor, a = actor(L, id);
+		if (!a || a.lord == null) return;
+		const g = L.regions[a.lord];
+		if (g && g.lord === id) succession(L, a.lord, id, e.cause || "age");
+	}
+	function succession(L, region, deadId, cause) {
+		const S = ST(L), g = L.regions[region], dead = actor(L, deadId);
+		if (!dead || S.disputes[region] || S.keys["fell:" + deadId] != null) return;
+		S.keys["fell:" + deadId] = today$1(L);
+		delete S.ill[deadId];
+		const r = rngFor(L.seed, "succession", region, L.hour), sons = sonsOf(L, dead);
+		announce(L, "event.lordDied", {
+			region,
+			actor: deadId,
+			cause,
+			culture: g.culture,
+			zone: g.seat
+		}, `${who$1(L, deadId)}, lord of ${regName(L, region)}, is dead (${cause}). The bell tolls at the seat.`, ["bell", "messenger"], [region, ...S.adj[region]]);
+		let rival = S.keys["will:" + deadId] ? null : sons[1] || null;
+		if (!rival && sons[0] && !S.keys["will:" + deadId]) {
+			const uncles = dead.parents.flatMap((p) => (actor(L, p) || { children: [] }).children).map((id) => actor(L, id)).filter((u) => u && u.alive && u.id !== deadId && u.sex === "m");
+			if (uncles.length && r.chance(.5)) rival = uncles[0];
+			else if (r.chance(.2)) {
+				const ret = census(L).byRegion[region].fighters.map((id) => actor(L, id)).filter((a) => a.cls === "retainer" || a.cls === "noble");
+				if (ret.length) rival = r.pick(ret);
+			}
+		}
+		if (sons[0] && rival && r.chance(sons[1] && rival === sons[1] ? .75 : 1)) {
+			const d = S.disputes[region] = {
+				a: sons[0].id,
+				b: rival.id,
+				since: today$1(L),
+				dead: deadId
+			};
+			const q = post(L, "succession", {
+				key: "succ:" + region + ":" + deadId,
+				region,
+				giver: d.b,
+				target: d.a,
+				other: d.b,
+				days: 45 + r.int(0, 30),
+				reward: 200 + r.int(0, 400),
+				title: `Two claim the seat of ${regName(L, region)}`,
+				text: `${who$1(L, deadId)} is dead, and ${who$1(L, d.a)} (the elder son) and ${who$1(L, d.b)} (${rival === sons[1] ? "his younger brother" : rival.cls === "retainer" ? "a retainer with an army behind him" : "their uncle"}) both claim the seat. Retainers are choosing sides; the villages are keeping their heads down.`,
+				board: "lord",
+				stake: { renown: 3 }
+			});
+			d.quest = q && q.id;
+			announce(L, "event.successionDispute", {
+				region,
+				claimants: [d.a, d.b],
+				quest: d.quest,
+				effects: {
+					danger: .2,
+					unrest: .15
+				}
+			}, `${regName(L, region)}: ${who$1(L, d.a)} and ${who$1(L, d.b)} both claim their father's seat. Armed men on the roads.`, ["messenger", "smoke"], [region, ...S.adj[region]]);
+			S.reg[region].danger = clamp(S.reg[region].danger + .2);
+			S.reg[region].unrest = clamp(S.reg[region].unrest + .15);
+			return;
+		}
+		const heir = sons[0] || (dead.spouse && alive(L, dead.spouse) ? actor(L, dead.spouse) : null) || steward(L, r, region);
+		setLord(L, region, heir ? heir.id : null, sons[0] ? "his son" : heir && heir.id === dead.spouse ? "his widow, as regent" : "a steward of the house");
+	}
+	function steward(L, r, region) {
+		const f = census(L).byRegion[region].nobles.concat(census(L).byRegion[region].fighters).map((id) => actor(L, id)).filter((a) => a.culture === L.regions[region].culture);
+		return f.length ? r.pick(f) : null;
+	}
+	function setLord(L, region, id, how) {
+		const g = L.regions[region], was = g.lord;
+		g.lord = id;
+		if (id) actor(L, id).lord = region;
+		announce(L, "event.succession", {
+			region,
+			actor: id,
+			was,
+			how,
+			culture: g.culture,
+			zone: g.seat
+		}, id ? `${who$1(L, id)} (${how}) now sits in the seat of ${regName(L, region)}.` : `The seat of ${regName(L, region)} stands empty.`, ["messenger", "board"], [region, ...ST(L).adj[region]]);
+	}
+	function settleDispute(L, region, winner, loserFate, how) {
+		const S = ST(L), d = S.disputes[region];
+		if (!d) return;
+		delete S.disputes[region];
+		const loser = winner === d.a ? d.b : d.a;
+		if (loserFate === "killed") kill(L, loser, "succession", winner);
+		else if (loserFate === "exiled" && actor(L, loser)) actor(L, loser).home = null;
+		if (alive(L, winner)) setLord(L, region, winner, how);
+		S.reg[region].danger = clamp(S.reg[region].danger - .15);
+		announce(L, "event.disputeSettled", {
+			region,
+			winner,
+			loser,
+			fate: loserFate
+		}, `${regName(L, region)}: ${who$1(L, winner)} holds the seat; ${who$1(L, loser)} is ${loserFate === "killed" ? "dead" : loserFate === "exiled" ? "in exile" : "bowed and pardoned"}.`, ["messenger"], [region]);
+	}
+	function politicsSeason(L, cal, r) {
+		const S = ST(L), cen = census(L);
+		if (!L.sys.people) for (const g of L.regions) {
+			const a = actor(L, g.lord);
+			if (!a || !a.alive || S.ill[a.id]) continue;
+			const age = ageIn(L, a);
+			if (age < 55 || !r.chance((age - 52) * .004)) continue;
+			S.ill[a.id] = {
+				region: g.id,
+				since: today$1(L),
+				dies: today$1(L) + r.int(20, 70),
+				fatal: r.chance(.7)
+			};
+			announce(L, "event.lordIll", {
+				region: g.id,
+				actor: a.id
+			}, `${who$1(L, a.id)}, lord of ${g.name}, has taken to his bed. Physicians come and go; his sons count retainers.`, ["messenger"], [g.id]);
+			const kin = sonsOf(L, a)[1] || sonsOf(L, a)[0];
+			post(L, "dying", {
+				key: "ill:" + a.id,
+				region: g.id,
+				giver: g.lord,
+				target: a.id,
+				other: kin ? kin.id : null,
+				days: S.ill[a.id].dies - today$1(L),
+				reward: 150 + r.int(0, 200),
+				title: `A healer for the lord of ${g.name}`,
+				text: `${who$1(L, a.id)} is failing. His house will pay whoever brings a healer from the mountain shrines, and some would pay more for him to go quietly.`,
+				board: "lord"
+			});
+		}
+		war(L, cal, r, cen);
+		uprisings(L, cal, r, cen);
+		processions(L, cal, r);
+	}
+	function politicsDay(L, cal, r) {
+		const S = ST(L), d = today$1(L);
+		for (const id in S.ill) {
+			const ill = S.ill[id];
+			if (!alive(L, id)) {
+				delete S.ill[id];
+				continue;
+			}
+			if (d >= ill.dies) {
+				if (ill.fatal) kill(L, id, "illness");
+				else {
+					delete S.ill[id];
+					announce(L, "event.lordRecovers", {
+						region: ill.region,
+						actor: id
+					}, `${who$1(L, id)}, lord of ${regName(L, ill.region)}, is up from his sickbed.`, ["messenger"], [ill.region]);
+				}
+			}
+		}
+		for (const g in S.uprisings) if (S.uprisings[g].quest == null && d >= S.uprisings[g].due) delete S.uprisings[g];
+	}
+	function politicsYear(L, cal, r) {
+		const S = ST(L);
+		for (const g of L.regions) {
+			const a = actor(L, g.lord), R = S.reg[g.id];
+			if (!a) continue;
+			if ((a.traits.some(([t]) => [
+				"proud",
+				"vain",
+				"regal",
+				"cocky"
+			].includes(t)) || Object.values(S.wars).some((w) => w.a === g.culture || w.b === g.culture)) && R.tax < .7 && r.chance(.14)) {
+				R.tax = +(R.tax + .1).toFixed(2);
+				announce(L, "event.tax", {
+					region: g.id,
+					rate: R.tax,
+					lord: a.id,
+					effects: {
+						unrest: .1,
+						prices: { rice: .05 }
+					}
+				}, `${who$1(L, a.id)} raises the rice tax in ${g.name} to ${Math.round(R.tax * 100)}% of the crop. The tax collectors ride out with ashigaru.`, ["board"], [g.id]);
+			} else if (R.tax > .3 && R.hunger > .4 && r.chance(.3)) {
+				R.tax = +(R.tax - .1).toFixed(2);
+				announce(L, "event.taxRelief", {
+					region: g.id,
+					rate: R.tax,
+					lord: a.id
+				}, `${who$1(L, a.id)} lowers the rice tax in ${g.name} to ${Math.round(R.tax * 100)}% for the hungry year.`, ["board"], [g.id]);
+			}
+		}
+	}
+	function war(L, cal, r, cen) {
+		const S = ST(L), wars = Object.values(S.wars);
+		if (cal.seasonIndex === 0 && wars.length < 3) {
+			const pairs = /* @__PURE__ */ new Set();
+			for (const g of L.regions) for (const n of S.adj[g.id]) {
+				const a = g.culture, b = L.regions[n].culture;
+				if (a !== b) pairs.add(Math.min(a, b) + "|" + Math.max(a, b));
+			}
+			for (const pk of r.shuffle([...pairs])) {
+				const [a, b] = pk.split("|").map(Number);
+				if (L.cultures[a].relations[b] > -.5 || wars.some((w) => [w.a, w.b].includes(a) || [w.a, w.b].includes(b)) || !r.chance(.18)) continue;
+				const fronts = L.regions.filter((g) => (g.culture === a || g.culture === b) && S.adj[g.id].some((n) => L.regions[n].culture === (g.culture === a ? b : a))).map((g) => g.id);
+				const w = {
+					id: newId(L, "war"),
+					a,
+					b,
+					since: today$1(L),
+					score: 0,
+					battles: 0,
+					fronts
+				};
+				S.wars[w.id] = w;
+				for (const f of fronts) S.reg[f].war = w.id;
+				announce(L, "event.war", {
+					war: w.id,
+					cultures: [a, b],
+					fronts,
+					effects: {
+						prices: {
+							weapons: .4,
+							rice: .15
+						},
+						danger: .3
+					}
+				}, `War: ${cultName(L, a)} and ${cultName(L, b)} have broken with each other. Levies are called, the border roads closed.`, ["messenger", "smoke"], fronts);
+				front(L, r, w, "message");
+				break;
+			}
+		}
+		for (const w of Object.values(S.wars)) {
+			const fa = cen.fightersOf[w.a] + 5, fb = cen.fightersOf[w.b] + 5, pa = .15 + .7 * fa / (fa + fb), win = r.chance(pa) ? w.a : w.b, lose = win === w.a ? w.b : w.a;
+			const at = r.pick(w.fronts.filter((f) => L.regions[f].culture === lose)) ?? r.pick(w.fronts);
+			w.score += win === w.a ? 1 : -1;
+			w.battles++;
+			let dead = 0;
+			const pool = cen.byRegion[at].fighters.filter((id) => actor(L, id).culture === lose);
+			for (let k = r.int(2, 5); k > 0 && pool.length; k--) if (kill(L, pool.splice(r.int(0, pool.length - 1), 1)[0], "battle")) dead++;
+			S.reg[at].harvest = +(S.reg[at].harvest * .85).toFixed(3);
+			S.reg[at].danger = clamp(S.reg[at].danger + .2);
+			announce(L, "event.battle", {
+				war: w.id,
+				region: at,
+				winner: win,
+				loser: lose,
+				dead,
+				effects: {
+					danger: .2,
+					harvest: .85
+				}
+			}, `Battle at ${regName(L, at)}: ${cultName(L, win)} beat ${cultName(L, lose)}${dead ? `, ${dead} dead on the field` : ""}. Smoke over the villages.`, ["smoke", "messenger"], [at, ...S.adj[at]]);
+			if (r.chance(.4)) front(L, r, w, r.chance(.5) ? "defend" : "message");
+			if (Math.abs(w.score) >= 3 || w.battles >= 8) endWar(L, r, w);
+		}
+	}
+	function front(L, r, w, kind) {
+		ST(L);
+		const side = r.chance(.5) ? w.a : w.b, mine = w.fronts.filter((f) => L.regions[f].culture === side);
+		if (!mine.length) return;
+		const reg = r.pick(mine), g = L.regions[reg], foe = side === w.a ? w.b : w.a;
+		const foeLord = (L.regions[w.fronts.find((f) => L.regions[f].culture === foe) ?? L.cultures[foe].regions[0]] || {}).lord ?? null;
+		if (kind === "message") {
+			const ally = L.cultures.filter((c) => c.id !== side && c.id !== foe && L.cultures[side].relations[c.id] > .1).sort((x, y) => L.cultures[side].relations[y.id] - L.cultures[side].relations[x.id])[0];
+			if (!ally || !g.lord) return;
+			const to = L.regions[ally.regions[0]];
+			post(L, "message", {
+				key: "msg:" + w.id + ":" + side,
+				region: reg,
+				giver: g.lord,
+				target: to.lord,
+				other: foeLord,
+				culture: side,
+				tculture: foe,
+				days: 20 + r.int(0, 20),
+				reward: 120 + r.int(0, 180),
+				stake: {
+					war: w.id,
+					side,
+					ally: ally.id,
+					to: to.id
+				},
+				title: `A sealed letter for ${to.name}`,
+				text: `${who$1(L, g.lord)} needs a letter carried to ${who$1(L, to.lord)} at ${to.name}, asking ${ally.name} to march against ${cultName(L, foe)}. The road runs through enemy country; ${cultName(L, foe)} would pay well for it.`,
+				board: "lord"
+			});
+		} else {
+			const vs = villagesOf(L, reg);
+			if (!vs.length) return;
+			const v = r.pick(vs);
+			post(L, "defend", {
+				key: "def:" + v.x + "," + v.y,
+				region: reg,
+				zone: [v.x, v.y],
+				giver: g.lord,
+				other: foeLord,
+				culture: side,
+				tculture: foe,
+				days: 14 + r.int(0, 14),
+				reward: 150 + r.int(0, 150),
+				stake: {
+					war: w.id,
+					attacker: foe,
+					by: "war"
+				},
+				title: `Hold ${v.name} against ${cultName(L, foe)}`,
+				text: `A column of ${cultName(L, foe)} is marching on ${v.name}. The headman begs for swords; the garrison is at the front.`,
+				board: "person"
+			});
+		}
+	}
+	function endWar(L, r, w) {
+		const S = ST(L), win = w.score > 0 ? w.a : w.score < 0 ? w.b : null;
+		delete S.wars[w.id];
+		for (const f of w.fronts) if (S.reg[f].war === w.id) S.reg[f].war = null;
+		L.cultures[w.a].relations[w.b] = L.cultures[w.b].relations[w.a] = +clamp(L.cultures[w.a].relations[w.b] + .3, -1, 1).toFixed(2);
+		let took = null;
+		if (win != null) {
+			const lose = win === w.a ? w.b : w.a;
+			const freed = w.fronts.find((f) => L.regions[f].culture === win && L.regions[f].occupier && L.regions[f].occupier.culture === lose);
+			if (freed != null) {
+				delete L.regions[freed].occupier;
+				took = freed;
+			} else {
+				const cand = w.fronts.filter((f) => L.regions[f].culture === lose && !L.regions[f].occupier);
+				if (cand.length) {
+					took = r.pick(cand);
+					L.regions[took].occupier = {
+						culture: win,
+						since: L.hour,
+						how: "war"
+					};
+				}
+			}
+		}
+		announce(L, "event.peace", {
+			war: w.id,
+			cultures: [w.a, w.b],
+			winner: win,
+			region: took,
+			occupied: took != null && !!L.regions[took].occupier
+		}, win == null ? `Peace between ${cultName(L, w.a)} and ${cultName(L, w.b)}: nobody won.` : took == null ? `${cultName(L, win)} won the war; the border stays where it was.` : L.regions[took].occupier ? `${cultName(L, win)} won the war and hold ${regName(L, took)}. Its lord keeps his title on paper; their garrison keeps the land.` : `${cultName(L, win)} won the war and drove the occupiers out of ${regName(L, took)}.`, ["messenger", "bell"], w.fronts);
+	}
+	function uprisings(L, cal, r, cen) {
+		const S = ST(L);
+		for (const g of L.regions) {
+			const R = S.reg[g.id];
+			if (R.unrest < .65 || S.uprisings[g.id] || L.cultures[g.culture].kind === "bandits" || !g.lord || !r.chance(.5)) continue;
+			const pool = cen.byRegion[g.id].all.map((id) => actor(L, id)).filter((a) => a.cls === "rebel" || a.cls === "commoner" && a.household === a.id);
+			if (!pool.length) continue;
+			const leader = r.pick(pool);
+			const q = post(L, "uprising", {
+				key: "up:" + g.id + ":" + cal.year,
+				region: g.id,
+				zone: leader.home,
+				giver: leader.id,
+				target: g.lord,
+				other: leader.id,
+				days: 25 + r.int(0, 25),
+				reward: 80 + r.int(0, 120),
+				title: `${regName(L, g.id)} rises`,
+				text: `${who$1(L, leader.id)} leads the villages of ${g.name} against ${who$1(L, g.lord)}: rice taxed at ${Math.round(R.tax * 100)}%, children hungry. The rebels want a sword; the lord wants the ringleader's head.`,
+				board: "person",
+				stake: { renown: 2 }
+			});
+			S.uprisings[g.id] = {
+				leader: leader.id,
+				since: today$1(L),
+				quest: q && q.id
+			};
+			announce(L, "event.uprising", {
+				region: g.id,
+				leader: leader.id,
+				quest: q && q.id,
+				effects: {
+					danger: .25,
+					prices: { rice: .1 }
+				}
+			}, `Uprising in ${g.name}: ${who$1(L, leader.id)} and the villages have taken up sickles and spears.`, ["smoke", "messenger"], [g.id, ...S.adj[g.id]]);
+		}
+	}
+	function settleUprising(L, region, rebelsWon, r) {
+		const S = ST(L), u = S.uprisings[region];
+		if (!u) return;
+		delete S.uprisings[region];
+		const g = L.regions[region], R = S.reg[region], cen = census(L);
+		if (rebelsWon) {
+			const lord = g.lord;
+			if (alive(L, u.leader)) g.occupier = {
+				actor: u.leader,
+				culture: g.culture,
+				since: L.hour,
+				how: "uprising"
+			};
+			if (lord && r.chance(.5)) kill(L, lord, "uprising", u.leader);
+			R.tax = .3;
+			R.unrest = .2;
+			announce(L, "event.uprisingWon", {
+				region,
+				leader: u.leader
+			}, `The rebels of ${g.name} hold the seat. ${who$1(L, u.leader)} opens the rice stores; the lord's house keeps its title, and waits.`, ["messenger", "bell"], [region, ...S.adj[region]]);
+		} else {
+			kill(L, u.leader, "executed", g.lord);
+			const pool = cen.byRegion[region].all.filter((id) => actor(L, id).cls === "rebel");
+			for (let k = r.int(1, 4); k > 0 && pool.length; k--) kill(L, pool.splice(r.int(0, pool.length - 1), 1)[0], "executed", g.lord);
+			R.unrest = .25;
+			R.tax = +Math.min(.7, R.tax + .05).toFixed(2);
+			announce(L, "event.uprisingCrushed", {
+				region,
+				leader: u.leader
+			}, `The rising in ${g.name} is crushed. Heads on the gate of the seat; the tax goes up for the trouble.`, ["messenger", "smoke"], [region]);
+		}
+	}
+	function processions(L, cal, r) {
+		const S = ST(L);
+		if (cal.seasonIndex % 2 || !r.chance(.6)) return;
+		for (const c of L.cultures) {
+			if (c.kind !== "court" || Object.keys(S.processions).length) continue;
+			const royals = Object.values(L.actors).filter((a) => a.alive && a.cls === "royal" && a.culture === c.id);
+			if (!royals.length) continue;
+			const royal = r.pick(royals), from = L.regions[c.regions[0]], friends = L.cultures.filter((o) => o.id !== c.id && c.relations[o.id] > .15);
+			if (!friends.length) continue;
+			const to = L.regions[r.pick(friends).regions[0]], route = routeOf(L, from.seat, to.seat);
+			const id = newId(L, "proc");
+			S.processions[id] = {
+				royal: royal.id,
+				from: from.id,
+				to: to.id,
+				route,
+				end: today$1(L) + route.length * 3 + 6
+			};
+			announce(L, "event.procession", {
+				procession: id,
+				actor: royal.id,
+				route,
+				culture: c.id,
+				effects: {
+					prices: { silk: .2 },
+					danger: -.1
+				}
+			}, `A royal procession leaves ${from.name} for ${to.name}: ${who$1(L, royal.id)} in red silk, forty spears, the road cleared ahead. Kneel as it passes.`, ["messenger", "board"], route);
+			post(L, "procession", {
+				key: "proc:" + id,
+				region: route[Math.min(1, route.length - 1)],
+				giver: from.lord,
+				target: royal.id,
+				culture: c.id,
+				days: route.length * 3 + 6,
+				reward: 250 + r.int(0, 250),
+				stake: {
+					procession: id,
+					renown: 2
+				},
+				title: `Guard the royal road to ${to.name}`,
+				text: `${who$1(L, royal.id)} travels in red silk through ${route.length} regions. The court hires swords to walk the road ahead; the outlaw camps along it have heard of the silk too.`,
+				board: "inn"
+			});
+		}
+	}
+	function routeOf(L, [x0, y0], [x1, y1]) {
+		const out = [], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+		for (let i = 0; i <= n; i++) {
+			const z = zoneAt(L, Math.round(x0 + (x1 - x0) * i / n), Math.round(y0 + (y1 - y0) * i / n));
+			if (z && z.region >= 0 && !out.includes(z.region)) out.push(z.region);
+		}
+		return out;
+	}
+	//#endregion
+	//#region src/sim/story/order.js
+	const key = (z) => z.x + "," + z.y;
+	function initOrder(L) {
+		const S = ST(L);
+		S.camps = {};
+		const villages = L.zones.filter((z) => z.kind === "village" || z.kind === "town");
+		for (const z of L.zones) if (z.kind === "camp") {
+			const near = villages.map((v) => [v, Math.abs(v.x - z.x) + Math.abs(v.y - z.y)]).filter(([, d]) => d <= 14).sort((a, b) => a[1] - b[1]).slice(0, 4).map(([v]) => [v.x, v.y]);
+			S.camps[key(z)] = {
+				zone: [z.x, z.y],
+				region: z.region,
+				near,
+				raids: 0,
+				notoriety: 0,
+				razed: false
+			};
+		}
+	}
+	const chiefOf = (L, c) => {
+		const z = zoneAt(L, ...c.zone);
+		return z.holder && alive(L, z.holder) ? z.holder : null;
+	};
+	function orderWeek(L, cal, r) {
+		if (L.sys.crime) return;
+		const S = ST(L);
+		let cen = null;
+		for (const k in S.camps) {
+			const c = S.camps[k];
+			if (c.razed) continue;
+			const chief = chiefOf(L, c);
+			if (!chief || !c.near.length) continue;
+			const R = S.reg[c.region];
+			if (r.chance(.035 + R.hunger * .1 + (R.war ? .03 : 0))) {
+				cen = cen || census(L);
+				const vz = r.pick(c.near), heads = (cen.byZone[vz[0] + "," + vz[1]] || []).filter((id) => actor(L, id).household === id);
+				if (!heads.length) continue;
+				const victim = r.pick(heads);
+				raided(L, c, chief, {
+					victim,
+					took: pay(L, victim, chief, r.int(20, 120)),
+					killed: r.chance(.1) && kill(L, victim, "raid", chief),
+					zone: vz
+				});
+			}
+			if (S.geo[c.region].road > .08 && r.chance(.02)) {
+				cen = cen || census(L);
+				const ms = cen.byRegion[c.region].merchants.concat(...ST(L).adj[c.region].map((n) => cen.byRegion[n].merchants));
+				if (!ms.length) continue;
+				const victim = r.pick(ms);
+				robbed(L, {
+					victim,
+					thief: chief,
+					mon: pay(L, victim, chief, r.int(60, 400)),
+					zone: actor(L, victim).home,
+					camp: k
+				});
+			}
+		}
+	}
+	function raided(L, c, chief, { victim, took, killed, zone }) {
+		const S = ST(L);
+		c.raids++;
+		c.notoriety++;
+		S.reg[c.region].danger = clamp(S.reg[c.region].danger + .03);
+		announce(L, "event.raid", {
+			region: zoneAt(L, ...zone).region,
+			zone,
+			by: chief,
+			victim,
+			took,
+			killed: !!killed,
+			camp: c.zone
+		}, `Raiders from ${zoneName(L, c.zone)} hit ${zoneName(L, zone)}: ${took ? `${took} mon taken` : "nothing worth taking"}${killed ? `, ${who$1(L, victim)} cut down at his door` : ""}.`, ["smoke"]);
+		if (killed) grudge(L, victim, chief, "raid");
+		if (c.notoriety >= 4 && dedupe(L, "raiders:" + c.zone, 112)) {
+			const g = L.regions[c.region];
+			post(L, "raiders", {
+				key: "raidq:" + c.zone,
+				region: c.region,
+				zone: c.zone,
+				giver: g.lord,
+				target: chief,
+				tculture: actor(L, chief).culture,
+				days: 28 + c.notoriety * 3,
+				reward: 60 * c.notoriety,
+				stake: {
+					camp: c.zone.join(","),
+					renown: 2
+				},
+				title: `The ${zoneName(L, c.zone)} preys on the road`,
+				text: `${who$1(L, chief)}'s band has raided ${c.raids} times from ${zoneName(L, c.zone)}. The magistrate pays for the camp broken; the villages would settle for the raids stopping.`,
+				board: "magistrate"
+			});
+		}
+	}
+	function robbed(L, { victim, thief, mon, zone, camp = null, item = null }) {
+		const v = actor(L, victim);
+		if (!v) return;
+		const region = zoneAt(L, ...zone || v.home).region;
+		announce(L, "event.robbery", {
+			region,
+			zone,
+			victim,
+			by: thief,
+			mon,
+			item
+		}, `${who$1(L, victim)} was robbed on the road near ${regName(L, region)}: ${item || `${mon} mon`} gone.`, ["board"]);
+		if (camp && ST(L).camps[camp]) ST(L).camps[camp].notoriety++;
+		if ((mon >= 150 || item) && alive(L, thief)) post(L, "robbed", {
+			key: "rob:" + victim + ":" + (item || ""),
+			region,
+			zone: v.home || zone,
+			giver: victim,
+			target: thief,
+			tculture: actor(L, thief).culture,
+			days: 21,
+			reward: Math.round((mon || 300) * .3),
+			stake: {
+				mon,
+				item
+			},
+			title: `${who$1(L, victim)} was robbed`,
+			text: `${who$1(L, victim)} lost ${item || `${mon} mon`} to ${who$1(L, thief)}'s men on the road. He will give a third of it to whoever brings it back.`,
+			board: "person"
+		});
+	}
+	function grudge(L, victim, killer, why) {
+		const S = ST(L), v = actor(L, victim);
+		if (!v || !actor(L, killer)) return;
+		const kin = v.children.concat(v.spouse ? [v.spouse] : [], v.parents).filter((id) => alive(L, id))[0];
+		if (!kin) return;
+		S.grudges.push({
+			by: kin,
+			against: killer,
+			why,
+			d: today$1(L)
+		});
+		if (S.grudges.length > 200) S.grudges.shift();
+	}
+	function orderSeason(L, cal, r) {
+		const S = ST(L);
+		const worst = Object.values(S.camps).filter((c) => !c.razed && c.notoriety >= 6).map((c) => [c, chiefOf(L, c)]).filter(([, id]) => id && !S.bounties[id]).sort((a, b) => b[0].notoriety - a[0].notoriety)[0];
+		if (worst) postBounty(L, worst[1], Math.min(1500, 100 * worst[0].notoriety), worst[0].region, `${worst[0].notoriety} raids and robberies on the road`);
+		refound(L, r);
+		const byReg = {};
+		for (const c of Object.values(S.camps)) if (!c.razed && chiefOf(L, c)) (byReg[c.region] || (byReg[c.region] = [])).push(c);
+		for (const [reg, cs] of Object.entries(byReg)) {
+			const nt = cs.reduce((s, c) => s + c.notoriety, 0);
+			if (cs.length < 2 || nt < 10 || Object.values(S.armies).some((a) => a.region === +reg) || S.keys["army:" + reg] != null && today$1(L) - S.keys["army:" + reg] < 224 || !r.chance(.2)) continue;
+			S.keys["army:" + reg] = today$1(L);
+			const lead = cs.sort((a, b) => b.notoriety - a.notoriety)[0], chief = chiefOf(L, lead);
+			const targets = [+reg, ...S.adj[+reg]].filter((g) => L.cultures[L.regions[g].culture].kind !== "bandits").flatMap((g) => villagesOf(L, g));
+			if (!targets.length) continue;
+			const v = targets.sort((a, b) => Math.abs(a.x - lead.zone[0]) + Math.abs(a.y - lead.zone[1]) - (Math.abs(b.x - lead.zone[0]) + Math.abs(b.y - lead.zone[1])))[0];
+			const id = newId(L, "army");
+			S.armies[id] = {
+				region: +reg,
+				chief,
+				camps: cs.map((c) => c.zone.join(",")),
+				target: [v.x, v.y],
+				strength: cs.length * 6 + Math.round(nt / 2)
+			};
+			announce(L, "event.banditArmy", {
+				army: id,
+				region: +reg,
+				chief,
+				camps: S.armies[id].camps,
+				target: [v.x, v.y],
+				effects: { danger: .3 }
+			}, `A bandit army gathers under ${who$1(L, chief)}: ${cs.length} camps of ${regName(L, +reg)} have joined. Their fires can be seen from ${v.name}.`, ["smoke", "messenger"], [+reg, v.region]);
+			const head = (census(L).byZone[v.x + "," + v.y] || []).find((id2) => actor(L, id2).household === id2);
+			post(L, "defend", {
+				key: "def:" + v.x + "," + v.y,
+				region: v.region,
+				zone: [v.x, v.y],
+				giver: head || L.regions[v.region].lord,
+				other: chief,
+				tculture: actor(L, chief).culture,
+				days: 21 + r.int(0, 14),
+				reward: 100 + r.int(0, 100),
+				stake: {
+					army: id,
+					attacker: chief,
+					by: "bandits",
+					renown: 3
+				},
+				title: `Defend ${v.name} from the bandit army`,
+				text: `${who$1(L, chief)}'s army will fall on ${v.name} within the month. The villagers have sickles, a wall of brushwood, and a little rice to pay a sword.`,
+				board: "person"
+			});
+		}
+		const p = actor(L, L.player);
+		if (p) {
+			for (const [c, v] of Object.entries(p.standing)) if (v <= -.5 && dedupe(L, "crack:" + c, 112)) announce(L, "event.crackdown", {
+				culture: +c,
+				target: L.player,
+				effects: { danger: .3 }
+			}, `${L.cultures[c].name} post the ronin's likeness at every gate: patrols doubled, inns told to send word.`, ["board", "messenger"], L.cultures[c].regions);
+		}
+	}
+	function refound(L, r) {
+		const S = ST(L), cen = census(L);
+		for (const k in S.camps) {
+			const c = S.camps[k], z = zoneAt(L, ...c.zone);
+			if (!c.razed || L.hour - z.razed < 2688 || !r.chance(.15)) continue;
+			const pool = [c.region, ...S.adj[c.region]].flatMap((g) => cen.byRegion[g].outlaws.concat(cen.byRegion[g].all.filter((id) => actor(L, id).cls === "ronin"))).filter((id) => alive(L, id) && !actor(L, id).chief && id !== L.player);
+			if (!pool.length) continue;
+			const chief = actor(L, r.pick(pool));
+			chief.chief = true;
+			chief.home = c.zone.slice();
+			z.holder = chief.id;
+			delete z.razed;
+			c.razed = false;
+			c.notoriety = 0;
+			c.raids = 0;
+			S.reg[c.region].danger = clamp(S.reg[c.region].danger + .1);
+			announce(L, "event.campFounded", {
+				region: c.region,
+				zone: c.zone,
+				by: chief.id
+			}, `Smoke over the old camp at ${zoneName(L, c.zone)} again: ${who$1(L, chief.id)} has gathered a band there.`, ["smoke"], [c.region]);
+		}
+	}
+	function postBounty(L, target, reward, region, why) {
+		const S = ST(L), t = actor(L, target);
+		if (!t || S.bounties[target]) return;
+		S.bounties[target] = {
+			reward,
+			since: today$1(L),
+			region
+		};
+		const regions = [region, ...S.adj[region]];
+		announce(L, "event.bounty", {
+			region,
+			actor: target,
+			reward,
+			effects: {}
+		}, `A famous bounty: ${reward} mon for ${who$1(L, target)}, dead or alive (${why}).`, ["board"], regions);
+		post(L, "bounty", {
+			key: "bounty:" + target,
+			region,
+			zone: t.home || L.regions[region].seat,
+			giver: L.regions[region].lord,
+			target,
+			tculture: t.culture,
+			days: 112,
+			reward,
+			stake: { renown: 3 },
+			title: `Wanted: ${who$1(L, target)}, ${reward} mon`,
+			text: `${who$1(L, target)} (${why}) is wanted by the lord of ${regName(L, region)}. The reward is paid at the magistrate's on proof.`,
+			board: "magistrate"
+		});
+	}
+	function razeCamp(L, zkey, by, why) {
+		const S = ST(L), c = S.camps[zkey];
+		if (!c || c.razed) return;
+		const z = zoneAt(L, ...c.zone), chief = z.holder, men = census(L).byZone[zkey] || [];
+		if (chief) kill(L, chief, why || "camp razed", by);
+		for (const id of men.slice(0, 3)) kill(L, id, why || "camp razed", by);
+		z.holder = null;
+		z.razed = L.hour;
+		c.razed = true;
+		S.reg[c.region].danger = clamp(S.reg[c.region].danger - .15);
+		for (const a in S.armies) if (S.armies[a].camps.includes(zkey)) S.armies[a].strength = Math.max(0, S.armies[a].strength - 8);
+		announce(L, "event.campRazed", {
+			region: c.region,
+			zone: c.zone,
+			by
+		}, `The camp at ${zoneName(L, c.zone)} is burnt. Its ground belongs to nobody now.`, ["smoke"], [c.region]);
+	}
+	function settleArmy(L, id, defended, r) {
+		const S = ST(L), A = S.armies[id];
+		if (!A) return;
+		delete S.armies[id];
+		for (const k of A.camps) if (S.camps[k]) S.camps[k].notoriety = Math.floor(S.camps[k].notoriety / 2);
+		const v = zoneAt(L, ...A.target), pre = A.target.join(",") + ":";
+		if (!defended && alive(L, A.chief)) {
+			const people = census(L).byZone[A.target.join(",")] || [];
+			for (let k = r.int(1, 4); k > 0 && people.length; k--) kill(L, people.splice(r.int(0, people.length - 1), 1)[0], "bandit army", A.chief);
+			const plots = Object.keys(L.plots).filter((p) => p.startsWith(pre));
+			for (const p of plots) seize(L, p, A.chief, "bandit army");
+			S.reg[v.region].danger = clamp(S.reg[v.region].danger + .2);
+			announce(L, "event.villageTaken", {
+				region: v.region,
+				zone: A.target,
+				by: A.chief,
+				plots
+			}, `${v.name} has fallen to ${who$1(L, A.chief)}'s army. The families still hold their deeds; the bandits hold their fields.`, ["smoke", "messenger"], [v.region, A.region]);
+		} else {
+			if (alive(L, A.chief)) kill(L, A.chief, "bandit army broken");
+			const k = A.camps.find((c) => S.camps[c] && !S.camps[c].razed);
+			if (k) razeCamp(L, k, null, "bandit army broken");
+			announce(L, "event.armyBroken", {
+				region: v.region,
+				zone: A.target
+			}, `The bandit army broke on the brushwood wall of ${v.name}.`, ["messenger"], [v.region, A.region]);
+		}
+	}
+	function onCrime(e, L) {
+		const S = ST(L);
+		if (e.type === "crime.raid" && e.camp) {
+			const c = S.camps[[].concat(e.camp).join(",")];
+			if (c) raided(L, c, e.by || chiefOf(L, c), {
+				victim: e.victim,
+				took: e.mon || 0,
+				killed: !!e.killed,
+				zone: e.zone || c.zone
+			});
+		} else if (e.type === "crime.robbery" && e.victim && (e.by || e.thief)) robbed(L, {
+			victim: e.victim,
+			thief: e.by || e.thief,
+			mon: e.mon ?? e.amount ?? 0,
+			zone: e.zone,
+			item: e.item || null
+		});
+		else if (e.type === "crime.murder" && e.victim && e.by) grudge(L, e.victim, e.by, "murder");
+		else if (e.type === "crime.bounty" && e.actor && e.actor !== L.player && (e.mon ?? e.amount ?? 0) >= 300) {
+			const a = actor(L, e.actor);
+			if (a && a.home) postBounty(L, e.actor, e.mon ?? e.amount, zoneAt(L, ...a.home).region, e.why || "wanted by the law");
+		}
+	}
+	//#endregion
+	//#region src/sim/story/kinds-world.js
+	const st = (...pairs) => {
+		const o = {};
+		for (let i = 0; i < pairs.length; i += 2) if (pairs[i] != null) o[pairs[i]] = +((o[pairs[i]] || 0) + pairs[i + 1]).toFixed(2);
+		return o;
+	};
+	const deed = (L, q, crime, victim, seen) => emit(L, "story.deed", {
+		actor: L.player,
+		crime,
+		victim,
+		seen,
+		zone: q.zone,
+		region: q.region,
+		quest: q.id
+	});
+	const loot = (L, q, by, item) => emit(L, "story.item", {
+		actor: by,
+		item,
+		quest: q.id,
+		zone: q.zone
+	});
+	const dying = (L, q) => q.target != null && !alive(L, q.target);
+	function onFamine(e, L) {
+		const g = L.regions[e.region], cen = census(L), vs = villagesOf(L, g.id);
+		if (!vs.length || !g.lord) return;
+		const v = vs[(ST(L).questOrder.length + e.region) % vs.length], head = (cen.byZone[v.x + "," + v.y] || []).find((id) => actor(L, id).household === id);
+		if (!head) return;
+		post(L, "famine", {
+			key: "famine:" + v.x + "," + v.y,
+			region: g.id,
+			zone: [v.x, v.y],
+			giver: head,
+			target: g.lord,
+			days: 21,
+			reward: 30,
+			stake: { renown: 2 },
+			title: `${v.name} is starving`,
+			board: "person",
+			text: `${who$1(L, head)}, headman of ${v.name}, says the children will not see spring. ${who$1(L, g.lord)}'s storehouse at ${regName(L, g.id)} is full of tax rice and under guard.`
+		});
+	}
+	const feed = (L, q, f) => {
+		const R = ST(L).reg[q.region];
+		R.hunger = +clamp(R.hunger - f).toFixed(2);
+		R.unrest = +clamp(R.unrest - f / 2).toFixed(2);
+	};
+	defineQuest("famine", {
+		board: "person",
+		check: (L, q) => !alive(L, q.giver) ? "The headman died before help came." : null,
+		ways: [
+			{
+				id: "help",
+				label: "Buy rice and bring it",
+				blurb: "Spend your own money on rice at the market and carry it in.",
+				karma: 3,
+				cost: () => 150,
+				payTo: "giver",
+				standing: (L, q) => st(q.culture, .1),
+				act: (L, q) => {
+					feed(L, q, .3);
+					return `The ronin bought rice with his own money and carried it into ${zoneName(L, q.zone)}. Nobody there will forget his face.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Empty the lord's storehouse by night",
+				blurb: "Unseen, carry the tax rice out to the village.",
+				karma: 1,
+				standing: (L, q) => st(q.culture, -.05),
+				act: (L, q) => {
+					feed(L, q, .35);
+					deed(L, q, "theft", q.target, false);
+					return `The tax rice of ${who$1(L, q.target)} vanished by night and turned up in ${zoneName(L, q.zone)}'s pots. The lord hunts a thief.`;
+				}
+			},
+			{
+				id: "fight",
+				label: "Break the storehouse guard",
+				blurb: "Open it by force in daylight and let the village take what it needs.",
+				karma: 0,
+				standing: (L, q) => st(q.culture, -.2),
+				act: (L, q, r) => {
+					feed(L, q, .45);
+					const g = census(L).byRegion[q.region].fighters;
+					if (g.length) kill(L, r.pick(g), "storehouse guard", L.player);
+					deed(L, q, "assault", q.target, true);
+					return `The ronin cut through the storehouse guard; ${zoneName(L, q.zone)} carried out rice by the cartload. ${who$1(L, q.target)} has put a price on him.`;
+				}
+			},
+			{
+				id: "betray",
+				label: "Sell the headman to the lord",
+				blurb: "Tell the lord who is stirring the village up. He pays for names.",
+				karma: -4,
+				mon: () => 100,
+				from: "target",
+				standing: (L, q) => st(q.culture, -.05),
+				act: (L, q) => {
+					kill(L, q.giver, "executed", q.target);
+					ST(L).reg[q.region].unrest = .1;
+					return `${who$1(L, q.giver)} was dragged to the seat and beheaded as a troublemaker. The village is quiet now, and hungrier.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			const people = (census(L).byZone[q.zone.join(",")] || []).filter((id) => id !== q.giver);
+			let dead = 0;
+			for (let k = r.int(2, 5); k > 0 && people.length; k--) if (kill(L, people.splice(r.int(0, people.length - 1), 1)[0], "famine")) dead++;
+			ST(L).reg[q.region].unrest = +clamp(ST(L).reg[q.region].unrest + .25).toFixed(2);
+			return `Nobody came. ${dead} died in ${zoneName(L, q.zone)} before the thaw; the survivors talk about the lord's full storehouse.`;
+		}
+	});
+	const disp = (L, q) => ST(L).disputes[q.region];
+	defineQuest("succession", {
+		board: "lord",
+		check: (L, q) => !disp(L, q) ? "The seat was settled before anyone came." : !alive(L, q.target) && !alive(L, q.other) ? "Both claimants are dead." : null,
+		ways: [
+			{
+				id: "elder",
+				as: "fight",
+				label: "Fight for the elder son",
+				blurb: "The lawful heir. Lead his retainers against his brother.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "target",
+				standing: (L, q) => st(q.culture, .1),
+				act: (L, q) => {
+					settleDispute(L, q.region, q.target, "exiled", "the elder son, with a ronin at his side");
+					return `With the ronin in the front rank, ${who$1(L, q.target)} took his father's seat. ${who$1(L, q.other)} fled the region.`;
+				}
+			},
+			{
+				id: "younger",
+				as: "fight",
+				label: "Fight for the rival claimant",
+				blurb: "He pays better and he has the harder men.",
+				karma: -1,
+				mon: (L, q) => q.reward * 1.3,
+				from: "other",
+				standing: (L, q) => st(q.culture, -.05),
+				act: (L, q) => {
+					settleDispute(L, q.region, q.other, "killed", "by the sword, a ronin at his side");
+					return `${who$1(L, q.other)} took the seat by the sword; ${who$1(L, q.target)} died in the gatehouse.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Murder the elder son quietly",
+				blurb: "One cut in the dark and the question is answered.",
+				karma: -5,
+				mon: (L, q) => q.reward * 2,
+				from: "other",
+				standing: () => ({}),
+				act: (L, q) => {
+					kill(L, q.target, "murdered", L.player);
+					deed(L, q, "murder", q.target, false);
+					settleDispute(L, q.region, q.other, "spared", "after his brother was found dead");
+					return `${who$1(L, q.target)} was found dead in his bath. ${who$1(L, q.other)} took the seat, grieving loudly.`;
+				}
+			},
+			{
+				id: "talk",
+				label: "Broker a peace",
+				blurb: "Gifts to the retainers on both sides; the elder takes the seat, the other a fort and his life.",
+				karma: 3,
+				cost: () => 150,
+				payTo: "target",
+				standing: (L, q) => st(q.culture, .15),
+				act: (L, q) => {
+					settleDispute(L, q.region, q.target, "spared", "by agreement, a ronin as go-between");
+					return `The brothers drank from one cup before their retainers: ${who$1(L, q.target)} holds the seat, ${who$1(L, q.other)} keeps his life and a fort.`;
+				}
+			},
+			{
+				id: "betray",
+				label: "Take both their money",
+				blurb: "Promise each your sword, then sell each one to the other.",
+				karma: -4,
+				mon: (L, q) => q.reward,
+				from: "other",
+				standing: (L, q) => st(q.culture, -.15),
+				act: (L, q) => {
+					settleDispute(L, q.region, q.target, "killed", "after his brother was betrayed");
+					return `The ronin took ${who$1(L, q.other)}'s money and led him into ${who$1(L, q.target)}'s ambush. Both sides now call him a snake.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			const f = census(L).byRegion[q.region].fighters.filter((id) => id !== q.target && id !== q.other);
+			for (let k = r.int(1, 3); k > 0 && f.length; k--) kill(L, f.splice(r.int(0, f.length - 1), 1)[0], "succession war");
+			let w = r.chance(.55) ? q.target : q.other;
+			if (!alive(L, w)) w = w === q.target ? q.other : q.target;
+			settleDispute(L, q.region, w, r.chance(.5) ? "killed" : "exiled", "after a season of fighting");
+			return `After a season of skirmishes ${who$1(L, w)} holds the seat of ${regName(L, q.region)}.`;
+		}
+	});
+	const up = (L, q) => ST(L).uprisings[q.region];
+	defineQuest("uprising", {
+		board: "person",
+		check: (L, q) => !up(L, q) ? "The rising is already over." : null,
+		ways: [
+			{
+				id: "fight",
+				label: "Fight with the rebels",
+				blurb: "Stand with the villages against the lord's ashigaru.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, -.15),
+				act: (L, q, r) => {
+					settleUprising(L, q.region, true, r);
+					return `The ashigaru broke against the ronin and the peasants' spears. ${who$1(L, q.giver)} holds the seat of ${regName(L, q.region)}.`;
+				}
+			},
+			{
+				id: "lord",
+				as: "fight",
+				label: "Fight for the lord",
+				blurb: "Put the rising down. The lord pays in silver and favour.",
+				karma: -2,
+				mon: (L, q) => q.reward * 1.5,
+				from: "target",
+				standing: (L, q) => st(q.culture, .15),
+				act: (L, q, r) => {
+					settleUprising(L, q.region, false, r);
+					return `The ronin cut down the rebel line; ${who$1(L, q.giver)}'s head hangs at the gate.`;
+				}
+			},
+			{
+				id: "bribe",
+				label: "Pay the arrears and end it",
+				blurb: "Pay the lord the villages' back taxes; he lowers the rate, they go home.",
+				karma: 3,
+				cost: () => 200,
+				payTo: "target",
+				standing: (L, q) => st(q.culture, .1),
+				act: (L, q) => {
+					const R = ST(L).reg[q.region];
+					delete ST(L).uprisings[q.region];
+					R.tax = .3;
+					R.unrest = .15;
+					announce(L, "event.uprisingEnds", {
+						region: q.region,
+						how: "paid"
+					}, `The rising in ${regName(L, q.region)} ends without blood: the arrears paid by a ronin, the tax lowered.`, ["messenger"], [q.region]);
+					return `The ronin paid the villages' arrears. The tax is lowered; the rebels went home to their fields.`;
+				}
+			},
+			{
+				id: "betray",
+				label: "Hand over the ringleader",
+				blurb: "Lead the lord's men to where he sleeps.",
+				karma: -4,
+				mon: () => 150,
+				from: "target",
+				standing: (L, q) => st(q.culture, .05),
+				act: (L, q, r) => {
+					settleUprising(L, q.region, false, r);
+					return `${who$1(L, q.giver)} was taken asleep, on the ronin's word. The rising died with him.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Kill the lord in the night",
+				blurb: "Cut the head off the house, and the rising wins by morning.",
+				karma: -3,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, -.3),
+				act: (L, q, r) => {
+					kill(L, q.target, "murdered", L.player);
+					deed(L, q, "murder", q.target, false);
+					settleUprising(L, q.region, true, r);
+					return `${who$1(L, q.target)} was found dead at dawn. His ashigaru scattered; the rebels walked into the seat.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			const R = ST(L).reg[q.region], win = r.chance(.25 + R.unrest * .35 + (L.cultures[L.regions[q.region].culture].kind === "rebels" ? .15 : 0));
+			settleUprising(L, q.region, win, r);
+			return win ? `The rising won on its own: ${who$1(L, q.giver)} holds ${regName(L, q.region)}.` : `The rising was crushed without him; ${who$1(L, q.giver)} is dead.`;
+		}
+	});
+	defineQuest("dying", {
+		board: "lord",
+		check: (L, q) => dying(L, q) ? `${who$1(L, q.target)} died before a healer came.` : !ST(L).ill[q.target] ? "He recovered." : null,
+		ways: [
+			{
+				id: "help",
+				label: "Bring a healer from the shrines",
+				blurb: "Two days into the mountains and back with a monk who knows the herbs.",
+				karma: 2,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .1),
+				act: (L, q, r) => {
+					const ill = ST(L).ill[q.target];
+					if (r.chance(.6)) delete ST(L).ill[q.target];
+					else ill.dies += r.int(60, 200);
+					return `The monk's herbs worked. ${who$1(L, q.target)} is on his feet${ST(L).ill[q.target] ? ", for now" : ""}.`;
+				}
+			},
+			{
+				id: "talk",
+				label: "Sit with him and witness his will",
+				blurb: "He dies anyway, but names his heir before witnesses; no one can dispute it.",
+				karma: 1,
+				standing: (L, q) => st(q.culture, .05),
+				act: (L, q) => {
+					const sons = actor(L, q.target).children.filter((id) => alive(L, id) && actor(L, id).sex === "m");
+					if (sons.length) ST(L).keys["will:" + q.target] = sons[0];
+					kill(L, q.target, "illness");
+					return `${who$1(L, q.target)} named his heir with the ronin as witness, and died before morning.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Hasten his end",
+				blurb: "An ambitious kinsman pays for a pillow over the face.",
+				karma: -5,
+				mon: () => 250,
+				from: "other",
+				needs: (L, q) => q.other && alive(L, q.other) ? null : "nobody is paying for it",
+				act: (L, q) => {
+					kill(L, q.target, "illness", L.player);
+					deed(L, q, "murder", q.target, false);
+					return `${who$1(L, q.target)} died in his sleep, they say. ${who$1(L, q.other)} paid for it.`;
+				}
+			}
+		],
+		untouched: (L, q) => `${who$1(L, q.target)} lingers; no healer came.`
+	});
+	const campOf = (L, q) => ST(L).camps[q.stake.camp];
+	defineQuest("raiders", {
+		board: "magistrate",
+		check: (L, q) => campOf(L, q).razed ? "The camp was broken by someone else." : null,
+		ways: [
+			{
+				id: "fight",
+				label: "Break the camp",
+				blurb: "Walk in the front gate. Kill the chief, burn the palisade.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .15, q.tculture, -.1),
+				act: (L, q) => {
+					razeCamp(L, q.stake.camp, L.player);
+					return `The ronin broke ${zoneName(L, q.zone)}: the chief dead, the palisade burning. The road is open.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Kill the chief in the night",
+				blurb: "Over the palisade; the band scatters without him.",
+				karma: 0,
+				mon: (L, q) => q.reward * .8,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .1),
+				act: (L, q, r) => {
+					kill(L, q.target, "assassinated", L.player);
+					const c = campOf(L, q), z = zoneAt(L, ...c.zone), men = census(L).byZone[q.stake.camp] || [];
+					if (men.length && r.chance(.5)) {
+						z.holder = r.pick(men);
+						c.notoriety = 0;
+						return `${who$1(L, q.target)} died in his sleep; ${who$1(L, z.holder)} took the band and lies low.`;
+					}
+					razeCamp(L, q.stake.camp, null, "scattered");
+					return `${who$1(L, q.target)} died in his sleep and the band scattered by morning.`;
+				}
+			},
+			{
+				id: "bribe",
+				label: "Pay them to move on",
+				blurb: "The raids stop here. They will start somewhere else.",
+				karma: -1,
+				cost: () => 150,
+				payTo: "target",
+				standing: (L, q) => st(q.culture, .05),
+				act: (L, q) => {
+					ST(L);
+					const c = campOf(L, q), far = L.zones.filter((z) => z.kind === "village" && Math.abs(z.x - c.zone[0]) + Math.abs(z.y - c.zone[1]) > 10 && Math.abs(z.x - c.zone[0]) + Math.abs(z.y - c.zone[1]) < 22).slice(0, 3);
+					c.near = far.map((z) => [z.x, z.y]);
+					c.notoriety = 0;
+					return `The band took the ronin's silver and turned their raids on ${far.length ? far.map((z) => z.name).join(", ") : "other roads"}.`;
+				}
+			},
+			{
+				id: "betray",
+				label: "Ride with them for a share",
+				blurb: "Join the next raid. The chief pays well.",
+				karma: -4,
+				mon: () => 120,
+				from: "target",
+				standing: (L, q) => st(q.culture, -.2, q.tculture, .2),
+				act: (L, q, r) => {
+					const c = campOf(L, q);
+					c.notoriety += 3;
+					ST(L).reg[q.region].danger = clamp(ST(L).reg[q.region].danger + .1);
+					deed(L, q, "banditry", null, true);
+					return `The ronin rode with ${who$1(L, q.target)}'s raiders. ${c.near.length ? zoneName(L, c.near[0]) : "A village"} burned; the magistrate has his description.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			if (r.chance(.3)) {
+				razeCamp(L, q.stake.camp, q.giver, "ashigaru");
+				return `The lord sent ashigaru at last and burnt ${zoneName(L, q.zone)}.`;
+			}
+			const c = campOf(L, q);
+			c.notoriety += 2;
+			ST(L).reg[q.region].danger = clamp(ST(L).reg[q.region].danger + .1);
+			return `Nobody came for the camp. It grows: more men, bolder raids.`;
+		}
+	});
+	defineQuest("robbed", {
+		board: "person",
+		check: (L, q) => !alive(L, q.giver) ? "The victim is dead." : null,
+		ways: [
+			{
+				id: "fight",
+				label: "Take it back by force",
+				blurb: "Find the thief and take it off him.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .05, q.tculture, -.05),
+				act: (L, q, r) => {
+					pay(L, q.target, q.giver, q.stake.mon || 0);
+					if (r.chance(.5)) kill(L, q.target, "duel", L.player);
+					return `${q.stake.item || "The money"} is back with ${who$1(L, q.giver)}${alive(L, q.target) ? "" : `; ${who$1(L, q.target)} will not rob again`}.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Steal it back",
+				blurb: "Nobody needs to know who.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .05),
+				act: (L, q) => {
+					pay(L, q.target, q.giver, q.stake.mon || 0);
+					return `${q.stake.item || "The money"} came back to ${who$1(L, q.giver)} in the night. The thief is looking for a traitor.`;
+				}
+			},
+			{
+				id: "bribe",
+				label: "Buy it back from the fence",
+				blurb: "Half price, no blood.",
+				karma: 0,
+				cost: (L, q) => Math.max(40, Math.round((q.stake.mon || 200) * .5)),
+				payTo: "target",
+				mon: (L, q) => q.reward,
+				from: "giver",
+				act: (L, q) => {
+					pay(L, q.target, q.giver, (q.stake.mon || 0) * .5);
+					return `The ronin bought ${q.stake.item || "it"} back from a fence and returned it.`;
+				}
+			},
+			{
+				id: "betray",
+				label: "Keep it yourself",
+				blurb: "Take it from the thief, and don't give it back.",
+				karma: -3,
+				mon: (L, q) => q.stake.mon || 0,
+				from: "target",
+				standing: (L, q) => st(q.culture, -.05),
+				act: (L, q, r, by) => {
+					if (q.stake.item) loot(L, q, by, q.stake.item);
+					return `The ronin took ${q.stake.item || "the money"} from the thief and kept it. ${who$1(L, q.giver)} is ruined.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			const v = actor(L, q.giver);
+			if (r.chance(.3)) {
+				v.money.mon = 0;
+				return `${who$1(L, q.giver)} never got it back and sold his tools to eat.`;
+			}
+			return `${who$1(L, q.giver)} never got it back.`;
+		}
+	});
+	defineQuest("bounty", {
+		board: "magistrate",
+		ways: [
+			{
+				id: "fight",
+				label: "Hunt him down",
+				blurb: "Bring back his head.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .15, q.tculture, -.1),
+				act: (L, q) => {
+					kill(L, q.target, "bounty", L.player);
+					delete ST(L).bounties[q.target];
+					return `The ronin brought in ${who$1(L, q.target)}'s head and was paid at the magistrate's.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Take him alive",
+				blurb: "Harder. The lord pays more for a public execution.",
+				karma: 2,
+				mon: (L, q) => q.reward * 1.2,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .2),
+				act: (L, q) => {
+					kill(L, q.target, "executed", q.giver);
+					delete ST(L).bounties[q.target];
+					return `${who$1(L, q.target)} was taken alive and executed before the seat. Crowds came.`;
+				}
+			},
+			{
+				id: "bribe",
+				label: "Let him buy his life",
+				blurb: "He has money buried. He will leave the region.",
+				karma: -2,
+				mon: () => 300,
+				from: "target",
+				standing: (L, q) => st(q.culture, -.05, q.tculture, .1),
+				act: (L, q) => {
+					const a = actor(L, q.target);
+					a.home = null;
+					return `${who$1(L, q.target)} paid the ronin and slipped over the border. The bounty stands.`;
+				}
+			}
+		],
+		untouched: (L, q) => {
+			delete ST(L).bounties[q.target];
+			return `The bounty on ${who$1(L, q.target)} lapsed unclaimed.`;
+		}
+	});
+	const takeVillage = (L, q, r, by) => {
+		const pre = q.zone.join(",") + ":", people = census(L).byZone[q.zone.join(",")] || [];
+		for (let k = r.int(1, 3); k > 0 && people.length; k--) kill(L, people.splice(r.int(0, people.length - 1), 1)[0], "raid", by);
+		for (const p of Object.keys(L.plots).filter((p) => p.startsWith(pre))) seize(L, p, by, "war");
+	};
+	defineQuest("defend", {
+		board: "person",
+		ways: [
+			{
+				id: "fight",
+				label: "Hold the wall",
+				blurb: "Stand at the gate with the villagers when they come.",
+				karma: 2,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .2, q.tculture, -.1),
+				act: (L, q, r) => {
+					if (q.stake.army) settleArmy(L, q.stake.army, true, r);
+					return `${zoneName(L, q.zone)} held. The ronin was the last man off the wall.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Burn their camp the night before",
+				blurb: "They never arrive.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .15),
+				act: (L, q, r) => {
+					if (q.stake.army) settleArmy(L, q.stake.army, true, r);
+					return `The attackers' camp burned in the night; they turned back before dawn.`;
+				}
+			},
+			{
+				id: "help",
+				label: "Lead the villagers away",
+				blurb: "Lose the fields, keep the people.",
+				karma: 2,
+				standing: (L, q) => st(q.culture, .05),
+				act: (L, q, r) => {
+					const A = q.stake.army && ST(L).armies[q.stake.army], by = A ? A.chief : null;
+					if (A) delete ST(L).armies[q.stake.army];
+					for (const p of Object.keys(L.plots).filter((p) => p.startsWith(q.zone.join(",") + ":"))) seize(L, p, by, "abandoned");
+					return `The ronin led ${zoneName(L, q.zone)} into the hills. Their fields are someone else's for now; their people are alive.`;
+				}
+			},
+			{
+				id: "betray",
+				label: "Open the gate for them",
+				blurb: "The attackers pay for a quiet gate.",
+				karma: -6,
+				mon: () => 200,
+				from: "other",
+				standing: (L, q) => st(q.culture, -.4, q.tculture, .1),
+				needs: (L, q) => q.other && alive(L, q.other) ? null : "nobody to sell it to",
+				act: (L, q, r) => {
+					if (q.stake.army) settleArmy(L, q.stake.army, false, r);
+					else takeVillage(L, q, r, q.other);
+					deed(L, q, "treachery", q.giver, true);
+					return `The gate of ${zoneName(L, q.zone)} was open when they came. Everyone knows who opened it.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			if (q.stake.army) {
+				const ok = !ST(L).armies[q.stake.army] || r.chance(.35);
+				settleArmy(L, q.stake.army, ok, r);
+				return ok ? `${zoneName(L, q.zone)} held without him.` : `${zoneName(L, q.zone)} fell to the bandit army.`;
+			}
+			if (r.chance(.5)) {
+				takeVillage(L, q, r, q.other);
+				return `${zoneName(L, q.zone)} was overrun by ${cultName(L, q.tculture)}.`;
+			}
+			return `The column passed ${zoneName(L, q.zone)} by.`;
+		}
+	});
+	const proc = (L, q) => ST(L).processions[q.stake.procession];
+	const arrive = (L, q, how) => {
+		const P = proc(L, q);
+		if (!P) return;
+		delete ST(L).processions[q.stake.procession];
+		announce(L, "event.processionArrives", {
+			procession: q.stake.procession,
+			actor: P.royal,
+			region: P.to
+		}, `The royal procession reached ${regName(L, P.to)} ${how}.`, ["messenger"], [P.to]);
+	};
+	defineQuest("procession", {
+		board: "inn",
+		ways: [
+			{
+				id: "fight",
+				label: "Walk the road ahead of it",
+				blurb: "Clear the outlaws before the silk comes by.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .2),
+				act: (L, q) => {
+					arrive(L, q, "safely, a ronin walking ahead");
+					return `The procession passed without a stone thrown. The court remembers who walked ahead of it.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Steal the silk at the inn",
+				blurb: "One night, one chest, nobody hurt.",
+				karma: -3,
+				standing: (L, q) => st(q.culture, -.1),
+				act: (L, q, r, by) => {
+					loot(L, q, by, "a royal red kimono");
+					deed(L, q, "theft from royalty", q.target, false);
+					arrive(L, q, "a chest lighter");
+					return `A chest of red silk is missing from the royal baggage. Every inn on the road is being searched.`;
+				}
+			},
+			{
+				id: "betray",
+				label: "Rob the procession",
+				blurb: "Colour is worth a fortune. It is also death to touch.",
+				karma: -6,
+				mon: () => 400,
+				from: "target",
+				standing: (L, q) => st(q.culture, -.6),
+				act: (L, q, r, by) => {
+					loot(L, q, by, "a royal red kimono");
+					deed(L, q, "robbery of royalty", q.target, true);
+					if (proc(L, q)) delete ST(L).processions[q.stake.procession];
+					return `The ronin fell on the procession on an open road. ${who$1(L, q.target)} lived; the red silk did not stay with him.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			const P = proc(L, q);
+			if (!P) return "The procession has passed.";
+			const S = ST(L), camps = Object.entries(S.camps).filter(([, c]) => !c.razed && P.route.includes(c.region) && c.notoriety >= 2);
+			const danger = Math.max(0, ...P.route.map((g) => S.reg[g].danger));
+			if (camps.length && r.chance(danger)) {
+				const [k, c] = r.pick(camps), chief = zoneAt(L, ...c.zone).holder;
+				delete S.processions[q.stake.procession];
+				if (chief) {
+					robbed(L, {
+						victim: P.royal,
+						thief: chief,
+						mon: 0,
+						zone: c.zone,
+						camp: k,
+						item: "the royal red kimono"
+					});
+					return `Outlaws from ${zoneName(L, c.zone)} fell on the procession and made off with the red silk.`;
+				}
+			}
+			arrive(L, q, "safely");
+			return `The procession passed safely without him.`;
+		}
+	});
+	const warOf = (L, q) => ST(L).wars[q.stake.war];
+	const shift = (L, q, toSide, n) => {
+		const w = warOf(L, q);
+		if (w) w.score += toSide === w.a ? n : -n;
+	};
+	defineQuest("message", {
+		board: "lord",
+		check: (L, q) => !warOf(L, q) ? "The war ended before the letter mattered." : null,
+		ways: [
+			{
+				id: "fight",
+				label: "Carry it through the lines",
+				blurb: "The straight road, sword out.",
+				karma: 0,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .15, q.tculture, -.1),
+				act: (L, q) => {
+					shift(L, q, q.stake.side, 1);
+					return `The letter reached ${who$1(L, q.target)}. ${cultName(L, q.stake.ally)} marched a week later.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Slip through by night",
+				blurb: "Mountain paths; nobody sees him.",
+				karma: 0,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .15),
+				act: (L, q) => {
+					shift(L, q, q.stake.side, 1);
+					return `The letter reached ${who$1(L, q.target)} by mountain paths. ${cultName(L, q.stake.ally)} marched.`;
+				}
+			},
+			{
+				id: "betray",
+				label: "Sell it to the enemy",
+				blurb: "The other side pays in gold for what is in it.",
+				karma: -4,
+				mon: () => 250,
+				from: "other",
+				needs: (L, q) => alive(L, q.other) ? null : "no enemy lord to sell it to",
+				standing: (L, q) => st(q.culture, -.3, q.tculture, .2),
+				act: (L, q) => {
+					shift(L, q, q.tculture, 1);
+					return `The letter was read in ${cultName(L, q.tculture)}'s war tent. The ambush they laid cost ${cultName(L, q.culture)} dearly.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			if (r.chance(.6)) {
+				shift(L, q, q.stake.side, 1);
+				return "A courier got the letter through.";
+			}
+			shift(L, q, q.tculture, 1);
+			return "The courier was caught; the letter was read by the enemy.";
+		}
+	});
+	//#endregion
+	//#region src/sim/story/kinds-jobs.js
+	const BEASTS = [
+		"a man-eating bear",
+		"a wolf pack",
+		"a great boar",
+		"a wild dog pack",
+		"an old tiger (so the woodcutters swear)"
+	];
+	function jobsWeek(L, cal, r) {
+		const S = ST(L), cen = census(L), n = L.regions.length;
+		for (let k = 0; k < 3; k++) {
+			const g = r.int(0, n - 1), vs = villagesOf(L, g);
+			if (!vs.length || !r.chance(.25)) continue;
+			const v = r.pick(vs), heads = (cen.byZone[v.x + "," + v.y] || []).filter((id) => actor(L, id).household === id && actor(L, id).holds.length);
+			if (heads.length < 2) continue;
+			const [a, b] = r.shuffle(heads.slice()).slice(0, 2), why = r.pick([
+				"a boundary stone moved in the night",
+				"water taken from the shared channel",
+				"a daughter promised and refused",
+				"an insult at the New Year",
+				"a dead ox and a missing one"
+			]);
+			post(L, "feud", {
+				key: "feud:" + [a, b].sort().join("|"),
+				region: g,
+				zone: [v.x, v.y],
+				giver: a,
+				target: b,
+				reward: 40 + r.int(0, 60),
+				days: 21 + r.int(0, 21),
+				stake: { why },
+				title: `The ${actor(L, a).family} and the ${actor(L, b).family} of ${v.name}`,
+				text: `${who$1(L, a)} and ${who$1(L, b)} have been at each other since ${why}. Knives have been shown. ${who$1(L, a)} wants a sword on his side.`
+			});
+		}
+		for (const gr of S.grudges.filter((x) => today$1(L) - x.d < 40 && !x.posted)) {
+			if (!alive(L, gr.by) || !alive(L, gr.against) || !r.chance(.4)) continue;
+			gr.posted = true;
+			const a = actor(L, gr.by), z = a.home ? zoneAt(L, ...a.home) : null;
+			if (!z || z.region < 0) continue;
+			post(L, "kill", {
+				key: "kill:" + gr.by + ":" + gr.against,
+				region: z.region,
+				zone: a.home,
+				giver: gr.by,
+				target: gr.against,
+				tculture: actor(L, gr.against).culture,
+				reward: 80 + r.int(0, 170),
+				days: 28,
+				title: `A life for a life`,
+				text: `${who$1(L, gr.by)} wants ${who$1(L, gr.against)} dead for the ${gr.why} that took their kin. Payment on proof, no questions.`
+			});
+		}
+		if (r.chance(.6)) {
+			const g = r.int(0, n - 1), m = cen.byRegion[g].merchants;
+			if (m.length) {
+				const who2 = r.pick(m), a = actor(L, who2), dest = r.pick(S.adj[g]);
+				if (dest != null && a.home) {
+					const route = routeOf(L, a.home, L.regions[dest].seat), danger = Math.max(0, ...route.map((x) => S.reg[x].danger)), cargo = 200 + r.int(0, 600);
+					post(L, "escort", {
+						key: "escort:" + who2,
+						region: g,
+						zone: a.home,
+						giver: who2,
+						other: campChief(L, route),
+						reward: 40 + Math.round(danger * 200) + r.int(0, 40),
+						days: 10 + r.int(0, 10),
+						stake: {
+							to: dest,
+							route,
+							danger: +danger.toFixed(2),
+							cargo
+						},
+						title: `Guard a caravan to ${regName(L, dest)}`,
+						text: `${who$1(L, who2)} carries ${cargo} mon of goods to ${regName(L, dest)}. The road is ${danger > .3 ? "bad: camps along it" : danger > .1 ? "uneasy" : "quiet, mostly"}.`
+					});
+				}
+			}
+		}
+		if (r.chance(.45)) {
+			const g = r.int(0, n - 1);
+			if (S.geo[g].high > .25 || S.geo[g].wet > .2) {
+				const vs = villagesOf(L, g);
+				if (vs.length) {
+					const v = r.pick(vs), head = (cen.byZone[v.x + "," + v.y] || []).find((id) => actor(L, id).household === id);
+					if (head) {
+						const beast = r.pick(BEASTS);
+						post(L, "hunt", {
+							key: "hunt:" + v.x + "," + v.y,
+							region: g,
+							zone: [v.x, v.y],
+							giver: head,
+							reward: 30 + r.int(0, 70),
+							days: 14 + r.int(0, 14),
+							stake: { beast },
+							board: "shrine",
+							title: `${beast[0].toUpperCase() + beast.slice(1)} at ${v.name}`,
+							text: `${beast[0].toUpperCase() + beast.slice(1)} has taken livestock at ${v.name} and a child is missing. The shrine asks for a hunter.`
+						});
+					}
+				}
+			}
+		}
+		if (r.chance(.25)) {
+			const camps = Object.entries(S.camps).filter(([, c]) => !c.razed && zoneAt(L, ...c.zone).holder);
+			if (camps.length) {
+				const [key, c] = r.pick(camps), nob = cen.byRegion[c.region].nobles.concat(...S.adj[c.region].map((x) => cen.byRegion[x].nobles));
+				const thieves = cen.byZone[key] || [];
+				if (nob.length && thieves.length) {
+					const owner = r.pick(nob), thief = r.pick(thieves), a = actor(L, owner);
+					post(L, "blade", {
+						key: "blade:" + owner,
+						region: zoneAt(L, ...a.home).region,
+						zone: a.home,
+						giver: owner,
+						target: thief,
+						tculture: actor(L, thief).culture,
+						reward: 150 + r.int(0, 250),
+						days: 35,
+						board: "inn",
+						stake: {
+							blade: r.pick([
+								"his grandfather's katana",
+								"a blade by a named smith",
+								"the house's wakizashi",
+								"a tachi given by a lord"
+							]),
+							camp: key
+						},
+						title: `The ${a.family} blade was stolen`,
+						text: `${who$1(L, owner)}'s heirloom sword was taken by ${who$1(L, thief)} of ${zoneName(L, c.zone)}. The house is shamed until it is back on its stand.`
+					});
+				}
+			}
+		}
+		if (r.chance(.5)) {
+			const g = r.int(0, n - 1), m = cen.byRegion[g].merchants, poor = cen.byRegion[g].heads.filter((id) => actor(L, id).money.mon < 120 && !m.includes(id));
+			if (m.length && poor.length) {
+				const lender = r.pick(m), debtor = r.pick(poor), sum = 100 + r.int(0, 300), a = actor(L, debtor);
+				post(L, "debt", {
+					key: "debt:" + debtor,
+					region: g,
+					zone: a.home,
+					giver: lender,
+					target: debtor,
+					reward: Math.round(sum * .2),
+					days: 28,
+					stake: {
+						sum,
+						plot: a.holds[0]
+					},
+					board: "inn",
+					title: `Collect ${sum} mon from ${who$1(L, debtor)}`,
+					text: `${who$1(L, lender)} lent ${who$1(L, debtor)} ${sum} mon against his field. It is due. He pays a fifth to whoever collects.`
+				});
+			}
+		}
+	}
+	defineQuest("feud", {
+		board: "person",
+		check: (L, q) => !alive(L, q.giver) || !alive(L, q.target) ? "One side of the feud is dead; it ended there." : null,
+		ways: [
+			{
+				id: "fight",
+				label: "Stand for the one who asked",
+				blurb: "Face the other house in the street.",
+				karma: -1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, -.02),
+				act: (L, q, r) => {
+					if (r.chance(.4)) {
+						kill(L, q.target, "feud", L.player);
+						grudge(L, q.target, L.player, "feud");
+						return `${who$1(L, q.target)} drew on the ronin and died in the street. His sons will not forget it.`;
+					}
+					return `${who$1(L, q.target)} backed down in front of the whole village. The ${actor(L, q.giver).family} have their way.`;
+				}
+			},
+			{
+				id: "talk",
+				label: "Mediate",
+				blurb: "Sake, a headman, a fair word. Costs a little.",
+				karma: 2,
+				cost: () => 30,
+				standing: (L, q) => st(q.culture, .05),
+				act: (L, q) => `The two houses drank together before the headman. The feud over ${q.stake.why} is closed.`
+			},
+			{
+				id: "bribe",
+				label: "Pay blood money to settle it",
+				blurb: "Pay the wronged house yourself.",
+				karma: 2,
+				cost: () => 90,
+				payTo: "target",
+				standing: (L, q) => st(q.culture, .05),
+				act: (L, q) => `The ronin paid the ${actor(L, q.target).family} to let it go. Both houses bowed.`
+			},
+			{
+				id: "betray",
+				label: "Take money from both",
+				blurb: "Promise each house your sword, and keep both purses.",
+				karma: -3,
+				mon: (L, q) => q.reward,
+				from: "target",
+				act: (L, q, r) => {
+					const [a, b] = r.chance(.5) ? [q.giver, q.target] : [q.target, q.giver];
+					kill(L, b, "feud", a);
+					seize(L, actor(L, b).holds[0] || `${q.zone.join(",")}:1`, a, "feud");
+					return `With both purses in the ronin's pocket and neither sword to stop them, ${who$1(L, a)} killed ${who$1(L, b)} and took his field.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			if (r.chance(.45)) {
+				const [a, b] = r.chance(.5) ? [q.giver, q.target] : [q.target, q.giver];
+				kill(L, b, "feud", a);
+				grudge(L, b, a, "feud");
+				const plot = actor(L, b).holds[0];
+				if (plot) seize(L, plot, a, "feud");
+				return `The feud came to knives: ${who$1(L, a)} killed ${who$1(L, b)} and holds his field. The title is still in the dead man's name.`;
+			}
+			return `The feud cooled with the weather.`;
+		}
+	});
+	defineQuest("kill", {
+		board: "person",
+		ways: [
+			{
+				id: "fight",
+				label: "Challenge him openly",
+				blurb: "A duel before witnesses: revenge, honestly done.",
+				karma: -1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.tculture, -.1),
+				act: (L, q) => {
+					kill(L, q.target, "duel", L.player);
+					return `The ronin called ${who$1(L, q.target)} out before witnesses and cut him down.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Kill him quietly",
+				blurb: "Nobody sees.",
+				karma: -3,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				act: (L, q) => {
+					kill(L, q.target, "murdered", L.player);
+					deed(L, q, "murder", q.target, false);
+					return `${who$1(L, q.target)} was found in a ditch. ${who$1(L, q.giver)} lit incense for his kin.`;
+				}
+			},
+			{
+				id: "betray",
+				label: "Warn him and take his silver",
+				blurb: "Tell the target who wants him dead. He pays for the name.",
+				karma: -2,
+				mon: () => 120,
+				from: "target",
+				act: (L, q, r) => {
+					if (r.chance(.5)) {
+						kill(L, q.giver, "murdered", q.target);
+						return `Warned, ${who$1(L, q.target)} struck first: ${who$1(L, q.giver)} is dead.`;
+					}
+					return `${who$1(L, q.target)} paid for the warning and left the region.`;
+				}
+			},
+			{
+				id: "talk",
+				label: "Refuse, and tell the magistrate",
+				blurb: "Murder for hire is a crime.",
+				karma: 2,
+				standing: (L, q) => st(q.culture, .05),
+				act: (L, q) => {
+					const lord = L.regions[q.region].lord;
+					pay(L, q.giver, lord, 50);
+					return `The ronin refused and reported it. ${who$1(L, q.giver)} was fined and watched.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			if (r.chance(.35)) {
+				kill(L, q.target, "hired blade", q.giver);
+				return `Someone else took the money: ${who$1(L, q.target)} is dead.`;
+			}
+			return `The grief cooled; nobody took the job.`;
+		}
+	});
+	defineQuest("escort", {
+		board: "inn",
+		check: (L, q) => !alive(L, q.giver) ? "The merchant is dead." : null,
+		ways: [
+			{
+				id: "fight",
+				label: "Guard the caravan",
+				blurb: "Walk beside the carts, sword ready.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .05),
+				act: (L, q, r) => {
+					const S = ST(L);
+					for (const g of q.stake.route) S.reg[g].danger = clamp(S.reg[g].danger - .02);
+					return `The caravan reached ${regName(L, q.stake.to)}${q.stake.danger > .2 && r.chance(.5) ? " after a fight at a ford" : " without trouble"}.`;
+				}
+			},
+			{
+				id: "bribe",
+				label: "Pay the camps' toll",
+				blurb: "A string of coins at each camp; no blood.",
+				karma: 0,
+				cost: (L, q) => Math.round(30 + q.stake.danger * 100),
+				mon: (L, q) => q.reward,
+				from: "giver",
+				act: (L, q) => `The ronin paid the toll at each camp; the carts rolled through to ${regName(L, q.stake.to)}.`
+			},
+			{
+				id: "betray",
+				label: "Lead it into an ambush",
+				blurb: "The camps pay a share of what they take.",
+				karma: -4,
+				mon: (L, q) => q.stake.cargo * .2,
+				from: "other",
+				standing: (L, q) => st(q.culture, -.15),
+				needs: (L, q) => alive(L, q.other) ? null : "no camp on the road to sell it to",
+				act: (L, q) => {
+					robbed(L, {
+						victim: q.giver,
+						thief: q.other,
+						mon: pay(L, q.giver, q.other, q.stake.cargo * .7),
+						zone: q.zone
+					});
+					deed(L, q, "robbery", q.giver, false);
+					return `The caravan was ambushed at the pass the ronin chose. He walked away with a share.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			if (r.chance(q.stake.danger)) {
+				const thief = campChief(L, q.stake.route);
+				if (thief) {
+					robbed(L, {
+						victim: q.giver,
+						thief,
+						mon: pay(L, q.giver, thief, q.stake.cargo * .5),
+						zone: q.zone
+					});
+					return `The caravan went alone and was robbed on the road.`;
+				}
+			}
+			return `The caravan went alone and got through.`;
+		}
+	});
+	function campChief(L, route) {
+		const c = Object.values(ST(L).camps).find((c) => !c.razed && route.includes(c.region) && zoneAt(L, ...c.zone).holder);
+		return c ? zoneAt(L, ...c.zone).holder : null;
+	}
+	defineQuest("hunt", {
+		board: "shrine",
+		ways: [
+			{
+				id: "fight",
+				label: "Hunt it",
+				blurb: "Track it to its den.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .05),
+				act: (L, q) => {
+					ST(L).reg[q.region].danger = clamp(ST(L).reg[q.region].danger - .03);
+					return `The ronin brought back the head of ${q.stake.beast}. The village held a feast.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Trap it",
+				blurb: "A pit, a bait, a long wait.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .05),
+				act: (L, q) => `${q.stake.beast[0].toUpperCase() + q.stake.beast.slice(1)} went into the ronin's pit. The village sleeps again.`
+			},
+			{
+				id: "talk",
+				label: "Ask the shrine to drive it off",
+				blurb: "An offering; the monks say it will leave.",
+				karma: 2,
+				cost: () => 20,
+				standing: (L, q) => st(q.culture, .03),
+				act: (L, q) => `The monks rang the bell for three nights; ${q.stake.beast} moved up the mountain.`
+			}
+		],
+		untouched: (L, q, r) => {
+			if (r.chance(.5)) {
+				const people = census(L).byZone[q.zone.join(",")] || [];
+				if (people.length) {
+					const v = r.pick(people);
+					kill(L, v, "beast");
+					return `${q.stake.beast[0].toUpperCase() + q.stake.beast.slice(1)} killed ${who$1(L, v)} before it moved on.`;
+				}
+			}
+			return `${q.stake.beast[0].toUpperCase() + q.stake.beast.slice(1)} moved on by itself.`;
+		}
+	});
+	defineQuest("blade", {
+		board: "inn",
+		check: (L, q) => !alive(L, q.giver) ? "The house has no one left to want it back." : null,
+		ways: [
+			{
+				id: "fight",
+				label: "Take it from the thief",
+				blurb: "Walk into the camp and ask for it.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .1, q.tculture, -.05),
+				act: (L, q, r) => {
+					if (r.chance(.6)) kill(L, q.target, "duel", L.player);
+					return `${q.stake.blade[0].toUpperCase() + q.stake.blade.slice(1)} is back on its stand in the ${actor(L, q.giver).family} house.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Steal it back",
+				blurb: "Into the camp by night.",
+				karma: 1,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .1),
+				act: (L, q) => `The blade was on its stand by morning. The ${actor(L, q.giver).family} asked no questions.`
+			},
+			{
+				id: "bribe",
+				label: "Buy it from the fence",
+				blurb: "Every stolen blade is for sale.",
+				karma: 0,
+				cost: () => 120,
+				payTo: "target",
+				mon: (L, q) => q.reward,
+				from: "giver",
+				act: (L, q) => `The ronin bought ${q.stake.blade} from a fence and returned it.`
+			},
+			{
+				id: "betray",
+				label: "Keep the blade",
+				blurb: "A blade like that is worth more than the reward.",
+				karma: -3,
+				standing: (L, q) => st(q.culture, -.15),
+				act: (L, q, r, by) => {
+					loot(L, q, by, q.stake.blade);
+					return `The ronin took ${q.stake.blade} from the thief and wears it himself. The house knows.`;
+				}
+			}
+		],
+		untouched: (L, q, r) => {
+			const sons = actor(L, q.giver).children.filter((id) => alive(L, id) && actor(L, id).sex === "m");
+			if (sons.length && r.chance(.4)) {
+				kill(L, sons[0], "duel", q.target);
+				return `${who$1(L, sons[0])} went to take the blade back himself and died at the camp gate.`;
+			}
+			return `The blade was sold on. The ${actor(L, q.giver).family} house lives with the shame.`;
+		}
+	});
+	defineQuest("debt", {
+		board: "inn",
+		check: (L, q) => !alive(L, q.giver) || !alive(L, q.target) ? "Death has cancelled the debt." : null,
+		ways: [
+			{
+				id: "fight",
+				label: "Collect it by force",
+				blurb: "Knock on the door with a hand on the hilt.",
+				karma: -2,
+				mon: (L, q) => q.reward,
+				from: "giver",
+				standing: (L, q) => st(q.culture, -.05),
+				act: (L, q) => {
+					const got = pay(L, q.target, q.giver, q.stake.sum);
+					if (got < q.stake.sum && q.stake.plot) seize(L, q.stake.plot, q.giver, "debt");
+					return got >= q.stake.sum ? `${who$1(L, q.target)} paid, white-faced.` : `${who$1(L, q.target)} could pay only ${got}; the lender holds his field now.`;
+				}
+			},
+			{
+				id: "help",
+				label: "Pay it yourself",
+				blurb: "Clear the debt with your own money.",
+				karma: 3,
+				cost: (L, q) => q.stake.sum,
+				payTo: "giver",
+				standing: (L, q) => st(q.culture, .1),
+				act: (L, q) => `The ronin paid ${who$1(L, q.target)}'s debt. The family keeps its field.`
+			},
+			{
+				id: "talk",
+				label: "Talk the lender down",
+				blurb: "Half now, and the field stays with the family.",
+				karma: 1,
+				mon: (L, q) => q.reward * .5,
+				from: "giver",
+				act: (L, q) => {
+					pay(L, q.target, q.giver, q.stake.sum * .5);
+					return `The ronin talked ${who$1(L, q.giver)} down to half. The field stays.`;
+				}
+			},
+			{
+				id: "betray",
+				label: "Warn the debtor, for a fee",
+				blurb: "He can run before the lender comes.",
+				karma: -1,
+				mon: () => 30,
+				from: "target",
+				act: (L, q) => {
+					const a = actor(L, q.target);
+					a.home = null;
+					if (q.stake.plot) seize(L, q.stake.plot, q.giver, "debt");
+					return `${who$1(L, q.target)} fled in the night. The lender holds an empty field.`;
+				}
+			}
+		],
+		untouched: (L, q) => {
+			if (pay(L, q.target, q.giver, q.stake.sum) >= q.stake.sum) return `${who$1(L, q.target)} scraped the money together and paid.`;
+			if (q.stake.plot) seize(L, q.stake.plot, q.giver, "debt");
+			return `${who$1(L, q.target)} could not pay. ${who$1(L, q.giver)} holds his field now; the deed is still in the family's name.`;
+		}
+	});
+	//#endregion
+	//#region src/sim/story/frame.js
+	const CHAPTERS = [
+		{
+			n: 1,
+			title: "Masterless",
+			text: "No lord, no house, a sword and a straw hat. The roads are full of men like him; most end in a ditch."
+		},
+		{
+			n: 2,
+			title: "A Name on the Road",
+			text: "Innkeepers know his hat now. Headmen send boys to find him; magistrates pretend not to."
+		},
+		{
+			n: 3,
+			title: "The Offer",
+			text: "A lord has asked him to kneel and take a stipend. A ronin who accepts is a ronin no longer."
+		},
+		{
+			n: 4,
+			title: "Sworn",
+			text: "He wears a lord's crest. His quarrels are his lord's, and so are his enemies."
+		},
+		{
+			n: 4,
+			alt: true,
+			title: "Free Blade",
+			text: "He turned down a lord to his face. Every house now wonders who he will sell his sword to."
+		},
+		{
+			n: 5,
+			title: "Blood and Land",
+			text: "He holds ground of his own. Ground is what men kill each other for."
+		},
+		{
+			n: 6,
+			title: "The Heir",
+			text: "He has a child. If he dies now, the name goes on."
+		}
+	];
+	const EPITHETS = [
+		"the Salt Crow",
+		"of the Broken Hat",
+		"Nine Cuts",
+		"the Quiet",
+		"Red Sleeve",
+		"the Late Moon",
+		"Two Scabbards",
+		"the Cold Kettle",
+		"of the Long Road",
+		"Ash Hand"
+	];
+	const RETURN = [
+		"One-Eye",
+		"the Scarred",
+		"Come-Back",
+		"Twice-Buried"
+	];
+	const CREEDS = {
+		honour: [
+			"fight",
+			"elder",
+			"help",
+			"talk"
+		],
+		coin: [
+			"bribe",
+			"betray",
+			"younger",
+			"fight"
+		],
+		cruel: [
+			"betray",
+			"stealth",
+			"younger",
+			"fight"
+		]
+	};
+	function initFrame(L) {
+		ST(L);
+		const r = rngFor(L.seed, "story", "rivals"), pool = Object.values(L.actors).filter((a) => a.alive && a.cls === "ronin" && a.id !== L.player && ageIn(L, a) > 20 && ageIn(L, a) < 42);
+		const creeds = [
+			"honour",
+			"coin",
+			"cruel"
+		], used = /* @__PURE__ */ new Set();
+		for (const creed of creeds) {
+			const cand = pool.filter((a) => !used.has(a.culture));
+			if (!cand.length) break;
+			const a = r.pick(cand);
+			used.add(a.culture);
+			newRival(L, a.id, creed, r.pick(EPITHETS), 1, null);
+		}
+	}
+	function newRival(L, id, creed, epithet, line, heirOf) {
+		const a = actor(L, id), home = a.home ? L.zones[a.home[1] * L.size.w + a.home[0]] : null;
+		ST(L).rivals[id] = {
+			id,
+			creed,
+			epithet,
+			line,
+			heirOf,
+			renown: heirOf ? 2 : 0,
+			grudge: heirOf ? 2 : 0,
+			beaten: 0,
+			at: home && home.region >= 0 ? home.region : 0,
+			away: 0,
+			since: today$1(L)
+		};
+		return ST(L).rivals[id];
+	}
+	const rivalName = (L, id) => {
+		const R = ST(L).rivals[id];
+		return R ? `${actor(L, id).given} ${R.epithet}` : who$1(L, id);
+	};
+	function rivalTakes(L, q, r) {
+		if (q.kind === "duel" || q.kind === "offer") return null;
+		for (const R of Object.values(ST(L).rivals)) {
+			if (!alive(L, R.id) || R.away > today$1(L) || q.giver === R.id || q.target === R.id) continue;
+			if (R.at !== q.region && !ST(L).adj[R.at].includes(q.region)) continue;
+			if (!r.chance(.2)) continue;
+			const ways = KINDS[q.kind].ways, w = CREEDS[R.creed].map((id) => ways.find((x) => x.id === id || x.as === id)).find((x) => x && !(x.needs && x.needs(L, q, actor(L, R.id))) && !(x.cost && x.cost(L, q) > actor(L, R.id).money.mon));
+			if (!w) continue;
+			if (q.state === "taken") {
+				R.grudge++;
+				announce(L, "story.rivalBeatHim", {
+					rival: R.id,
+					quest: q.id,
+					region: q.region
+				}, `${rivalName(L, R.id)} got to "${q.title}" before the ronin did.`, ["board"]);
+			}
+			return {
+				id: R.id,
+				way: w.id
+			};
+		}
+		return null;
+	}
+	function frameSeason(L, cal, r) {
+		const S = ST(L);
+		for (const R of Object.values(S.rivals)) {
+			if (!alive(L, R.id)) continue;
+			if (R.away && R.away <= today$1(L)) {
+				R.away = 0;
+				R.epithet = r.pick(RETURN);
+				R.grudge += 2;
+				announce(L, "story.rivalReturns", {
+					rival: R.id,
+					region: R.at
+				}, `${rivalName(L, R.id)} is back on the roads, with a new name and an old grudge.`, ["board", "messenger"], [R.at]);
+			}
+			if (R.away) continue;
+			const next = S.adj[R.at];
+			if (next.length && r.chance(.6)) R.at = r.pick(next);
+			const p = actor(L, L.player), near = p && p.at ? L.zones[p.at[1] * L.size.w + p.at[0]].region : -1;
+			if ((R.grudge >= 2 || R.renown >= 4 && r.chance(.12)) && !openQuests(L).some((q) => q.kind === "duel" && q.giver === R.id)) {
+				const at = near >= 0 && r.chance(.5) ? near : R.at;
+				post(L, "duel", {
+					key: "duel:" + R.id + ":" + cal.day,
+					region: at,
+					giver: R.id,
+					target: L.player,
+					tculture: actor(L, R.id).culture,
+					days: 20,
+					reward: 0,
+					stake: { renown: 3 },
+					board: "inn",
+					title: `${rivalName(L, R.id)} calls the ronin out`,
+					text: `${rivalName(L, R.id)} has nailed a challenge to the inn door at ${regName(L, at)}: dawn, the dry riverbed, alone. ${R.grudge >= 2 ? "He has a score to settle." : "He wants the name."}`
+				});
+			}
+		}
+	}
+	function onKilled(e, L) {
+		const S = ST(L), R = S.rivals[e.actor];
+		if (!R) return;
+		delete S.rivals[e.actor];
+		const a = actor(L, e.actor), kin = a.children.concat(a.parents).map((id) => actor(L, id)).filter((k) => k && k.alive && ageIn(L, k) >= 16 && k.id !== L.player);
+		const heir = kin[0] || Object.values(L.actors).find((x) => x.alive && x.cls === "ronin" && x.culture === a.culture && !S.rivals[x.id] && x.id !== L.player);
+		announce(L, "story.rivalDied", {
+			rival: e.actor,
+			by: e.by,
+			region: R.at
+		}, `${a.given} ${R.epithet} is dead${e.by === L.player ? " by the ronin's hand" : ""}.`, ["board", "messenger"], [R.at]);
+		if (!heir) return;
+		const N = newRival(L, heir.id, R.creed, kin[0] ? `${R.epithet}'s ${heir.sex === "m" ? a.children.includes(heir.id) ? "son" : "father" : a.children.includes(heir.id) ? "daughter" : "mother"}` : `who learnt from ${a.given}`, R.line + 1, e.actor);
+		N.at = R.at;
+		if (e.by !== L.player) N.grudge = 0;
+		announce(L, "story.rivalRises", {
+			rival: heir.id,
+			heirOf: e.actor,
+			region: R.at
+		}, `${rivalName(L, heir.id)} has taken up the sword${e.by === L.player ? " and swears on the grave to find the ronin" : ""}.`, ["board"], [R.at]);
+	}
+	defineQuest("duel", {
+		board: "inn",
+		check: (L, q) => !alive(L, q.giver) ? "The challenger is dead." : null,
+		ways: [
+			{
+				id: "fight",
+				label: "Meet him at dawn",
+				blurb: "Alone, as asked.",
+				karma: 0,
+				standing: () => ({}),
+				act: (L, q, r) => {
+					const R = ST(L).rivals[q.giver];
+					if (r.chance(.5)) {
+						kill(L, q.giver, "duel", L.player);
+						return `The ronin cut ${rivalName(L, q.giver)} down in the dry riverbed.`;
+					}
+					R.beaten++;
+					R.grudge = 0;
+					R.away = today$1(L) + 112 + r.int(0, 112);
+					return `${rivalName(L, q.giver)} lost, bowed, and walked away bleeding. He will be back.`;
+				}
+			},
+			{
+				id: "stealth",
+				label: "Ambush him on the way",
+				blurb: "He expects a duel. Give him a knife in the dark.",
+				karma: -4,
+				standing: (L, q) => st(q.tculture, -.1),
+				act: (L, q) => {
+					kill(L, q.giver, "ambushed", L.player);
+					deed(L, q, "murder", q.giver, false);
+					return `${rivalName(L, q.giver)} never reached the riverbed. People are saying the ronin has no honour.`;
+				}
+			},
+			{
+				id: "bribe",
+				label: "Pay him to go away",
+				blurb: "His name grows; yours does not.",
+				karma: 0,
+				cost: () => 100,
+				payTo: "giver",
+				act: (L, q) => {
+					const R = ST(L).rivals[q.giver];
+					R.renown++;
+					R.grudge = 0;
+					R.away = today$1(L) + 56;
+					return `The ronin paid ${rivalName(L, q.giver)} to take his challenge elsewhere.`;
+				}
+			},
+			{
+				id: "talk",
+				label: "Refuse",
+				blurb: "Let him say what he likes.",
+				karma: 0,
+				standing: (L, q) => st(L.regions[q.region].culture, -.05),
+				act: (L, q) => {
+					const R = ST(L).rivals[q.giver];
+					R.renown += 2;
+					return `The ronin did not come. ${rivalName(L, q.giver)} tells every inn why.`;
+				}
+			}
+		],
+		untouched: (L, q) => {
+			const R = ST(L).rivals[q.giver];
+			if (R) R.renown += 2;
+			const p = actor(L, L.player), c = L.regions[q.region].culture;
+			if (p) p.standing[c] = +((p.standing[c] || 0) - .05).toFixed(2);
+			return `The ronin never came. ${rivalName(L, q.giver)} calls him a coward in every inn of ${regName(L, q.region)}.`;
+		}
+	});
+	defineQuest("offer", {
+		board: "lord",
+		check: (L, q) => !alive(L, q.giver) ? "The lord who made the offer is dead." : null,
+		ways: [
+			{
+				id: "talk",
+				label: "Kneel and swear",
+				blurb: "A stipend, a crest, a master.",
+				karma: 0,
+				mon: () => 100,
+				from: "giver",
+				standing: (L, q) => st(q.culture, .25),
+				act: (L, q) => {
+					const p = actor(L, L.player);
+					p.master = q.giver;
+					ST(L).arc.sworn = q.giver;
+					return `The ronin knelt to ${who$1(L, q.giver)} and took his crest. He is masterless no longer.`;
+				}
+			},
+			{
+				id: "help",
+				label: "Refuse, politely",
+				blurb: "Stay free. The lord will remember the bow and the no.",
+				karma: 0,
+				standing: (L, q) => st(q.culture, -.05),
+				act: (L, q) => {
+					ST(L).arc.sworn = false;
+					return `The ronin bowed low and refused ${who$1(L, q.giver)}. He is still his own man.`;
+				}
+			},
+			{
+				id: "betray",
+				label: "Take the advance and vanish",
+				blurb: "A season's stipend up front.",
+				karma: -3,
+				mon: () => 250,
+				from: "giver",
+				standing: (L, q) => st(q.culture, -.4),
+				act: (L, q) => {
+					ST(L).arc.sworn = false;
+					deed(L, q, "fraud", q.giver, true);
+					return `The ronin took ${who$1(L, q.giver)}'s advance and was gone by morning.`;
+				}
+			}
+		],
+		untouched: (L, q) => {
+			ST(L).arc.sworn = false;
+			return `${who$1(L, q.giver)} waited for an answer that never came, and withdrew the offer.`;
+		}
+	});
+	function arcDay(L, cal) {
+		const A = ST(L).arc, p = actor(L, L.player);
+		if (!p) return;
+		const want = p.children && p.children.length ? 6 : p.holds && p.holds.length ? 5 : A.sworn != null ? 4 : A.renown >= 12 ? 3 : A.renown >= 6 ? 2 : 1;
+		if (want === 3 && A.chapter < 3) {
+			const best = Object.entries(p.standing).filter(([c, v]) => v >= .3 && ["clan", "court"].includes(L.cultures[c].kind)).sort((a, b) => b[1] - a[1])[0];
+			if (!best) return;
+			const reg = L.cultures[best[0]].regions.map((i) => L.regions[i]).find((g) => g.lord && alive(L, g.lord));
+			if (!reg) return;
+			post(L, "offer", {
+				key: "offer:" + reg.lord,
+				region: reg.id,
+				giver: reg.lord,
+				culture: +best[0],
+				days: 40,
+				reward: 0,
+				stake: { renown: 2 },
+				title: `${who$1(L, reg.lord)} offers the ronin service`,
+				text: `${who$1(L, reg.lord)} of ${cultName(L, +best[0])} has heard enough about the ronin. A stipend of rice, a crest, a place in his hall, if he kneels.`,
+				board: "lord"
+			});
+		}
+		if (want > A.chapter) {
+			A.chapter = want;
+			A.since = today$1(L);
+			const c = chapterOf(L);
+			announce(L, "story.chapter", {
+				actor: L.player,
+				chapter: want,
+				title: c.title
+			}, `Chapter ${want}: ${c.title}. ${c.text}`, ["messenger"]);
+		}
+	}
+	function chapterOf(L) {
+		const A = ST(L).arc, p = actor(L, L.player), c = CHAPTERS.find((x) => x.n === A.chapter && (A.chapter !== 4 || !!x.alt === (A.sworn === false)));
+		const k = p ? p.karma : 0, name = k >= 10 ? "the Just" : k >= 4 ? "the Kind" : k <= -10 ? "the Butcher" : k <= -4 ? "the Snake" : null;
+		return {
+			...c,
+			epithet: name,
+			renown: A.renown,
+			done: A.done,
+			ways: A.ways
+		};
+	}
+	const MEMORABLE = /* @__PURE__ */ new Set([
+		"event.lordDied",
+		"event.disputeSettled",
+		"event.battle",
+		"event.peace",
+		"event.uprisingWon",
+		"event.uprisingCrushed",
+		"event.famine",
+		"event.flood",
+		"event.typhoon",
+		"event.earthquake",
+		"event.drought",
+		"event.plague",
+		"event.villageTaken",
+		"event.armyBroken",
+		"event.campRazed",
+		"event.comet",
+		"event.processionArrives"
+	]);
+	const WEIGHT = {
+		war: 9,
+		succession: 8,
+		uprising: 8,
+		army: 7,
+		famine: 7,
+		plague: 6,
+		occupied: 5,
+		dying: 4
+	};
+	function taleOf(L, region) {
+		const S = ST(L), g = L.regions[region], t = [];
+		const w = S.reg[region].war && S.wars[S.reg[region].war];
+		if (w) t.push([
+			"war",
+			`The war of ${cultName(L, w.a)} and ${cultName(L, w.b)}`,
+			`${regName(L, region)} is a front. ${w.battles} battles so far; ${w.score === 0 ? "neither side ahead" : `${cultName(L, w.score > 0 ? w.a : w.b)} ahead`}.`
+		]);
+		const d = S.disputes[region];
+		if (d) t.push([
+			"succession",
+			"Two sons, one seat",
+			`${who$1(L, d.a)} and ${who$1(L, d.b)} both claim the seat of their dead father.`
+		]);
+		if (S.uprisings[region]) t.push([
+			"uprising",
+			"The sickle and the spear",
+			`${who$1(L, S.uprisings[region].leader)} leads the villages against ${who$1(L, g.lord)}.`
+		]);
+		const A = Object.values(S.armies).find((a) => a.region === region || L.zones[a.target[1] * L.size.w + a.target[0]].region === region);
+		if (A) t.push([
+			"army",
+			"The bandit army",
+			`${who$1(L, A.chief)} has gathered ${A.camps.length} camps.`
+		]);
+		if (S.reg[region].hunger >= .5) t.push([
+			"famine",
+			"The hungry winter",
+			`The storehouses of ${g.name} are empty; the lord's are not.`
+		]);
+		if (S.reg[region].sick > 0) t.push([
+			"plague",
+			"The sickness",
+			`Plague walks the roads of ${g.name}.`
+		]);
+		if (g.occupier) t.push([
+			"occupied",
+			"Held by force",
+			`${g.occupier.actor ? who$1(L, g.occupier.actor) : cultName(L, g.occupier.culture)} holds ${g.name}; the lord's house keeps only the deed.`
+		]);
+		if (g.lord && S.ill[g.lord]) t.push([
+			"dying",
+			"The lord's last winter",
+			`${who$1(L, g.lord)} is dying, and his house is choosing sides.`
+		]);
+		if (t.length) {
+			t.sort((a, b) => WEIGHT[b[0]] - WEIGHT[a[0]]);
+			const [kind, title, text] = t[0];
+			return {
+				kind,
+				title,
+				text,
+				quests: openQuests(L, region).map((q) => q.id),
+				also: t.slice(1).map((x) => x[1])
+			};
+		}
+		const past = S.news.slice().reverse().find((n) => n.regions.includes(region) && MEMORABLE.has(n.type));
+		return {
+			kind: "quiet",
+			title: `The quiet of ${g.name}`,
+			text: past ? `They still talk about it: ${past.text}` : `${g.lord ? `${who$1(L, g.lord)} rules` : "Nobody rules"} ${g.name} for ${cultName(L, g.culture)}. Nothing has happened here that anyone remembers.`,
+			quests: openQuests(L, region).map((q) => q.id),
+			also: []
+		};
+	}
+	//#endregion
+	//#region src/sim/story/board.js
+	const BOARD_OF = {
+		inn: "the inn",
+		shrine: "the shrine",
+		magistrate: "the magistrate's gate",
+		person: "asked in person",
+		lord: "the lord's hall"
+	};
+	function boardOf(L, region, { days = 28, max = 12 } = {}) {
+		const S = ST(L), d = today$1(L), g = L.regions[region];
+		const news = S.news.filter((n) => d - n.d <= days && n.regions.includes(region) && !n.type.startsWith("story.quest")).slice(-max).reverse();
+		const contracts = openQuests(L, region).map((q) => ({
+			id: q.id,
+			kind: q.kind,
+			title: q.title,
+			text: q.text,
+			where: BOARD_OF[q.board] || q.board,
+			reward: q.reward,
+			due: q.due - d,
+			giver: q.giver != null ? who$1(L, q.giver) : null,
+			taken: q.state === "taken"
+		}));
+		const recent = S.news.filter((n) => d - n.d <= 3 && n.regions.includes(region));
+		const R = S.reg[region];
+		return {
+			region,
+			name: g.name,
+			seat: g.seat,
+			lord: g.lord != null ? who$1(L, g.lord) : null,
+			occupier: g.occupier || null,
+			tale: taleOf(L, region),
+			news,
+			contracts,
+			signs: {
+				smoke: recent.some((n) => n.heralds.includes("smoke")),
+				bell: recent.some((n) => n.heralds.includes("bell")),
+				messengers: recent.filter((n) => n.heralds.includes("messenger")).length
+			},
+			mood: {
+				hunger: R.hunger,
+				unrest: R.unrest,
+				danger: R.danger,
+				sick: R.sick,
+				tax: R.tax,
+				harvest: R.harvest,
+				war: R.war
+			}
+		};
+	}
+	function hear(L, type, text, heralds, regions) {
+		const S = ST(L);
+		S.news.push({
+			d: today$1(L),
+			type,
+			text,
+			heralds,
+			regions,
+			zone: null
+		});
+		if (S.news.length > 1500) S.news.shift();
+	}
+	//#endregion
+	//#region src/sim/story/index.js
+	system({
+		id: "story",
+		order: 70,
+		init(L) {
+			initState(L);
+			initNature(L);
+			initOrder(L);
+			initFrame(L);
+		},
+		onDay(L, cal, r) {
+			natureDay(L, cal, r);
+			politicsDay(L, cal, r);
+			if (cal.day % 7 === 0) {
+				orderWeek(L, cal, r);
+				jobsWeek(L, cal, r);
+			}
+			questsDay(L, cal, r, rivalTakes);
+			arcDay(L, cal);
+		},
+		onSeason(L, cal, r) {
+			natureSeason(L, cal, r);
+			politicsSeason(L, cal, r);
+			orderSeason(L, cal, r);
+			frameSeason(L, cal, r);
+		},
+		onYear(L, cal, r) {
+			politicsYear(L, cal, r);
+		}
+	});
+	const live$1 = (L) => L.sys.story && L.sys.story.reg;
+	const when$1 = (type, fn) => on(type, (e, L) => {
+		if (live$1(L)) fn(e, L);
+	});
+	when$1("event.famine", onFamine);
+	when$1("story.killed", onKilled);
+	when$1("econ.famine", onEconFamine);
+	when$1("people.died", onPeopleDied);
+	for (const t of [
+		"crime.raid",
+		"crime.robbery",
+		"crime.murder",
+		"crime.bounty"
+	]) when$1(t, onCrime);
+	when$1("*", (e, L) => {
+		if (!e.type.startsWith("storm.")) return;
+		const z = e.zone ? zoneAt(L, e.zone[0], e.zone[1]) : null, region = e.region ?? (z ? z.region : null);
+		if (region == null || region < 0) return;
+		hear(L, e.type, `The shrine bell rings at ${regName(L, region)}: ${e.text || "a glitch storm is crossing the land"}.`, ["bell"], [region, ...ST(L).adj[region]]);
+	});
+	//#endregion
+	//#region prototypes-src/40-story/main.js
+	const $ = (id) => document.getElementById(id);
+	const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({
+		"&": "&amp;",
+		"<": "&lt;",
+		">": "&gt;",
+		"\"": "&quot;"
+	})[c]);
+	let L;
+	let sel = null;
+	let qsel = null;
+	let cmp = null;
+	let cats = /* @__PURE__ */ new Set([
+		"nature",
+		"politics",
+		"crime",
+		"quests"
+	]);
+	let capture = null;
+	on("*", (e, W) => {
+		if (capture && W === capture.L) capture.events.push(e);
+	});
+	const CAT = (t) => /festival|planting|harvest|winter/.test(t) ? "calendar" : /drought|flood|typhoon|earthquake|plague|comet|famine|poorHarvest/.test(t) ? "nature" : /raid|robbery|bounty|camp|army|village|crackdown/.test(t) ? "crime" : t.startsWith("story.") ? "quests" : "politics";
+	const COLORS = {
+		calendar: "#5f6664",
+		nature: "#6ff3e4",
+		politics: "#c9a45a",
+		crime: "#e0864f",
+		quests: "#d8d1bf"
+	};
+	const when = (d) => {
+		const c = calendar(d * 24);
+		return `y${c.year} ${c.season.slice(0, 3)} ${c.dayOfSeason}`;
+	};
+	const today = () => Math.floor(L.hour / 24);
+	const me = () => L.actors[L.player];
+	const who = (id) => id == null ? "—" : L.actors[id] ? ST(L).rivals[id] ? rivalName(L, id) : nameOf(L.actors[id]) : "?";
+	function make(seed) {
+		L = generateWorld(seed, 0);
+		advance(L, 5376);
+		const p = me(), home = L.zones[p.at[1] * 100 + p.at[0]].region;
+		sel = [home, ...ST(L).adj[home]].sort((a, b) => openQuests(L, b).length - openQuests(L, a).length)[0];
+		qsel = null;
+		cmp = null;
+		draw();
+	}
+	function live(hours) {
+		advance(L, hours);
+		if (qsel && !quest(L, qsel)) qsel = null;
+		cmp = null;
+		draw();
+	}
+	function drawMap() {
+		const g = $("map").getContext("2d"), S = ST(L), s = 4;
+		const hue = L.cultures.map((k) => k.hue);
+		for (const z of L.zones) {
+			if (z.region < 0) g.fillStyle = "#0e1215";
+			else {
+				const R = S.reg[z.region], light = 20 + (z.biome === "mountains" ? 6 : z.biome === "hills" ? 3 : 0) + (z.region === sel ? 14 : 0);
+				g.fillStyle = `hsl(${hue[L.regions[z.region].culture]}, ${z.region === sel ? 30 : 16}%, ${light}%)`;
+				if (R.war) g.fillStyle = `hsl(8, 45%, ${light + 4}%)`;
+			}
+			g.fillRect(z.x * s, z.y * s, s, s);
+			if (z.road && z.region >= 0) {
+				g.fillStyle = "rgba(216,209,191,.18)";
+				g.fillRect(z.x * s + 1, z.y * s + 1, 2, 2);
+			}
+		}
+		g.fillStyle = "rgba(0,0,0,.55)";
+		for (const z of L.zones) {
+			if (z.region < 0) continue;
+			const r = L.zones[z.y * 100 + z.x + 1], d = L.zones[(z.y + 1) * 100 + z.x];
+			if (r && z.x < 99 && r.region !== z.region) g.fillRect(z.x * s + s - 1, z.y * s, 1, s);
+			if (d && d.region !== z.region) g.fillRect(z.x * s, z.y * s + s - 1, s, 1);
+		}
+		for (const z of L.zones) if (z.kind === "town" || z.kind === "village" || z.kind === "camp") {
+			g.fillStyle = z.kind === "camp" ? z.holder ? "#7a3a2c" : "#3a3a3a" : z.kind === "town" ? "#d8d1bf" : "#8d8676";
+			g.fillRect(z.x * s + 1, z.y * s + 1, 2, 2);
+		}
+		const recent = S.news.filter((n) => today() - n.d <= 14), seen = /* @__PURE__ */ new Set();
+		for (const n of recent) for (const r of n.regions.slice(0, 1)) {
+			const [x, y] = L.regions[r].seat, k = r + (n.heralds.includes("smoke") ? "s" : "b");
+			if (seen.has(k)) continue;
+			seen.add(k);
+			if (n.heralds.includes("smoke")) {
+				g.fillStyle = "rgba(224,134,79,.8)";
+				g.fillRect(x * s - 2, y * s - 5, 3, 3);
+				g.fillRect(x * s, y * s - 8, 2, 2);
+			} else if (n.heralds.includes("bell")) {
+				g.strokeStyle = "rgba(111,243,228,.8)";
+				g.strokeRect(x * s - 3 + .5, y * s - 3 + .5, 8, 8);
+			}
+		}
+		const p = me();
+		g.fillStyle = "#fff";
+		g.fillRect(p.at[0] * s - 1, p.at[1] * s - 1, 5, 5);
+		g.fillStyle = "#000";
+		g.fillRect(p.at[0] * s + 1, p.at[1] * s + 1, 1, 1);
+	}
+	function drawChart() {
+		const c = $("chart"), g = c.getContext("2d"), W = c.width, H = c.height, S = ST(L);
+		const seasons = Math.floor(today() / 28) + 1, bins = Array.from({ length: seasons }, () => ({}));
+		for (const n of S.news) {
+			const k = CAT(n.type);
+			if (!cats.has(k)) continue;
+			const b = bins[Math.floor(n.d / 28)];
+			if (b) b[k] = (b[k] || 0) + 1;
+		}
+		const max = Math.max(4, ...bins.map((b) => Object.values(b).reduce((a, x) => a + x, 0)));
+		g.clearRect(0, 0, W, H);
+		const top = 20, bot = H - 30, bw = (W - 50) / Math.max(seasons, 8);
+		g.font = "20px JetBrains Mono, monospace";
+		g.fillStyle = "#8d9693";
+		g.strokeStyle = "#2c3130";
+		for (const f of [
+			0,
+			.5,
+			1
+		]) {
+			const y = bot - (bot - top) * f;
+			g.beginPath();
+			g.moveTo(44, y);
+			g.lineTo(W, y);
+			g.stroke();
+			g.fillText(String(Math.round(max * f)), 0, y + 6);
+		}
+		bins.forEach((b, i) => {
+			let y = bot;
+			for (const k of [
+				"calendar",
+				"nature",
+				"politics",
+				"crime",
+				"quests"
+			]) {
+				const v = b[k] || 0;
+				if (!v) continue;
+				const h = (bot - top) * v / max;
+				g.fillStyle = COLORS[k];
+				g.fillRect(48 + i * bw, y - h, Math.max(2, bw - 3), h);
+				y -= h;
+			}
+			if (i % 4 === 0) {
+				g.fillStyle = "#8d9693";
+				g.fillText("y" + (i / 4 + 1), 48 + i * bw, H - 6);
+			}
+		});
+		$("cats").innerHTML = Object.keys(COLORS).map((k) => `<button class="chip ${cats.has(k) ? "on" : ""}" data-cat="${k}"><i style="display:inline-block;width:8px;height:8px;background:${COLORS[k]};margin-right:5px"></i>${k}</button>`).join("");
+		const feed = S.news.filter((n) => cats.has(CAT(n.type)) && !n.type.startsWith("story.questPosted")).slice(-80).reverse();
+		$("feed").innerHTML = feed.map((n) => `<div><span class="when">${when(n.d)}</span><span>${esc(n.text)}</span></div>`).join("");
+	}
+	function drawBoard() {
+		const b = boardOf(L, sel, { days: 56 }), g = L.regions[sel];
+		const occ = b.occupier ? ` · held by ${b.occupier.actor ? esc(who(b.occupier.actor)) : esc(L.cultures[b.occupier.culture].name)} (${b.occupier.how})` : "";
+		const m = b.mood, meter = (k, v, bad) => `<div class="meter ${v >= bad ? "bad" : ""}">${k} <span class="num">${Math.round(v * 100)}%</span><span class="bar"><i style="width:${Math.round(Math.min(1, v) * 100)}%"></i></span></div>`;
+		$("board").innerHTML = `<h2>${esc(b.name)}</h2>
+    <div class="sub">${esc(L.cultures[g.culture].name)} · lord ${esc(b.lord || "none")}${occ}</div>
+    <div class="tale"><div class="label" style="color:#6a6252">The tale here</div><h3>${esc(b.tale.title)}</h3><p>${esc(b.tale.text)}</p>${b.tale.also.length ? `<div class="also">Also: ${esc(b.tale.also.join(" · "))}</div>` : ""}</div>
+    <div class="signs">${b.signs.smoke ? "<span class=\"sign hot\">smoke on the horizon</span>" : ""}${b.signs.bell ? "<span class=\"sign hot\">the bell is ringing</span>" : ""}${b.signs.messengers ? `<span class="sign">${b.signs.messengers} messenger${b.signs.messengers > 1 ? "s" : ""} this week</span>` : ""}<span class="sign">tax ${Math.round(m.tax * 100)}%</span>${m.war ? "<span class=\"sign hot\">at war</span>" : ""}</div>
+    <div class="mood">${meter("hunger", m.hunger, .5)}${meter("unrest", m.unrest, .65)}${meter("danger", m.danger, .4)}${meter("crop this year", m.harvest, 2)}</div>
+    <div class="label" style="color:#a89d86;margin-bottom:6px">Posted here</div>
+    <div class="slips">${b.contracts.length ? b.contracts.map((q) => `<button class="slip ${q.id === qsel ? "sel" : ""}" data-q="${q.id}"><span class="seal">${q.reward ? q.reward + " mon" : ""}</span><h4>${esc(q.title)}</h4>
+      <div class="meta"><span>${esc(q.where)}</span><span>${q.due} days left</span>${q.taken ? "<span>taken</span>" : ""}<span>${q.kind}</span></div></button>`).join("") : "<div class=\"empty\">Nothing posted. Try a neighbouring region, or let a season pass.</div>"}</div>
+    <div class="news"><div class="label" style="color:#a89d86">Heard in the last eight weeks</div>${b.news.map((n) => `<p><span class="h">${n.heralds[0]}</span>${esc(n.text)}</p>`).join("") || "<div class=\"empty\">Quiet.</div>"}</div>`;
+	}
+	const sign = (v, unit = "") => v ? `<span class="${v > 0 ? "up" : "down"}">${v > 0 ? "+" : ""}${v}${unit}</span>` : "<span>0</span>";
+	const standingText = (st) => Object.entries(st).map(([c, v]) => `${esc(L.cultures[c].name.replace(/^the /, ""))} ${sign(Math.round(v * 100), "")}`).join(", ") || "no one";
+	function drawQuest() {
+		const el = $("quest"), q = qsel && quest(L, qsel);
+		if (!q) {
+			el.innerHTML = `<h2>Pick a notice</h2><p class="hint">Each notice on the board is something really happening in the ledger. Open one to see who is involved, the ways it can be solved, and what each way does to the world and to him. Leave it alone and it plays out without him on its due day.</p>
+    <p class="hint">"Compare every way" copies the world once per way, resolves it, lives one more season, and lays the results side by side. The last row is the untouched ending.</p>`;
+			return;
+		}
+		const done = q.state === "done", ways = waysOf(L, q);
+		el.innerHTML = `<div class="label">${q.kind} · ${esc(L.regions[q.region].name)} · posted ${when(q.posted)} · due ${when(q.due)}</div><h2>${esc(q.title)}</h2>
+    <p class="q-text">${esc(q.text)}</p>
+    <div class="who">Asked by ${esc(who(q.giver))}${q.target != null ? ` · about ${esc(who(q.target))}` : ""}${q.other != null ? ` · also ${esc(who(q.other))}` : ""}</div>
+    ${done ? `<div class="outcome ${q.outcome.by === L.player ? "" : "world"}"><div class="label">${q.outcome.by === L.player ? "He chose: " + esc(q.outcome.way) : q.outcome.by ? "A rival got there first" : "It played out without him"} · ${when(q.outcome.day)}</div>${esc(q.outcome.text)}
+      ${q.outcome.change ? `<div class="mono" style="font-size:12px;margin-top:4px">karma ${sign(q.outcome.change.karma)} · mon ${sign(q.outcome.change.mon)} · standing ${standingText(q.outcome.change.standing)}</div>` : ""}</div>` : `<div class="ways">${ways.map((w) => `<div class="way"><h4><span class="tag">${w.as}</span>${esc(w.label)}</h4><p>${esc(w.blurb)}</p>
+      <div class="fx">karma ${sign(w.karma)} · mon ${sign(w.mon)} · standing ${standingText(w.standing)}</div>
+      <button data-way="${w.id}" ${w.can ? "" : "disabled"} title="${esc(w.why || "")}">${w.can ? "Do it" : esc(w.why)}</button></div>`).join("")}</div>
+    <div class="controls" style="margin-top:12px"><button class="primary" id="compare">Compare every way</button><button id="untouched">Let it play out</button>${q.state === "open" ? "<button id=\"take\">Take it</button>" : "<span class=\"busy\">taken</span>"}</div>`}
+    <div id="cmpOut">${cmp && cmp.id === q.id ? cmpTable(cmp) : ""}</div>`;
+	}
+	function cmpTable(c) {
+		return `<div class="cmp"><table><thead><tr><th>Way</th><th>What happened</th><th>Karma</th><th>Mon</th><th>Standing</th><th>Dead nearby</th><th>Fields changed hands nearby</th><th>Next season</th></tr></thead><tbody>${c.rows.map((r) => `<tr>
+    <td><b>${esc(r.label)}</b></td><td class="story">${esc(r.text)}</td><td class="num">${sign(r.karma)}</td><td class="num">${sign(r.mon)}</td><td>${standingText(r.standing)}</td>
+    <td class="num">${r.dead}</td><td class="num">${r.seized}</td><td>${esc(r.next.join(" · ") || "—")}</td></tr>`).join("")}</tbody></table></div>`;
+	}
+	function compare(q) {
+		const json = serialize(L), rows = [];
+		const play = (label, fn) => {
+			const C = deserialize(json), p0 = C.actors[C.player], k0 = p0.karma, m0 = p0.money.mon, s0 = { ...p0.standing };
+			capture = {
+				L: C,
+				events: []
+			};
+			const text = fn(C);
+			const now = capture.events.slice();
+			advance(C, 672);
+			const later = capture.events.slice(now.length);
+			capture = null;
+			const all = now.concat(later), p = C.actors[C.player], st = {};
+			for (const k of /* @__PURE__ */ new Set([...Object.keys(s0), ...Object.keys(p.standing)])) {
+				const d = +((p.standing[k] || 0) - (s0[k] || 0)).toFixed(2);
+				if (d) st[k] = d;
+			}
+			const next = [...new Set(later.filter((e) => e.type.startsWith("event.") && !/festival|planting|winter|harvest/.test(e.type) && (e.region === q.region || (e.regions || []).includes(q.region))).map((e) => e.type.slice(6)))].slice(0, 4);
+			const near = (e) => {
+				const z = e.zone && C.zones[e.zone[1] * 100 + e.zone[0]];
+				return z && (z.region === q.region || C.sys.story.adj[q.region].includes(z.region));
+			};
+			rows.push({
+				label,
+				text,
+				karma: +(p.karma - k0).toFixed(1),
+				mon: p.money.mon - m0,
+				standing: st,
+				dead: all.filter((e) => e.type === "story.killed" && near(e)).length,
+				seized: all.filter((e) => e.type === "story.seized" && near(e)).length,
+				next
+			});
+		};
+		for (const w of waysOf(L, q)) if (w.can) play(w.label, (C) => {
+			takeQuest(C, q.id);
+			const o = resolveQuest(C, q.id, w.id);
+			return o ? o.text : "nothing happened";
+		});
+		play("Nobody comes", (C) => {
+			const Q = C.sys.story.quests[q.id];
+			advance(C, Math.max(1, Q.due - Math.floor(C.hour / 24) + 1) * 24);
+			const R = C.sys.story.quests[q.id];
+			return R && R.outcome ? (R.outcome.by ? `${rivalName(C, R.outcome.by)}: ` : "") + R.outcome.text : "still open";
+		});
+		cmp = {
+			id: q.id,
+			rows
+		};
+	}
+	function drawHim() {
+		const p = me(), c = chapterOf(L), S = ST(L), st = Object.entries(p.standing).filter(([, v]) => v).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 2);
+		$("him").innerHTML = `<div><div class="label">The ronin</div><b>${esc(nameOf(p))}${c.epithet ? " " + c.epithet : ""}</b></div>
+    <div><div class="label">Chapter ${c.n}</div><b>${esc(c.title)}</b></div>
+    <div><div class="label">Karma</div><span class="num">${p.karma}</span></div><div><div class="label">Mon</div><span class="num">${p.money.mon}</span> <button id="purse" title="For testing: ways that cost money">+500</button></div>
+    <div><div class="label">Renown</div><span class="num">${S.arc.renown}</span></div>
+    <div><div class="label">Standing</div><span>${st.map(([k, v]) => `${esc(L.cultures[k].name.replace(/^the /, ""))} ${sign(Math.round(v * 100))}`).join(", ") || "unknown to all"}</span></div>`;
+	}
+	function draw() {
+		const c = calendar(L.hour);
+		$("clock").textContent = `Year ${c.year}, ${c.season}, day ${c.dayOfSeason}`;
+		drawMap();
+		drawChart();
+		drawBoard();
+		drawQuest();
+		drawHim();
+	}
+	$("regen").onclick = () => make(+$("seed").value || 1);
+	$("d7").onclick = () => live(168);
+	$("season").onclick = () => live(672);
+	$("year").onclick = () => live(2688);
+	$("ten").onclick = () => live(26880);
+	$("map").onclick = (e) => {
+		const r = e.target.getBoundingClientRect(), x = Math.floor((e.clientX - r.left) / r.width * 100), y = Math.floor((e.clientY - r.top) / r.height * 100), z = L.zones[y * 100 + x];
+		if (z && z.region >= 0) {
+			sel = z.region;
+			draw();
+		}
+	};
+	document.addEventListener("click", (e) => {
+		const t = e.target.closest("[data-q],[data-way],[data-cat],#compare,#untouched,#take,#purse");
+		if (!t) return;
+		const q = qsel && quest(L, qsel);
+		if (t.dataset.q) {
+			qsel = t.dataset.q;
+			cmp = null;
+			draw();
+		} else if (t.dataset.cat) {
+			cats.has(t.dataset.cat) ? cats.delete(t.dataset.cat) : cats.add(t.dataset.cat);
+			drawChart();
+		} else if (t.dataset.way && q) {
+			if (q.state === "open") takeQuest(L, q.id);
+			resolveQuest(L, q.id, t.dataset.way);
+			cmp = null;
+			draw();
+		} else if (t.id === "take" && q) {
+			takeQuest(L, q.id);
+			draw();
+		} else if (t.id === "purse") {
+			me().money.mon += 500;
+			draw();
+		} else if (t.id === "untouched" && q) live(Math.max(1, q.due - today() + 1) * 24);
+		else if (t.id === "compare" && q) {
+			$("cmpOut").innerHTML = "<p class=\"busy\">Living it out on copies of the world…</p>";
+			setTimeout(() => {
+				compare(q);
+				drawQuest();
+			}, 20);
+		}
+	});
+	make(12345);
+	//#endregion
+})();
+
+</script>
+</body>
+</html>
