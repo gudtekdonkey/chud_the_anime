@@ -6,7 +6,7 @@ import { CLASSES, KINDS, familyName, givenName } from './cultures.js';
 // ---- People: every person in the world is one record in L.actors, the ronin included (docs/foundations.md: one actor for everyone) ----
 // { id, given, family, sex, born (game hour; negative before the world began), alive, died?, culture, cls, job, rank, home: [x, y] | null,
 //   spouse, parents: [ids], children: [ids], household, weapon, traits: [[trait, strength]], karma, standing: { cultureId: -1..1 },
-//   money: { mon, silver, ryo }, holds: [plot ids], lord? (region id) }
+//   money: { mon, silver, ryo }, holds: [plot ids], int (intelligence 0..1: how good their choices are), lord? (region id) }
 // The people lane owns ageing, marriage, births, deaths and heirs; this file makes the first generation so every lane starts from the same people.
 export const ageOf = (L, a) => (L.hour - a.born) / HOURS_PER_YEAR;
 export const nameOf = a => `${a.given} ${a.family}`;
@@ -15,7 +15,8 @@ export function makeActor(L, r, o) {
   const cls = CLASSES[o.cls], sex = o.sex || (r.chance(.5) ? 'm' : 'f');
   const a = { id: newId(L, 'a'), given: givenName(r, sex), family: o.family || familyName(r), sex, born: L.hour - Math.round((o.age ?? 30) * HOURS_PER_YEAR) - r.int(0, HOURS_PER_YEAR - 1),
     alive: true, culture: o.culture, cls: o.cls, job: o.job || r.pick(cls.jobs), rank: cls.rank, home: o.home || null, spouse: null, parents: [], children: [],
-    household: o.household || null, weapon: r.weighted(cls.weapons), traits: [], karma: 0, standing: {}, money: purse(r, o.cls), holds: [] };
+    household: o.household || null, weapon: r.weighted(cls.weapons), traits: [], karma: 0, standing: {}, money: purse(r, o.cls), holds: [],
+    int: o.int ?? +Math.min(1, Math.max(0, (r.next() + r.next() + r.next()) / 3 + (cls.rank - 2) * .02)).toFixed(2) };   // intelligence 0..1: how good their choices are (owner)
   const kind = o.culture != null && L.cultures[o.culture] ? KINDS[L.cultures[o.culture].kind] : null;
   if (kind) a.traits.push([r.pick(kind.traits), +(r.range(.5, 1)).toFixed(2)]);
   if (r.chance(.4)) a.traits.push([r.pick(['calm', 'nervous', 'cheerful', 'grim', 'lazy', 'eager', 'wary', 'proud', 'humble', 'weary']), +(r.range(.3, .8)).toFixed(2)]);
