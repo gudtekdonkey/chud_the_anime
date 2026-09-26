@@ -1,6 +1,7 @@
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
 import { RY } from '../rig/rig.js';
 import { breathe } from './grip.js';
+import { blade3d } from './art3d.js';
 
 // ---- The kusarigama: a sickle in the front hand, a chain with an iron weight in the back hand. The chain is thrown out
 //   past anything else he carries and yanked back; the sickle hooks in close ----
@@ -15,6 +16,7 @@ function chain(k, from, d, len) { let e = len; while (e > 3 && from[1] + d[1] * 
   for (let i = 1; i < e; i += 2) k.put(...k.add(from, d, i), 'S');
   const w = k.add(from, d, e); k.blob(w[0], w[1], 2, 'K'); k.put(...w, 'S'); }
 const ART = {
+  d3: blade3d(6, 0),   // the other facings show the sickle alone (art3d.js)
   // stowed: the chain coiled at the small of his back
   far(k, p, mouth) { if (drawn(p) || p.bsword != null) return; const c = k.L(2.5, -2.8);
     for (const [x, y] of [[0, 0], [1, 1], [0, 2], [-1, 1], [1, -1]]) k.put(c[0] + x, c[1] + y, 'S'); k.put(c[0], c[1] + 3, 'K'); },
