@@ -13,28 +13,32 @@ import { motes } from './body.js';
 import { hit, burst } from './hits.js';
 import { meditate, spawnMirror, updateMirrors } from './mirror.js';
 import { TAP, chargeUp, TC, RIFT, release, charged } from './skills.js';
-import { DUMMIES } from '../world/dummies.js';
 import { reach } from '../weapons/weapons.js';
+import { gate, startCd, updateCds } from './cooldowns.js';
+import { updateEnemies } from '../world/enemies.js';
+import { assassinate, tickStages, updateStages } from '../assassin/assassinate.js';
+import { K, updateMarkers } from '../assassin/markers.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
   for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; q.life -= dt; }
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
   P.ghosts.forEach(g => { g.age += dt; g.white -= dt; }); P.ghosts = P.ghosts.filter(g => g.age < g.hold + .25);
-  for (const d of DUMMIES) { d.flash = Math.max(0, d.flash - dt); d.wob = Math.max(0, d.wob - dt); }
-  S.shake = Math.max(0, S.shake - dt); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
-  updateFx(dt);
+  S.shake = Math.max(0, S.shake - dt); S.impact = Math.max(0, S.impact - 1); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
+  updateCds(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
+  updateFx(dt); updateEnemies(dt, S.hitstop > 0); updateStages(dt); updateMarkers();
   if (S.hitstop > 0) { S.hitstop -= dt; return; }
-  updateCuts(dt); updateMirrors(dt);
+  updateCuts(dt); updateMirrors(dt); tickStages(dt);
   for (const t of timers.splice(0)) if ((t.t -= dt) <= 0) t.fn(); else timers.push(t); // sequenced payoffs (implosions, chain links)
 
   P.t += dt;
   const s = P.state, T = P.t, D = dur(s), u = T / D;
-  const free = s === 'idle' || s === 'run' || s === 'idleGlitch' || s === 'sit' || s === 'sitDown';
+  const free = s === 'idle' || s === 'run' || s === 'walk' || s === 'idleGlitch' || s === 'sit' || s === 'sitDown';
   const canAttack = free || s === 'land' || s === 'sheathe' || s.startsWith('ready') || s === 'runArmed';
   if (inp.mx) P.face = Math.sign(inp.mx);
   const moving = inp.mx || inp.my;
 
+  if (s === 'exec') return;   // the execution's stage moves him (assassin/assassinate.js)
   if (inp.die && s !== 'death') { setState('death'); return; }
   if (s === 'sit' || s === 'sitDown') {
     if (moving || inp.slash || inp.jump || inp.slide || inp.tele || inp.double || inp.sweep || inp.sit || inp.moon || inp.rift || inp.mirror) {
@@ -49,13 +53,14 @@ export function update(dt, inp) {
   if (canAttack) {
     if (inp.slash) return setState(P.armed ? 'slash1r' : 'slash1');
     if (inp.jump) { setState('jump'); P.vz = 150; return; }
-    if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); return; }
-    if (inp.tele) { setState('tele'); P.blinkDir = inputDir(inp); return; }
-    if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'double'; return; }
-    if (inp.rift) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'rift'; return; }
+    if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); startCd('slide'); return; }
+    if (inp.tele && K.pick) return assassinate(K.pick);   // an isolated enemy in reach: K flashes to him and executes
+    if (inp.tele) { setState('tele'); P.blinkDir = inputDir(inp); startCd('tele'); return; }
+    if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'double'; startCd('double'); return; }
+    if (inp.rift) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'rift'; return; }   // O and P cool down from the release
     if (inp.moon) { setState('moonHold'); P.charge = 0; return; }
-    if (inp.mirror) return meditate();
-    if (inp.sweep) return setState('sweep');
+    if (inp.mirror) { startCd('mirror'); return meditate(); }
+    if (inp.sweep) { startCd('sweep'); return setState('sweep'); }
     if (inp.sit && s !== 'sit' && s !== 'sitDown') return setState('sitDown');
   }
 
@@ -66,15 +71,16 @@ export function update(dt, inp) {
       else { if (s === 'runArmed') setState(pickStance()); P.still += dt; if (P.still > 2) { P.still = 0; setState('sheathe'); } }
       break;
     }
-    case 'idle': case 'run': case 'idleGlitch': case 'sit': case 'sitDown': {
+    case 'idle': case 'run': case 'walk': case 'idleGlitch': case 'sit': case 'sitDown': {
       if (moving) {
-        const [dx, dy] = inputDir(inp);
-        moveBy(dx * 78 * dt, dy * 78 * dt);
-        if (s !== 'run') setState('run');
+        // hold V to walk; both speeds come from his personality
+        const [dx, dy] = inputDir(inp), gait = held.has('walk') ? 'walk' : 'run';
+        moveBy(dx * P.gait[gait] * dt, dy * P.gait[gait] * dt);
+        if (s !== gait) setState(gait);
         P.still = 0;
       } else {
         P.still += dt;
-        if (s === 'run') setState('idle');
+        if (s === 'run' || s === 'walk') setState('idle');
         if (s === 'idle' && P.still > 4) { setState('idleGlitch'); P.still = 0; }
         if (s === 'idleGlitch' && T >= D) setState('idle');
         if (s === 'sitDown' && T >= D) setState('sit');
@@ -182,7 +188,7 @@ export function update(dt, inp) {
       break;
     }
     case 'moonHold': { // O held: he charges in place, blade raised; letting go brings it down
-      if (held.has('moon')) chargeUp(dt, inp); else { const pw = P.charge || 0; setState('moon'); P.pow = pw; }
+      if (held.has('moon')) chargeUp(dt, inp); else { const pw = P.charge || 0; setState('moon'); P.pow = pw; startCd('moon'); }
       break;
     }
     case 'moon': {
@@ -198,11 +204,11 @@ export function update(dt, inp) {
     }
     case 'standUp': {
       if (T >= D) { const q = P.pending || {}; P.pending = null; setState('idle');
-        if (q.slash) setState('slash1'); else if (q.tele) { setState('tele'); P.blinkDir = q.dir; }
-        else if (q.double) { setState('double'); P.blinkDir = q.dir; P.hk = 'double'; } else if (q.sweep) setState('sweep');
+        if (q.slash) setState('slash1'); else if (q.tele) { setState('tele'); P.blinkDir = q.dir; startCd('tele'); }
+        else if (q.double) { setState('double'); P.blinkDir = q.dir; P.hk = 'double'; startCd('double'); } else if (q.sweep) { setState('sweep'); startCd('sweep'); }
         else if (q.rift) { setState('double'); P.blinkDir = q.dir; P.hk = 'rift'; } else if (q.moon) { setState('moonHold'); P.charge = 0; }
-        else if (q.mirror) meditate();
-        else if (q.slide) { setState('slide'); P.slideDir = q.dir; dust(6, q.dir[0]); } else if (q.jump) { setState('jump'); P.vz = 150; } }
+        else if (q.mirror) { meditate(); startCd('mirror'); }
+        else if (q.slide) { setState('slide'); P.slideDir = q.dir; dust(6, q.dir[0]); startCd('slide'); } else if (q.jump) { setState('jump'); P.vz = 150; } }
       break;
     }
     case 'death': {

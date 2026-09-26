@@ -4,7 +4,7 @@ import { S } from './state.js';
 // ---- Input ----
 export const held = new Set(), taps = new Set();
 const KEYS = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down',
-  j: 'slash', ' ': 'jump', Shift: 'slide', l: 'slide', k: 'tele', i: 'double', u: 'sweep', c: 'sit', x: 'die', o: 'moon', p: 'rift', n: 'mirror' };
+  j: 'slash', ' ': 'jump', Shift: 'slide', l: 'slide', k: 'tele', i: 'double', u: 'sweep', c: 'sit', x: 'die', o: 'moon', p: 'rift', n: 'mirror', v: 'walk' };
 game.addEventListener('keydown', e => { const k = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (!k) return; e.preventDefault(); if (!held.has(k)) taps.add(k); held.add(k); });
 game.addEventListener('keyup', e => { const k = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (k) held.delete(k); });
 game.addEventListener('blur', () => held.clear());

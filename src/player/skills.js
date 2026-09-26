@@ -9,6 +9,7 @@ import { tear } from '../fx/void.js';
 import { setState, once, moveBy, blink, ghost, frameOf, inputDir } from './actions.js';
 import { silPts, bodyPt, motes } from './body.js';
 import { hit, hitSeg, burst } from './hits.js';
+import { CD, startCd } from './cooldowns.js';
 import { collide } from '../world/room.js';
 
 // ---- Charging (hold I, O or P): sparks and bolts converge onto his body while it glows ----
@@ -82,6 +83,7 @@ export function release(v, min = 0) {
   const c = Math.max(min, P.charge || 0); P.cv = v; P.pow = c; P.ct = -.05; P.trem = 0; P.charge = null; // -.05: the glitch frame 3 plays before he vanishes
   P.k = .35 + .65 * c; // size scale: a short hold is still a charged move, a full one is the full thing
   P.dist = 44 + (v.dist - 44) * c;
+  startCd(v === RIFT ? 'rift' : 'double', v === RIFT ? CD.rift : CD.tc);   // cools down from the release
 }
 export function charged(dt) {
   const v = P.cv, t = (P.ct += dt), V = v.V, F = V + .16 + v.hold;

@@ -26,6 +26,22 @@ Decisions made in the design sessions so far, newest last.
 - **Sword out:** after an attack he waits with the blade out in one of six stances, picked at random each time and never the same twice running: four side-on counter stances with the blade in his back hand pointing at the ground, and two opened to the camera.
 - **Skills:** hold I for Thousand Cuts; hold O for Crescent Moon, cast in place; P for Cross Rift, a tear in reality; N for Mirror Meditation, where mirror images attack the nearest enemies. Storm Chain is a passive that runs for 8 s whenever the Qi meter fills from landing hits.
 - **Executions, batch 1 (approved):** behind the back, through and past, rising launch, whirlwind, far behind, peek-a-boo, and peek-a-boo from behind (a neck snap).
+- **Executions, batch 2 (all approved):** standoff (amazing), hat throw, shadow step, bare hand, three of me, topknot (amazing), pommel, the bow, overload (great death, idea and execution), vault (perfect, creative).
+  - **Hat throw** needs him to be wearing a hat. Reworked: he glitches behind the enemy and the hat is left behind, hanging where his head was; it catches up through the enemy's neck and lands on his head, and the head falls on the click.
+  - **Hat throw only with certain hats**: the wide-brimmed ones he can fling like a disc (the straw hat, the kasa). Hat items carry `throwable: true`.
+- **Executions, batch 3:** lattice (amazing), kick launch (great, creative), reflection, scabbard, half moon, fault line (amazing: "more deaths like this, imaginative") all approved.
+  - **Blade Rain → Shuriken Rain**: the falling glitch blades become shuriken.
+  - **Endings only** (only when no other enemy is on screen): an execution is an ending when it leaves him AT REST (sheathed, still, turned away, walking off), so nothing obviously follows (owner 2026-09-26). Still Heart, Walk By, Hat throw (he tugs the brim down), Resonance (never moves), Shadow Cut (never moves again), The Thread (twenty paces off, back turned), Sky Split (the world closes on the last man). Maybes left chainable: Bare hand, Behind the back.
+  - **Rewind only on stronger enemies** (elite and boss), never a minion; every samurai so far is a minion.
+- **Execution rules** (`src/assassin/rules.js`): every execution declares what it needs: which weapons (anything drawn from a scabbard and sheathed on the click needs katana, nodachi or tanto; Scabbard and Pommel need a long scabbard, katana or nodachi; the yari has none), a throwable hat, ending-only, and enemy tiers. `pick()` offers only the ones that fit, never the same twice running. With the yari only Hat throw, Bare hand and Shuriken Rain fit today, so the spear needs executions of its own.
+  - **Rarity by extremeness** (owner 2026-09-26: "the more extreme the rarer. the shorter/simpler the more common"). All run 1.4-2.5 s, so spectacle decides. Weights 10 / 5 / 2 / 0.6; rare needs power II and legendary power III unless a Qi boost is running (rare ×4, legendary ×8).
+    - Common (plain, grounded): Through and past, Far behind, Behind the back, Peek-a-boo, Peek-a-boo from behind, Bare hand, Pommel, Scabbard, Topknot, Walk By.
+    - Uncommon (a trick or flourish): Rising launch, Whirlwind, Decapitation, Hat throw, Standoff, The bow, Shadow step, Reflection, Half Moon, Still Heart, The Thread, Resonance, Shadow Cut.
+    - Rare (acrobatic or supernatural): Three of me, Vault, Kick Launch, Lattice, Shuriken Rain, Echo Line, Static Cage, Floor Flip.
+    - Legendary (the world breaks): Overload, Fault Line, Sky Split, Derez, Rewind (elite/boss only).
+    - Simulated with a katana, a hat and others on screen: power I 74% common / 26% uncommon; power III rare 12%, legendary 1.4%; a Qi boost rare 30%, legendary 7%.
+  - **Openers** (owner: "some should only be used at start"): only as the first kill of a fight. Proposed: Standoff, The bow. Endings are the other bookend.
+- **Executions, batch 4** (`prototypes/28-executions-batch-4.html`, after "more deaths like Fault Line, imaginative"): Shadow Cut, Echo Line, Static Cage, Sky Split, The Thread, Floor Flip, Resonance, Derez. **All approved** ("absolutely amazing"). In the rules as uncommon to legendary.
 - **Skills, round two** (`prototypes/18-skills-ideas.html`):
   - Approved as they are: Counter, Glitch Dodge, Static Trail, Lightning Chain, and Lingering Blades (its spectral blades turn to whichever enemy is nearest when they fire).
   - Iai Focus: approved, and its stance is the movement bar for every other skill and execution. As Focus builds he settles into the draw: hand to the hilt, rear foot slides back, body hunched over the sheath.
@@ -38,8 +54,34 @@ Decisions made in the design sessions so far, newest last.
   - Three power tiers each: I is quiet (a trickle of motes); II adds matter lifting off the floor; III adds ribbons of light. Nothing on the floor (no ripples, no sigils) and nothing over his head.
   - **Harvest** splits off onto its own key (E proposed): hold near the fallen to turn their remains into EXP. Healing stays on C. Approved. He should face **north** (back to the camera) and let it come to him; that needs the 8-direction rig (see Next).
   - **Glitch Dodge power:** at power II it dodges again if another blow comes within 0.5 s; at power III within 1 s.
-- **Counters by attack** (`prototypes/23-counters.html`): the enemy has several attacks, each with a readable tell (a glint running up the blade, the eye flashing, plus the wind-up itself). A blow that lands while he holds F plays the counter that answers that attack: overhead chop → receive and flow; horizontal sweep → under the sweep; thrust → along the blade; diagonal cut → disarm; low rising cut → pin the blade; charge → matador; leaping strike → under the leap; three-cut flurry → break the rhythm.
+- **Counters by attack** (`prototypes/23-counters.html`): the enemy has several attacks, each with a readable tell (a glint running up the blade, the eye flashing, plus the wind-up itself). A blow that lands while he holds F plays the counter that answers that attack: overhead chop → receive and flow; horizontal sweep → under the sweep; thrust → along the blade; diagonal cut → disarm; low rising cut → pin the blade; charge → matador; leaping strike → under the leap; three-cut flurry → break the rhythm. Added (loved, "can we add more"): quick-draw → stop the draw; spinning cut → into the turn; front kick → sweep the leg; feint then thrust → don't bite; sword throw → return to sender; shoulder barge → give way.
+  - **The counter window (agreed):** tap F. A blow landing within 0.2 s of the press is countered; an earlier press is only a block (pushed back, no counter). Four indicators prototyped; recommended A, the glint running up the enemy's blade and a star on the point while the window is open, with B, a closing ring, as an assist option. Not yet picked.
 - **Nothing left to fight:** if no enemy is within two screens (960 px) when an attack or execution ends, he skips the blade-out stance and sheathes at once, unbothered.
+
+## Personality traits (`prototypes/26-personalities.html`, approved)
+
+- The owner asked for a personality trait system, for movement first (idle, walking and so on, later other things), with at least 40 variations, reusable and modifiable.
+- Built: 52 traits in six groups (bearing, energy, mood, quirk, body, discipline) and 20 idle fidgets. A trait is only data: nudges to lean, breath, hands, stride, bounce, cadence and speed, plus fidgets. A character is up to three traits with strengths (0.5 is half as much); traits add, so they mix freely. A trait can start from another (`like`).
+- Only idle, walk and run take the personality; attacks, skills and stances stay as drawn. With no traits he is exactly the ronin as before.
+- In the game: a picker under the screen, and hold **V** to walk (new). The samurai can take the same traits, since they share his rig.
+- **Approved:** keep all 52 traits as they are ("they're all great"). Merged to main.
+- **Decided:** the ronin keeps the personality he has: no traits by default, so he stands, walks and runs as drawn. The picker stays for trying mixes.
+## HUD
+
+- **Skill bar, like League of Legends:** bottom centre. The Storm Chain passive on the left (the Qi fills its icon; during the storm its 8 s drain as a sweep), then I, O, P, N and U, then K (the flash) and slide as the two summoner-style slots. Each slot shows its cooldown as a dark clockwise sweep with the seconds left, whole seconds then tenths under one.
+- **Cooldowns on every active.** The flash (K) is recastable after an assassination: its cooldown drops to 0.2 s. Starting values, to tune: K 3 s, I 2 s (Thousand Cuts 8 s), O 10 s, P 12 s, N 14 s, U 8 s, slide 1 s. K keeps the old rule that with no enemy near you can spam it.
+
+## Deaths pass (approved: prototypes 28 to 31)
+
+The owner said the deaths still don't feel like someone dying, and the executions lack impact when the sword lands. Prototypes 28, 29 and 30 replay execution batches 1, 2 and 3 (all 28 executions), and 31 replays the 14 counters, with one shared change to the enemy's body and a toggle to compare against the page as it was. The owner approved all of it, blood and impact frames included ("with blood"):
+
+- **Flow through poses.** The pages ease in and out of every key, so the body stops dead at each pose. The enemy's timeline is now read as one curve per joint that keeps its speed through a pose and only settles where the motion turns back.
+- **Limp joints.** Every joint chases its pose on a spring: the hips lead, the chest follows, the arms, blade and head trail and overshoot. As he goes down the springs soften, so the arms and head go loose.
+- **Gravity and the floor.** The last move into lying down accelerates like a fall and stops dead on the floor, with dust and a small shake; the arms and head flop on after the trunk stops. Then one twitch, a smaller one, and stillness. The red eye flickers and goes out, in a severed head too.
+- **Sword impact.** Each hit knocks him away from the blade, he shakes through the hit pause, light sparks leave out the far side, and a killing blow (hit pause of 0.09 s or more) gets two impact frames, black then white.
+- **Blood.** Dark red drops fly out with the spray and stain the floor, pieces trail a little and pool where they land. Approved as a new palette colour, alongside the impact frames.
+
+## Weapons
 
 - **Weapons:** his attacks depend on the equipped weapon. Every move works with every weapon, on the same timing and hits, but each weapon has its own poses. First set, in review: katana (as before), yari (a straight-headed spear 37 px long, half again his height, slung across his back; both hands on the haft, the back hand driving it through the front one, so every attack is point-led: J thrusts, J again whips it overhead and beats it down), nodachi (the Grave Nodachi pickup: a blade 26 px long, taller than he is, 2 px wide with a heavy tsuba and a long wrapped grip; its saya runs down his back to his calves with the hilt over his shoulder; heavy cuts, longer reach, a longer hit pause and more shake), twin tanto (short blades at the obi, the back hand in a reverse grip). Owner: "10/10", and asked for more. Second set, in review: naginata (a curved blade on a long haft, sweeping cuts low at the legs and down from overhead), kanabo (an iron-studded club hung down his back, raised and dropped; the heaviest hit), kusarigama (a sickle, and a chain with a weight thrown out past any other weapon's reach), tessen (an iron war fan: shut it strikes like a baton, open it guards the face and slices; the lightest). In play a weapon comes from a pickup; a picker under the game switches for testing.
 
@@ -56,6 +98,17 @@ Decisions made in the design sessions so far, newest last.
      - **Lock-on brackets** are reserved for big items you can pick up.
    - Enemies are samurai built like him: same body, no hat or mantle, bare-headed with a topknot, in a darker red-grey.
    - Executions are short and brutal, show only the key frames (each one leaning into the motion), and cut the enemy into real pieces.
-3. **Clothing redesign.** The mantle was flattened because it read as a hump; the rest still needs a pass.
-4. **Front, back and diagonal views** for every move. Everything uses the side view today. The 8-direction rig (`prototypes/19-rig-v2-and-clothing.html`) is the path: port each move's key poses onto it, starting with walk, idle and the stances. Harvest facing north waits on this.
-5. **Real enemies** with health, needed by K.
+   - **In the game** (`src/assassin/`): the markers, the seven approved batch 1 executions and the 0.2 s K reset. Claude's guesses, open to tuning: K reaches 120 px; the bubbles are drawn at half the isolation distance so two overlap exactly when the enemies guard each other; the prototype's 0.75 s lock-on beat before he flashes is cut to 0.2 s; the execution is picked at random, never the same twice running. Decapitation (the eighth in prototype 14) is not in the approved list, so it is left out.
+3. **Clothing** (`prototypes/19-rig-v2-and-clothing.html`, loved: "great job on the clothing system", "let's do more"):
+   - **All fifteen items stay**, and **the slots are good as they are**. More items to come.
+   - **Lamellar and samurai armour may be coloured, but only faintly** (muted, low-saturation tints over the blacks). Cloth stays shades of black, never bright red.
+   - Still open: the default outfit; his true left side or a mirror when facing left; whether the hat brim shows more of its top when he faces the camera.
+   - Earlier: the mantle was flattened because it read as a hump.
+4. **Front, back and diagonal views** for every move: **the port system is built** (`src/rig/port.js`, `prototypes/27-port-system.html`, `docs/port-system.md`). It turns every existing side-view animation, and every personality bake, into all eight directions on rig v2 automatically. Wiring it into the game waits on the clothing branch, which brings rig v2's skeleton into `src/wardrobe/`. Harvest facing north waits on that too.
+5. **Real enemies** with health, needed by K. Built in the game (`src/world/enemies.js`), waiting on the owner's review:
+   - Seven topknot samurai replace the dummies, on his rig: bare head and topknot, no hat or mantle, red-grey, a red eye, blade out in guard.
+   - Health 4. Damage per hit: slash 1, double slash 1 per cut, sheath-click burst 1, storm slam 2, Thousand Cuts 2, Crescent Moon 3, Cross Rift 1 per arm and 2 on the detonation, mirror 1, chain 1. Starting numbers, open to tuning.
+   - Reactions: a hit makes him flinch; a blow of 2 or more, or a second hit within 0.5 s, staggers him back a step. He turns to face whoever hit him, and in guard turns to keep facing the ronin a beat late. A thin red health bar shows once he is hurt.
+   - Death uses the deaths pass (PR #2): spring joints, knees give, kneel, a gravity fall that stops dead with dust, a twitch or two, the eye going out; his sword falls from his hands; blood drops, stains and a pool.
+   - Clear the room and the fallen fade after about 3 s and a new squad steps in.
+   - Not yet: enemy movement and attacks (the counters' attacks come with them), executions cutting into pieces (K).

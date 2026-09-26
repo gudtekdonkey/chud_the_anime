@@ -45,3 +45,6 @@ th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rul
 th { color: var(--muted); font-weight: 600; }
 td:first-child { font-family: "Pixelify Sans", monospace; color: var(--ink); white-space: nowrap; }
 .tbl { overflow-x: auto; }
+.form .k { display: flex; gap: 8px; align-items: center; }
+.form input[type=range] { accent-color: var(--cyan); width: 110px; height: auto; padding: 0; border: 0; background: none; }
+.drop a { color: var(--cyan); }
