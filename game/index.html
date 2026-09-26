@@ -50,8 +50,8 @@
 
 <div class="wrap">
   <header>
-    <h1>Ronin engine, <span>rigged build</span></h1>
-    <p>The game engine at 480×270, top-down, now with our own ronin in place of the placeholder: a posable rig drawn pixel by pixel, so every move has real body motion (wind-up, lean, lunge, follow-through). He breathes calmly when idle, keeps the katana sheathed at his hip, draws it only to attack and resheathes after. Hit the training dummy to feel the impact.</p>
+    <h1>Ronin engine, <span>skills build</span></h1>
+    <p>The game engine at 480×270, top-down, with our own rigged ronin: every move is a real pose (wind-up, lean, lunge, follow-through). He keeps the katana sheathed until he attacks, waits in guard after, and resheathes when calm. Now with charged skills: tap <kbd>I</kbd> for the glitch double slash or hold it for Thousand Cuts, hold <kbd>O</kbd> for the Crescent Moon, <kbd>P</kbd> for the Cross Rift, <kbd>N</kbd> for Mirror Meditation. Every hit feeds his Qi (bottom left); when it fills, Storm Chain wakes for 8 s and every hit chains lightning through the training dummies.</p>
   </header>
 
   <section>
@@ -63,8 +63,12 @@
       <span><kbd>Space</kbd> jump</span>
       <span><kbd>Shift</kbd> / <kbd>L</kbd> ground slide</span>
       <span><kbd>K</kbd> glitch teleport</span>
-      <span><kbd>I</kbd> glitch double slash</span>
-      <span><kbd>U</kbd> glitch sweep</span>
+      <span><kbd>I</kbd> tap: glitch double slash</span>
+      <span>Hold <kbd>I</kbd>: Thousand Cuts</span>
+      <span>Hold <kbd>O</kbd>, release: Crescent Moon</span>
+      <span><kbd>P</kbd> Cross Rift (hold to charge)</span>
+      <span><kbd>N</kbd> Mirror Meditation</span>
+      <span><kbd>U</kbd> storm slam</span>
       <span><kbd>C</kbd> sit and rest</span>
       <span><kbd>X</kbd> die (to test)</span>
     </div>
@@ -73,7 +77,9 @@
       <button data-k="down" aria-label="Move down">↓</button><button data-k="right" aria-label="Move right">→</button>
       <button data-k="slash" class="act">Slash</button><button data-k="jump" class="act">Jump</button>
       <button data-k="slide" class="act">Slide</button><button data-k="tele" class="act">Glitch</button>
-      <button data-k="double" class="act">Double</button><button data-k="sweep" class="act">Sweep</button>
+      <button data-k="double" class="act">Double (hold)</button><button data-k="sweep" class="act">Sweep</button>
+      <button data-k="moon" class="act">Moon (hold)</button><button data-k="rift" class="act">Rift (hold)</button>
+      <button data-k="mirror" class="act">Mirror</button>
     </div>
   </section>
 
@@ -117,13 +123,22 @@ const ANIMS = {
   land:     { n: 3,  fps: 16, loop: false, about: 'Touchdown: knees soak it up, with a dust puff.' },
   slash1:   { n: 16, fps: 30, loop: false, about: 'One fluid cut, 0.5 s: from the sheath, the hips sink and the chest turns away, then hips, chest, arms and blade drive through in that order with a lunge, into a held follow-through, and he settles into his guard stance. Press J again during the follow-through to flow straight into slash 2.' },
   slash1r:  { n: 16, fps: 30, loop: false, hidden: true, about: '' },
-  ready:    { n: 16, fps: 8,  loop: true,  about: 'Guard stance after an attack: feet wide, hips low, both hands on the hilt, blade angled up, breathing. After about 2 s of calm he resheathes.' },
+  ready:    { n: 16, fps: 8,  loop: true,  about: 'Waiting with the blade out after an attack. Each time, one of six stances is picked at random: four side-on counter stances (low hang, reverse grip, tip to the floor, shoulder first) with the blade in his back hand pointing at the ground, and two opened to the camera (open, invitation). After about 2 s of calm he resheathes.' },
+  ready0:   { n: 16, fps: 8,  loop: true,  hidden: true, about: '' },
+  ready1:   { n: 16, fps: 8,  loop: true,  hidden: true, about: '' },
+  ready2:   { n: 16, fps: 8,  loop: true,  hidden: true, about: '' },
+  ready3:   { n: 16, fps: 8,  loop: true,  hidden: true, about: '' },
+  ready4:   { n: 8,  fps: 4,  loop: true,  hidden: true, about: '' },
+  ready5:   { n: 8,  fps: 4,  loop: true,  hidden: true, about: '' },
   runArmed: { n: 8,  fps: 14, loop: true,  about: 'Running with the blade out, trailing low behind him.' },
   slash2:   { n: 16, fps: 30, loop: false, about: 'The answer cut, flowing on from slash 1\'s follow-through: he sinks and coils, then rises through a cut that ends with the blade overhead and the chest open, and settles back into guard.' },
   sheathe:  { n: 19, fps: 15, loop: false, about: 'Unhurried, 1.2 s, only once he has waited in guard: a sharp flick, a beat, the blade laid across and slid home slowly, the click, a moment of stillness, then his hands let go.' },
   tele:     { n: 8,  fps: 22, loop: false, about: 'Glitch teleport: he drops into a sprinter\'s crouch and breaks into slices, blinks 56 px, and lands kneeling in a flurry of crackling electricity before rising. For a few seconds afterwards his body glitches at random, as if the jump is still settling. Glitch slivers hang at both ends.' },
-  double:   { n: 16, fps: 24, loop: false, about: 'Glitch double slash: a deep quick-draw crouch, vanish, then a long low lunge cut and a second cut down past his body. He freezes in the final pose, sheathes, and on the click the target bursts.' },
+  double:   { n: 16, fps: 24, loop: false, about: 'Glitch double slash: a deep quick-draw crouch, vanish, then a long low lunge cut and a second cut down past his body. He freezes in the final pose, sheathes, and on the click the target bursts. That is a tap of I. Hold I instead to charge Thousand Cuts in this crouch; P (Cross Rift) plays on these frames too.' },
   sweep:    { n: 44, fps: 20, loop: false, about: 'Storm slam: he kneels slowly and draws, then waits a full second gathering power. Chips of stone and dust lift off the floor, drift in and circle him, faster and faster, with crackles jumping between them. He rises with the blade whirling in a cyclone, the debris spiralling up with him, leaps, and brings the blade all the way down. The slam flings the debris out, cracks the floor, throws a ring of bolts and shakes the screen.' },
+  moonHold: { n: 8,  fps: 10, loop: true,  about: 'Crescent Moon, the charge (hold O): he plants his feet and raises the blade high behind his head, in place. Sparks and short bolts gather onto his body, a cyan rim flickers round him and motes rise off his hat and shoulders, all growing with the charge (about 0.9 s to full).' },
+  moon:     { n: 24, fps: 30, loop: false, about: 'Crescent Moon, the release: one huge descending cut. A giant crescent sweeps into being along its arc in about 0.15 s: white-hot core, cyan body, a flickering pale shimmer, echoes and motes trailing off it, a pale screen flash, a shockwave on the floor and its light pooled beneath. It hangs, glowing, then shatters into slivers and shards and everything under it bursts. Size and power grow with the charge. He settles into guard.' },
+  meditate: { n: 16, fps: 12, loop: true,  about: 'Mirror Meditation (N): he stands still without drawing, palms together at his chest, head bowed, eyes dimmed, breathing slowly inside a faint cyan aura. For about 1.4 s he cannot move while 3 to 5 glitching cyan mirror images step out of him, each dash to a different nearest dummy, cut it once and dissolve into slivers. Mirror hits feed Qi.' },
   sitDown:  { n: 4,  fps: 8,  loop: false, about: 'Replaces wall sit: he turns his back to the camera and lowers himself to the floor.' },
   standUp:  { n: 4,  fps: 12, loop: false, about: 'Getting up from the monk sit: he rises, stands with his back to you, then turns. Plays before anything he does from sitting.' },
   sit:      { n: 8,  fps: 3,  loop: true,  about: 'Sitting cross-legged like a monk, back to the camera, katana laid beside him, breathing slowly. Any move gets him up.' },
@@ -152,11 +167,11 @@ function sliceGlitch(g, fx, s, seed) {
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
 const FW = 48, FH = 48, OX = 24, OY = 40;
 const RC = { K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', H: '#2a2f37', G: '#3b424c', B: '#1a1d24',
-  E: '#6ff3e4', W: '#e9eeee', S: '#7d868e', s: '#2c3037' };
+  E: '#6ff3e4', e: '#2e6a64', W: '#e9eeee', S: '#7d868e', s: '#2c3037' };
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
 // angles in radians: limbs 0 = straight down, + swings forward; knee + folds the shin back; elbow + folds the forearm forward
 const REST = { hx: 0, hy: 0, lean: .04, chest: 0, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
-  sword: null, sheathing: false, hat: 0, flutter: 0 };
+  sword: null, bsword: null, sheathing: false, hat: 0, flutter: 0, bow: 0, dim: 0 };   // bow: head dips forward; dim: eyes dimmed (meditation)
 const pz = o => ({ ...REST, ...o });
 const HILT = [.42, 1.0];          // front hand resting on the hilt at the hip
 const lerpP = (a, b, k) => { const o = {}; for (const key in a) {
@@ -200,16 +215,18 @@ function rig(g, fx, p) {
 
   // far side first: scabbard, far arm, far leg
   seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
-  arm(p.ba, 'D');
+  // the back hand can carry the blade too, for the counter stances
+  const bh = arm(p.ba, 'D');
+  if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
   leg(p.bl, 'D', -.5);
   // torso, near leg
   poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
   for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
   leg(p.fl, 'K', .5);
   // head and hat
-  const hc = L(10, .6);
+  const hc = L(10 - p.bow * .7, .6 + p.bow * 1.1);
   for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
-  put(hc[0] + 1.5, hc[1], 'E');
+  put(hc[0] + 1.5, hc[1], p.dim ? 'e' : 'E');
   const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
   HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x - fx + fx, hy0 + y, ch); }));
   // mantle over the shoulders, its back tip lifting a hair with the flutter
@@ -220,11 +237,11 @@ function rig(g, fx, p) {
   if (f > .5) put(...L(2.6, -3.4), 'M');
   // near arm and the sword
   const hand = arm(p.fa, 'K');
-  if (p.sword === null && !p.sheathing) {                    // sheathed: hilt pokes forward-up out of the scabbard
+  if (p.sword === null && !p.sheathing && p.bsword == null) {                    // sheathed: hilt pokes forward-up out of the scabbard
     put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W');
   } else if (p.sheathing) {                                  // sliding home: blade runs from the hand into the scabbard mouth
     seg(hand, mouth, 1, 'W'); put(...hand, 'S'); put(...add(hand, [hand[0] - mouth[0], hand[1] - mouth[1]].map(v => v / (Math.hypot(hand[0] - mouth[0], hand[1] - mouth[1]) || 1)), 2), 'K');
-  } else {
+  } else if (p.sword !== null) {
     const d = [Math.cos(p.sword), Math.sin(p.sword)];
     seg(hand, add(hand, d, -2.5), 1, 'K'); put(...hand, 'S');
     seg(add(hand, d, 1), add(hand, d, 13), 1, 'W');
@@ -258,7 +275,37 @@ const J1_TAIL = [
   [.36, pz({ ...J1_FOLLOW, lean: .56, chest: .46 })],
   [.5, GUARD]];
 const LUNGE = pz({ hx: 3, hy: 2, lean: .55, fl: [1.0, .9], bl: [-.95, .1] });
+// O: blade raised high behind the head, feet planted wide; the release brings it all the way down through the front
+const MOON_HOLD = pz({ hx: -1, hy: 3, lean: -.08, chest: -.28, fl: [.6, 1.0], bl: [-.7, .45], fa: [2.75, .35], ba: [2.45, .55], sword: -2.25 });
+const MOON_DOWN = pz({ hx: 3, hy: 5, lean: .7, chest: .55, fl: [1.15, 1.3], bl: [-1.15, .1], fa: [.85, .15], sword: 1.35, ba: [.55, .2], hat: 1, flutter: 1 });
+// the counter stances he cycles through after an attack: one hand, blade in the back hand, point to the ground
+const STANCE_POSES = [
+  pz({ hx: -1, hy: 2, lean: -.06, chest: .08, fl: [.45, .55], bl: [-.35, .45], fa: [.55, .35], ba: [-.35, .25], bsword: 2.05 }),
+  pz({ hx: -1, hy: 2, lean: -.02, chest: .12, fl: [.4, .6], bl: [-.35, .5], fa: [.95, .7], ba: [-.15, .9], bsword: 1.85 }),
+  pz({ hx: -1, hy: 3, lean: .02, chest: .14, fl: [.5, .75], bl: [-.45, .6], fa: [.3, .25], ba: [-.55, .1], bsword: 1.95, hat: 1 }),
+  pz({ hx: -2, hy: 2, lean: -.1, chest: .22, fl: [.5, .5], bl: [-.5, .5], fa: [.25, 1.3], ba: [-.75, .15], bsword: 1.75 }),
+];
+const STANCE_BREATH = [0, 0, .3, .7, 1, 1, 1, .7, .3, 0, 0, 0, .2, .5, .2, 0];
+// opened to the camera: hand-drawn front view, 28 wide, mantle thrown back, blade hanging point-down from one hand
+const OPEN_FRONT = [
+  '...........GGGGGG...........', '........GGGHHHHHHGGG........', '.....GGHHHHHHHHHHHHHHGG.....', '....GBBBBBBBBBBBBBBBBBBG....', '.....KBBBBBBBBBBBBBBBBK.....',
+  '..........KKKKKKKK..........', '..........KKEKKEKK..........', '...........KKKKKK...........', '.......mMMMKKKKKKMMMm.......', '......mMMMMKDKKDKMMMMm......',
+  '.....MMMMK.KDKKDK.KMMMM.....', '.....MMM.K.KKKKKK.K.MMM.....', '.....MM..K.KKDDKK.K..MM.....', '.....M...K.KKKKKK..K..M.....', '....M...K..DDDDDD..K...M....',
+  '....M..SK..KKKKKK...K..M....', '......W....KKKKKK...........', '.....W.....KKKKKK...........', '....W.....KKK..KKK..........', '...W.....KKK....KKK.........',
+  '..W.....KKK......KKK........', '.W.....KKK........KKK.......', '......KKK..........KKK......', '.....KKKK..........KKKK.....'];
+const INVITE_FRONT = OPEN_FRONT.map((r, y) => { const a = [...r];
+  if (y >= 10 && y <= 15) for (let x = 18; x <= 21; x++) if (a[x] === 'K') a[x] = '.';
+  for (const x of ({ 10: [18, 19], 11: [20, 21], 12: [22, 23], 13: [24] })[y] || []) a[x] = 'K';
+  if (y === 12) a[24] = 'D'; return a.join(''); });
+function frontFrame(g, fx, list, i) {
+  const b = [0, 0, 0, 1, 1, 1, 1, 0][i % 8], lift = i === 5 || i === 6, top = OY - list.length + 1;
+  list.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === '.') return;
+    let xx = x; if (lift && (ch === 'M' || ch === 'm') && y >= 11) xx += x < 14 ? -1 : 1;
+    g.fillStyle = RC[ch]; g.fillRect(fx + OX - 14 + xx, top + y + (y < 14 ? b : 0), 1, 1); }));
+}
 const POSES = {
+  ...Object.fromEntries(STANCE_POSES.map((q, k) => ['ready' + k, STANCE_BREATH.map((b, i) => pz({ ...q, breath: b, bsword: q.bsword + b * .03, flutter: i === 5 || i === 13 ? 1 : 0 }))])),
+  ready4: Array(8).fill(null), ready5: Array(8).fill(null),
   idle: idle16,
   idleGlitch: idle16.filter((_, i) => i % 2 === 0),
   run: run8,
@@ -286,6 +333,12 @@ const POSES = {
     [.2, pz({ hx: 2, hy: 1, lean: -.22, chest: -.45, fl: [.9, .4], bl: [-.8, .2], fa: [2.9, -.1], sword: -1.85, ba: [2.6, .1], hat: 1, flutter: 1 })],
     [.34, pz({ hx: 2, hy: 1, lean: -.2, chest: -.42, fl: [.9, .4], bl: [-.8, .2], fa: [2.88, -.1], sword: -1.82, ba: [2.55, .1], hat: 1 })],
     [.5, GUARD]], 30),
+  moonHold: [0, .3, .7, 1, 1, .7, .3, 0].map((b, i) => pz({ ...MOON_HOLD, breath: b, sword: MOON_HOLD.sword - b * .05, flutter: i === 3 || i === 4 ? 1 : 0 })),
+  moon: keyed([[0, MOON_HOLD],
+    [.05, pz({ hx: 2, hy: 4, lean: .5, chest: .4, fl: [1.0, 1.15], bl: [-1.0, .15], fa: [1.6, .05], sword: .1, ba: [1.1, .2], hat: 1, flutter: 1 }), lin],
+    [.1, MOON_DOWN], [.45, pz({ ...MOON_DOWN, lean: .66, chest: .5 })], [.75, GUARD]], 30),
+  // N: standing meditation, palms together at the chest, head bowed, eyes dimmed, a slow breath
+  meditate: BREATH.map((b, i) => pz({ lean: .02, chest: .1, fl: [.06, .05], bl: [-.06, .04], fa: [.55, 2.15], ba: [.45, 2.25], bow: 1, dim: 1, breath: b, flutter: FLUT[i] })),
   // after an attack he waits in a guard stance, blade out, breathing
   ready: [0, 0, .3, .7, 1, 1, 1, .7, .3, 0, 0, 0, .2, .5, .2, 0].map((b, i) => pz({ ...GUARD, breath: b, sword: GUARD.sword + b * .04, flutter: i === 5 || i === 13 ? 1 : 0 })),
   runArmed: run8.map(q => pz({ ...q, lean: .4, fa: [.9, .3], sword: 2.55 })),
@@ -396,6 +449,7 @@ function placeholderSheet(name) {
   const g = c.getContext('2d');
   for (let i = 0; i < n; i++) {
     if (name === 'sit' || name === 'sitDown' || name === 'standUp') { sitFrame(g, i * FW, name, i); continue; }
+    if (name === 'ready4' || name === 'ready5') { frontFrame(g, i * FW, name === 'ready4' ? OPEN_FRONT : INVITE_FRONT, i); continue; }
     const p = POSES[name][i % POSES[name].length];
     if (p) rig(g, i * FW, p);
     const gl = GLF[name] && GLF[name][i];
@@ -437,9 +491,10 @@ function drawPillar(g, p) {
   g.fillStyle = '#232625'; g.fillRect(p.x + p.w - 4, p.y - 28, 4, p.h + 28);
 }
 
-// ---- Dummy target ----
-const dummy = { x: 300, y: 190, hp: 1, flash: 0, wob: 0, zap: 0 };
-function drawDummy(g) {
+// ---- Dummy targets: a small field, so area moves, mirrors and chains have something to find ----
+const DUMMIES = [[262, 170], [306, 196], [348, 178], [400, 192], [312, 118], [420, 244], [92, 208]]
+  .map(([x, y]) => ({ x, y, flash: 0, wob: 0, zap: 0 }));
+function drawDummy(g, dummy) {
   const x = Math.round(dummy.x + Math.sin(dummy.wob * 40) * dummy.wob * 8), y = dummy.y;
   g.fillStyle = 'rgba(20,24,24,.35)'; g.fillRect(x - 6, y, 12, 2);
   const c = dummy.flash > 0 ? '#ffffff' : '#6d5a44';
@@ -450,12 +505,13 @@ function drawDummy(g) {
 
 // ---- Player ----
 const P = { x: 200, y: 180, z: 0, vz: 0, vx: 0, vy: 0, face: 1, state: 'idle', t: 0, still: 0, combo: false,
-  hitDone: {}, ev: {}, inv: false, ghosts: [], dead: 0, flash: 0 };
+  hitDone: {}, ev: {}, inv: false, ghosts: [], dead: 0, flash: 0, struck: new Set(), charge: null, cv: null, fr: null, trem: 0,
+  qi: 0, qiIdle: 0, storm: 0, aura: 0 };
 const parts = [];
 let shake = 0, hitstop = 0;
 
 // ---- Engine effects: drawn in world space, never in the sheets, so they survive real art replacing the placeholder ----
-const frags = [], slashes = [], cuts = [], zaps = [], rings = [];
+const frags = [], slashes = [], cuts = [], zaps = [], rings = [], timers = [], moons = [], voids = [], mirrors = [];
 const rr = (a, b) => a + Math.random() * (b - a), sgn = () => Math.random() < .5 ? -1 : 1;
 const FRAG_COLS = [COL.fx, COL.fx2, '#ffffff', '#0d1012'];
 // glitch slivers left hanging where the body was: slow upward drift, 1px sideways twitches, flicker, fade
@@ -467,12 +523,17 @@ function residue(x, y, n) {
 // rot tilts its bulge up (-) or down (+); a big one sits back from the target so two tilted ones cross over it like an X
 function smear(face, rot = 0, flip = 1, big = false) {
   const R = big ? 23 : 16, tx = P.x + face * (big ? 22 : 5), ty = P.y - 12 - P.z, back = big ? R * .45 : 0;
-  slashes.push({ x: tx - face * Math.cos(rot) * back, y: ty - Math.sin(rot) * back * SQ, face, rot, flip, R, d: big ? 6 : 5,
-    hold: big ? .09 : SLASH_HOLD, age: 0, broke: false, seed: Math.random() });
+  crescent(tx - face * Math.cos(rot) * back, ty - Math.sin(rot) * back * SQ, face, rot, flip, R, big ? 6 : 5, big ? .09 : SLASH_HOLD);
 }
+// any crescent: the skills want other sizes, spots, slower breaks and see-through echoes (a)
+function crescent(x, y, face, rot, flip, R, d, hold, brk = SLASH_BREAK, a = 1) {
+  slashes.push({ x, y, face, rot, flip, R, d, hold, brk, a, age: 0, broke: false, seed: Math.random() });
+}
+function ring(x, y, rx, ry, life, grow = 0, col = '#ffffff') { rings.push({ x, y, rx, ry, life, max: life, grow, col }); }
+const after = (t, fn) => timers.push({ t, fn });
 // the strike beat shared by every cut: crescent, whole-body flash
 function strike(rot, flip, big) { smear(P.face, rot, flip, big); P.flash = .034; }
-function zap(x0, y0, x1, y1, life, jit, col, o = {}) { const z = { x0, y0, x1, y1, life, max: life, jit, col, tick: 2, on: true, ...o }; z.pts = boltPts(z); zaps.push(z); }
+function zap(x0, y0, x1, y1, life, jit, col, o = {}) { const z = { x0, y0, x1, y1, life, max: life, jit, col, tick: 2, on: true, ...o }; z.pts = boltPts(z); zaps.push(z); return z; }
 function line(out, x0, y0, x1, y1) { // Bresenham, so bolts are whole pixels with no smoothing
   x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
   const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy;
@@ -564,40 +625,46 @@ function updateFx(dt) {
     z.on = Math.random() < (z.every === 1 ? .9 : .7); }
   for (const r of rings) r.life -= dt;
   // a shocked dummy keeps 2-3 short bolts crawling over it
-  if (dummy.zap > 0) { dummy.zap -= dt;
-    if (zaps.filter(z => z.dz).length < 3) { const x = dummy.x + rr(-7, 7), y = dummy.y - rr(3, 27);
-      zap(x, y, x + rr(-10, 10), y + rr(-8, 8), rr(.05, .09), 2.5, Math.random() < .5 ? '#ffffff' : COL.fx2, { every: 1, dz: true }); } }
+  for (const dummy of DUMMIES) if (dummy.zap > 0) { dummy.zap -= dt;
+    if (zaps.filter(z => z.dz === dummy).length < 3) { const x = dummy.x + rr(-7, 7), y = dummy.y - rr(3, 27);
+      zap(x, y, x + rr(-10, 10), y + rr(-8, 8), rr(.05, .09), 2.5, Math.random() < .5 ? '#ffffff' : COL.fx2, { every: 1, dz: dummy }); } }
+  updateQi(dt);
   for (const L of [frags, zaps, rings]) for (let i = L.length - 1; i >= 0; i--) if (L[i].life <= 0) L.splice(i, 1);
 }
 // slashes and cut lines age only outside hit pause, so the cut hangs frozen on impact
 function updateCuts(dt) {
   for (const s of slashes) { s.age += dt;
-    if (s.age > s.hold && !s.broke) { s.broke = true; // shed a few slivers that trail back off the arc
-      for (let i = 0; i < 5; i++) { const a = rr(-1.3, 1.3), life = rr(.1, .16);
+    if (s.age > s.hold && !s.broke) { s.broke = true; // shed a few slivers that trail back off the arc (more off a bigger arc, slower off a slow break)
+      const sl = s.brk / SLASH_BREAK;
+      for (let i = 0; i < 5 * Math.max(1, s.R / 20) * s.a; i++) { const a = rr(-1.3, 1.3), life = rr(.1, .16) * sl;
         frags.push({ x: s.x + s.face * Math.cos(a) * s.R, y: s.y + Math.sin(a) * s.R * .8, w: 2 + (Math.random() * 3 | 0), col: i % 2 ? '#ffffff' : COL.fx2,
-          vx: -s.face * rr(20, 50), vy: rr(-10, 10), life, max: life, jx: 0, on: true }); } } }
+          vx: -s.face * rr(20, 50) / Math.sqrt(sl), vy: rr(-10, 10), life, max: life, jx: 0, on: true }); } } }
   for (const c of cuts) c.life -= dt;
-  for (const L of [slashes, cuts]) for (let i = L.length - 1; i >= 0; i--) if (L[i].age > L[i].hold + SLASH_BREAK || L[i].life <= 0) L.splice(i, 1);
+  updateMoons(dt); updateVoids(dt);
+  for (const L of [slashes, cuts]) for (let i = L.length - 1; i >= 0; i--) if (L[i].age > L[i].hold + L[i].brk || L[i].life <= 0) L.splice(i, 1);
 }
 const SLASH_HOLD = .05, SLASH_BREAK = .15, SQ = .8; // SQ flattens circles into the top-down floor plane
 function drawSlash(s) {
-  const k = Math.max(0, (s.age - s.hold) / SLASH_BREAK); // 0 while it holds full size, then 0→1 as it thins and breaks
+  const k = Math.max(0, (s.age - s.hold) / s.brk); // 0 while it holds full size, then 0→1 as it thins and breaks
   const d = Math.max(1, s.d * (1 - k)), R = s.R + k * 2, c = Math.cos(s.rot), sn = Math.sin(s.rot), ox = Math.round(s.x), oy = Math.round(s.y);
-  const core = [], edge = [], trail = [];
+  const core = [], edge = [], trail = [], body = [];
   for (let py = -Math.ceil(R) - 1; py <= Math.ceil(R) + 1; py++) for (let px = -Math.ceil(R) - 1; px <= Math.ceil(R) + 1; px++) {
     const lx0 = px * s.face, dy = py / SQ, lx = lx0 * c + dy * sn, ly = (-lx0 * sn + dy * c) * s.flip;
     const ro = Math.hypot(lx, ly); if (ro > R) continue;
     const ri = Math.hypot(lx + d, ly - d * .35); if (ri <= R) continue; // the inner circle, nudged so one tip is fatter
+    if (s.R > 30 && R - ro > 4 && ri - R >= 1) { body.push(ox + px, oy + py); continue; } // a giant arc keeps a see-through body behind its white band
     if (k > 0 && ((Math.atan2(ly, lx) * R / 5 + s.seed) % 1 + 1) % 1 < k * .85) continue; // gaps widen until only slivers are left
     (R - ro < 1.2 ? edge : ri - R < 1 ? trail : core).push(ox + px, oy + py); // cyan leading edge, pale trailing edge
   }
-  g.globalAlpha = 1 - k * .5;
+  g.globalAlpha = .4 * (1 - k * .5) * s.a; g.fillStyle = COL.fx; for (let i = 0; i < body.length; i += 2) g.fillRect(body[i], body[i + 1], 1, 1);
+  g.globalAlpha = (1 - k * .5) * s.a;
   g.fillStyle = COL.eye; for (let i = 0; i < edge.length; i += 2) g.fillRect(edge[i], edge[i + 1], 1, 1);
   g.fillStyle = COL.fx2; for (let i = 0; i < trail.length; i += 2) g.fillRect(trail[i], trail[i + 1], 1, 1);
   g.fillStyle = '#ffffff'; for (let i = 0; i < core.length; i += 2) g.fillRect(core[i], core[i + 1], 1, 1);
   g.globalAlpha = 1;
 }
 function drawFloorFx() {
+  for (const m of moons) moonLight(m);
   for (const c of cracks) { const k = c.life / c.max; g.globalAlpha = Math.min(1, k * 2);
     for (let i = 0; i < c.pts.length; i += 2) { g.fillStyle = i > c.pts.length * .8 && k > .6 ? COL.fx : '#24282a'; g.fillRect(c.pts[i], c.pts[i + 1], 1, 1); } }
   g.globalAlpha = 1;
@@ -610,8 +677,11 @@ function drawFx() {
   for (const c of cuts) { const k = c.life / c.max, x0 = Math.min(c.x0, c.x1), w = Math.abs(c.x1 - c.x0);
     g.globalAlpha = Math.min(1, k * 1.5); g.fillStyle = '#ffffff'; g.fillRect(x0, c.y, w, 1);
     if (k > .6) { g.fillRect(x0 + 6, c.y - 1, w - 12, 3); g.fillStyle = COL.eye; g.fillRect(x0 - 3, c.y, 3, 1); g.fillRect(x0 + w, c.y, 3, 1); } } // fat for its first frames, then a hairline
-  for (const r of rings) { g.globalAlpha = 1; g.fillStyle = '#ffffff';
-    for (let a = 0; a < Math.PI * 2; a += .5 / r.rx) g.fillRect(Math.round(r.x + Math.cos(a) * r.rx), Math.round(r.y + Math.sin(a) * r.ry), 1, 1); }
+  for (const r of rings) { const t = r.max ? 1 - r.life / r.max : 0, sc = 1 + (r.grow || 0) * t, rx = r.rx * sc, ry = r.ry * sc;
+    g.globalAlpha = r.grow ? Math.min(1, 1.6 * (1 - t)) : 1; g.fillStyle = r.col || '#ffffff'; // growing ripples fade as they spread
+    for (let a = 0; a < Math.PI * 2; a += .5 / rx) g.fillRect(Math.round(r.x + Math.cos(a) * rx), Math.round(r.y + Math.sin(a) * ry), 1, 1); }
+  for (const v of voids) drawVoid(v);
+  for (const m of moons) drawMoon(m);
   for (const z of zaps) { if (!z.on) continue;
     g.globalAlpha = Math.min(1, z.life / z.max * 1.8); g.fillStyle = z.col;
     for (let i = 0; i < z.pts.length; i += 2) g.fillRect(z.pts[i], z.pts[i + 1], 1, 1); }
@@ -620,7 +690,10 @@ function drawFx() {
   g.globalAlpha = 1;
 }
 
-function setState(s) { if (s === 'idle' || s === 'run') P.armed = false; P.state = s; P.t = 0; P.hitDone = {}; P.ev = {}; P.combo = false; }
+// a different one of the six counter stances each time he stops with the blade out
+function pickStance() { let k; do k = Math.random() * 6 | 0; while (k === P.lastStance); P.lastStance = k; return 'ready' + k; }
+function setState(s) { if (s === 'idle' || s === 'run') P.armed = false; P.state = s; P.t = 0; P.hitDone = {}; P.ev = {}; P.combo = false; P.struck = new Set();
+  P.charge = null; P.cv = null; P.fr = null; P.trem = 0; }
 // true the first time an in-state beat is reached, so a strike fires once even if a frame skips past it
 const once = (k, when) => when && !P.ev[k] && (P.ev[k] = true);
 function collide(nx, ny) {
@@ -640,50 +713,356 @@ function blink(dist, dir) {
   const [dx, dy] = dir; const steps = Math.ceil(dist / 2);
   for (let i = 0; i < steps; i++) moveBy(dx * 2, dy * 2);
 }
-function spark(x, y, vx, vy, life, col, streak) { parts.push({ x, y, vx, vy, life, max: life, col, streak }); }
+function spark(x, y, vx, vy, life, col, streak, grav = 40) { parts.push({ x, y, vx, vy, life, max: life, col, streak, grav }); }
 function dust(n, dir = 0) { for (let i = 0; i < n; i++) spark(P.x + (Math.random() - .5) * 8, P.y - 1, (Math.random() - .5) * 60 - dir * 40, -Math.random() * 16, .3 + Math.random() * .2, '#8f9692'); }
-function ghost() { P.ghosts.push({ state: P.state, f: frameOf(), x: P.x, y: P.y - P.z, face: P.face, age: 0 }); }
+// hold: seconds an afterimage stays solid before its .25 s fade
+function ghost(hold = 0) { const gh = { state: P.state, f: frameOf(), x: P.x, y: P.y - P.z, face: P.face, age: 0, hold, white: 0 }; P.ghosts.push(gh); return gh; }
 
-function hit(kind, cx, cy, r) {
-  if (P.hitDone[kind]) return;
-  if (Math.hypot(dummy.x - cx, (dummy.y - 10 - cy) * 1.4) > r) return;
-  P.hitDone[kind] = true;
+// ---- Hits: each dummy once per kind per move; P.struck remembers them for the sheath-click burst ----
+// the Qi each kind of hit feeds: bigger moves feed more (chain hits feed none, or the storm would never end)
+const QI_GAIN = { slash: .1, d: .09, sw: .16, tc: .05, cm: .2, cr: .08, crB: .1, mi: .07 }, STORM_T = 8;
+function hitOne(dummy, i, kind, fx = P.x, fy = P.y) {
+  P.hitDone[kind + i] = true; P.struck.add(dummy);
   // short on purpose: a 3-frame white dummy, a 3-frame freeze, ONE shaken frame
-  dummy.flash = .05; dummy.wob = .25; hitstop = .05; shake = 1 / 60;
+  dummy.flash = .05; dummy.wob = .25; hitstop = Math.max(hitstop, .05); shake = Math.max(shake, 1 / 60);
   if (kind === 'sw') dummy.zap = .25;
-  // 6-12 short streaks, mostly thrown away from him
-  const away = Math.atan2(dummy.y - P.y, dummy.x - P.x), n = 6 + (Math.random() * 7 | 0);
+  // 6-12 short streaks, mostly thrown away from whoever cut it
+  const away = Math.atan2(dummy.y - fy, dummy.x - fx), n = 6 + (Math.random() * 7 | 0);
   for (let i = 0; i < n; i++) { const a = i < n * .7 ? away + rr(-1.1, 1.1) : rr(0, Math.PI * 2), v = rr(110, 170);
     spark(dummy.x + rr(-2, 2), dummy.y - 16 + rr(-4, 4), Math.cos(a) * v, Math.sin(a) * v * .7, rr(.09, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
+  if (P.storm > 0) chainFrom(dummy); else qiAdd(QI_GAIN[kind.match(/^[a-zA-Z]+/)[0]] || 0);
+}
+function hit(kind, cx, cy, r) {
+  DUMMIES.forEach((d, i) => { if (!P.hitDone[kind + i] && Math.hypot(d.x - cx, (d.y - 10 - cy) * 1.4) <= r) hitOne(d, i, kind); });
+}
+// distance from a point to a segment in the same squashed floor space as hit(), and how far along it the point sits
+function segDist(px, py, x0, y0, x1, y1) {
+  const dx = x1 - x0, dy = (y1 - y0) * 1.4, qx = px - x0, qy = (py - y0) * 1.4, t = Math.max(0, Math.min(1, (qx * dx + qy * dy) / (dx * dx + dy * dy || 1)));
+  return [Math.hypot(qx - dx * t, qy - dy * t), t];
+}
+function hitSeg(kind, x0, y0, x1, y1, r) {
+  DUMMIES.forEach((d, i) => { if (!P.hitDone[kind + i] && segDist(d.x, d.y - 10, x0, y0, x1, y1)[0] <= r) hitOne(d, i, kind); });
+}
+// the sheath-click payoff on one dummy: white, a cut across it, slivers and a spray of streaks
+function burst(d, p = 1) {
+  d.flash = .08; d.wob = .3;
+  cuts.push({ x0: Math.round(d.x - 16 * p), x1: Math.round(d.x + 16 * p), y: Math.round(d.y - 14), life: .14, max: .14 });
+  residue(d.x, d.y, 10 * p | 0);
+  for (let i = 0; i < 16 * p; i++) { const a = rr(0, 6.28); spark(d.x, d.y - 14, Math.cos(a) * rr(80, 160) * p, Math.sin(a) * rr(60, 120) * p, rr(.12, .22), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
+}
+
+// ---- Qi and the Storm Chain passive: hits fill it, a full meter wakes the storm for 8 s ----
+function qiAdd(v) { if (!v) return; P.qiIdle = 0; P.qi = Math.min(1, P.qi + v); if (P.qi >= 1) stormOn(); }
+function stormOn() {
+  P.storm = STORM_T; P.qiPop = .5; P.flash = .05; P.shakeAmp = 2; shake = 2 / 60;
+  ring(P.x, P.y, 16, 7, .45, 2.6, COL.fx2); ring(P.x, P.y, 9, 4, 2 / 60);
+  for (let i = 0; i < 8; i++) { const a = i / 8 * 6.28 + rr(-.2, .2), R = rr(18, 30);
+    zap(P.x, P.y - 14, P.x + Math.cos(a) * R, P.y - 14 + Math.sin(a) * R * .6, rr(.12, .2), 2.5, i % 2 ? '#ffffff' : COL.fx2, { every: 1, fork: true }); }
+}
+function updateQi(dt) {
+  P.qiPop = Math.max(0, (P.qiPop || 0) - dt);
+  if (P.storm > 0) { P.storm -= dt; P.qi = Math.max(0, P.storm / STORM_T); if (P.storm <= 0) P.storm = P.qi = 0;
+    // now and then a bolt crackles along his body
+    if (Math.random() < dt * 6) { const sil = silPts(SHEETS[P.state], frameOf()); if (sil.length) { const [x0, y0] = bodyPt(sil), a = rr(0, 6.28), l = rr(5, 11);
+      zap(x0, y0, x0 + Math.cos(a) * l, y0 + Math.sin(a) * l, rr(.05, .1), 1.5, Math.random() < .5 ? '#ffffff' : COL.fx2); } }
+    return; }
+  if ((P.qiIdle += dt) > 3) P.qi = Math.max(0, P.qi - dt * .05); // out of the fight it slowly ebbs
+}
+// from the struck dummy, lightning leaps to the nearest dummies not yet in this chain, up to three links
+function chainFrom(d0) {
+  const seen = new Set([d0]); let a = d0;
+  ring(d0.x, d0.y - 2, 6, 3, .3, 3, COL.fx2);
+  for (let hop = 0; hop < 3; hop++) {
+    let b = null, best = 130;
+    for (const d of DUMMIES) { const r = Math.hypot(d.x - a.x, (d.y - a.y) * 1.3); if (!seen.has(d) && r < best) { best = r; b = d; } }
+    if (!b) break; seen.add(b);
+    const x0 = a.x, y0 = a.y - 16, x1 = b.x, y1 = b.y - 16;
+    after(.02 + hop * .07, () => { zap(x0, y0, x1, y1, .32, 3.5, '#ffffff', { every: 1, fork: true }); zap(x0, y0, x1, y1, .32, 2, COL.fx, { every: 1 });
+      ring(x1, y1 + 14, 6, 3, .32, 3.5, COL.fx2); ring(x1, y1, 4, 4, 2 / 60); chainHit(b); });
+    a = b;
+  }
+}
+function chainHit(d) { d.flash = .05; d.wob = .22; d.zap = .35; P.struck.add(d);
+  for (let i = 0; i < 9; i++) { const a = rr(0, 6.28); spark(d.x, d.y - 16, Math.cos(a) * rr(60, 130), Math.sin(a) * rr(40, 90), rr(.08, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); } }
+
+// ---- His silhouette: edge pixels of the current frame, so charge sparks, bolts and motes land ON his body ----
+const SIL = new WeakMap();
+function silPts(sh, f) {
+  let m = SIL.get(sh); if (!m) SIL.set(sh, m = new Map());
+  if (m.has(f)) return m.get(f);
+  const out = []; out.top = [];
+  try { const c = document.createElement('canvas'); c.width = sh.fw; c.height = sh.fh; const cg = c.getContext('2d');
+    cg.drawImage(sh.img, f * sh.fw, 0, sh.fw, sh.fh, 0, 0, sh.fw, sh.fh);
+    const d = cg.getImageData(0, 0, sh.fw, sh.fh).data, A = (x, y) => x >= 0 && y >= 0 && x < sh.fw && y < sh.fh && d[(y * sh.fw + x) * 4 + 3] > 40;
+    for (let y = 0; y < sh.fh; y++) for (let x = 0; x < sh.fw; x++) if (A(x, y) && !(A(x - 1, y) && A(x + 1, y) && A(x, y - 1) && A(x, y + 1))) out.push([x - sh.ox, y - sh.oy]);
+    const top = Math.min(...out.map(q => q[1])); out.top = out.filter(q => q[1] < top + 11); } catch (e) { /* an unreadable strip just gets no body-bound sparks */ }
+  m.set(f, out); return out;
+}
+const bodyPt = q => { q = q[Math.random() * q.length | 0]; return [Math.round(P.x + P.trem) + (P.face > 0 ? q[0] : -q[0] - 1), Math.round(P.y - P.z) + q[1]]; };
+// faint motes lifting off his hat and shoulders (the charge glow, the meditation aura)
+function motes(p) { const sil = silPts(SHEETS[P.state], frameOf()); if (!sil.top.length || Math.random() > p) return;
+  const [x, y] = bodyPt(sil.top); spark(x, y - 1, rr(-4, 4), -rr(6, 14), rr(.5, .9), Math.random() < .6 ? COL.fx : COL.fx2, false, -14); }
+
+// ---- Charging (hold I, O or P): sparks and bolts converge onto his body while it glows ----
+const TAP = .14, CHARGE_T = .9;
+function chargeUp(dt, inp) {
+  const was = P.charge || 0, c = P.charge = Math.min(1, was + dt / CHARGE_T + 1e-6);
+  if (inp.mx || inp.my) P.blinkDir = inputDir(inp); // aim while holding
+  const sil = silPts(SHEETS[P.state], frameOf());
+  if (sil.length) {
+    // each spark starts out in the air and dies exactly as it reaches a point on his outline
+    for (let i = 0; i < 3; i++) if (Math.random() < .25 + c * .55) { const [tx, ty] = bodyPt(sil), a = rr(0, 6.28), R = rr(20, 36), v = 70 + c * 150;
+      spark(tx + Math.cos(a) * R, ty + Math.sin(a) * R * .7, -Math.cos(a) * v, -Math.sin(a) * v * .7, R / v, [COL.fx, COL.fx2, '#ffffff'][i], true, 0); }
+    if (Math.random() < .1 + c * .45) { const [tx, ty] = bodyPt(sil), a = rr(0, 6.28), R = rr(10, 20);
+      zap(tx + Math.cos(a) * R, ty + Math.sin(a) * R * .8, tx, ty, rr(.04, .07), 1.5, Math.random() < .6 ? COL.fx : '#ffffff'); }
+  }
+  motes(.15 + c * .5);
+  P.trem = c >= 1 && Math.random() < .5 ? sgn() : 0; // a 1px tremble at full charge
+  if (was < 1 && c >= 1) { P.flash = .05; ring(P.x, P.y - 13, 10, 7, .14, 1.4, COL.fx2); } // full: one flash
+}
+// the glow: 0 when calm, grows with the charge; the meditation aura and the storm borrow it faintly
+const glowK = () => P.charge != null && !P.cv ? .3 + .7 * P.charge : P.state === 'meditate' ? P.aura : P.storm > 0 && Math.random() < .35 ? .12 : 0;
+// his silhouette dilated by a pixel, in cyan at low alpha, flickering behind him; a second, paler pixel once the charge is high
+function rim(sheet, f, x, y, face, k) {
+  const fl = .7 + Math.random() * .3, sh = solid(sheet, f, COL.fx);
+  for (const [ox, oy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) spriteTo(g, sh, 0, x + ox, y + oy, face, (.14 + .5 * k) * fl);
+  if (k > .6) { const s2 = solid(sheet, f, COL.fx2); for (const [ox, oy] of [[2, 0], [-2, 0], [0, -2], [1, -1], [-1, -1]]) spriteTo(g, s2, 0, x + ox, y + oy, face, (k - .6) * .4 * fl); }
+}
+
+// ---- The dash-and-cut skills (hold I: Thousand Cuts, P: Cross Rift), both on the double's frames and timeline ----
+// vanish (4) for V s, lunge cut (5-6), second cut (7-8), freeze (9) for `hold` s, resheathe (13-15); the payoff lands on the click in frame 14.
+const TC = { name: 'Thousand Cuts', dist: 110, V: .34, hold: .24,
+  go() { const x0 = P.x, y0 = P.y; residue(x0, y0, 14); blink(P.dist, P.blinkDir); P.C = [P.x, P.y]; P.face0 = P.face; P.a0 = rr(0, 6.28); P.last = [x0, y0 - 12];
+    hit('tc', P.x, P.y - 12, 30 + 30 * P.k); },
+  frame(t) { const j = t / (this.V / 7) | 0, ph = t - j * this.V / 7; return ph < .033 ? 5 + j % 4 : 4; },
+  tick(t) { const j = Math.min(6, t / (this.V / 7) | 0); if (t >= this.V || !once('tc' + j, true)) return;
+    // a new spot on a flattened circle round the point, facing in; each gets its own crescent angle
+    const a = P.a0 + j * 2.4, rad = 16 + 12 * P.k, [cx, cy] = P.C;
+    [P.x, P.y] = collide(cx + Math.cos(a) * rad, cy + Math.sin(a) * rad * .6); P.face = Math.sign(cx - P.x) || 1; P.fr = 5 + j % 4;
+    zap(P.last[0], P.last[1], P.x, P.y - 12, .07, 1.2, COL.fx); P.last = [P.x, P.y - 12];
+    ghost(.08); crescent(P.x + P.face * 8, P.y - 12, P.face, rr(-1.1, 1.1), sgn(), 17 + 6 * P.k, 5, .05);
+    P.flash = .02; for (let i = 0; i < 4; i++) spark(cx + rr(-6, 6), cy - 12 + rr(-6, 6), rr(-90, 90), rr(-60, 60), rr(.08, .14), i % 2 ? '#ffffff' : COL.fx2, true); },
+  c1() { P.face = P.face0; [P.x, P.y] = collide(P.C[0] - P.face * 16, P.C[1]); strike(-.5, 1, true); }, c2() { strike(.5, -1, true); },
+  click() { const [cx, cy] = P.C, R = 30 + 30 * P.k;
+    ring(cx, cy - 10, R, R * .55, .1); ring(cx, cy - 10, R * .6, R * .33, .22, 1, COL.fx2); residue(cx, cy, 10);
+    for (let i = 0; i < 28; i++) { const a = rr(0, 6.28); spark(cx, cy - 12, Math.cos(a) * rr(90, 200), Math.sin(a) * rr(60, 130), rr(.12, .24), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
+    for (const d of P.struck) burst(d, 1.2); } };
+const RIFT = { name: 'Cross Rift', dist: 120, V: .08, hold: .3,
+  go() { dash(); },
+  arm(sign) { const h = 30 + 42 * P.k, cx = P.x + P.face * (30 + 26 * P.k), cy = P.y - 12, hx = h * .85, hy = h * .42 * sign;
+    P.X = [cx, cy, h]; hitSeg('cr' + sign, cx - hx, cy - hy, cx + hx, cy + hy, 12 + 8 * P.k);
+    return tear(cx - hx, cy - hy, cx + hx, cy + hy, 2.5 + 3.5 * P.k); },
+  c1() { strike(-.5, 1, true); P.r1 = this.arm(1); }, c2() { strike(.5, -1, true); P.r2 = this.arm(-1); },
+  tick(t, dt) { if (!P.r2 || P.r2.shut != null) return;
+    // the tear drinks the room: stone chips lift off the floor and motes stream in, dying as they reach its lips
+    for (const r of [P.r1, P.r2]) if (Math.random() < .8) { const u = rr(.15, .85), x = r.x0 + (r.x1 - r.x0) * u, y = r.y0 + (r.y1 - r.y0) * u, a = rr(0, 6.28), R = rr(14, 34), v = rr(60, 110);
+      const stone = Math.random() < .45, sx = x + Math.cos(a) * R, sy = stone ? y + rr(10, 22) : y + Math.sin(a) * R * .7, L = Math.hypot(x - sx, y - sy) || 1;
+      spark(sx, sy, (x - sx) / L * v, (y - sy) / L * v, L / v, stone ? STONE[Math.random() * 3 | 0] : [COL.fx, COL.fx2, '#ffffff'][Math.random() * 3 | 0], !stone, 0); }
+    const [cx, cy] = P.X; for (const f of frags) { const dx = cx - f.x, dy = cy - f.y, L = Math.hypot(dx, dy); if (L < 70 && L > 3) { f.vx += dx / L * 160 * dt; f.vy += dy / L * 160 * dt; } }
+    if (Math.random() < .15) { const r = Math.random() < .5 ? P.r1 : P.r2, u = rr(.2, .8), u2 = u + rr(.06, .14) * sgn();
+      zap(r.x0 + (r.x1 - r.x0) * u, r.y0 + (r.y1 - r.y0) * u, r.x0 + (r.x1 - r.x0) * u2, r.y0 + (r.y1 - r.y0) * u2, .05, 2, '#ffffff'); } },
+  // the click: the X snaps shut, imploding for 3 frames, then detonates outward and hits everything inside
+  click() { const [cx, cy, h] = P.X; hitstop = 0; shake = 0;
+    for (const r of [P.r1, P.r2]) r.shut = r.age;
+    for (let i = 0; i < 18; i++) { const a = rr(0, 6.28), R = rr(10, h * .7), v = R / .05; spark(cx + Math.cos(a) * R, cy + Math.sin(a) * R * .6, -Math.cos(a) * v, -Math.sin(a) * v * .6, .05, i % 2 ? '#ffffff' : COL.fx2, true, 0); }
+    after(.05, () => { for (const r of [P.r1, P.r2]) r.life = 0;
+      hitstop = .08; shake = 4 / 60; P.shakeAmp = 3; scrFlash(.05, .16);
+      ring(cx, cy + 2, h * .9, h * .5, .1); ring(cx, cy + 2, h * .5, h * .28, .24, 1.1, COL.fx2); ring(cx, cy + 2, 6, 3, .3, h / 5, '#ffffff'); ring(cx, cy + 12, h * .4, h * .12, .4, 1.8, COL.fx);
+      hit('crB', cx, cy, h * .95); residue(cx, cy + 14, 12);
+      for (let i = 0; i < 34; i++) { const a = rr(0, 6.28); spark(cx, cy, Math.cos(a) * rr(90, 220), Math.sin(a) * rr(60, 140), rr(.12, .26), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
+      for (const d of P.struck) burst(d, 1.2); }); } };
+// the dash both use: blink along the aim (walls and pillars clamp it), slivers at the start, a streak along the way
+function dash() {
+  const x0 = P.x, y0 = P.y; residue(x0, y0, 14); blink(P.dist, P.blinkDir);
+  const n = Math.hypot(P.x - x0, P.y - y0) | 0;
+  for (let i = 0; i < n; i += 3) spark(x0 + (P.x - x0) * i / n, y0 - 12 + (P.y - y0) * i / n + rr(-5, 5), 0, 0, rr(.12, .22), i % 2 ? COL.fx : COL.fx2, false, 0);
+  return [x0, y0, P.x, P.y];
+}
+function release(v, min = 0) {
+  const c = Math.max(min, P.charge || 0); P.cv = v; P.pow = c; P.ct = -.05; P.trem = 0; P.charge = null; // -.05: the glitch frame 3 plays before he vanishes
+  P.k = .35 + .65 * c; // size scale: a short hold is still a charged move, a full one is the full thing
+  P.dist = 44 + (v.dist - 44) * c;
+}
+function charged(dt) {
+  const v = P.cv, t = (P.ct += dt), V = v.V, F = V + .16 + v.hold;
+  P.inv = t < V + .1;
+  if (t < 0) { P.fr = 3; return; }
+  P.fr = t < V ? (v.frame ? v.frame(t) : 4) : t < V + .04 ? 5 : t < V + .08 ? 6 : t < V + .12 ? 7 : t < V + .16 ? 8 : t < F ? 9 : t < F + .04 ? 13 : t < F + .1 ? 14 : 15;
+  if (once('go', true)) v.go();
+  if (v.tick) v.tick(t, dt);
+  if (once('c1', t >= V)) v.c1();
+  if (once('c2', t >= V + .1)) { v.c2(); moveBy(P.face * 3, 0); }
+  // the sheath click: a longer freeze and a 3-frame shake than the normal double, then the skill's payoff
+  if (once('click', t >= F + .06)) { spark(P.x + P.face * 3, P.y - 10, 0, -10, .12, '#ffffff', false);
+    hitstop = .08; shake = 3 / 60; v.click(); }
+  if (t >= F + .2) { P.inv = false; setState('idle'); }
+}
+
+// ---- Cross Rift's tear: a cut that opens into a jagged slit of void with crawling edges and star-specks inside ----
+function tear(x0, y0, x1, y1, W) { const L = Math.hypot(x1 - x0, y1 - y0) || 1;
+  const v = { x0, y0, x1, y1, W, L, age: 0, shut: null, life: 9, tick: 0, jag: [],
+    stars: Array.from({ length: 4 + (L / 12 | 0) }, () => ({ t: rr(.12, .88), s: rr(-.7, .7), vt: rr(-.12, .12), col: Math.random() < .7 ? COL.fx : '#ffffff' })) };
+  crawl(v); voids.push(v); return v; }
+function crawl(v) { v.jag = Array.from({ length: (v.L / 3 | 0) + 2 }, () => [rr(-1.4, 1.2), rr(-1.4, 1.2)]); } // each lip re-jags on its own, every 2-3 frames
+function updateVoids(dt) {
+  for (const v of voids) { v.age += dt; v.life -= dt; if (--v.tick <= 0) { crawl(v); v.tick = 2 + (Math.random() * 2 | 0); }
+    for (const st of v.stars) { st.t += st.vt * dt; if (st.t < .1 || st.t > .9) st.vt *= -1; } }
+  for (let i = voids.length - 1; i >= 0; i--) if (voids[i].life <= 0) voids.splice(i, 1);
+}
+function drawVoid(v) {
+  const DRAW = .05, OPEN = .12, dx = v.x1 - v.x0, dy = v.y1 - v.y0, L = v.L, ux = dx / L, uy = dy / L;
+  const kd = Math.min(1, v.age / DRAW), op = ease(Math.min(1, Math.max(0, (v.age - DRAW) / OPEN)));
+  const shut = v.shut == null ? 0 : Math.min(1, (v.age - v.shut) / .05), open = op * (1 - shut);
+  const pad = Math.ceil(v.W + 4), X0 = Math.floor(Math.min(v.x0, v.x1)) - pad, X1 = Math.ceil(Math.max(v.x0, v.x1)) + pad;
+  const Y0 = Math.floor(Math.min(v.y0, v.y1)) - pad, Y1 = Math.ceil(Math.max(v.y0, v.y1)) + pad;
+  const on = v.jag.map(() => Math.random() < .8), hole = [], lip = [], glint = [], halo = [], line0 = [];
+  for (let py = Y0; py <= Y1; py++) for (let px = X0; px <= X1; px++) {
+    const rx = px + .5 - v.x0, ry = py + .5 - v.y0, t = (rx * ux + ry * uy) / L; if (t < 0 || t > kd) continue;
+    const s = -rx * uy + ry * ux, as = Math.abs(s), j = t * L / 3 | 0;
+    const w = open * v.W * Math.pow(Math.sin(Math.PI * t), .6) + (open > .05 ? v.jag[j][s < 0 ? 0 : 1] * open : 0);
+    if (as < .55 && w <= 1) { line0.push(px, py); continue; }            // still just the cut: a white hairline
+    if (as <= w - 1) hole.push(px, py);
+    else if (as <= w) (shut > 0 || (on[j] && Math.random() < .12) ? glint : on[j] ? lip : halo).push(px, py);
+    else if (as <= w + 1.6 && open > .25 && on[j]) halo.push(px, py);
+  }
+  const put = (a, col, al) => { g.globalAlpha = al; g.fillStyle = col; for (let i = 0; i < a.length; i += 2) g.fillRect(a[i], a[i + 1], 1, 1); };
+  put(halo, COL.fx, shut ? .6 : .3); put(hole, '#05070a', .96);
+  // specks of far-off light drift inside the dark
+  if (open > .4) for (const st of v.stars) { const w = open * v.W * Math.pow(Math.sin(Math.PI * st.t), .6) - 1.5; if (w < 1 || Math.random() < .2) continue;
+    g.globalAlpha = .9; g.fillStyle = st.col; g.fillRect(Math.round(v.x0 + dx * st.t - uy * st.s * w), Math.round(v.y0 + dy * st.t + ux * st.s * w), 1, 1); }
+  put(lip, COL.eye, .95); put(glint, '#ffffff', 1); put(line0, '#ffffff', 1);
+  g.globalAlpha = 1;
+}
+
+// ---- Crescent Moon (O): charge in place, release one giant crescent that sweeps into being along its arc ----
+let scr = { t: 0, max: 1, a: 0 };
+const scrFlash = (t, a) => { scr = { t, max: t, a }; };                  // a short pale flash over the whole screen
+const arcA = sw => -1.75 + 3.5 * sw;                                     // the arc's reach: it sweeps from overhead down through the front
+const moonPt = (m, a, r) => [m.x + m.face * Math.cos(a) * r, m.y + Math.sin(a) * r * SQ];
+function unleashMoon(pow) {
+  const k = .35 + .65 * pow, R = Math.round(23 * (1 + 2 * k)), cx = P.x + P.face * R * .25, cy = P.y - 13;
+  moons.push({ x: cx, y: cy, fy: P.y, face: P.face, R, d: 6 + 9 * k, k, age: 0, SW: .15, HOLD: .3 + .14 * k, GLOW: .55, seed: Math.random(), echo: 0, shat: false, hit: false, struck: [] });
+  P.flash = .05; scrFlash(.08, .12 + .16 * pow); shake = .1; P.shakeAmp = 1 + Math.round(2 * pow);
+  ring(P.x + P.face * R * .3, P.y + 1, R * .35, R * .12, .5, 2.2, COL.fx2); ring(P.x, P.y + 1, 12, 5, 2 / 60);
+  dust(10 + 10 * pow | 0);
+}
+function updateMoons(dt) {
+  for (const m of moons) { m.age += dt; const sw = Math.min(1, m.age / m.SW), A = arcA(sw);
+    if (m.age < m.SW) {
+      // echoes: smaller see-through arcs peel off behind the sweep; motes stream off its white-hot front
+      if ((m.echo -= dt) <= 0) { m.echo = .035; crescent(m.x - m.face * rr(5, 12), m.y + rr(-4, 4), m.face, rr(-.35, .35), 1, m.R * rr(.4, .65), 4, .03, .22, .5); }
+      for (let i = 0; i < 3; i++) { const [x, y] = moonPt(m, A, m.R - rr(0, m.d)), life = rr(.25, .5);
+        frags.push({ x, y, w: 1 + (Math.random() * 2 | 0), col: i % 2 ? '#ffffff' : COL.fx2, vx: -m.face * rr(10, 40), vy: rr(-20, 4), life, max: life, jx: 0, on: true }); } }
+    if (!m.hit && sw >= .5) { m.hit = true; const before = new Set(P.struck); hit('cm', m.x + m.face * m.R * .45, m.y, m.R * 1.05); m.struck = [...P.struck].filter(d => !before.has(d)); }
+    if (m.age >= m.SW && m.age < m.SW + m.HOLD && Math.random() < .7) { const [x, y] = moonPt(m, rr(-1.6, 1.6), m.R - rr(0, 3)), life = rr(.3, .6);
+      frags.push({ x, y, w: 1, col: Math.random() < .5 ? COL.fx2 : '#ffffff', vx: m.face * rr(2, 10), vy: -rr(6, 16), life, max: life, jx: 0, on: true }); }
+    if (!m.shat && m.age >= m.SW + m.HOLD) { m.shat = true; shatter(m); } }
+  for (let i = moons.length - 1; i >= 0; i--) if (moons[i].age > moons[i].SW + moons[i].HOLD + moons[i].GLOW) moons.splice(i, 1);
+}
+// it breaks: long slivers drift back off the arc, heavier shards tumble to the floor, whatever it cut bursts
+function shatter(m) {
+  for (let i = 0; i < 26 + 20 * m.k; i++) { const a = rr(-1.6, 1.6), [x, y] = moonPt(m, a, m.R - rr(0, m.d)), life = rr(.35, .8);
+    frags.push({ x, y, w: 2 + (Math.random() * 4 | 0), col: FRAG_COLS[i % 3], vx: m.face * Math.cos(a) * rr(8, 40), vy: Math.sin(a) * rr(8, 26) - rr(0, 8), life, max: life, jx: 0, on: true }); }
+  for (let i = 0; i < 16 + 12 * m.k; i++) { const a = rr(-1.6, 1.6), [x, y] = moonPt(m, a, m.R - rr(0, m.d));
+    spark(x, y, m.face * Math.cos(a) * rr(20, 70), Math.sin(a) * rr(10, 40) - rr(10, 30), rr(.4, .8), ['#ffffff', COL.fx2, COL.fx][i % 3], true, 90); }
+  ring(m.x + m.face * m.R * .4, m.fy + 1, m.R * .5, m.R * .16, .3, 1.2, '#ffffff');
+  if (m.struck.length) { hitstop = .06; shake = 2 / 60; for (const d of m.struck) burst(d, 1 + .5 * m.k); }
+}
+function drawMoon(m) {
+  const sw = Math.min(1, m.age / m.SW), A = arcA(sw), gk = Math.max(0, (m.age - m.SW - m.HOLD) / m.GLOW); // gk: 0 until it shatters, then 0→1 as the afterglow dies
+  const R = m.R + gk * 3, d = Math.max(1, m.d * (1 - gk * .7)), ox = Math.round(m.x), oy = Math.round(m.y), f = m.face, RR = Math.ceil(R) + 3;
+  const shim = [], edge = [], core = [], body = [], trail = [], tip = [], flow = [], on = Array.from({ length: 48 }, () => Math.random() < .6);
+  for (let py = -RR; py <= RR; py++) for (let px = -RR; px <= RR; px++) {
+    const lx = px * f, ly = py / SQ, ro = Math.hypot(lx, ly); if (ro > R + 2.5) continue;
+    const a = Math.atan2(ly, lx); if (a > A) continue;
+    if (ro > R) { // the pale outer shimmer, flickering in chunks, only along the arc's own span
+      if (gk < .5 && on[(a * R / 4 | 0) + 24 & 47] && Math.hypot(R * Math.cos(a) + d, R * Math.sin(a) - d * .35) > R + .5) shim.push(ox + px, oy + py); continue; }
+    const ri = Math.hypot(lx + d, ly - d * .35); if (ri <= R) continue;
+    if (gk > 0 && ((a * R / 5 + m.seed) % 1 + 1) % 1 < gk * .9) continue;  // the shatter: gaps widen until only slivers are left
+    const dep = R - ro;
+    // inside the body, thin pale filaments of energy stream along the arc, crawling inward as it hangs
+    const fil = ((dep - m.age * 30) % 5 + 5) % 5 < 1 && on[(a * R / 6 | 0) + 24 & 47];
+    (sw < 1 && A - a < .14 ? tip : dep < 1.2 ? edge : dep < 3.5 + m.k * 1.5 ? core : ri - R < 1 ? trail : fil ? flow : body).push(ox + px, oy + py);
+  }
+  const put = (q, col, al) => { g.globalAlpha = al; g.fillStyle = col; for (let i = 0; i < q.length; i += 2) g.fillRect(q[i], q[i + 1], 1, 1); };
+  const fade = 1 - gk;
+  put(shim, COL.fx2, .35 * fade); put(body, COL.fx, .45 * fade); put(flow, COL.fx2, .6 * fade); put(trail, COL.fx2, .9 * fade);
+  put(edge, gk ? COL.fx : COL.eye, fade); put(core, gk ? COL.fx2 : '#ffffff', 1 - gk * .75); put(tip, '#ffffff', 1);
+  g.globalAlpha = 1;
+}
+// its light on the floor: a dithered pool under the arc and a flattened reflection of its rim, fading with the afterglow
+function moonLight(m) {
+  const sw = Math.min(1, m.age / m.SW), gk = Math.max(0, (m.age - m.SW - m.HOLD) / m.GLOW), I = sw * (1 - gk); if (I <= 0) return;
+  const cx = Math.round(m.x + m.face * m.R * .35), cy = Math.round(m.fy + 3), rx = Math.round(m.R * .85), ry = Math.max(4, Math.round(m.R * .2));
+  const lv = [[], [], []];
+  for (let dy = -ry; dy <= ry; dy++) for (let dx = -rx; dx <= rx; dx++) { const q = (dx / rx) ** 2 + (dy / ry) ** 2; if (q > 1) continue;
+    const l = q < .25 ? 2 : q < .6 ? 1 : 0; if (l === 0 && (dx + dy) & 1) continue; lv[l].push(cx + dx, cy + dy); }
+  g.fillStyle = COL.fx; [.1, .14, .2].forEach((al, l) => { g.globalAlpha = al * I; for (let i = 0; i < lv[l].length; i += 2) g.fillRect(lv[l][i], lv[l][i + 1], 1, 1); });
+  g.globalAlpha = .35 * I; g.fillStyle = COL.fx2;
+  for (let a = -1.55; a <= Math.min(arcA(sw), 1.55); a += .5 / m.R) g.fillRect(Math.round(m.x + m.face * Math.cos(a) * m.R * .95), Math.round(cy + 2 - Math.sin(a) * m.R * .12), 1, 1);
+  g.globalAlpha = 1;
+}
+
+// ---- Mirror Meditation (N): he meditates while glitching mirror images step out of him and cut the nearest dummies ----
+const MS = .18, MD = .12, MC = .42, MF = .32; // step out, dash, cut, dissolve
+function meditate() {
+  setState('meditate'); P.aura = 0;
+  const near = DUMMIES.map((d, i) => ({ d, i, r: Math.hypot(d.x - P.x, (d.y - P.y) * 1.3) })).sort((a, b) => a.r - b.r);
+  const n = Math.max(3, Math.min(5, near.filter(q => q.r < 200).length));
+  P.mq = Array.from({ length: n }, (_, j) => near[j % near.length]);   // spread across different dummies, nearest first
+}
+function spawnMirror(j, q) {
+  const side = j % 2 ? -1 : 1;
+  mirrors.push({ j, d: q.d, di: q.i, t: 0, x: P.x, y: P.y, x0: P.x, y0: P.y, ox: P.x + side * rr(13, 18), oy: P.y + (j % 3 - 1) * 5, face: side, st: 'run', f: 0, a: 0, white: 0, glitch: .4, done: {} });
+  residue(P.x, P.y, 3); spark(P.x, P.y - 14, 0, -8, .15, '#ffffff', false, 0);
+}
+function updateMirrors(dt) {
+  for (const m of mirrors) { const t = (m.t += dt); m.white -= dt;
+    if (t < MS) { const k = ease(t / MS); m.x = m.x0 + (m.ox - m.x0) * k; m.y = m.y0 + (m.oy - m.y0) * k; m.a = Math.min(1, t / MS * 1.4); m.st = 'run'; m.f = (t * 16 | 0) % 8; }
+    else if (t < MS + MD) {
+      if (!m.done.dash) { m.done.dash = 1; m.face = Math.sign(m.d.x - m.x) || 1; m.dx0 = m.x; m.dy0 = m.y; m.tx = m.d.x - m.face * 15; m.ty = m.d.y + 1; residue(m.x, m.y, 3); }
+      const k = (t - MS) / MD, px = m.x, py = m.y; m.x = m.dx0 + (m.tx - m.dx0) * k * k; m.y = m.dy0 + (m.ty - m.dy0) * k * k; m.st = 'tele'; m.f = 3; m.glitch = 1.5;
+      const n = Math.hypot(m.x - px, m.y - py) | 0; for (let i = 0; i < n; i += 3) spark(px + (m.x - px) * i / n, py - rr(4, 22), 0, 0, rr(.08, .16), i % 2 ? COL.fx : COL.fx2, false, 0);
+      if (Math.random() < .5) P.ghosts.push({ state: 'tele', f: 3, x: m.x, y: m.y, face: m.face, age: 0, hold: 0, white: 0 }); }
+    else if (t < MS + MD + MC) { const tc = t - MS - MD; m.st = 'slash1'; m.f = Math.min(SHEETS.slash1.n - 1, tc * 30 | 0); m.glitch = .4; m.y = m.ty;
+      if (!m.done.cut && tc >= .16) { m.done.cut = 1; m.white = .05;
+        crescent(m.x + m.face * 5, m.y - 12, m.face, .15, 1, 16, 5, .05, SLASH_BREAK, .9); hitOne(m.d, m.di, 'mi' + m.j, m.x, m.y);
+        for (let k = 0; k < 4; k++) { const life = rr(.06, .12); frags.push({ x: m.x - m.face * rr(4, 18), y: m.y - rr(4, 24), w: 3 + (Math.random() * 6 | 0), col: k % 2 ? '#ffffff' : COL.fx2, vx: m.face * rr(10, 30), vy: 0, life, max: life, jx: 0, on: true }); } } }
+    else { const k = (t - MS - MD - MC) / MF; m.a = 1 - k; m.glitch = .6 + 3 * k;
+      if (!m.done.fade) { m.done.fade = 1; for (let i = 0; i < 12; i++) { const life = rr(.4, .8); frags.push({ x: m.x + rr(-8, 8), y: m.y - rr(2, 28), w: 1 + (Math.random() * 4 | 0), col: [COL.fx, COL.fx2, '#ffffff'][i % 3], vx: rr(-6, 6), vy: rr(-10, -2), life, max: life, jx: 0, on: true }); } } } }
+  for (let i = mirrors.length - 1; i >= 0; i--) if (mirrors[i].t > MS + MD + MC + MF) mirrors.splice(i, 1);
 }
 
 function frameOf() {
+  if (P.fr != null) return P.fr; // the dash-and-cut skills pick the double's frames on their own timeline
   const a = ANIMS[P.state], n = SHEETS[P.state].n, f = Math.floor(P.t * a.fps);
   return a.loop ? f % n : Math.min(n - 1, f);
 }
 function inputDir(inp) { const m = Math.hypot(inp.mx, inp.my); return m ? [inp.mx / m, inp.my / m] : [P.face, 0]; }
 
 function update(dt, inp) {
-  for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += 40 * dt; q.life -= dt; }
+  for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; q.life -= dt; }
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
-  P.ghosts.forEach(g => g.age += dt); P.ghosts = P.ghosts.filter(g => g.age < (g.max || .25));
-  dummy.flash = Math.max(0, dummy.flash - dt); dummy.wob = Math.max(0, dummy.wob - dt);
-  shake = Math.max(0, shake - dt); P.flash = Math.max(0, P.flash - dt);
+  P.ghosts.forEach(g => { g.age += dt; g.white -= dt; }); P.ghosts = P.ghosts.filter(g => g.age < g.hold + .25);
+  for (const d of DUMMIES) { d.flash = Math.max(0, d.flash - dt); d.wob = Math.max(0, d.wob - dt); }
+  shake = Math.max(0, shake - dt); P.flash = Math.max(0, P.flash - dt); scr.t -= dt;
   updateFx(dt);
   if (hitstop > 0) { hitstop -= dt; return; }
-  updateCuts(dt);
+  updateCuts(dt); updateMirrors(dt);
+  for (const t of timers.splice(0)) if ((t.t -= dt) <= 0) t.fn(); else timers.push(t); // sequenced payoffs (implosions, chain links)
 
   P.t += dt;
   const s = P.state, T = P.t, D = dur(s), u = T / D;
   const free = s === 'idle' || s === 'run' || s === 'idleGlitch' || s === 'sit' || s === 'sitDown';
-  const canAttack = free || s === 'land' || s === 'sheathe' || s === 'ready' || s === 'runArmed';
+  const canAttack = free || s === 'land' || s === 'sheathe' || s.startsWith('ready') || s === 'runArmed';
   if (inp.mx) P.face = Math.sign(inp.mx);
   const moving = inp.mx || inp.my;
 
   if (inp.die && s !== 'death') { setState('death'); return; }
   if (s === 'sit' || s === 'sitDown') {
-    if (moving || inp.slash || inp.jump || inp.slide || inp.tele || inp.double || inp.sweep || inp.sit) {
-      P.pending = { slash: inp.slash, jump: inp.jump, slide: inp.slide, tele: inp.tele, double: inp.double, sweep: inp.sweep, dir: inputDir(inp) };
+    if (moving || inp.slash || inp.jump || inp.slide || inp.tele || inp.double || inp.sweep || inp.sit || inp.moon || inp.rift || inp.mirror) {
+      P.pending = { slash: inp.slash, jump: inp.jump, slide: inp.slide, tele: inp.tele, double: inp.double, sweep: inp.sweep,
+        moon: inp.moon, rift: inp.rift, mirror: inp.mirror, dir: inputDir(inp) };
       setState('standUp');
     }
     if (s === 'sitDown' && T >= D) setState('sit');
@@ -695,16 +1074,19 @@ function update(dt, inp) {
     if (inp.jump) { setState('jump'); P.vz = 150; return; }
     if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); return; }
     if (inp.tele) { setState('tele'); P.blinkDir = inputDir(inp); return; }
-    if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); return; }
+    if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'double'; return; }
+    if (inp.rift) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'rift'; return; }
+    if (inp.moon) { setState('moonHold'); P.charge = 0; return; }
+    if (inp.mirror) return meditate();
     if (inp.sweep) return setState('sweep');
     if (inp.sit && s !== 'sit' && s !== 'sitDown') return setState('sitDown');
   }
 
   switch (s) {
-    case 'ready': case 'runArmed': {
+    case 'ready': case 'ready0': case 'ready1': case 'ready2': case 'ready3': case 'ready4': case 'ready5': case 'runArmed': {
       // blade out: he waits in guard or runs with it trailing; after ~2 s of calm he puts it away
       if (moving) { const [dx, dy] = inputDir(inp); moveBy(dx * 74 * dt, dy * 74 * dt); if (s !== 'runArmed') setState('runArmed'); P.still = 0; }
-      else { if (s === 'runArmed') setState('ready'); P.still += dt; if (P.still > 2) { P.still = 0; setState('sheathe'); } }
+      else { if (s === 'runArmed') setState(pickStance()); P.still += dt; if (P.still > 2) { P.still = 0; setState('sheathe'); } }
       break;
     }
     case 'idle': case 'run': case 'idleGlitch': case 'sit': case 'sitDown': {
@@ -748,7 +1130,7 @@ function update(dt, inp) {
       if (T >= SK && T < SK + .1) hit(s === 'slash2' ? 'slash2' : 'slash1', P.x + P.face * 14, P.y - 12, 22);
       if (s !== 'slash2' && inp.slash && T > .15) P.combo = true;
       if (s !== 'slash2' && P.combo && T >= .3) { setState('slash2'); break; }   // flow straight out of the follow-through
-      if (T >= D) { P.armed = true; P.still = 0; setState(moving ? 'runArmed' : 'ready'); }
+      if (T >= D) { P.armed = true; P.still = 0; setState(moving ? 'runArmed' : pickStance()); }
       break;
     }
     case 'tele': {
@@ -761,6 +1143,13 @@ function update(dt, inp) {
       break;
     }
     case 'double': {
+      if (P.cv) { charged(dt); break; }
+      // I held past the tap window (or P, which always charges): hold the crouch's clean frame 1 and charge; letting go fires
+      const hk = P.hk || 'double';
+      if (P.charge != null || (T >= (hk === 'rift' ? 0 : TAP) && T < TAP + .03 && held.has(hk))) { P.t = TAP; P.inv = true; P.fr = 1;
+        if (held.has(hk)) chargeUp(dt, inp); else release(hk === 'rift' ? RIFT : TC, hk === 'rift' ? .5 : 0);
+        break; }
+      if (hk === 'rift') { release(RIFT, .5); break; } // P tapped and let go before the first frame: a mid-size rift
       P.inv = T < .2;
       if (T >= .15 && !P.moved) { P.moved = true; const fx0 = P.x, fy0 = P.y; blink(44, P.blinkDir); residue(fx0, fy0, 8); }
       // two big crescents crossing like an X, 0.1 s apart, the second drawing a cut line through the target
@@ -771,10 +1160,7 @@ function update(dt, inp) {
       if (T >= .325 && T < .4) hit('d2', P.x + P.face * 14, P.y - 12, 26);
       // the sheath click: whatever he cut bursts now, a beat after the blades
       if (once('click', T >= .6)) { spark(P.x + P.face * 3, P.y - 10, 0, -10, .12, '#ffffff', false);
-        if (P.hitDone.d1 || P.hitDone.d2) { dummy.flash = .08; dummy.wob = .3; hitstop = .06; shake = 1 / 60;
-          cuts.push({ x0: dummy.x - 16, x1: dummy.x + 16, y: Math.round(dummy.y - 14), life: .14, max: .14 });
-          residue(dummy.x, dummy.y, 10);
-          for (let i = 0; i < 16; i++) { const a = rr(0, 6.28); spark(dummy.x, dummy.y - 14, Math.cos(a) * rr(80, 160), Math.sin(a) * rr(60, 120), rr(.12, .22), ['#ffffff', COL.fx2, COL.fx][i % 3], true); } } }
+        if (P.struck.size) { hitstop = .06; shake = 1 / 60; for (const d of P.struck) burst(d); } }
       if (T >= D) { P.moved = false; P.inv = false; P.armed = false; setState('idle'); }
       break;
     }
@@ -814,13 +1200,30 @@ function update(dt, inp) {
       if (T >= SLAM && T < SLAM + .1) hit('sw', cx + P.face * 8, P.y - 6, 60);
       if (T > SLAM + .04 && Math.random() < (1 - (T - SLAM) / .4) * .7) { const a = rr(0, 6.28), R = rr(10, 55), x = cx + Math.cos(a) * R, y = P.y + Math.sin(a) * R * .5;
         zap(x, y, x + rr(-7, 7), y + rr(-4, 4), rr(.06, .12), 2, Math.random() < .7 ? COL.fx : COL.fx2); }
-      if (T >= D) { P.z = 0; P.armed = true; P.still = 0; setState('ready'); }
+      if (T >= D) { P.z = 0; P.armed = true; P.still = 0; setState(pickStance()); }
+      break;
+    }
+    case 'moonHold': { // O held: he charges in place, blade raised; letting go brings it down
+      if (held.has('moon')) chargeUp(dt, inp); else { const pw = P.charge || 0; setState('moon'); P.pow = pw; }
+      break;
+    }
+    case 'moon': {
+      if (once('cut', T >= .04)) { unleashMoon(P.pow); ghost(); }
+      if (T >= D) { P.armed = true; P.still = 0; setState(moving ? 'runArmed' : pickStance()); }
+      break;
+    }
+    case 'meditate': { // he cannot move; the mirror images step out of him one by one
+      P.aura = Math.min(.55, T * 1.2); motes(.25);
+      P.mq.forEach((q, j) => { if (once('m' + j, T >= .22 + j * .17)) spawnMirror(j, q); });
+      if (T >= 1.4) setState('idle');
       break;
     }
     case 'standUp': {
       if (T >= D) { const q = P.pending || {}; P.pending = null; setState('idle');
         if (q.slash) setState('slash1'); else if (q.tele) { setState('tele'); P.blinkDir = q.dir; }
-        else if (q.double) { setState('double'); P.blinkDir = q.dir; } else if (q.sweep) setState('sweep');
+        else if (q.double) { setState('double'); P.blinkDir = q.dir; P.hk = 'double'; } else if (q.sweep) setState('sweep');
+        else if (q.rift) { setState('double'); P.blinkDir = q.dir; P.hk = 'rift'; } else if (q.moon) { setState('moonHold'); P.charge = 0; }
+        else if (q.mirror) meditate();
         else if (q.slide) { setState('slide'); P.slideDir = q.dir; dust(6, q.dir[0]); } else if (q.jump) { setState('jump'); P.vz = 150; } }
       break;
     }
@@ -862,20 +1265,54 @@ function drawPlayer() {
   g.save(); g.globalAlpha = .17; g.translate(0, 2 * P.y + 1); g.scale(1, -1);
   spriteTo(g, sheet, f, P.x, P.y + P.z, P.face); g.restore();
   // afterimages
-  for (const gh of P.ghosts) {
-    if (gh.age < 0) continue;
-    spriteTo(g, solid(SHEETS[gh.state], gh.f, gh.col || COL.fx), 0, gh.x, gh.y, gh.face, (gh.a || .45) * (1 - gh.age / (gh.max || .25)));
-  }
+  for (const gh of P.ghosts)
+    spriteTo(g, solid(SHEETS[gh.state], gh.f, gh.white > 0 ? '#ffffff' : COL.fx), 0, gh.x, gh.y, gh.face, (gh.white > 0 ? 1 : .45) * Math.min(1, 1 - (gh.age - gh.hold) / .25));
+  // the charge glow (and the meditation aura): a flickering cyan rim behind him
+  const px = P.x + P.trem, gk = glowK();
+  if (gk > 0) rim(sheet, f, px, P.y - P.z, P.face, gk);
   // strike frames: the whole body as a white silhouette for ~2 frames
-  if (P.flash > 0) { spriteTo(g, solid(sheet, f, '#ffffff'), 0, P.x, P.y - P.z, P.face); return; }
+  if (P.flash > 0) { spriteTo(g, solid(sheet, f, '#ffffff'), 0, px, P.y - P.z, P.face); return; }
   // the sprite; dropped-in glitch animations get the engine's slice effect on top
-  if (!glitchy) { spriteTo(g, sheet, f, P.x, P.y - P.z, P.face); return; }
+  if (!glitchy) { spriteTo(g, sheet, f, px, P.y - P.z, P.face); return; }
   buf.width = sheet.fw; buf.height = sheet.fh;
   bg2.drawImage(sheet.img, f * sheet.fw, 0, sheet.fw, sheet.fh, 0, 0, sheet.fw, sheet.fh);
   const sl = document.createElement('canvas'); sl.width = sheet.fw; sl.height = sheet.fh;
   const sg = sl.getContext('2d'); let y = 0;
   while (y < sheet.fh) { const h = 1 + (Math.random() * 3 | 0), off = Math.random() < .35 ? Math.round((Math.random() - .5) * 8) : 0; sg.drawImage(buf, 0, y, sheet.fw, h, off, y, sheet.fw, h); y += h; }
   spriteTo(g, { img: sl, fw: sheet.fw, fh: sheet.fh, ox: sheet.ox, oy: sheet.oy }, 0, P.x, P.y - P.z, P.face);
+}
+// a mirror image: a pale 1px rim, then his frame tinted cyan and sliced into rows that jump sideways (glitchy edges)
+const mcv = document.createElement('canvas'), mg = mcv.getContext('2d');
+function drawMirror(m) {
+  const sh = SHEETS[m.st], f = Math.min(sh.n - 1, m.f), a = m.a * .8; if (a <= 0) return;
+  g.fillStyle = 'rgba(20,24,24,.2)'; g.fillRect(Math.round(m.x - 5), Math.round(m.y), 10, 1);
+  if (m.white > 0) { spriteTo(g, solid(sh, f, '#ffffff'), 0, m.x, m.y, m.face, .9); return; }
+  const rimg = solid(sh, f, COL.fx2);
+  for (const [ox, oy] of [[1, 0], [-1, 0], [0, -1]]) spriteTo(g, rimg, 0, m.x + ox, m.y + oy, m.face, a * .3);
+  buf.width = sh.fw; buf.height = sh.fh; bg2.drawImage(sh.img, f * sh.fw, 0, sh.fw, sh.fh, 0, 0, sh.fw, sh.fh);
+  bg2.globalCompositeOperation = 'source-atop'; bg2.globalAlpha = .42; bg2.fillStyle = COL.fx; bg2.fillRect(0, 0, sh.fw, sh.fh);
+  bg2.globalAlpha = 1; bg2.globalCompositeOperation = 'source-over';
+  mcv.width = sh.fw; mcv.height = sh.fh; let y = 0;
+  while (y < sh.fh) { const h = 1 + (Math.random() * 3 | 0), off = Math.random() < .25 * m.glitch ? Math.round((Math.random() - .5) * 4 * m.glitch) : 0; mg.drawImage(buf, 0, y, sh.fw, h, off, y, sh.fw, h); y += h; }
+  spriteTo(g, { img: mcv, fw: sh.fw, fh: sh.fh, ox: sh.ox, oy: sh.oy }, 0, m.x, m.y, m.face, a);
+}
+// the Qi meter, bottom left: a tiny pixel label, a 48px bar, glowing and crackling when full (the storm)
+const GLYPH = { Q: ['.##.', '#..#', '#..#', '#.##', '.###'], I: ['###', '.#.', '.#.', '.#.', '###'], S: ['###', '#..', '###', '..#', '###'],
+  T: ['###', '.#.', '.#.', '.#.', '.#.'], O: ['###', '#.#', '#.#', '#.#', '###'], R: ['##.', '#.#', '##.', '#.#', '#.#'], M: ['#...#', '##.##', '#.#.#', '#...#', '#...#'] };
+function pixText(txt, x, y, col) { g.fillStyle = col; for (const ch of txt) { const gl = GLYPH[ch];
+  gl.forEach((r, j) => [...r].forEach((c, i) => { if (c === '#') g.fillRect(x + i, y + j, 1, 1); })); x += gl[0].length + 1; } }
+function drawQi() {
+  const x = 30, y = 259, w = 48, full = P.storm > 0, blink = Math.floor(performance.now() / 90) % 2, fill = Math.round(w * P.qi);
+  g.globalAlpha = .7; g.fillStyle = '#0d1012'; g.fillRect(16, 255, full ? 96 : 66, 11); g.globalAlpha = 1;
+  if (full) { g.globalAlpha = .35 + .35 * Math.random(); g.fillStyle = COL.fx; g.fillRect(x - 2, y - 2, w + 4, 7); g.globalAlpha = 1; } // the glow round a full meter
+  pixText('QI', 18, y - 1, full ? (blink ? '#ffffff' : COL.eye) : COL.fx);
+  g.fillStyle = '#23292a'; g.fillRect(x - 1, y - 1, w + 2, 5); g.fillStyle = '#0d1012'; g.fillRect(x, y, w, 3);
+  g.fillStyle = full ? (blink ? '#ffffff' : COL.fx2) : COL.fx; g.fillRect(x, y, fill, 3);
+  if (!full && fill) { g.fillStyle = COL.fx2; g.fillRect(x + fill - 1, y, 1, 3); }
+  if (P.qiPop > 0) { g.globalAlpha = P.qiPop * 2; g.fillStyle = '#ffffff'; g.fillRect(x - 1, y - 1, w + 2, 5); g.globalAlpha = 1; }
+  if (full) { g.fillStyle = '#ffffff'; for (let i = 0; i < 3; i++) if (Math.random() < .5) { let px = x + (Math.random() * fill | 0), py = y - 1 - (Math.random() * 2 | 0);
+      for (let k = 0; k < 4; k++) { g.fillRect(px, py, 1, 1); px += 1; py += Math.random() < .5 ? -1 : 1; } }
+    pixText('STORM', 82, y - 1, blink ? COL.fx2 : '#ffffff'); }
 }
 function render() {
   g.save();
@@ -884,7 +1321,8 @@ function render() {
   g.drawImage(bg, 0, 0);
   drawFloorFx();
   // depth-sort the pillars, the dummy and the player by their feet
-  const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), { y: dummy.y, d: () => drawDummy(g) }, { y: P.y, d: drawPlayer },
+  const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), ...DUMMIES.map(d => ({ y: d.y, d: () => drawDummy(g, d) })), { y: P.y, d: drawPlayer },
+    ...mirrors.map(m => ({ y: m.y, d: () => drawMirror(m) })),
     ...debris.map(d => ({ y: d.state === 'in' ? d.cy + Math.sin(d.a) * d.r * .45 : d.py, d: () => drawDebris(d) }))];
   items.sort((a, b) => a.y - b.y).forEach(i => i.d());
   drawFx();
@@ -895,14 +1333,18 @@ function render() {
   }
   g.globalAlpha = 1;
   g.restore();
-  hud.innerHTML = `animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}`;
+  if (scr.t > 0) { g.globalAlpha = scr.a * scr.t / scr.max; g.fillStyle = '#e4fffb'; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
+  drawQi();
+  const chg = P.charge != null && !P.cv ? ` · charge <b>${Math.round(P.charge * 100)}%</b>` : P.cv ? ` · ${P.cv.name} at <b>${Math.round(P.pow * 100)}%</b>` : '';
+  const qi = P.storm > 0 ? ` · <b>STORM CHAIN ${P.storm.toFixed(1)} s</b>` : ` · qi <b>${Math.round(P.qi * 100)}%</b>`;
+  hud.innerHTML = `animation <b>${P.state}</b> · frame ${frameOf() + 1}/${SHEETS[P.state].n} · ${SHEETS[P.state].custom ? 'your sprite' : 'placeholder'}${chg}${qi}`;
 }
 
 // ---- Input ----
 const hud = document.getElementById('hud');
 const held = new Set(), taps = new Set();
 const KEYS = { ArrowLeft: 'left', a: 'left', ArrowRight: 'right', d: 'right', ArrowUp: 'up', w: 'up', ArrowDown: 'down', s: 'down',
-  j: 'slash', ' ': 'jump', Shift: 'slide', l: 'slide', k: 'tele', i: 'double', u: 'sweep', c: 'sit', x: 'die' };
+  j: 'slash', ' ': 'jump', Shift: 'slide', l: 'slide', k: 'tele', i: 'double', u: 'sweep', c: 'sit', x: 'die', o: 'moon', p: 'rift', n: 'mirror' };
 game.addEventListener('keydown', e => { const k = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (!k) return; e.preventDefault(); if (!held.has(k)) taps.add(k); held.add(k); });
 game.addEventListener('keyup', e => { const k = KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key]; if (k) held.delete(k); });
 game.addEventListener('blur', () => held.clear());
@@ -915,7 +1357,8 @@ document.querySelectorAll('.pad button').forEach(b => {
 function readInput() {
   const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0), my: (held.has('down') ? 1 : 0) - (held.has('up') ? 1 : 0),
     slash: taps.has('slash'), jump: taps.has('jump'), slide: taps.has('slide'), tele: taps.has('tele'),
-    double: taps.has('double'), sweep: taps.has('sweep'), sit: taps.has('sit'), die: taps.has('die') };
+    double: taps.has('double'), sweep: taps.has('sweep'), sit: taps.has('sit'), die: taps.has('die'),
+    moon: taps.has('moon'), rift: taps.has('rift'), mirror: taps.has('mirror') };
   taps.clear();
   return inp;
 }
@@ -930,7 +1373,14 @@ function frame(now) {
 requestAnimationFrame(frame);
 
 // ---- Moveset table ----
-document.getElementById('moves').innerHTML = Object.entries(ANIMS).filter(([, a]) => !a.hidden).map(([k, a]) => `<tr><td>${k}</td><td>${a.about}</td></tr>`).join('');
+// the skills that play on another move's frames (or on none) get their own rows after the animations
+const SKILL_ROWS = [
+  ['hold I · Thousand Cuts', 'Hold I in the double slash\'s crouch (about 0.9 s to full) while his body gathers light, then let go: he vanishes to a point ahead and blinks round it seven times in about 0.3 s, a cyan afterimage and a crescent in a new direction at each spot, then lands the final double cut. Everything in a wide circle round the point is hit and bursts on the sheath click. Range and area grow with the charge; aim with the arrows while holding.'],
+  ['P · Cross Rift', 'The dash, the two crossing cuts, the freeze and the resheathe of the double slash. The cuts open into a giant X of torn reality: jagged slits of void with crawling, flickering lips, star-specks drifting inside, stone chips and motes pulled into it. On the sheath click it snaps shut, implodes for three frames, then detonates outward in a white ring that hits everything inside. Tap for a mid-size rift, hold to charge a bigger one.'],
+  ['Qi · Storm Chain', 'A passive. Every hit he lands fills the Qi meter at the bottom left (bigger moves fill more); out of the fight it slowly ebbs. When it fills, Storm Chain wakes for 8 s: the meter glows and crackles, bolts run over his body, and every hit he lands leaps as lightning from the struck dummy to up to three dummies nearby, hitting each. Then the meter empties.'],
+];
+document.getElementById('moves').innerHTML = [...Object.entries(ANIMS).filter(([, a]) => !a.hidden).map(([k, a]) => [k, a.about]), ...SKILL_ROWS]
+  .map(([k, a]) => `<tr><td>${k}</td><td>${a}</td></tr>`).join('');
 
 // ---- Dropping in real strips ----
 const sel = document.getElementById('anim'), fileIn = document.getElementById('file'), fwIn = document.getElementById('fw');

@@ -29,7 +29,7 @@
 <div class="wrap">
   <header>
     <div class="eyebrow">K · executions · batch 1, second pass</div>
-    <h1>Six assassinations</h1>
+    <h1>Seven assassinations</h1>
     <p>Reworked from your notes. The enemies are now samurai built like him, bare-headed with a topknot. Kills are shorter and more brutal, and the enemy comes apart into real pieces cut from his own pixels, which tumble and fall. Most of the motion happens between frames. The few poses you do see lean into where he is going and where he has just been.</p>
     <div class="bar"><label for="slow"><input type="checkbox" id="slow"> Half speed</label></div>
   </header>
@@ -215,6 +215,10 @@ function splitPiece(S, P, L, kick) {   // cut an airborne chunk in two along a w
 }
 function updatePieces(S, dt) {
   for (const P of S.pieces) {
+    if (P.script) { P.st = (P.st || 0) + dt; const o = P.script(P.st); P.x = P.x0 + o.dx; P.a = o.a;
+      const low = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
+      P.z = Math.max(low, (P.z0 + (o.dz || 0)));
+      if (o.done) P.life -= dt; continue; }
     if (P.rest < 1) { P.x += P.vx * dt; P.z += P.vz * dt; P.vz -= 320 * dt; P.a += P.va * dt;
       if (P.maxA != null && Math.abs(P.a) > P.maxA) { P.a = Math.sign(P.a) * P.maxA; P.va = 0; }
       const low = Math.max(...P.pts.map(([dx, dy]) => dx * Math.sin(P.a) + dy * Math.cos(P.a)));
@@ -319,7 +323,11 @@ const EXECS = [
         for (let k = 0; k < 3; k++) F.ghost(S, { x: x0 + (E.x + 28 - x0) * (k + 1) / 4, y: R.y, face: 1, pose: lerpP(crouch, past, (k + 1) / 3) }, k % 2 ? CY2 : WH, .14 + k * .02);
         F.speed(S, x0, E.x + 28, R.y, 10); F.cut(S, E.x - 9, E.y - 16, E.x + 9, E.y - 7, .75); F.hit(S, E, .08, 1 / 60); });
       S.once('click', t >= .76, () => { F.burst(S, E.x, E.y - 11, 12);
-        shatter(S, E, [[E.x - 9, E.y - 16, E.x + 9, E.y - 7]], (P, cx, cy) => { if (cy < E.y - 12) { P.vx = 22; P.vz = 12; P.va = 2.2; } else { P.va = -2; P.maxA = 1.5; P.vx = -4; } }); });
+        // the top half slides down the cut, then tips over and settles; the legs buckle a moment later. Eased, no bounce.
+        shatter(S, E, [[E.x - 9, E.y - 16, E.x + 9, E.y - 7]], (P, cx, cy) => { P.x0 = P.x; P.z0 = P.z;
+          if (cy < E.y - 12) P.script = t => { const a = ease(Math.min(1, t / .3)), b = ease(Math.min(1, Math.max(0, (t - .25) / .5)));
+            return { dx: a * 4 + b * 6, dz: -a * 2 - b * 30, a: b * 1.55, done: t > 1.2 }; };
+          else P.script = t => { const b = ease(Math.min(1, Math.max(0, (t - .3) / .55))); return { dx: -b * 3, dz: -30, a: -b * 1.5, done: t > 1.3 }; }; }); });
     } },
   { name: 'Rising launch', note: 'One rising cut from the kneel and the enemy\'s top half goes up. He goes after it, gone from the ground. Cuts flash in the air, and the pieces split and split again as they fall. Then he drops back down, blade low, into the rain of pieces.',
     side: -1, gap: 9, dur: 1.5,
@@ -390,6 +398,23 @@ const EXECS = [
         for (let k = 0; k < 5; k++) { const a = rr(0, 3.14); F.cut(S, x - Math.cos(a) * 12, y - 10 - Math.sin(a) * 12, x + Math.cos(a) * 12, y - 10 + Math.sin(a) * 12, .14); }
         shatter(S, E, [[x - 10, y - 20, x + 10, y], [x + 10, y - 20, x - 10, y], [x - 12, y - 12, x + 12, y - 8], [x - 3, y - 22, x + 2, y + 2]], (P, cx, cy) => { P.vx = (cx - x) * 6; P.vz = rr(10, 50); P.va = rr(-7, 7); });
         S.stop = .08; S.shake = .1; F.burst(S, x, y - 10, 16); });
+    } },
+  { name: 'Peek-a-boo, from behind', note: 'He glitches in right behind the enemy, takes his head in both hands and snaps it round. No blade at all. He glitches back to where he started and lets his hands fall. The enemy stands a moment longer, then drops.',
+    side: +1, gap: 6, dur: 1.5, stay: true,
+    run(S, t, R, E) {
+      const reach = pz({ hy: 1, lean: .12, fl: [.3, .3], bl: [-.35, .3], fa: [2.0, .9], ba: [1.8, 1.0] });
+      const grip = pz({ hy: 2, lean: .2, chest: .1, fl: [.4, .5], bl: [-.45, .4], fa: [2.25, 1.15], ba: [2.05, 1.25] });
+      const twist = pz({ hy: 2, lean: .05, chest: -.3, fl: [.45, .5], bl: [-.5, .4], fa: [1.9, 1.3], ba: [2.5, .7], flutter: 1 });
+      R.face = -1;
+      if (t < .34) { R.pose = at([[0, reach], [.07, grip], [.15, twist, lin], [.34, twist]], t); R.glitch = t > .27 ? (t - .27) * 20 : 0; }
+      else { R.x = START.x; R.y = START.y; R.face = 1; R.pose = at([[.34, pz({ fa: [.8, .9], ba: [.6, .9] })], [.6, IDLE]], t); R.glitch = t < .4 ? (.4 - t) * 18 : 0; }
+      S.once('snap', t >= .15, () => { S.stop = .1; S.shake = 1 / 60; E.flashT = .05;
+        for (let k = 0; k < 4; k++) F.spark(S, E.x + rr(-2, 2), E.y - 18, rr(-40, 40), rr(-30, 0), .1, WH, true); });
+      // his head yanked round, then limp
+      if (t >= .15 && t < .8) { E.face = t < .2 ? 1 : -1; E.pose = pz({ ...EG, lean: -.25, chest: -.35, fa: [.35, .3], sword: 1.4, ba: [-.1, .2], hy: 1 }); }
+      S.once('back', t >= .34, () => { F.slivers(S, E.x + 6, E.y, 8); F.slivers(S, START.x, START.y, 6); });
+      S.once('drop', t >= .8, () => shatter(S, E, [], P => { P.x0 = P.x; P.z0 = P.z;
+        P.script = tt => { const b = ease(Math.min(1, tt / .5)); return { dx: -b * 2, dz: -30, a: -b * 1.5, done: tt > 1 }; }; }));
     } },
 ];
 

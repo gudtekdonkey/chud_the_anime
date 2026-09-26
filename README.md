@@ -20,8 +20,12 @@ Click the screen first.
 | Shift or L | Ground slide |
 | Space | Jump |
 | K | Glitch teleport |
-| I | Glitch double slash |
+| I | Tap: glitch double slash. Hold: Thousand Cuts |
+| O (hold) | Crescent Moon, cast in place |
+| P | Cross Rift |
+| N | Mirror Meditation |
 | U | Storm slam |
+|  | Storm Chain turns on by itself when the Qi meter fills |
 | C | Sit cross-legged (any key gets him up) |
 | X | Die (for testing) |
 

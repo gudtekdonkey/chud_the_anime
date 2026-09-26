@@ -1,0 +1,125 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>body { margin: 0; }</style>
+<title>Open Stance</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 Figtree, system-ui, sans-serif; }
+  .wrap { max-width: 1040px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 64px; display: grid; gap: 26px; }
+  header { display: grid; gap: 8px; max-width: 70ch; }
+  .eyebrow { font: 500 13px/1 "Pixelify Sans", monospace; letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0; }
+  h2 { font: 700 19px/1.15 "Pixelify Sans", monospace; margin: 0; }
+  p { margin: 0; color: var(--muted); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--rule); display: grid; }
+  .card canvas { width: 100%; aspect-ratio: 1; image-rendering: pixelated; display: block; border-bottom: 1px solid var(--rule); }
+  .card div { padding: 14px 16px 16px; display: grid; gap: 6px; }
+  .num { font: 700 13px/1 "Pixelify Sans", monospace; color: var(--cyan); letter-spacing: .06em; }
+  .ask { background: var(--panel); border: 1px solid var(--rule); padding: 16px 18px; display: grid; gap: 8px; max-width: 70ch; }
+  .ask b { color: var(--ink); font-weight: 600; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Sword out · a fifth stance</div>
+    <h1>Open to the camera</h1>
+    <p>Hand-drawn facing the camera, since the rig only draws him side-on. The mantle is swept open off his chest and his arms are apart from his body. The blade hangs from one hand, its point angled down to the floor, feet wide. It is the opposite of the thin side stances: nothing hidden, daring you to come in. Two takes, each breathing, with the mantle's edges lifting and the eyes blinking. The third panel shows both at game scale.</p>
+  </header>
+  <div class="grid" id="grid"></div>
+  <div class="ask">
+    <h2>Your call</h2>
+    <p><b>A, B, or both?</b> Both are already in the game for now: after every attack he picks one of six stances at random (the four side-on counter stances and these two).</p>
+  </div>
+</div>
+
+<script>
+const PAL = { G: '#3b424c', H: '#2a2f37', B: '#1a1d24', K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', E: '#6ff3e4', W: '#e9eeee', S: '#7d868e' };
+// 28 wide, 24 tall, facing the camera; his right hand (screen left) carries the blade point-down to the floor
+const OPEN = [
+  '...........GGGGGG...........',
+  '........GGGHHHHHHGGG........',
+  '.....GGHHHHHHHHHHHHHHGG.....',
+  '....GBBBBBBBBBBBBBBBBBBG....',
+  '.....KBBBBBBBBBBBBBBBBK.....',
+  '..........KKKKKKKK..........',
+  '..........KKEKKEKK..........',
+  '...........KKKKKK...........',
+  '.......mMMMKKKKKKMMMm.......',
+  '......mMMMMKDKKDKMMMMm......',
+  '.....MMMMK.KDKKDK.KMMMM.....',
+  '.....MMM.K.KKKKKK.K.MMM.....',
+  '.....MM..K.KKDDKK.K..MM.....',
+  '.....M...K.KKKKKK..K..M.....',
+  '....M...K..DDDDDD..K...M....',
+  '....M..SK..KKKKKK...K..M....',
+  '......W....KKKKKK...........',
+  '.....W.....KKKKKK...........',
+  '....W.....KKK..KKK..........',
+  '...W.....KKK....KKK.........',
+  '..W.....KKK......KKK........',
+  '.W.....KKK........KKK.......',
+  '......KKK..........KKK......',
+  '.....KKKK..........KKKK.....',
+];
+// B: the free arm swung out wide, palm open, an invitation
+const INVITE = OPEN.map((r, y) => {
+  const a = [...r];
+  if (y >= 10 && y <= 15) for (let x = 18; x <= 21; x++) if (a[x] === 'K') a[x] = '.';
+  const arm = { 10: [18, 19], 11: [20, 21], 12: [22, 23], 13: [24] };
+  for (const x of arm[y] || []) a[x] = 'K';
+  if (y === 12) a[24] = 'D';
+  return a.join('');
+});
+const TAKES = [
+  { name: 'Open', note: 'Chest square to the camera, the mantle thrown back off both shoulders, the free hand loose at his side. Calm and exposed.', rows: OPEN },
+  { name: 'Invitation', note: 'The same, but the free arm swings out wide with the palm open, as if asking you to try.', rows: INVITE },
+];
+const UPPER = 14;   // rows above this breathe; the legs stay planted
+const BR = [0, 0, 0, 1, 1, 1, 1, 0];
+function frameOf(rows, f, blink) {
+  const out = [], b = BR[f % 8], lift = f % 16 === 5 || f % 16 === 6;
+  rows.forEach((r, y) => [...r].forEach((ch, x) => {
+    if (ch === '.') return;
+    if (blink && ch === 'E') ch = 'K';
+    let xx = x, yy = y < UPPER ? y + b : y;
+    if (lift && (ch === 'M' || ch === 'm') && y >= 11) xx += x < 14 ? -1 : 1;   // the mantle's hanging edges lift outward a pixel
+    out.push([xx, yy, ch]);
+  }));
+  return out;
+}
+function floor(W, H, seed) { const c = document.createElement('canvas'); c.width = W; c.height = H; const g = c.getContext('2d'); let r = seed;
+  const rnd = () => (r = (r * 16807) % 2147483647) / 2147483647;
+  g.fillStyle = '#474c4a'; g.fillRect(0, 0, W, H);
+  for (let i = 0; i < W * H / 40; i++) { g.fillStyle = rnd() < .5 ? '#434846' : '#4b504e'; g.fillRect(rnd() * W | 0, rnd() * H | 0, 2, 1); } return c; }
+function draw(g, px, ox, feet) {
+  const top = feet - 23;
+  g.globalAlpha = .17; for (const [x, y, ch] of px) { g.fillStyle = PAL[ch]; g.fillRect(ox + x, 2 * feet + 1 - (top + y), 1, 1); }
+  g.globalAlpha = 1; g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(ox + 6, feet + 1, 16, 1);
+  for (const [x, y, ch] of px) { g.fillStyle = PAL[ch]; g.fillRect(ox + x, top + y, 1, 1); }
+}
+const cards = TAKES.map((tk, i) => {
+  const card = document.createElement('section'); card.className = 'card';
+  card.innerHTML = `<canvas width="44" height="44" role="img" aria-label="Open stance ${String.fromCharCode(65 + i)}: ${tk.name}"></canvas><div><span class="num">${String.fromCharCode(65 + i)}</span><h2>${tk.name}</h2><p>${tk.note}</p></div>`;
+  document.getElementById('grid').append(card);
+  return { g: card.querySelector('canvas').getContext('2d'), tk, floor: floor(44, 44, 3 + i * 17), phase: i * 3 };
+});
+// the lineup at game scale
+const card = document.createElement('section'); card.className = 'card';
+card.innerHTML = `<canvas width="44" height="44" role="img" aria-label="Both open stances at game scale"></canvas><div><span class="num">GAME SCALE</span><h2>At 1×, beside each other</h2><p>How they read at the size you play at, zoomed only by the page.</p></div>`;
+document.getElementById('grid').append(card);
+const lg = card.querySelector('canvas').getContext('2d'), lfloor = floor(44, 44, 99);
+const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function tick(now) {
+  const t = still ? 0 : now / 1000, f = Math.floor(t * 4);
+  for (const c of cards) { c.g.drawImage(c.floor, 0, 0); draw(c.g, frameOf(c.tk.rows, f + c.phase, !still && (t + c.phase) % 3.4 < .12), 8, 36); }
+  lg.drawImage(lfloor, 0, 0);
+  // small copies: every other pixel, i.e. true size inside this zoomed canvas
+  TAKES.forEach((tk, i) => { const px = frameOf(tk.rows, f + i * 3, false);
+    lg.globalAlpha = 1; for (const [x, y, ch] of px) { lg.fillStyle = PAL[ch]; lg.fillRect(4 + i * 20 + Math.floor(x / 2), 18 + Math.floor(y / 2), 1, 1); } });
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>

@@ -23,9 +23,12 @@ Decisions made in the design sessions so far, newest last.
 - **U, storm slam:** a slow kneel, then a full second gathering power while stone chips and dust lift off the floor and circle him. He rises in a cyclone with the debris, then slams; the debris flies out and the screen shakes.
 - **C, sit:** back to the camera, cross-legged like a monk. Standing up plays before anything else.
 
+- **Sword out:** after an attack he waits with the blade out in one of six stances, picked at random each time and never the same twice running: four side-on counter stances with the blade in his back hand pointing at the ground, and two opened to the camera.
+- **Skills:** hold I for Thousand Cuts; hold O for Crescent Moon, cast in place; P for Cross Rift, a tear in reality; N for Mirror Meditation, where mirror images attack the nearest enemies. Storm Chain is a passive that runs for 8 s whenever the Qi meter fills from landing hits.
+- **Executions, batch 1 (approved):** behind the back, through and past, rising launch, whirlwind, far behind, peek-a-boo, and peek-a-boo from behind (a neck snap).
+
 ## Next
 
-1. **Held I:** hold to charge, release for a far longer dash with a much bigger area of effect. Six variations to choose from in `prototypes/13-charged-i.html`: Flash Line, Thousand Cuts, Crescent Moon, Storm Chain, Cross Rift, Afterimage Barrage.
 2. **K assassinations:**
    - With an isolated enemy in range (no other enemy within the isolation distance, 36 px to start), K flashes to it and plays an execution.
    - A kill resets K after 0.2 s.
