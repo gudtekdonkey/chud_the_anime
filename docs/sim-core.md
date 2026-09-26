@@ -23,7 +23,7 @@ The living world as plain data: the ledger of `docs/foundations.md`. Pure JavaSc
 - `L.zones[y * 100 + x]`: `{ x, y, biome, region, kind, road, name?, holder? }`. `kind`: sea, wild, town (a region's seat), village, camp (outlaws: a hostile base), fort, shrine.
 - `L.regions[id]`: `{ id, name, culture, seat: [x, y], zones, center, lord }`.
 - `L.cultures[id]`: `{ id, kind, name, regions, relations: { otherId: -1..1 }, hue }`.
-- `L.actors[id]`: one record for every person, the ronin included (`L.player`): `{ id, given, family, sex, born, alive, culture, cls, job, rank, home, spouse, parents, children, household, weapon, traits, karma, standing, money: { mon, silver, ryo }, holds, lord?, chief?, at? }`.
+- `L.actors[id]`: one record for every person, the ronin included (`L.player`): `{ id, given, family, sex, born, alive, culture, cls, job, rank, home, spouse, parents, children, household, weapon, traits, karma, standing, money: { mon, silver, ryo }, holds, int, lord?, chief?, at? }`. `int` is intelligence, 0..1 (owner, 2026-09-26: personality decides whether and how willingly someone acts, intelligence how good their choices are).
 - `L.plots[plotId]`: only plots that differ from their zone's default. `ownerOf` gives `{ title, holder }`: **title** is ownership on paper, **holder** is who has it now (owner, 2026-09-26: raids take possession, never the title). `null` is nature, claimable.
 - `L.log`: recent events `{ h, type, ...data }`.
 - `L.sys[id]`: each system's own state.
@@ -51,6 +51,7 @@ Each lane owns its folder, its `L.sys` key, its event prefix and its prototype n
 | Karma, crime, title and possession | `src/sim/crime/` | `crime`, `crime.*` | 39 |
 | Quests and world events | `src/sim/story/` | `story`, `story.*`, `event.*` | 40 |
 | Travel events and glitch storms | `src/sim/travel/`, glitch storm effects | `travel`, `travel.*`, `storm.*` | 41 |
+| Dominion: building, the land ladder, governing, armies, war | `src/sim/dominion/` | `dominion`, `dom.*`, `war.*` | 42 |
 
 ## Prototype pages on the core
 
