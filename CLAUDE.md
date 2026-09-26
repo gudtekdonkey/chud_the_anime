@@ -20,7 +20,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | File | Owns |
 |---|---|
 | `main.js` | Boot, the fixed 60 Hz update loop under `requestAnimationFrame`, the debug hook |
-| `config.js` | `W`/`H`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY`, `SQ` (floor squash) |
+| `config.js` | `W`/`H`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY` (96×64; the rig draws in its old 48×48 box, `RX`/`RY`, shifted by whole pixels), `SQ` (floor squash) |
 | `state.js` | ALL shared mutable state: the player `P`, what he wears (`wear`), `S` (`shake`, `hitstop`, `scr` screen flash, `roomClear`, `banner`), the inventory `INV` (the HUD reads only this), `parts`, `pops` and every effect list |
 | `screen.js` | The `#game` canvas, its 2D context `g`, the `#hud` line |
 | `input.js` | Keyboard map, touch pad, `held`/`taps`, `readInput()`, the room-clear checkbox |
@@ -36,7 +36,8 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `anims/sheets.js` | Bakes every animation to a sheet at load (`SHEETS`, the equipped weapon's, in the default outfit, keeping each frame's pose and glitch), `sliceGlitch`, `dur()`, `rebake` |
 | `weapons/weapons.js` | `WEAPONS`, `weapon()`, `setWeapon(id)` (the API for pickups: bakes once, swaps `SHEETS`), `reach()`, `framesFor` (a weapon's poses, or the katana's run through its `adapt`) |
 | `weapons/katana.js` | `KATANA_ART`: the drawing hooks every weapon's art has (`far`, `stowed`, `held`, `backHeld`, `sheathing`, optional `offHand`, `front`/`sit` rows) |
-| `weapons/yari.js`, `nodachi.js`, `tanto.js` | Each weapon's art, its own poses (cuts, guard, the four side-on stances, what it does with the hilt hand), `reach` and `weight` |
+| `weapons/grip.js` | Shared by weapons: `grip` (two-handed poses from where the fists go), `twoHanded`, `breathe`, the draw and stow for weapons carried on the back (`slungDraw`/`slungStow`, `shoulderDraw`/`shoulderStow`), `runWith` |
+| `weapons/yari.js`, `nodachi.js`, `tanto.js`, `naginata.js`, `kanabo.js`, `kusarigama.js`, `tessen.js`, `bo.js` | Each weapon's art, its own poses (cuts, guard, the four side-on stances, what it does with the hilt hand), `reach` and `weight` |
 | `player/update.js` | The state machine: one `update(dt, inp)` step |
 | `player/actions.js` | `setState`, `once`, stance picking, the two-screen threat check, movement, `ghost`, `frameOf`, `inputDir` |
 | `player/skills.js` | Charging (`chargeUp`), Thousand Cuts (`TC`), Cross Rift (`RIFT`), the dash, `release`/`charged` |
