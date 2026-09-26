@@ -51,7 +51,7 @@ export const LOG_CAP = 4000;
 // data: anything plain; by convention { zone: [x, y], actor, region, culture } where they apply, so the world map and the quests can find it
 export function emit(L, type, data = {}) {
   const e = { h: L.hour, type, ...data };
-  L.log.push(e); if (L.log.length > LOG_CAP) L.log.splice(0, L.log.length - LOG_CAP);
+  L.log.push(e); if (L.log.length > LOG_CAP * 1.25) L.log.splice(0, L.log.length - LOG_CAP);   // trimmed in batches: a busy world emits a lot
   for (const fn of LISTENERS.get(type) || []) fn(e, L);
   for (const fn of LISTENERS.get('*') || []) fn(e, L);
   return e;

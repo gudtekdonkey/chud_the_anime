@@ -52,6 +52,10 @@ export const HARVEST = { mean: 1.02, spread: .14, blight: .03, blightCut: .45 };
 export const FAMINE_AT = .75;
 // garrisons, bands and temples keep their numbers by recruiting from their region's villages
 export const KEEP = { fort: [5, 8], camp: [5, 8], shrine: [1, 3] };
+// newcomers (owner 2026-09-26: keep 30% violence, refill with newcomers): each season a town or village under its founding size (at most
+// TARGET of what its land feeds) takes in SHARE of the gap (at most MAX people), a household at a time: a head, a spouse WED of the time, up to KIDS children.
+// STRANGER of them come from another culture; RONIN of the heads are masterless swords
+export const NEWCOMERS = { TARGET: .8, SHARE: .35, MAX: 12, WED: .6, KIDS: 3, STRANGER: .1, RONIN: .08 };
 
 // bride price (yuinō) in mon, by the bride's class: the groom's house pays the bride's; a ronin's is small, a noble's a fortune
 export const BRIDE_PRICE = { royal: 500000, noble: 60000, retainer: 12000, shinobi: 3000, ashigaru: 2000, ronin: 1500, commoner: 1000, rebel: 800, outlaw: 500, monk: 0 };

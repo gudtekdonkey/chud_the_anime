@@ -126,10 +126,11 @@ const TEXT = {
   'crime.hunterFound': e => `${who(e.actor)} the hunter has found him`,
   'crime.hunterGone': e => `${who(e.actor)} gave up the hunt`,
   'crime.penance': e => `penance: karma +${e.karma}`,
+  'people.arrived': e => `${e.n} newcomers arrived to fill the empty houses`,
 };
 let worldCount = 0;
 on('*', e => {
-  if (!e.type.startsWith('crime.')) return;
+  if (!e.type.startsWith('crime.') && e.type !== 'people.arrived') return;
   const mine = e.actor === me.id || e.victim === me.id || e.target === me.id || (e.zone && e.zone[0] === S.zone[0] && e.zone[1] === S.zone[1]) || (e.plot && e.plot.startsWith(`${S.zone[0]},${S.zone[1]}:`));
   if (!mine || !TEXT[e.type]) { worldCount++; return; }
   const c = calendar(e.h);

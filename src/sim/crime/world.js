@@ -15,15 +15,20 @@ function index(L, season) {
   let X = INDEX.get(L);
   if (X && X.season === season) return X;
   const w = L.size.w, byRegion = L.regions.map(() => []), heads = L.regions.map(() => []), byZone = new Map();
-  for (const id in L.actors) { const a = L.actors[id]; if (!a.alive || !a.home || isPlayer(L, id) || ageOf(L, a) < K.ADULT) continue;   // children stay home
+  // the people lane's residents (the living, by zone) when it runs, else every actor
+  const res = L.sys.people?.res, ids = res ? Object.values(res).flat() : Object.keys(L.actors);
+  for (const id of ids) { const a = L.actors[id]; if (!a || !a.alive || !a.home || isPlayer(L, id) || ageOf(L, a) < K.ADULT) continue;   // children stay home
     const z = zoneAt(L, a.home[0], a.home[1]); if (!z || z.region < 0) continue; const zi = z.y * w + z.x;
     byRegion[z.region].push(id); (byZone.get(zi) || byZone.set(zi, []).get(zi)).push(id);
     if (a.holds.length && a.holds.some(p => L.plots[p]?.holder === id)) heads[z.region].push(id); }
-  const places = L.zones.filter(z => z.kind === 'town' || z.kind === 'village');
-  const camps = L.zones.filter(z => z.kind === 'camp').map(z => ({ zi: z.y * w + z.x,
-    targets: places.filter(v => Math.abs(v.x - z.x) + Math.abs(v.y - z.y) <= WORLD.RAID_REACH).map(v => v.y * w + v.x) })).filter(c => c.targets.length);
-  X = { season, byRegion, heads, byZone, camps };
+  X = { season, byRegion, heads, byZone, camps: X?.camps || campsOf(L) };
   INDEX.set(L, X); return X;
+}
+// each camp and the towns and villages within its reach: the places do not move, so this is made once per world
+function campsOf(L) {
+  const w = L.size.w, places = L.zones.filter(z => z.kind === 'town' || z.kind === 'village');
+  return L.zones.filter(z => z.kind === 'camp').map(z => ({ zi: z.y * w + z.x,
+    targets: places.filter(v => Math.abs(v.x - z.x) + Math.abs(v.y - z.y) <= WORLD.RAID_REACH).map(v => v.y * w + v.x) })).filter(c => c.targets.length);
 }
 const living = (L, r, ids, not = []) => { if (!ids || !ids.length) return null;
   for (let i = 0; i < 6; i++) { const id = r.pick(ids), a = L.actors[id]; if (a.alive && !not.includes(id) && ageOf(L, a) >= K.ADULT) return id; } return null; };

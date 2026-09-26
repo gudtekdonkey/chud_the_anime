@@ -6,18 +6,19 @@ import { initSettlements, rebuildResidents, adoptNewcomers, feedSettlements, rol
 import { liveBucket, yearOf } from './life.js';
 import { marketSeason } from './marriage.js';
 import { scheduleHour } from './schedule.js';
+import { arrive } from './newcomers.js';
 
 // ---- The people system: lives on the ledger (docs/sim-people.md). Import this module to register it, before generateWorld/loadWorld ----
 // onHour  daily schedules for the people around him (only while he plays)
 // onDay   one 56th of everyone lives half a year: death, birth, growing up, needs, ties
-// onSeason newcomers, how fed they are; in spring and autumn the marriage market, new houses, moving to where there is room, levies
+// onSeason people other systems made, newcomers from beyond the map where villages have emptied, how fed they are; in spring and autumn the marriage market, new houses, moving to where there is room, levies
 // onYear  who lives where (in full), the harvest, ambitions, the census
 export const PEOPLE = system({
   id: 'people', order: 30,
   init(L) {
     const P = L.sys.people;
     Object.assign(P, {
-      stats: { births: 0, deaths: {}, marriages: 0, adopted: 0, inherited: 0, estates: 0, regencies: 0, toLord: 0, toNature: 0, seats: 0, granted: 0, migrated: 0, recruited: 0 },
+      stats: { births: 0, deaths: {}, marriages: 0, adopted: 0, inherited: 0, estates: 0, regencies: 0, toLord: 0, toNature: 0, seats: 0, granted: 0, migrated: 0, recruited: 0, arrived: 0 },
       year: { births: 0, deaths: 0, marriages: 0 }, census: [], graves: [], lineage: [], over: null, wages: true, fadeAfter: FADE_AFTER,
     });
     for (const id in L.actors) {
@@ -31,7 +32,7 @@ export const PEOPLE = system({
   onHour(L, cal) { scheduleHour(L, cal); },
   onDay(L, cal, r) { liveBucket(L, cal.day, r); },
   onSeason(L, cal, r) {
-    adoptNewcomers(L); feedSettlements(L);
+    adoptNewcomers(L); arrive(L, r); feedSettlements(L);
     if (cal.seasonIndex % 2 === 0) { marketSeason(L, r); foundHouses(L); migrate(L, r); recruit(L, r); }   // spring and autumn: weddings, moves, levies
   },
   onYear(L, cal, r) { rebuildResidents(L); rollHarvests(L, r); yearOf(L, cal, r); },

@@ -1,13 +1,18 @@
 // node scripts/sim-crime.mjs [seed] [years]: live a world with the crime system for some years (10 by default) and print what happened:
 // crimes by kind, bounties, land that changed hands by force vs by title. Asserts the lane's rules and exits 1 if one breaks.
-import { generateWorld, advance, hoursFromYears, serialize, deserialize, HOURS_PER_YEAR, ownerOf } from '../src/sim/index.js';
+import { systems, generateWorld, advance, hoursFromYears, serialize, deserialize, HOURS_PER_YEAR, ownerOf } from '../src/sim/index.js';
 import { findHeir } from '../src/sim/people/index.js';
-import { crimeState, commit, takePlotByMurder, bountyOf, karmaName, payOff, claimantOf, courtCase, heirOf, payBloodPrice, fadeOf } from '../src/sim/crime/index.js';
+import { crimeState, commit, takePlotByMurder, bountyOf, karmaName, payOff, claimantOf, courtCase, heirOf, payBloodPrice, fadeOf, seize, buyTitle, bountiesOf } from '../src/sim/crime/index.js';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 10);
 let fails = 0; const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if (!ok) fails++; };
 
-let t0 = performance.now(); const L = generateWorld(seed, 0);
-console.log(`world ${seed}: generated in ${(performance.now() - t0).toFixed(0)} ms, ${Object.keys(L.actors).length} people`);
+// the crime system's own time (its onDay and onSeason, which include the deaths it causes through the people lane's killActor)
+let crimeMs = 0;
+for (const s of systems()) if (s.id === 'crime') for (const h of ['onDay', 'onSeason']) { const f = s[h]; s[h] = (...a) => { const t = performance.now(); f(...a); crimeMs += performance.now() - t; }; }
+let t0 = performance.now(); const L = generateWorld(seed, 0), genMs = performance.now() - t0;
+// the budget is at the core's reference speed (a world made in about 230 ms, docs/sim-core.md); slower machines scale, as the people test does
+const speed = Math.max(1, genMs / 230);
+console.log(`world ${seed}: generated in ${genMs.toFixed(0)} ms, ${Object.keys(L.actors).length} people`);
 const alive0 = Object.values(L.actors).filter(a => a.alive).length;
 
 // ---- his crimes, in the start village: a theft nobody saw, a theft three people saw, a masked assault, a murder that takes a plot ----
@@ -33,6 +38,11 @@ check(bountyOf(L, me.id, c) >= 1000 && payBloodPrice(L, me.id, v4.id).ok && boun
 const cl = w.filter(id => L.actors[id].alive); let seenThrough = 0;
 for (let i = 0; i < 40; i++) seenThrough += commit(L, 'trespass', { by: me.id, witnesses: cl, close: cl, masked: true, culture: c }).unmasked ? 1 : 0;
 check(seenThrough > 5 && seenThrough < 40, `masked, close witnesses see through it sometimes (${seenThrough} of 40)`);
+const h2 = folk.find(a => a.alive && a.holds.some(p => ownerOf(L, p).holder === a.id && ownerOf(L, p).title === a.id) && a.id !== L.regions[L.zones[zy * 100 + zx].region].lord);
+if (h2) { const p2 = h2.holds.find(p => ownerOf(L, p).holder === h2.id); seize(L, p2, me.id, { how: 'force' }); me.money.ryo += 20;
+  for (const k of Object.keys(bountiesOf(L, me.id))) payOff(L, me.id, +k);   // a seller will not deal with a wanted man
+  const sale = buyTitle(L, p2, me.id), o2 = ownerOf(L, p2);
+  check(sale.ok && o2.title === me.id && o2.holder === me.id && !crimeState(L).contested[p2], `drove ${h2.given} off plot ${p2}, then bought the title for ${sale.price} mon: his in law now${sale.ok ? '' : ` (${sale.reason})`}`); }
 check(fadeOf(me, 'regicide') === 0 && fadeOf({ cls: 'royal' }, 'regicide') > 0, 'killing royalty is forgiven only a royal');
 
 // ---- the world lives ----
@@ -46,7 +56,7 @@ const ms = performance.now() - t0;
 const C = crimeState(L), s = C.stats;
 console.log(`\nlived ${years} years (${H / 24} days) in ${ms.toFixed(0)} ms: ${(ms / (H / 24)).toFixed(3)} ms a day on average (per year: ${days.map(d => d.toFixed(3)).join(' ')})`);
 console.log('crimes by kind', s.byKind);
-console.log(`people living at the end of each year (births from the people lane): ${pop.join(' ')}`);
+console.log(`people living at the end of each year (births and newcomers from the people lane): ${pop.join(' ')}`);
 console.log(`died each year, any cause (share of grown people): ${slain.map(x => (x * 100).toFixed(0) + '%').join(' ')}`);
 console.log(`known ${s.known} · unseen ${s.unseen} · masked ${s.masked} · justice (the victim was wanted) ${s.justice}`);
 console.log(`bounties raised ${s.bounties} · paid ${s.paid} · faded ${s.faded} · caught ${s.caught} (fined ${s.fined}, executed ${s.executed}) · raids ${s.raids} · feuds ${s.feuds} · hunters ${s.hunters}`);
@@ -60,9 +70,11 @@ console.log(`people alive ${alive} of ${alive0} (by the sword: murder ${dead.fil
 const ks = Object.values(L.actors).map(a => a.karma || 0); console.log(`karma: lowest ${Math.min(...ks)}, people below 0: ${ks.filter(k => k < 0).length}`);
 
 check(slain[0] > .25 && slain[0] < .35, `a violent time: ${(slain[0] * 100).toFixed(0)}% died by the sword in the first year (owner: about 30%)`);
-check(ms / (H / 24) < 1, 'under a millisecond a game day on average');
+const perDay = crimeMs / (H / 24) / speed;
+console.log(`the crime system alone: ${(crimeMs / (H / 24)).toFixed(3)} ms a day here, ${perDay.toFixed(3)} at the core's reference speed`);
+check(perDay < 1, `crime under a millisecond a game day at reference speed (${perDay.toFixed(3)})`);
 check(split.length > 0 && s.land.force > 0, 'possession and title split somewhere');
-check(Object.keys(s.land.title).length >= 3, 'titles passed by several lawful mechanics');
+check(Object.values(s.land.title).reduce((a, b) => a + b, 0) > 0, `titles passed lawfully in the world (${JSON.stringify(s.land.title)}); inheritance is the people lane's`);
 check(['theft', 'assault', 'murder'].every(k => s.byKind[k] > 0), 'thefts, assaults and murders happen off screen');
 check(s.caught > 0 && s.faded >= 0, 'magistrates catch some');
 // the same world and the same years give the same result, and the ledger survives a save

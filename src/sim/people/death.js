@@ -128,7 +128,7 @@ function rehouse(L, a, heir) {
 // ---- a lord's seat: to his heir (a minor rules through a regent), else the region's highest-ranked grown man takes it ----
 function passSeat(L, a, heir) {
   const reg = L.regions[a.lord];
-  let to = heir && heir.alive ? heir : null, how = to ? (adult(L, to) ? 'heir' : 'regent') : 'seized';
+  let to = heir && heir.alive && heir.lord == null ? heir : null, how   // one seat to a man: an heir already lord elsewhere keeps his own = to ? (adult(L, to) ? 'heir' : 'regent') : 'seized';
   if (!to) {
     const P = L.sys.people, cands = [];
     for (const k in P.settle) if (P.settle[k].region === reg.id) for (const p of residents(L, k)) { const ag = age(L, p); if (ag >= 20 && ag < 65 && p.id !== L.player && p.lord == null) cands.push(p); }   // a lord already seated elsewhere keeps one seat

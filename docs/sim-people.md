@@ -23,6 +23,7 @@ node scripts/proto-bundle.mjs prototypes-src/38-people/index.html prototypes-src
 | `ties.js` | Friends, rivals, grudges and lovers outside the family |
 | `schedule.js` | The daily schedule, run only around him |
 | `player.js` | His line: `notable`, `recordDeed`, `playableHeirs`, `nameHeir`, `layOut` and `lootGrave` (grave goods), `handOff` |
+| `newcomers.js` | `arrive`: wanderers, refugees and settlers who refill emptied towns and villages each season (owner, 2026-09-26) |
 
 ## When it runs (docs/sim-core.md rule 1, 7)
 
@@ -45,6 +46,7 @@ Cost (`scripts/people-test.mjs`, 60 years, ~7,000 living): about 0.55 ms a game 
 | `heir` | the id he named as heir (`nameHeir`, or a house that took in a son-in-law as its heir) |
 | `regent` | a minor heir's regent: the one holding his land until he is 16. `null` after |
 | `wards` | on a regent: the minors whose land they hold |
+| `arrived` | the hour a newcomer came from beyond the map (newcomers.js) |
 | `ambition` | `{ kind, target?, victim?, since }` or `null`: `land`, `wealth`, `zone` (a chief), `seat` (a lord's younger son), `favour` (a retainer), `revenge` (kin of the murdered) |
 | `dynasty` | `true` on the ronin, his wives, his children and theirs |
 | `playedFrom` | the game hour the ronin (or his heir) became the played actor |
@@ -61,10 +63,10 @@ Core fields this lane writes: `alive`, `spouse` (through core `marry`), `family`
 
 | Key | Meaning |
 |---|---|
-| `settle["x,y"]` | `{ kind, region, cap, pop, fed, danger, fedCap? }` for towns, villages, forts, camps, shrines. `cap`: people the land feeds (towns and villages), `fed`: 0..1.3, `danger`: 0.3 per camp within 3 zones (other lanes may raise it). `fedCap: { fed, until }` is a famine another system imposed |
+| `settle["x,y"]` | `{ kind, region, cap, pop, fed, danger, fedCap?, base? }` for towns, villages, forts, camps, shrines. `cap`: people the land feeds (towns and villages), `fed`: 0..1.3, `danger`: 0.3 per camp within 3 zones (other lanes may raise it). `fedCap: { fed, until }` is a famine another system imposed. `base`: the population when newcomers first looked at it, what they refill to |
 | `res["x,y"]` | living actor ids whose `home` is that zone. Read it through `residents(L, key)` |
 | `harvest[region]` | this year's yield, around 1 |
-| `stats` | lifetime counts: `births`, `deaths: { cause: n }`, `marriages`, `adopted`, `inherited` (plots), `estates`, `regencies`, `toLord`, `toNature`, `seats`, `granted`, `migrated`, `recruited` |
+| `stats` | lifetime counts: `births`, `deaths: { cause: n }`, `marriages`, `adopted`, `inherited` (plots), `estates`, `regencies`, `toLord`, `toNature`, `seats`, `granted`, `migrated`, `recruited`, `arrived` (newcomers) |
 | `year` | this year's `{ births, deaths, marriages }` |
 | `census` | one row a year `{ year, pop, houses, births, deaths, marriages }`, last 400 |
 | `graves` | the graves the world remembers: `{ actor, name, zone, tile, born, died, cause, by, player, deeds }` for the notable |
@@ -96,6 +98,7 @@ Core fields this lane writes: `alive`, `spouse` (through core `marry`), `family`
 | `people.turnedOutlaw` | `actor, zone, region` | a broke young man joins a band |
 | `people.hunger` | `zone, region, fed` | a settlement falls below `FAMINE_AT` |
 | `people.desperate` | `actor, need, zone` | a hungry adult (5% a visit): the crime lane's theft |
+| `people.arrived` | `zone, region, n` | newcomers settle in an emptied town or village |
 
 Listens for `econ.famine` (`zone` or `region`): caps those settlements' `fed` at 0.5 for a season.
 
@@ -111,9 +114,9 @@ Listens for `econ.famine` (`zone` or `region`): caps those settlements' `fed` at
 ## The rules
 
 ### A life
-- **Ages:** a child (`job: 'child'`) takes a trade at 12 (a son follows his father's 70% of the time, a daughter 35%); comes of age at 16 (marries, inherits in their own right, can be played).
+- **Ages** (owner, 2026-09-26: children stay at home until 18, unseen): a child (`job: 'child'`) stays at home (its daily schedule never leaves the house) until 18, then takes a trade (a son follows his father's 70% of the time, a daughter 35%) and comes of age: marries, inherits in their own right, can be played. Regents hold a minor's land until 18. Marriage from 18 (women 18–41, men 18–54); a woman may bear children 18–44.
 - **Death, per year** (`hazard`): 12% under 1, 2.5% under 5, 0.5% to 16, then 0.7% + 0.5% × e^(0.1 (age − 40)): 1.2% at 40, 4.4% at 60, 10.7% at 70, 28% at 80. Royals ×0.7, nobles ×0.75, monks ×0.85, retainers ×0.9; a drunk up to ×1.3. A death is `age` past 55 three times in four, else `illness`.
-- **Violence** (per year, the baseline of the ledger's quiet fights; the crime and war lanes kill on top through `killActor`): outlaws 3.5%, ronin and shinobi 2%, ashigaru 1.2%, retainers 1%, rebels 0.8%, others 0.15%; brawlers, menacing and cocky up to ×1.5. None under 14.
+- **Violence** (per year, the baseline of the ledger's quiet fights, used only when the crime system is not loaded): outlaws 3.5%, ronin and shinobi 2%, ashigaru 1.2%, retainers 1%, rebels 0.8%, others 0.15%; brawlers, menacing and cocky up to ×1.5. None under 18. With the crime system running, it does all the killing (about 30% of grown people a year, owner 2026-09-26, `docs/sim-crime.md`) through `killActor`, and these are not used.
 - **Famine:** 25% × (0.9 − fed) / 0.9 a year below fed 0.9, twice for children under 5 and elders past 60.
 - **The ronin:** the ledger never kills him young off screen (no violence, famine or illness); past 55 old age can take him while you are away (owner, 2026-09-26: "yes he may die").
 - Resulting: life expectancy at birth about 35, at 16 about 49. Deaths over 60 years: illness ~50%, age ~19%, famine ~16%, violence ~13%, childbirth ~1%.
@@ -154,6 +157,10 @@ The first rule that finds a living person (never a monk) wins. `named`: the heir
 - **The house:** the heir heads it if he lives there and is grown, else the widow, else the eldest grown man, else the eldest grown member. Children left alone go to the heir's house, else a grown kinsman's, else the settlement's largest landholding house.
 - **A lord's seat** goes to his heir (a minor rules through the regent); with no heir, the region's highest-ranked grown person (20–64, men first, eldest first) seizes it and moves to the seat. **A band's chief** is followed by the eldest grown man of the band.
 
+### Newcomers (owner, 2026-09-26: keep 30% violence, refill with newcomers)
+- Each season a town or village below its founding size (`settle.base`, the population first seen; never past 80% of what its land feeds) takes in 35% of the gap, at most 12 people: a household at a time, a grown head (18–40, a man 80% of the time; a ronin 8%), a spouse 60% of the time, 0–3 children under 13. Nine in ten are the region's own culture, one in ten from any other. The head is granted a free plot if there is one. Each newcomer gets `arrived` (the hour they came). `people.arrived` is emitted per settlement.
+- Without the crime system, births keep most villages near their founding size and few newcomers come. With it (30% of grown people a year), seed 12345 holds about 5,950 of its 6,714 people over 10 years (children stay home and are never killed, so fewer grown people are left).
+
 ### Moving, and keeping garrisons
 - A settlement over 112% of what it feeds sends landless households and unmarried young adults (16–29) to settlements of its region (then its culture) under 90%, granting the head a free plot there.
 - A fort, camp or shrine under its minimum (5, 5, 1) recruits to 5–8, 5–8, 1–3 from its region's villages (its whole culture if the region has fewer than 40 people): forts take unmarried young men (commoners become ashigaru), camps take the broke first (`people.turnedOutlaw`), shrines take unmarried adults under 40 (they become monks).
@@ -175,6 +182,10 @@ Children play and help; elders sit. Field work (farmers, fishers, woodcutters, m
 A save grows by the dead. Once a year, the dead of more than `fadeAfter` years (20) who are not notable (not his house, a lord or rank 5+) keep only `id, given, family, sex, born, died, alive, cause, killer, culture, cls, job, parents, children, spouse, grave` and get `faded: true`; other systems must not read any other field of a faded record. Family trees still reach them. Sizes: about 3.2 MB fresh, 9.5 MB after 60 years (11 MB without forgetting; most of the weight is the recently dead). Set `fadeAfter = 0` to keep everything.
 
 ## Owner decisions (2026-09-26)
+
+- Children stay at home until 18 and are not seen: no trade, marriage, crime, fight or witness before it.
+- A violent time: about 30% of grown people die by the sword a year (the crime system), and newcomers refill emptied villages.
+- Fixed in the merge: a lord already seated in one region can no longer take a second seat, by inheritance or by seizing it (his first seat was left to a dead man).
 
 - Old age may take him while you are away ("yes he may die").
 - Heirs: "only his children and grandchildren, maybe a brother or companion". Built: children, grandchildren, then brothers. A companion as heir is still open (the party lane's companions are not actors in the ledger yet).
