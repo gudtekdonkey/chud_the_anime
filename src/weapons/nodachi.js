@@ -31,6 +31,12 @@ const TAIL = [
   [.16, pz({ hx: 2, hy: 4, lean: .5, chest: .4, fl: [1.05, 1.15], bl: [-1.05, .1], fa: [1.7, .05], ba: [1.3, .2], sword: .15, hat: 1, flutter: 1 }), lin],
   [.22, FOLLOW], [.36, pz({ ...FOLLOW, lean: .74, chest: .5 })], [.5, GUARD]];
 const OVER = pz({ hx: 2, hy: 2, lean: -.25, chest: -.5, fl: [.95, .5], bl: [-.85, .2], fa: [2.95, -.1], ba: [2.65, .1], sword: -1.95, hat: 1 });
+// J3 to J6 (player/combo.js): straight down into the floor, hauled round into a flat wheel, a rising cut from low behind,
+//   and the finisher: a hop and the whole weight brought over the shoulder into a kneel
+const N3 = pz({ hx: 3, hy: 7, lean: .85, chest: .6, fl: [1.3, 1.5], bl: [-1.2, .1], fa: [.9, .1], ba: [.6, .3], sword: 1.1, hat: 1 });
+const N4 = pz({ hx: 4, hy: 4, lean: .45, chest: .5, fl: [1.15, 1.1], bl: [-1.1, .15], fa: [1.5, 0], ba: [1.3, .2], sword: 0, hat: 1, flutter: 1 });
+const N5 = pz({ hx: 2, hy: 1, lean: -.25, chest: -.4, fl: [.8, .3], bl: [-.9, .3], fa: [2.5, 0], ba: [2.2, .15], sword: -1.2, hat: -1 });
+const N6 = pz({ hx: 4, hy: 7, lean: .95, chest: .6, fl: [1.3, 1.95], bl: [-.15, 2.4], fa: [.9, .1], ba: [.6, .25], sword: 1.2, hat: 1, flutter: 1 });
 const STANCES = [
   // resting on the shoulder, the blade pointing back
   pz({ hy: 2, lean: .02, chest: .08, fl: [.45, .55], bl: [-.4, .45], fa: [1.3, 1.6], ba: [-.2, .3], sword: -2.75 }),
@@ -71,6 +77,21 @@ export const NODACHI = { id: 'nodachi', name: 'Nodachi', about: 'A greatsword wo
       [.08, pz({ hx: 1, hy: 6, lean: .55, chest: .3, fl: [.85, 1.4], bl: [-.85, .4], fa: [.4, .3], ba: [.2, .5], sword: 2.5 })],
       [.14, pz({ hx: 2, hy: 3, lean: -.05, chest: -.25, fl: [.9, .6], bl: [-.8, .2], fa: [2.4, 0], ba: [2.0, .2], sword: -1.0, hat: 1, flutter: 1 }), lin],
       [.2, OVER], [.34, pz({ ...OVER, sword: -1.92 })], [.5, GUARD]], 30),
+    slash3: keyed([[0, OVER],
+      [.07, pz({ ...OVER, hx: 3, lean: -.1, fl: [1.0, .6], fa: [3.05, 0], sword: -2.2 })],
+      [.13, pz({ hx: 3, hy: 4, lean: .5, chest: .35, fl: [1.15, 1.1], bl: [-1.05, .15], fa: [1.8, 0], ba: [1.5, .2], sword: .1, flutter: 1 }), lin],
+      [.18, N3], [.34, pz({ ...N3, lean: .8 })], [.5, GUARD]], 30),
+    slash4: keyed([[0, N3],
+      [.07, pz({ hx: 1, hy: 4, lean: .15, chest: -.5, fl: [.9, 1.0], bl: [-.9, .35], fa: [.1, .3], ba: [-.2, .4], sword: 3.0 })],
+      [.13, pz({ ...N4, hx: 3, chest: .1, fa: [1.0, .2], sword: 1.6 }), lin], [.18, N4], [.34, pz({ ...N4, lean: .42 })], [.5, GUARD]], 30),
+    slash5: keyed([[0, N4],
+      [.07, pz({ hx: 2, hy: 6, lean: .55, chest: -.3, fl: [1.2, 1.5], bl: [-1.0, .3], fa: [.3, .3], ba: [.1, .4], sword: 2.4 })],
+      [.13, pz({ ...N5, hy: 3, lean: .1, fa: [1.7, 0], sword: -.2 }), lin], [.19, N5], [.34, pz({ ...N5, sword: -1.22 })], [.5, GUARD]], 30),
+    slash6: keyed([[0, N5],
+      [.06, pz({ hx: -1, hy: 3, lean: -.2, chest: -.5, fl: [.6, 1.0], bl: [-.8, .45], fa: [2.8, .4], ba: [2.5, .6], sword: -2.9 })],
+      [.13, pz({ hy: -1, lean: -.3, chest: -.55, fl: [.9, 1.7], bl: [-.1, 1.5], fa: [3.1, 0], ba: [2.85, .1], sword: -2.5, hat: -1, flutter: 1 })],
+      [.2, pz({ ...N6, hy: 4, lean: .6, fl: [1.2, 1.5], bl: [-.4, 1.8], fa: [1.7, 0], sword: .2 }), lin],
+      [.24, N6], [.45, pz({ ...N6, lean: .9 })], [.6, GUARD]], 30),
     runArmed: POSES_RUN_ARMED(),
   },
   // elsewhere: the hand that would wait on a hip hilt reaches up for the one over his shoulder

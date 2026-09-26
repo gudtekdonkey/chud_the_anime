@@ -6,7 +6,9 @@ export const P = { x: 200, y: 180, z: 0, vz: 0, vx: 0, vy: 0, face: 1, view: 'E'
   qi: 0, qiIdle: 0, storm: 0, aura: 0,
   gait: { walk: 40, run: 78 },   // px/s, set by his personality
   cd: {}, cdMax: {}, cdPop: {}, cdDeny: {},   // cooldowns: seconds left, the full length, the ready glint, the refused-press blink
-  weapon: 'katana' };
+  weapon: 'katana',
+  // the combo ladder and Flow (player/combo.js): the chain's count and its window, Flow's seconds left, HUD glints, the longest combo announced
+  flowN: 0, flowGap: 0, flow: 0, flowPop: 0, flowPip: 0, flowUsed: 0, comboSeen: 2, comboUp: 0 };
 export const parts = [];
 // what he wears (item ids from src/wardrobe/items.js) and the state of its cloth; the wardrobe under the game changes it
 export const wear = makeFigure();
@@ -16,7 +18,8 @@ export const S = { shake: 0, hitstop: 0, impact: 0, scr: { t: 0, max: 1, a: 0 },
 
 // ---- The inventory: the HUD reads only this, and every system writes to it. Qi stays on P.qi (0..1) ----
 // hp 0..1; power 1..3 is the I / II / III tier (its source is still the owner's call); edge: seconds of whetstone left
-export const INV = { hp: .6, mon: 0, shards: 0, exp: 0, lv: 1, power: 1, edge: 0, edgeSlot: 2,
+// basic: landed basic cuts, his basic skill; it grows the J combo (player/combo.js)
+export const INV = { hp: .6, mon: 0, shards: 0, exp: 0, lv: 1, power: 1, edge: 0, edgeSlot: 2, basic: 0,
   weapon: 'katana',   // mirrors P.weapon for the HUD; the weapon system (src/weapons/) sets both
   quick: [{ id: 'bomb', n: 3 }, { id: 'talisman', n: 2 }, { id: 'whetstone', n: 2 }, { id: 'incense', n: 3 }],   // null = empty
   charms: ['bead', 'mirror', 'knot', null],

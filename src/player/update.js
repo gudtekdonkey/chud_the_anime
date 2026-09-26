@@ -14,6 +14,7 @@ import { hit, burst } from './hits.js';
 import { meditate, spawnMirror, updateMirrors } from './mirror.js';
 import { TAP, chargeUp, TC, RIFT, release, charged } from './skills.js';
 import { gate, startCd, updateCds } from './cooldowns.js';
+import { CUTS, GO, nextCut, updateFlow } from './combo.js';
 import { updateEnemies } from '../world/enemies.js';
 import { assassinate, tickStages, updateStages } from '../assassin/assassinate.js';
 import { K, updateMarkers } from '../assassin/markers.js';
@@ -27,7 +28,7 @@ export function update(dt, inp) {
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
   P.ghosts.forEach(g => { g.age += dt; g.white -= dt; }); P.ghosts = P.ghosts.filter(g => g.age < g.hold + .25);
   S.shake = Math.max(0, S.shake - dt); S.impact = Math.max(0, S.impact - 1); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
-  updateCds(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
+  updateCds(dt); updateFlow(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
   updateFx(dt); updateEnemies(dt, S.hitstop > 0); updateStages(dt); updateMarkers();
   if (S.hitstop > 0) { S.hitstop -= dt; return; }
   updateCuts(dt); updateMirrors(dt); tickStages(dt);
@@ -109,17 +110,20 @@ export function update(dt, inp) {
       break;
     }
     case 'land': if (T >= D) setState(moving ? 'run' : 'idle'); break;
-    case 'slash1': case 'slash1r': case 'slash2': {
-      // one fluid motion: the lunge travels with the hips through the cut, the strike lands as the blade passes level
-      const SK = s === 'slash2' ? .14 : .16;
-      if (T >= SK - .05 && T < SK + .08) moveBy(P.face * (s === 'slash2' ? 60 : 85) * dt, 0);
-      if (once('strike', T >= SK)) { strike(s === 'slash2' ? -.35 : .15, s === 'slash2' ? -1 : 1, false); ghost();
+    case 'slash1': case 'slash1r': case 'slash2': case 'slash3': case 'slash4': case 'slash5': case 'slash6': {
+      // one fluid motion: the lunge travels with the hips through the cut, the strike lands as the blade passes level.
+      // J again during a cut's follow-through flows into the next, as far as his basic skill reaches (player/combo.js)
+      const c = CUTS[s], SK = c.sk, nx = nextCut(s);
+      if (T >= SK - .05 && T < SK + .08) moveBy(P.face * c.lunge * dt, 0);
+      if (c.hop) { const [h0, h1] = c.hop, k = (T - h0) / (h1 - h0); P.z = k > 0 && k < 1 ? Math.round(Math.sin(k * Math.PI) * 9) : 0; }
+      if (once('strike', T >= SK)) { strike(c.rot, c.flip, !!c.big); ghost();
+        if (c.big) { P.flash = .05; S.shake = Math.max(S.shake, 2 / 60); dust(8); }
         for (let k = 0; k < 5; k++) { const life = rr(.06, .12); frags.push({ x: P.x - P.face * rr(4, 20), y: P.y - rr(4, 24), w: 3 + (Math.random() * 7 | 0), col: k % 2 ? '#ffffff' : COL.fx2, vx: P.face * rr(10, 30), vy: 0, life, max: life, jx: 0, on: true }); } }
       if (once('trail', T >= SK + .03)) ghost();
-      if (T >= SK && T < SK + .1) { const [d, r] = reach(14, 22); hit(s === 'slash2' ? 'slash2' : 'slash1', P.x + P.face * d, P.y - 12, r); }
-      if (s !== 'slash2' && inp.slash && T > .15) P.combo = true;
-      if (s !== 'slash2' && P.combo && T >= .3) { setState('slash2'); break; }   // flow straight out of the follow-through
-      if (T >= D) { P.armed = true; P.still = 0; setState(afterAttack(moving)); }
+      if (T >= SK && T < SK + .1) { const [d, r] = reach(c.big ? 18 : 14, c.big ? 28 : 22); hit(s === 'slash1r' ? 'slash1' : s, P.x + P.face * d, P.y - 12, r); }
+      if (nx && inp.slash && T > .15) P.combo = true;
+      if (nx && P.combo && T >= GO) { P.z = 0; setState(nx); break; }   // flow straight out of the follow-through
+      if (T >= D) { P.z = 0; P.armed = true; P.still = 0; setState(afterAttack(moving)); }
       break;
     }
     case 'tele': {

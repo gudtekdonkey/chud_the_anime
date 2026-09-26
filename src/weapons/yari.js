@@ -30,6 +30,12 @@ const WIND = pz({ hx: -2, hy: 4, lean: -.08, chest: -.2, fl: [.55, 1.0], bl: [-.
 const THRUST = pz({ hx: 4, hy: 4, lean: .62, chest: .3, fl: [1.15, 1.2], bl: [-1.15, .1], fa: [1.62, 0], ba: [1.2, .5], sword: .02, hat: 1, flutter: 1 });
 const TAIL = [[.16, THRUST, lin], [.22, pz({ ...THRUST, fa: [1.58, .02] })], [.36, pz({ ...THRUST, lean: .58, fa: [1.52, .06] })], [.5, GUARD]];
 const OVER = pz({ hx: 2, hy: 1, lean: -.2, chest: -.4, fl: [.9, .4], bl: [-.8, .2], fa: [2.8, .1], ba: [2.4, .3], sword: -1.35, hat: 1 });
+// J3 to J6 (player/combo.js): a chop with the head, the butt driven back into him, a thrust down from over the shoulder,
+//   and the finisher: a leap that drives the spear down into the floor
+const Y3 = pz({ hx: 4, hy: 5, lean: .72, chest: .45, fl: [1.2, 1.3], bl: [-1.15, .1], fa: [1.0, .1], ba: [.7, .3], sword: .7, hat: 1 });
+const Y4 = pz({ hx: 3, hy: 3, lean: .45, chest: .5, fl: [1.1, 1.0], bl: [-1.05, .15], fa: [1.5, .2], ba: [1.15, .5], sword: 3.1, hat: 1, flutter: 1 });
+const Y5 = pz({ hx: 4, hy: 3, lean: .55, chest: .2, fl: [1.2, 1.1], bl: [-1.15, .1], fa: [2.35, 0], ba: [1.9, .3], sword: .4, hat: 1 });
+const Y6 = pz({ hx: 5, hy: 7, lean: .9, chest: .5, fl: [1.3, 1.95], bl: [-.15, 2.4], fa: [1.3, .1], ba: [1.0, .3], sword: .95, hat: 1, flutter: 1 });
 const STANCES = [
   // haft upright in the back hand, butt on the floor, head high
   pz({ hx: -1, hy: 2, lean: -.04, chest: .06, fl: [.4, .5], bl: [-.35, .45], fa: [.5, .4], ba: [-.1, 1.4], bsword: -1.62 }),
@@ -69,6 +75,21 @@ export const YARI = { id: 'yari', name: 'Yari', about: 'A spear slung across his
       [.08, pz({ hx: 1, hy: 5, lean: .45, chest: .2, fl: [.8, 1.3], bl: [-.8, .4], fa: [.4, .5], ba: [-.2, .8], sword: 2.6 })],
       [.14, pz({ hx: 2, hy: 2, lean: 0, chest: -.2, fl: [.9, .5], bl: [-.8, .2], fa: [2.2, .1], ba: [1.8, .3], sword: -.7, hat: 1, flutter: 1 }), lin],
       [.2, OVER], [.34, pz({ ...OVER, sword: -1.32 })], [.5, GUARD]], 30),
+    slash3: keyed([[0, OVER],
+      [.06, pz({ ...OVER, hx: 3, lean: -.05, fl: [1.0, .6], sword: -1.5 })],
+      [.12, pz({ hx: 4, hy: 3, lean: .45, chest: .2, fl: [1.1, 1.0], bl: [-1.05, .15], fa: [1.8, 0], ba: [1.4, .3], sword: .1, flutter: 1 }), lin],
+      [.18, Y3], [.34, pz({ ...Y3, sword: .72 })], [.5, GUARD]], 30),
+    slash4: keyed([[0, Y3],
+      [.07, pz({ hx: 2, hy: 4, lean: .2, chest: -.4, fl: [.9, 1.0], bl: [-.9, .35], fa: [.6, 1.2], ba: [.2, 1.0], sword: 2.2 })],
+      [.13, pz({ ...Y4, hx: 2, fa: [1.2, .5] }), lin], [.17, Y4], [.34, pz({ ...Y4, lean: .42 })], [.5, GUARD]], 30),
+    slash5: keyed([[0, Y4],
+      [.07, pz({ hx: 1, hy: 2, lean: -.05, chest: -.3, fl: [.8, .6], bl: [-.8, .3], fa: [2.9, .3], ba: [2.4, .5], sword: -.2 })],
+      [.13, pz({ ...Y5, hx: 3, fa: [2.5, .1] }), lin], [.17, Y5], [.34, pz({ ...Y5, lean: .52 })], [.5, GUARD]], 30),
+    slash6: keyed([[0, Y5],
+      [.06, pz({ hx: -1, hy: 4, lean: -.1, chest: -.3, fl: [.6, 1.0], bl: [-.8, .45], fa: [2.4, .3], ba: [2.0, .5], sword: -.3 })],
+      [.13, pz({ hy: -1, lean: -.2, chest: -.4, fl: [.9, 1.7], bl: [-.1, 1.5], fa: [2.95, 0], ba: [2.6, .2], sword: -1.3, hat: -1, flutter: 1 })],
+      [.2, pz({ ...Y6, hy: 4, lean: .6, fl: [1.2, 1.5], bl: [-.4, 1.8], fa: [1.9, 0], sword: .6 }), lin],
+      [.24, Y6], [.45, pz({ ...Y6, lean: .86 })], [.6, GUARD]], 30),
   },
   // every other move keeps the katana's pose; the hand that would rest on the hilt hangs free (the spear is on his back)
   adapt(p) { return p.fa === HILT ? pz({ ...p, fa: [.3, .5] }) : p; },
