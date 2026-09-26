@@ -1,10 +1,12 @@
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
+import { TANTO_3D } from './art3d.js';
 
 // ---- Twin tanto: two short blades at the front of the obi. The lead hand cuts, the back hand rides along in a reverse grip ----
 const along = a => [Math.cos(a), Math.sin(a)];
 const drawn = p => p.sword !== null && !p.sheathing;
 function knife(k, hand, d, len = 6) { k.put(...k.add(hand, d, -1.5), 'K'); k.put(...hand, 'S'); k.seg(k.add(hand, d, 1), k.add(hand, d, len), 1, 'W'); }
 const ART = {
+  d3: TANTO_3D,   // the same weapon from any other facing (art3d.js)
   // the second saya sits a pixel behind the first; its hilt shows while it is home
   far(k, p, mouth, sd) { const m = k.add(mouth, [0, -1], 1); k.seg(m, k.add(m, sd, 6), 1, 's');
     if (!drawn(p) && !p.sheathing) { k.put(...m, 'S'); k.seg(k.add(m, sd, -1), k.add(m, sd, -2.5), 1, 'G'); } },

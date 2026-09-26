@@ -1,4 +1,5 @@
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
+import { YARI_3D } from './art3d.js';
 
 // ---- The yari: a spear slung across his back. Thrusts where the katana cuts, and the reach shows ----
 const along = a => [Math.cos(a), Math.sin(a)];
@@ -10,6 +11,7 @@ function spear(k, hand, a, back, front) { const d = along(a);
   k.seg(k.add(hand, d, -back), k.add(hand, d, front), 1, 'T'); k.put(...k.add(hand, d, -back), 'S');
   k.put(...k.add(hand, d, front + 1), 'S'); k.seg(k.add(hand, d, front + 2), k.add(hand, d, front + 5), 1, 'W'); }
 const ART = {
+  d3: YARI_3D,   // the same weapon from any other facing (art3d.js)
   // slung diagonally across the back, head up behind the hat; the body and mantle are drawn over its middle
   far(k, p) { if (!stowed(p)) return; const b = k.L(1, -2.5), t = k.L(19, -6.5);
     k.seg(b, t, 1, 'T'); k.put(...b, 'S'); const d = [(t[0] - b[0]) / 21.6, (t[1] - b[1]) / 21.6]; k.seg(k.add(t, d, 1), k.add(t, d, 4), 1, 'W'); },

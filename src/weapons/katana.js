@@ -1,7 +1,10 @@
+import { KATANA_3D } from './art3d.js';
 // ---- The katana's art: how the rig draws it sheathed, drawn, in the back hand and sliding home ----
 // every weapon's art has these hooks; k is the rig's drawing kit ({ put, seg, blob, add, L }), all in frame pixels
 const along = a => [Math.cos(a), Math.sin(a)];
+
 export const KATANA_ART = {
+  d3: KATANA_3D,   // the same katana from any other facing (art3d.js)
   // the scabbard, far side of the hip, always there
   far(k, p, mouth, sd) { k.seg(mouth, k.add(mouth, sd, 12), 1, 's'); k.put(...k.add(mouth, sd, 12), 'S'); },
   // sheathed: the hilt pokes forward-up out of the scabbard
