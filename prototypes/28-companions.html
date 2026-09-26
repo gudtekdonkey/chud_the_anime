@@ -7212,17 +7212,148 @@ var CHARMS = {
 		scope: "hero",
 		about: "Each execution gives 25% Qi."
 	},
-	cord: {
-		name: "BOND CORD",
-		scope: "ally",
-		about: "Sets the wearer up for paired executions: near the enemy you press K on, they strike with you."
-	},
 	oath: {
 		name: "IRON OATH",
 		scope: "ally",
 		about: "Once per area the wearer steps in and takes a blow meant for you."
 	}
 };
+var PAIRED = [{
+	id: "cross",
+	name: "CROSSING CUT",
+	about: "You and the partner pass through him from both sides; he falls on the shared click.",
+	needs: { weapons: [
+		"katana",
+		"tanto",
+		"nodachi"
+	] }
+}];
+var SKILLS = {
+	spearwall: "SPEAR WALL",
+	shadowstep: "SHADOW STEP",
+	iai: "IAI"
+};
+var fits = (c, ex) => {
+	const n = ex.needs;
+	return (!n.weapons || n.weapons.includes(c.kit.weapon)) && (!n.skill || (c.skills || []).includes(n.skill)) && (!n.item || c.kit.wear.has(n.item));
+};
+var pairsFor = (c) => PAIRED.filter((ex) => fits(c, ex));
+var STATS = {
+	vigor: {
+		name: "VIG",
+		long: "VIGOR",
+		about: "Takes less from every cut."
+	},
+	edge: {
+		name: "EDG",
+		long: "EDGE",
+		about: "A chance for any cut to land heavy."
+	},
+	speed: {
+		name: "SPD",
+		long: "SPEED",
+		about: "Moves faster."
+	},
+	focus: {
+		name: "FOC",
+		long: "FOCUS",
+		about: "Cuts again sooner and builds more Qi."
+	}
+};
+var expNeed = (lv) => 100 * lv;
+var LEAN_W = {
+	katana: {
+		edge: 1,
+		focus: 1,
+		speed: 1
+	},
+	yari: {
+		vigor: 2,
+		focus: 1
+	},
+	tanto: {
+		speed: 2,
+		edge: 1
+	},
+	nodachi: {
+		edge: 2,
+		vigor: 1
+	}
+};
+var LEAN_T = {
+	vigor: [
+		"heavy",
+		"lumbering",
+		"soldier",
+		"grim",
+		"stoic",
+		"veteran",
+		"brawler"
+	],
+	speed: [
+		"nimble",
+		"lightFooted",
+		"restless",
+		"twitchy",
+		"eager",
+		"shinobi",
+		"bouncy"
+	],
+	edge: [
+		"menacing",
+		"cocky",
+		"duelist",
+		"coiled",
+		"wary"
+	],
+	focus: [
+		"calm",
+		"serene",
+		"monk",
+		"scholar",
+		"humble",
+		"regal"
+	]
+};
+function leaning(c) {
+	const w = {
+		vigor: 1,
+		edge: 1,
+		speed: 1,
+		focus: 1
+	};
+	for (const [k, v] of Object.entries(LEAN_W[c.kit.weapon])) w[k] += v;
+	for (const [id, str] of c.traits) for (const k in LEAN_T) if (LEAN_T[k].includes(id)) w[k] += 1.5 * str;
+	return w;
+}
+var leansOf = (c) => Object.entries(leaning(c)).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([k]) => STATS[k].long);
+function gainExp(c, n) {
+	c.exp += n;
+	let ups = 0;
+	while (c.exp >= expNeed(c.lv)) {
+		c.exp -= expNeed(c.lv);
+		c.lv++;
+		ups++;
+		if (c.id === "hero") c.points++;
+		else {
+			const w = leaning(c);
+			let r = Math.random() * Object.values(w).reduce((a, b) => a + b, 0), pick = "vigor";
+			for (const [k, v] of Object.entries(w)) if ((r -= v) <= 0) {
+				pick = k;
+				break;
+			}
+			c.stats[pick]++;
+			c.chose = pick;
+		}
+	}
+	return ups;
+}
+function spend(c, k) {
+	if (c.points > 0) {
+		c.points--;
+		c.stats[k]++;
+	}
+}
 var NAMED = [
 	{
 		id: "hero",
@@ -7245,6 +7376,7 @@ var NAMED = [
 		id: "kuro",
 		name: "KURO",
 		title: "THE OLD SPEAR",
+		skills: ["spearwall"],
 		traits: [["grim", 1], ["soldier", .5]],
 		from: "road",
 		kit: {
@@ -7264,6 +7396,7 @@ var NAMED = [
 		id: "suzume",
 		name: "SUZUME",
 		title: "THE SPARROW",
+		skills: ["shadowstep"],
 		traits: [["nimble", 1], ["restless", .5]],
 		from: "freed",
 		kit: {
@@ -7276,13 +7409,14 @@ var NAMED = [
 				"longscarf",
 				"wraps"
 			],
-			charms: ["tsuba", "cord"]
+			charms: ["tsuba", null]
 		}
 	},
 	{
 		id: "tetsu",
 		name: "TETSU",
 		title: "THE WALL",
+		skills: [],
 		traits: [["heavy", 1], ["lumbering", .6]],
 		from: "hired",
 		kit: {
@@ -7295,7 +7429,7 @@ var NAMED = [
 				"kote",
 				"legwraps"
 			],
-			charms: ["cord", null]
+			charms: [null, null]
 		}
 	}
 ];
@@ -7462,23 +7596,38 @@ function makeCompanion(from = pick([
 	const hat = wear.find((id) => BY_ID[id].slot === "head"), mask = wear.find((id) => BY_ID[id].slot === "face");
 	if (hat && mask && pair(hat, mask.slice(5)).state === "blocked") wear.splice(wear.indexOf(mask), 1);
 	const c = {
+		...fresh(),
 		id: "c" + Math.random().toString(36).slice(2, 8),
 		name,
 		title: pick(TITLES[weapon]),
 		from,
+		skills: Math.random() < .4 ? [pick(Object.keys(SKILLS))] : [],
 		traits: groups.map((gp) => [pick(TRAIT_POOL[gp]), +(.5 + Math.random() * .5).toFixed(2)]),
 		kit: {
 			weapon,
 			wear: new Set(wear),
-			charms: [Math.random() < .25 ? "cord" : null, null]
+			charms: [null, null]
 		}
 	};
 	ROSTER.push(c);
 	if (party.members.length < 30) party.members.push(c.id);
 	return c;
 }
+var fresh = () => ({
+	lv: 1,
+	exp: 0,
+	points: 0,
+	chose: null,
+	stats: {
+		vigor: 1,
+		edge: 1,
+		speed: 1,
+		focus: 1
+	}
+});
 var ROSTER = NAMED.map((c) => ({
 	...c,
+	...fresh(),
 	kit: {
 		...c.kit,
 		wear: new Set(c.kit.wear)
@@ -7512,7 +7661,6 @@ var BAG = {
 		"tsuba",
 		"crane",
 		"bell",
-		"cord",
 		"oath"
 	]
 };
@@ -8314,6 +8462,7 @@ var sim_exports = /* @__PURE__ */ __exportAll({
 	ghosts: () => ghosts,
 	hero: () => hero,
 	lines: () => lines,
+	pops: () => pops,
 	spots: () => spots,
 	syncParty: () => syncParty,
 	update: () => update
@@ -8482,17 +8631,28 @@ function hurtEnemy(e, from, heavy) {
 	e.flash = 2 / 60;
 	e.face = faceTo(e.F, e.face, -from.face);
 	e.kx = from.face * (heavy ? 5 : 2.5);
-	if (e.hp <= 0) killEnemy(e);
+	if (e.hp <= 0) killEnemy(e, [from]);
 	else if (e.state !== "wind") {
 		e.state = "stagger";
 		e.t = 0;
 	}
 }
-function killEnemy(e) {
+function killEnemy(e, by = []) {
 	e.state = "dead";
 	e.t = 0;
 	INV.mon += 5;
+	for (const a of [hero, ...allies]) if (a.state === "up") exp(a, by.includes(a) ? 40 : Math.hypot(a.x - e.x, a.y - e.y) < 60 ? 10 : 0);
 }
+var pops = [];
+function exp(a, n) {
+	if (n && gainExp(a.c, n)) pops.push({
+		x: a.x,
+		y: a.y - 30,
+		t: 0,
+		s: "LV " + a.c.lv
+	});
+}
+var st = (a, k) => a.c.stats[k] - 1;
 var wid = (a) => a.c.kit.weapon;
 var clip = (a, name) => frames(wid(a), tkey$1(a.c), a.c.traits, name);
 function setAnim(a, name) {
@@ -8514,7 +8674,7 @@ function tryHit(a) {
 	for (const e of living()) {
 		const dx = (e.x - a.x) * a.face, dy = Math.abs(e.y - a.y);
 		if (dx > -3 && dx < r + 6 && dy < 9) {
-			hurtEnemy(e, a, w === "nodachi");
+			hurtEnemy(e, a, w === "nodachi" || Math.random() < .08 * st(a, "edge"));
 			any = true;
 		}
 	}
@@ -8524,7 +8684,7 @@ function tryHit(a) {
 			S.stop = Math.max(S.stop, stop);
 			S.shake = Math.max(S.shake, shake);
 		}
-		let q = a === hero ? .05 : .025;
+		let q = (a === hero ? .05 : .025) * (1 + .1 * st(a, "focus"));
 		if (a.c.kit.charms.includes("tsuba")) q *= 1.25;
 		S.qi = Math.min(1, S.qi + q);
 		S.qiFlash = .06;
@@ -8554,7 +8714,7 @@ function step(a, dt, mx, my, run) {
 	}
 	const sp = bakeFor(tkey$1(a.c), a.c.traits).speed, m = Math.hypot(mx, my);
 	if (m > .01) {
-		const v = (a.armed || run ? sp.run : sp.walk) * (a === hero ? 1 : ROLES[w].speed);
+		const v = (a.armed || run ? sp.run : sp.walk) * (a === hero ? 1 : ROLES[w].speed) * (1 + .04 * st(a, "speed"));
 		const k = a === hero ? 1 : Math.min(1, m / (v * dt));
 		move(a, mx / m * v * dt * k, my / m * v * dt * .8 * k);
 		if (Math.abs(mx) > .05) a.face = faceTo(a.F, a.face, Math.sign(mx));
@@ -8622,7 +8782,7 @@ function think(a, i, dt, load) {
 			a.face = faceTo(a.F, a.face, Math.sign(a.target.x - a.x) || a.face);
 			if (a.cd <= 0) {
 				cut(a);
-				a.cd = ROLES[wid(a)].cd + Math.random() * .3;
+				a.cd = (ROLES[wid(a)].cd + Math.random() * .3) * Math.max(.6, 1 - .04 * st(a, "focus"));
 			}
 			return step(a, dt, 0, 0);
 		}
@@ -8642,7 +8802,7 @@ function hurtAlly(a, n, from) {
 		return;
 	}
 	if (a.state !== "up") return;
-	a.hp -= n;
+	a.hp -= n * Math.max(.5, 1 - .06 * st(a, "vigor"));
 	a.flash = 2 / 60;
 	move(a, (from ? from.face : 1) * 3, 0);
 	if (a.hp <= 0) {
@@ -8745,7 +8905,7 @@ function execCandidate() {
 	if (X || ATTACKS.has(hero.anim)) return null;
 	const e = living().filter((e) => Math.hypot(e.x - hero.x, (e.y - hero.y) * 1.3) < 52).sort((a, b) => Math.hypot(a.x - hero.x, a.y - hero.y) - Math.hypot(b.x - hero.x, b.y - hero.y))[0];
 	if (!e) return null;
-	const a = standing().filter((a) => a.c.kit.charms.includes("cord") && Math.hypot(a.x - e.x, a.y - e.y) < 72).sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0];
+	const a = standing().filter((a) => !ATTACKS.has(a.anim) && fits(a.c, PAIRED[0]) && Math.hypot(a.x - e.x, a.y - e.y) < 72).sort((p, q) => Math.hypot(p.x - e.x, p.y - e.y) - Math.hypot(q.x - e.x, q.y - e.y))[0];
 	return a ? {
 		e,
 		a
@@ -8839,7 +8999,7 @@ function execStep(dt) {
 		hero.t = a.t = Math.min(lenOf(clip(hero, "sheathe")), (t - .8) * 2.4);
 		if (!x.click && t > 1.12) {
 			x.click = true;
-			killEnemy(e);
+			killEnemy(e, [hero, a]);
 			S.shake = 1;
 			S.qi = Math.min(1, S.qi + .15);
 			S.qiFlash = .06;
@@ -8858,6 +9018,11 @@ function update(dt, inp) {
 	if (S.banner && (S.banner.t += dt) > 1.8) S.banner = null;
 	for (const gh of ghosts) gh.t += dt;
 	while (ghosts.length && ghosts[0].t > .3) ghosts.shift();
+	for (const p of pops) {
+		p.t += dt;
+		p.y -= dt * 10;
+	}
+	while (pops.length && pops[0].t > 1.1) pops.shift();
 	for (const l of lines) l.t += dt;
 	while (lines.length && lines[0].t > .5) lines.shift();
 	if (S.stop > 0) {
@@ -8876,7 +9041,7 @@ function update(dt, inp) {
 		if (inp.exec) {
 			const c = execCandidate();
 			if (c) startExec(c);
-			else say$1("NOBODY SET UP FOR IT (BOND CORD)", 1.4);
+			else say$1("NO PARTNER NEAR WITH A BLADE FOR IT", 1.4);
 		}
 		if (!X) {
 			if (inp.cut && (!ATTACKS.has(hero.anim) || hero.t > HIT_AT[wid(hero)] + .05)) cut(hero);
@@ -9104,6 +9269,12 @@ function drawRoom(g, dt) {
 			g.fillStyle = CY;
 			g.fillRect(Math.round(a.anchor[0]) - 1, Math.round(a.anchor[1]) + 3, 3, 1);
 		}
+	}
+	for (const p of pops) {
+		g.save();
+		g.globalAlpha = Math.min(1, (1.1 - p.t) * 3);
+		textC(g, p.s, Math.round(p.x), Math.round(p.y), "#b8fff6");
+		g.restore();
 	}
 	prompts(g);
 	g.restore();
@@ -9422,14 +9593,43 @@ function drawMenu(g, dt) {
 	text(g, c.title, 12, 170, GREY);
 	if (FROM[c.from]) text(g, FROM[c.from], 11, 47, DIM);
 	const R = ROLES[c.kit.weapon];
-	if (c.id === "hero") wrap("HE LEADS. HIS KIT HOLDS 4 CHARMS; A COMPANION'S HOLDS 2.", 134).forEach((l, i) => text(g, l, 12, 180 + i * 7, "#a9b1b6"));
-	else {
-		text(g, R.name, 12, 180, CY);
-		wrap(R.about.toUpperCase(), 134).forEach((l, i) => text(g, l, 12, 188 + i * 7, "#a9b1b6"));
-	}
+	text(g, "LV " + c.lv, 146 - textW("LV " + c.lv, 2), 156, CY, 2);
+	text(g, c.id === "hero" ? "YOU CHOOSE YOUR STATS" : R.name, 12, 178, c.id === "hero" ? GREY : CY);
+	g.fillStyle = "#23272d";
+	g.fillRect(12, 186, 134, 2);
+	g.fillStyle = "#b8fff6";
+	g.fillRect(12, 186, Math.round(134 * c.exp / expNeed(c.lv)), 2);
+	Object.entries(STATS).forEach(([k, S], i) => {
+		const x = 12 + i * 34, v = c.stats[k], mine = c.id !== "hero" && c.chose === k;
+		text(g, S.name, x, 191, mine ? CY : DIM);
+		text(g, String(v), x + 14, 191, WH);
+		box(x, 190, 30, 7, () => {
+			if (c.id === "hero") spend(c, k);
+		}, {
+			label: S.long,
+			about: S.about + (c.id === "hero" ? c.points ? " Click to spend a point." : "" : " This companion chooses their own points.")
+		});
+		if (c.id === "hero" && c.points) {
+			g.fillStyle = CY;
+			g.fillRect(x + 22, 193, 3, 1);
+			g.fillRect(x + 23, 192, 1, 3);
+		}
+	});
 	const tr = c.traits.length ? c.traits.map(([id]) => id.replace(/[A-Z]/g, (m) => " " + m).toUpperCase()).join(", ") : "NONE: HIS OWN WALK";
-	text(g, "MOVES", 12, 211, DIM);
-	text(g, fit(tr, 100), 40, 211, "#a9b1b6");
+	if (c.id === "hero") {
+		text(g, "POINTS", 12, 200, DIM);
+		text(g, c.points ? c.points + " TO SPEND" : "NONE", 40, 200, c.points ? CY : "#565e66");
+	} else {
+		const sk = (c.skills || []).map((k) => SKILLS[k]), pr = pairsFor(c);
+		text(g, "LEANS", 12, 200, DIM);
+		text(g, fit(leansOf(c).join(", ") + (c.chose ? ". LAST: " + STATS[c.chose].long : ""), 104), 40, 200, "#a9b1b6");
+		text(g, "PAIRS", 12, 208, DIM);
+		text(g, fit(pr.length ? pr.map((x) => x.name).join(", ") : "NOT WITH THIS WEAPON", 104), 40, 208, pr.length ? CY : "#565e66");
+		if (sk.length) text(g, "KNOWS " + sk.join(", "), 146 - textW("KNOWS " + sk.join(", ")), 170, "#a9b1b6");
+	}
+	const my = c.id === "hero" ? 208 : 216;
+	text(g, "MOVES", 12, my, DIM);
+	text(g, fit(tr, 104), 40, my, "#a9b1b6");
 	if (c.id !== "hero") {
 		const on = inParty(c);
 		g.fillStyle = on ? "#182423" : "rgba(12,13,17,.9)";
@@ -9759,7 +9959,8 @@ window.__proto = {
     <div class="grid">
       <div class="card"><div class="lbl">Up to 30</div><p>The warband falls in behind him in ranks of six. In a fight they spread out: an enemy with four on him already is left to the others. The HUD shows one small bar per companion, ten to a row. Everyone after the first three is made up from the same wardrobe, weapons and traits.</p></div>
       <div class="card"><div class="lbl">Down, and maybe dead</div><p>A companion cut to nothing kneels, with a bar draining under them for 15 s. Hold <b>E</b> beside them to lift them. If the bar runs out, or they are struck again while down, they die for good and their gear goes back in the bag.</p></div>
-      <div class="card"><div class="lbl">Paired execution</div><p>Now and then: when a companion wearing <b>Bond Cord</b> is near the enemy, <b>K</b> shows who will join you. He glitches in on the near side as they close on the far side, you cross through the samurai together, hold, resheathe as one, and he falls on the click.</p></div>
+      <div class="card"><div class="lbl">Paired execution</div><p>Now and then: every paired execution says what a partner needs (a weapon, an item they wear, or a skill they know), and any companion nearby who has it can join. The crossing cut needs a blade drawn from a scabbard, so a spear can't join it. <b>K</b> shows who will join you. He glitches in on the near side as they close on the far side, you cross through the samurai together, hold, resheathe as one, and he falls on the click.</p></div>
+      <div class="card"><div class="lbl">They level up, their own way</div><p>Everyone earns EXP and levels on the same curve as him (kills, and fights they stand near). You spend the ronin's points yourself in the kit screen. A companion spends their own, by weighted chance from their weapon and personality: a heavy spearman leans to vigor, a restless flanker to speed. Two companions alike on day one grow apart. Stats: vigor, edge, speed, focus.</p></div>
       <div class="card"><div class="lbl">Three ways to recruit</div><p><b>Met on the road:</b> a wanderer stands bottom left. <b>Freed from the enemy:</b> every other wave marches a captive in; cut the guards down and free him. <b>Hired at camp:</b> the notice board, 30 mon (kills pay 5).</p></div>
     </div>
   </section>
@@ -9785,7 +9986,6 @@ window.__proto = {
         <tr><td>Sageo Knot</td><td><span class="tag">anyone</span></td><td>The wearer's sheath click after a kill shocks enemies nearby. Companions resheathe too.</td></tr>
         <tr><td>Cracked Mirror</td><td><span class="tag">ronin only</span></td><td>Each glitch teleport leaves an afterimage that cuts once.</td></tr>
         <tr><td>Temple Bell</td><td><span class="tag">ronin only</span></td><td>Each execution gives 25% Qi.</td></tr>
-        <tr><td>Bond Cord <span class="tag c">new</span></td><td><span class="tag">companion only</span></td><td>Sets the wearer up for paired executions: near the enemy you press K on, they strike with you.</td></tr>
         <tr><td>Iron Oath <span class="tag c">new</span></td><td><span class="tag">companion only</span></td><td>Once per area the wearer steps in and takes a blow meant for you.</td></tr>
       </tbody>
     </table></div>
@@ -9807,8 +10007,8 @@ equip(char, id) · takeOff(char, slot) · giveWeapon(char, w) · putCharm(char, 
     <h2>Still open</h2>
     <ol>
       <li><b>More paired executions:</b> this one is a crossing cut. Which of the approved executions should also have a paired version?</li>
-      <li><b>Setting a companion up:</b> Bond Cord for now. Should some traits or weapons also allow it?</li>
       <li><b>Bleed-out time:</b> 15 s to reach a downed companion, and a second hit kills them.</li>
+      <li><b>Stats:</b> vigor, edge, speed and focus are placeholders until the ronin has a stat system; companions would use whatever he uses.</li>
     </ol>
   </section>
 </div>
