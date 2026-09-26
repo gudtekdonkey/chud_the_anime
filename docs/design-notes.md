@@ -65,6 +65,7 @@ Decisions made in the design sessions so far, newest last.
 - Only idle, walk and run take the personality; attacks, skills and stances stay as drawn. With no traits he is exactly the ronin as before.
 - In the game: a picker under the screen, and hold **V** to walk (new). The samurai can take the same traits, since they share his rig.
 - **Approved:** keep all 52 traits as they are ("they're all great"). Merged to main.
+- **Cultures (owner):** every culture and place uses the trait system for its people's mannerisms and movement. A culture is a shared trait mix plus a pool of personal traits, one drawn per person, so a crowd shares a manner but no two move alike (`src/traits/cultures.js`). Seven starter cultures (court, clan, monastery, port, bandit hills, farming village, shadow village) until the cultures work names its own.
 - **Decided:** the ronin keeps the personality he has: no traits by default, so he stands, walks and runs as drawn. The picker stays for trying mixes.
 
 ## HUD
@@ -102,6 +103,14 @@ The owner said the deaths still don't feel like someone dying, and the execution
 - Owner (the items thread): skills upgrade by usage. So basic skill is landed basic cuts (`INV.basic`), not levels: 2 cuts to start, 3 at 40, 4 at 120, 5 at 250, 6 at 450 (Claude's numbers, open to tuning).
 - Each weapon has its own six cuts on the katana's beats (cut n+1 starts from cut n's pose at the 0.3 s chain beat); the sixth is the finisher (a leap, a big crescent, a kneel).
 - Flow (Claude's defaults, the owner can change them): six landed basic cuts in a row, each within 1.6 s, no skill between, earn Flow for 8 s; the next skill still cooling down casts anyway and restarts its cooldown. Not the slide; never an ultimate (Time Slice and the full-Qi skills).
+
+## Elements (approved 2026-09-26, artifact "Ronin Elements")
+- His electricity is one element of several: Storm (default), Fire, Slime, Water, Wind, Energy, Psychic. The owner loved them.
+- Each element is its own matter on every move, never recoloured lightning: only Storm and Energy use bolts and glitch slices.
+- Slime: goo gathers and sticks ON his body when he charges (never just floating round him); on K he melts into a puddle, stretches to the new spot and stands back up.
+- Floor marks: attacks and the teleport leave them (puddles, scorch, ripples); Qi skills leave nothing on the floor.
+- A new style is one palette row plus one kit. Executions layer the element on top of the deaths pass; the body motion stays.
+- `[` and `]` step through the elements for testing; 1-4 stay free for the quick slots.
 
 ## Next
 
