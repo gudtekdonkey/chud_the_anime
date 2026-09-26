@@ -12,7 +12,7 @@ Decisions made in the design sessions so far, newest last.
 - Effects colours: cyan `#6ff3e4` / `#52e8d6` / `#b8fff6` and white, on a muted grey floor `#474c4a`. Glitch slices, jagged electric bolts, a floor reflection.
 - A hit is "dramatic yet controlled": whole-body white flash for about 2 frames, a short hit pause, a small screen shake.
 
-## Moves (game/index.html)
+## Moves (the game, `src/`)
 
 - **Idle:** a calm breath about 2.7 s long. The chest rises, the hips stay put and the cloth barely moves. No robotic bobbing.
 - **J:** one fluid, eased cut: the hips lead, then the chest, then the arms and blade, with a lunge and a held follow-through. Press J again during the follow-through to flow into the second cut.
