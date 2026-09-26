@@ -14,20 +14,18 @@ import { hit, burst } from './hits.js';
 import { meditate, spawnMirror, updateMirrors } from './mirror.js';
 import { TAP, chargeUp, TC, RIFT, release, charged } from './skills.js';
 import { gate, startCd, updateCds } from './cooldowns.js';
-import { DUMMIES } from '../world/dummies.js';
+import { updateEnemies } from '../world/enemies.js';
 import { assassinate, tickStages, updateStages } from '../assassin/assassinate.js';
 import { K, updateMarkers } from '../assassin/markers.js';
-import { updateTargets } from '../assassin/targets.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
   for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; q.life -= dt; }
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
   P.ghosts.forEach(g => { g.age += dt; g.white -= dt; }); P.ghosts = P.ghosts.filter(g => g.age < g.hold + .25);
-  for (const d of DUMMIES) { d.flash = Math.max(0, d.flash - dt); d.wob = Math.max(0, d.wob - dt); }
   S.shake = Math.max(0, S.shake - dt); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
   updateCds(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
-  updateFx(dt); updateStages(dt); updateTargets(dt); updateMarkers();
+  updateFx(dt); updateEnemies(dt, S.hitstop > 0); updateStages(dt); updateMarkers();
   if (S.hitstop > 0) { S.hitstop -= dt; return; }
   updateCuts(dt); updateMirrors(dt); tickStages(dt);
   for (const t of timers.splice(0)) if ((t.t -= dt) <= 0) t.fn(); else timers.push(t); // sequenced payoffs (implosions, chain links)

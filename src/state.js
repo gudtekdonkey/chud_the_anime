@@ -5,7 +5,7 @@ export const P = { x: 200, y: 180, z: 0, vz: 0, vx: 0, vy: 0, face: 1, state: 'i
   cd: {}, cdMax: {}, cdPop: {}, cdDeny: {} };  // cooldowns: seconds left, the full length, the ready glint, the refused-press blink
 export const parts = [];
 // reassigned from many modules, so they live on one object: screen shake, hit pause, the pale screen flash,
-// and roomClear (page checkbox: treat the training dummies as props, not enemies)
+// and roomClear (page checkbox: treat the enemies as no threat)
 export const S = { shake: 0, hitstop: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false };
 
 // ---- Engine effects: drawn in world space, never in the sheets, so they survive real art replacing the placeholder ----

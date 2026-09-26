@@ -9,7 +9,9 @@ import { frameOf } from '../player/actions.js';
 import { drawPlayer, drawMirror } from '../player/draw.js';
 import { drawQi } from '../ui/qi-meter.js';
 import { drawSkillBar } from '../ui/skill-bar.js';
-import { DUMMIES, drawDummy } from './dummies.js';
+import { drawBloodFloor, drawDrops } from '../fx/blood.js';
+import { ENEMIES, blades } from './enemies.js';
+import { drawEnemy, drawBlade } from './enemy-draw.js';
 import { stageItems, drawStagesFloor, drawStagesTop } from '../assassin/assassinate.js';
 import { drawMarkers, drawPrompt } from '../assassin/markers.js';
 import { PILLARS, bg, drawPillar } from './room.js';
@@ -19,15 +21,16 @@ export function render() {
   if (S.shake > 0) { const a = Math.max(1, Math.round((P.shakeAmp || 2) * Math.min(1, S.shake / .15))); g.translate(sgn() * a, sgn() * Math.ceil(a / 2)); } // never a zero offset
   if (S.shake <= 0) P.shakeAmp = 2;
   g.drawImage(bg, 0, 0);
-  drawFloorFx(); drawStagesFloor();
+  const fade = ENEMIES[0].alpha;   // the fallen, their swords and their blood fade together before a new squad
+  drawBloodFloor(fade); drawFloorFx(); drawStagesFloor();
   const t = performance.now() / 1000; drawMarkers(t);
-  // depth-sort the pillars, the dummy and the player by their feet
-  const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), ...DUMMIES.filter(d => !d.out).map(d => ({ y: d.y, d: () => drawDummy(g, d) })),
-    ...(P.state === 'exec' ? [] : [{ y: P.y, d: drawPlayer }]), ...stageItems(),
+  // depth-sort the pillars, the enemies, their dropped swords, the player and any execution by their feet
+  const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), ...ENEMIES.map(e => ({ y: e.y - (e.alive ? 0 : .5), d: () => drawEnemy(e) })),
+    ...blades.map(b => ({ y: b.y - .2, d: () => drawBlade(b, fade) })), ...(P.state === 'exec' ? [] : [{ y: P.y, d: drawPlayer }]), ...stageItems(),
     ...mirrors.map(m => ({ y: m.y, d: () => drawMirror(m) })),
     ...debris.map(d => ({ y: d.state === 'in' ? d.cy + Math.sin(d.a) * d.r * .45 : d.py, d: () => drawDebris(d) }))];
   items.sort((a, b) => a.y - b.y).forEach(i => i.d());
-  drawFx(); drawStagesTop(); drawPrompt(t);
+  drawFx(); drawDrops(); drawStagesTop(); drawPrompt(t);
   for (const q of parts) {
     g.globalAlpha = Math.min(1, q.life / q.max * 1.6); g.fillStyle = q.col;
     g.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);

@@ -49,22 +49,32 @@ try {
   const run = async (name, fn) => { step = name; await fn(); console.log(`  ok  ${name}`); };
 
   await run('move', async () => { await kb.down('d'); await reach(/^run$/); await sleep(300); await shot('01-run'); await kb.up('d'); await reach(/^idle$/); });
-  await run('K on an isolated dummy in reach: the kill line and K prompt, an execution, K ready 0.2 s after', async () => {
+  await run('J, J: slash 1 flows into slash 2', async () => {
+    await kb.press('j'); await reach(/^slash1$/);
+    await until('slash 1 follow-through', () => window.__game.P.t > .18);
+    await kb.press('j'); await reach(/^slash2$/); await shot('02-slash2');
+    await reach(/^ready\d$/); });
+  await run('J on a samurai: flinch, stagger, death', async () => {
+    // walk up to the nearest samurai, then cut until he falls; every state he passes through is logged
+    await page.evaluate(() => { window.__eLog = []; const e = window.__game.E[0];
+      const tick = () => { if (window.__eLog[window.__eLog.length - 1] !== e.state) window.__eLog.push(e.state); requestAnimationFrame(tick); }; tick(); });
+    await kb.down('d'); await until('walking up to him', () => window.__game.P.x > 236); await kb.up('d'); await reach(FREE);
+    for (let i = 0; i < 10 && await page.evaluate(() => window.__game.E[0].alive); i++) { await kb.press('j'); await reach(/^slash/); await reach(FREE); }
+    const e = await page.evaluate(() => ({ alive: window.__game.E[0].alive, hp: window.__game.E[0].hp, log: window.__eLog }));
+    if (e.alive) fail(`the samurai is still standing after 10 cuts (hp ${e.hp}, states ${e.log.join(' > ')})`);
+    for (const st of ['flinch', 'stagger', 'dead']) if (!e.log.includes(st)) fail(`the samurai never went through ${st} (states ${e.log.join(' > ')})`);
+    await until('him hitting the floor', () => window.__game.E[0].body.thudT != null); await sleep(600); await shot('08-samurai-down'); });
+  await run('K on a lone samurai in reach: the kill line and K prompt, an execution, K ready 0.2 s after', async () => {
     await sleep(200); await shot('09-k-prompt');
     await kb.press('k'); await reach(/^exec$/); await sleep(700); await shot('10-execution');
     await reach(/^idle$/, 4000);
     const cd = await page.evaluate(() => ({ t: window.__game.P.cd.tele, max: window.__game.P.cdMax.tele }));
     if (!(cd.max <= .2 + 1e-9)) fail(`K was not reset to 0.2 s after the kill (${JSON.stringify(cd)})`);
     await until('K ready again', () => !(window.__game.P.cd.tele > 0), undefined, 1000); await sleep(500); await shot('11-after'); });
-  await run('J, J: slash 1 flows into slash 2', async () => {
-    await kb.press('j'); await reach(/^slash1$/);
-    await until('slash 1 follow-through', () => window.__game.P.t > .18);
-    await kb.press('j'); await reach(/^slash2$/); await shot('02-slash2');
-    await reach(/^ready\d$/); });
   await run('Shift: ground slide', async () => { await kb.press('Shift'); await reach(/^slide$/); await reach(FREE); });
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
   await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
-    // out of every dummy's reach first (the top-left corner), so K is the plain teleport, not an assassination
+    // out of every samurai's reach first (the top-left corner), so K is the plain teleport, not an assassination
     await kb.down('a'); await kb.down('w'); await sleep(4200); await kb.up('a'); await kb.up('w'); await reach(FREE);
     await kb.press('k'); await reach(/^tele$/); await reach(FREE);
     await until('K on cooldown', () => window.__game.P.cd.tele > 0);

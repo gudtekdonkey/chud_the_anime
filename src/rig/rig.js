@@ -2,7 +2,7 @@ import { OX, OY, RC } from '../config.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
-// pal: a palette in RC's letters, so the same rig draws the enemy samurai in his own colours
+// pal swaps the colours (the samurai's red-grey); p.bare drops the hat and mantle for a bare head and topknot
 export function rig(g, fx, p, pal = RC) {
   const put = (x, y, c) => { g.fillStyle = pal[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
   const blob = (x, y, w, c) => { g.fillStyle = pal[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
@@ -50,12 +50,12 @@ export function rig(g, fx, p, pal = RC) {
   for (let v = -2; v <= 2; v++) put(...L(2.2, v), 'D');                       // obi line
   leg(p.fl, 'K', .5);
   // head and hat
-  const hc = L(10 - p.bow * .7, .6 + p.bow * 1.1);
+  // neck: the head lags and lolls on it (+ forward), carried by the chest
+  const nk = p.neck || 0, hc = L(10 - p.bow * .7 - Math.abs(nk) * 1.2, .6 + p.bow * 1.1 + nk * 2.2);
   if (!p.noHead) {   // noHead: the head has come off and is its own piece now
     for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
     const hf = p.headFlip ? -1 : 1;   // headFlip: the head is wrenched round to face backward
     put(hc[0] + 1.5 * hf, hc[1], p.dim ? 'e' : 'E');
-    // bare: the enemy samurai, no hat or mantle, bare-headed with a topknot
     if (p.bare) { for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] - 2, 'K'); put(hc[0] - hf, hc[1] - 3, 'K'); put(hc[0] - 2 * hf, hc[1] - 4, 'K'); put(hc[0] - 2 * hf, hc[1] - 3, 'D'); }
   }
   const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
@@ -70,7 +70,7 @@ export function rig(g, fx, p, pal = RC) {
   if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; blob(bh[0], bh[1], 2, 'D'); seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
   // near arm and the sword
   const hand = arm(p.fa, 'K');
-  if (p.sword === null && !p.sheathing && p.bsword == null) {                    // sheathed: hilt pokes forward-up out of the scabbard
+  if (p.sword === null && !p.sheathing && p.bsword == null && !p.empty) {                    // sheathed: hilt pokes forward-up out of the scabbard
     put(...mouth, 'S'); seg(add(mouth, sd, -1), add(mouth, sd, -3.5), 1, 'W');
   } else if (p.sheathing) {                                  // sliding home: blade runs from the hand into the scabbard mouth
     seg(hand, mouth, 1, 'W'); put(...hand, 'S'); put(...add(hand, [hand[0] - mouth[0], hand[1] - mouth[1]].map(v => v / (Math.hypot(hand[0] - mouth[0], hand[1] - mouth[1]) || 1)), 2), 'K');

@@ -8,14 +8,14 @@ import { EG, SET } from './enemy-poses.js';
 import { EXECS } from './executions.js';
 import { withShadow, drawPieces, updatePieces } from './pieces.js';
 import { F, FX, updateStageFx, drawStageFloor, drawStageTop } from './stage-fx.js';
-import { hold, killed, faceOf } from './targets.js';
+import { hold, faceOf, roomFade } from './targets.js';
 
 // ---- K on an isolated enemy: he flashes to him and plays an execution ----
 // Each execution plays on its own stage: the two bodies, the pieces and the effects, in a frame where the enemy faces left.
-// The stage is drawn mirrored round the enemy when he faces right. It lingers after the ronin is free, until the pieces are gone.
+// The stage is drawn mirrored round the enemy when he faces right. His body lies there with the rest of the fallen
+// and fades with them when the room is cleared.
 export const stages = [];
 const PRE = .2;       // the set and the vanish before he lands (the prototype's 0.75 s lock-on beat, cut down for play)
-const LINGER = 6;     // seconds a body lies there after it has come to rest, before it fades
 let lastExec = -1;
 export function assassinate(e) {
   let k; do k = Math.random() * EXECS.length | 0; while (k === lastExec && EXECS.length > 1); lastExec = k;
@@ -30,7 +30,7 @@ export function assassinate(e) {
 export function tickStages(dt) {
   for (const St of stages) {
     St.clock += dt; const c = St.clock, ex = St.ex, E = St.E;
-    if (c >= ex.dur) continue;   // the body has come to rest: it just lies there
+    if (c >= ex.dur) { if (!St.freed) free(St); continue; }   // the body has come to rest: it just lies there
     const R = St.R = { x: St.start.x, y: St.start.y, face: 1, pose: SET };
     if (c < 0) {   // the set: weight forward, hand on the hilt, breaking into slices, gone
       const u = c + PRE; R.glitch = u / PRE * 1.6;
@@ -57,22 +57,24 @@ function free(St) {
   St.freed = true; const R = St.R;
   [P.x, P.y] = collide(St.ox + St.m * (R.x - St.ox), R.y); P.face = St.m * R.face;
   P.inv = false; P.exec = null; P.armed = false; setState('idle');
-  killed(St.target); onAssassination();
+  onAssassination();
 }
 // effects and pieces move through hit pauses, like the world's own
 export function updateStages(dt) {
   for (const St of stages) { updateStageFx(St, dt); updatePieces(St, dt); }
-  for (let i = stages.length - 1; i >= 0; i--) { const St = stages[i];
-    if (St.freed && St.clock > St.ex.dur + LINGER + 1 && !St.pieces.length) stages.splice(i, 1); }
+  const f = roomFade();
+  for (let i = stages.length - 1; i >= 0; i--) { const St = stages[i]; if (f <= 0 && St.freed) St.cleared = true;
+    if (St.cleared && f > 0) stages.splice(i, 1); }   // a new squad: the old bodies are gone
 }
 // drawn in world space, flipped round the enemy's x when he faced right
 const mirrored = (St, fn) => () => { g.save(); if (St.m < 0) { g.translate(St.ox * 2, 0); g.scale(-1, 1); } fn(); g.restore(); };
 export function stageItems() {
   const out = [];
-  for (const St of stages) { const E = St.E, R = St.R, fade = Math.max(0, Math.min(1, St.ex.dur + LINGER + 1 - St.clock));
-    if (!E.gone && fade > 0) out.push({ y: E.y, d: mirrored(St, () => withShadow(g, { ...E, x: E.x + (E.jit || 0) }, fade)) });
+  const fade = roomFade();
+  for (const St of stages) { const E = St.E, R = St.R; if (St.cleared) continue;
+    if (!E.gone) out.push({ y: E.y - (St.clock >= St.ex.free ? .5 : 0), d: mirrored(St, () => withShadow(g, { ...E, x: E.x + (E.jit || 0) }, fade)) });
     if (R && !St.freed && !R.hidden) out.push({ y: R.y, d: mirrored(St, () => withShadow(g, R)) });
-    out.push({ y: E.y + .5, d: mirrored(St, () => drawPieces(g, St)) }); }
+    out.push({ y: E.y + .5, d: mirrored(St, () => drawPieces(g, St, fade)) }); }
   return out;
 }
 export function drawStagesFloor() { for (const St of stages) mirrored(St, () => drawStageFloor(g, St))(); }
