@@ -1,4 +1,4 @@
-import { W, H } from '../config.js';
+import { W, H, PX } from '../config.js';
 import { g, hud } from '../screen.js';
 import { P, INV, parts, S, mirrors, debris } from '../state.js';
 import { SHEETS } from '../anims/sheets.js';
@@ -25,6 +25,7 @@ import { drawPartyHud, drawPartyPrompts } from '../ui/party-hud.js';
 import { KIT, drawKit } from '../ui/kit-screen.js';
 
 export function render() {
+  g.setTransform(PX, 0, 0, PX, 0, 0); g.imageSmoothingEnabled = false;   // everything draws in world units; figures carry PX pixels
   g.save();
   if (S.shake > 0) { const a = Math.max(1, Math.round((P.shakeAmp || 2) * Math.min(1, S.shake / .15))); g.translate(sgn() * a, sgn() * Math.ceil(a / 2)); } // never a zero offset
   if (S.shake <= 0) P.shakeAmp = 2;
@@ -60,7 +61,7 @@ export function render() {
 
 // an execution's killing blow: two frames of the scene in two tones, black then white (the deaths pass)
 function impactFrame(second) {
-  const im = g.getImageData(0, 0, W, H), d = im.data, bg = second ? 235 : 10, fg = second ? 12 : 245;
+  const im = g.getImageData(0, 0, W * PX, H * PX), d = im.data, bg = second ? 235 : 10, fg = second ? 12 : 245;
   for (let i = 0; i < d.length; i += 4) { const l = .3 * d[i] + .59 * d[i + 1] + .11 * d[i + 2]; d[i] = d[i + 1] = d[i + 2] = l < 58 || l > 165 ? fg : bg; }
   g.putImageData(im, 0, 0);
 }
