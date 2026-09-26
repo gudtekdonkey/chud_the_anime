@@ -42,7 +42,8 @@ function culprit(L, r, ids, not = []) {
 }
 // who saw it: people of the zone, by the place and the hour
 function witnesses(L, r, X, zone, not) {
-  const z = zoneAt(L, zone[0], zone[1]), hour = r.int(0, 23), night = hour >= TIME.DUSK || hour < TIME.DAWN;
+  const z = zone && zoneAt(L, zone[0], zone[1]); if (!z) return [];   // no home now (moved, taken, on the road): nobody there saw it
+  const hour = r.int(0, 23), night = hour >= TIME.DUSK || hour < TIME.DAWN;
   const p = (WORLD.SEEN[z.kind] ?? WORLD.SEEN.wild) * (night ? .5 : 1);
   if (!r.chance(p)) return [];
   const ids = X.byZone.get(z.y * L.size.w + z.x), out = [];
@@ -54,7 +55,7 @@ const masked = (L, r, id) => r.chance(WORLD.MASK[L.actors[id].cls] ?? WORLD.MASK
 // half the witnesses stand close enough to see through a mask
 const close = (r, ws) => ws.filter(() => r.chance(WORLD.CLOSE));
 function one(L, r, X, kind, perp, victim, o = {}) {
-  const v = L.actors[victim], zone = v.home, ws = witnesses(L, r, X, zone, [perp, victim]);
+  const v = L.actors[victim], zone = v.home || v.at || null, ws = witnesses(L, r, X, zone, [perp, victim]);
   return commit(L, kind, { by: perp, victim, zone, witnesses: ws, close: close(r, ws), masked: masked(L, r, perp), rng: r, ...o });
 }
 
@@ -106,9 +107,11 @@ function raid(L, r, X, camp) {
   const heads = folk.filter(id => L.actors[id].alive && L.actors[id].holds.length), n = Math.min(heads.length, r.int(1, 3)), hit = [];
   for (let i = 0; i < n; i++) { const v = r.pick(heads), raider = r.pick(band); if (hit.includes(v)) continue; hit.push(v);
     const wit = witnesses(L, r, X, [tz.x, tz.y], [raider, v]);
-    commit(L, 'theft', { by: chief.id, victim: v, zone: [tz.x, tz.y], witnesses: wit, victimSaw: true, rng: r, value: L.actors[v].money.mon * r.range(...WORLD.RAID_TAKE) });
-    if (r.chance(WORLD.RAID_KILL)) commit(L, 'murder', { by: raider, victim: v, zone: [tz.x, tz.y], witnesses: wit, rng: r }); }
-  emit(L, 'crime.raid', { actor: chief.id, zone: [tz.x, tz.y], from: [z.x, z.y], victims: hit, culture: L.regions[tz.region].culture });
+    const rec = commit(L, 'theft', { by: chief.id, victim: v, zone: [tz.x, tz.y], witnesses: wit, victimSaw: true, rng: r, quiet: true, value: L.actors[v].money.mon * r.range(...WORLD.RAID_TAKE) });
+    const killed = r.chance(WORLD.RAID_KILL);
+    if (killed) commit(L, 'murder', { by: raider, victim: v, zone: [tz.x, tz.y], witnesses: wit, rng: r, quiet: true });
+    // one event a household hit, as the story's quests read it
+    emit(L, 'crime.raid', { camp: [z.x, z.y], by: chief.id, actor: chief.id, victim: v, mon: rec.taken || 0, killed, zone: [tz.x, tz.y], culture: L.regions[tz.region].culture }); }
   if (r.chance(WORLD.RAID_SEIZE)) { const v = L.actors[r.pick(hit)], pid = v && v.holds.find(q => L.plots[q]?.holder === v.id);
     if (pid) seize(L, pid, chief.id, { how: 'raid', witnesses: folk.slice(0, 5) }); }
 }

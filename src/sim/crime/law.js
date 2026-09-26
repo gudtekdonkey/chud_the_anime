@@ -66,19 +66,26 @@ export function driftStanding(L, day) {
 export const bountyOf = (L, id, c) => crimeState(L).bounty[id]?.[c]?.mon || 0;
 export const bountiesOf = (L, id) => crimeState(L).bounty[id] || {};
 export const wantedBy = (L, id, c) => bountyOf(L, id, c) > 0;
-export function addBounty(L, id, c, mon, kind) {
+// forever: a bounty that never fades and is never paid off (the story's manhunts for an oathbreaker or a royal robbery, owner)
+export const FAMOUS = 300;   // a bounty this big is news (the story posts it; travel mirrors his)
+export function addBounty(L, id, c, mon, kind, forever = false) {
   const C = crimeState(L), bs = C.bounty[id] || (C.bounty[id] = {}), b = bs[c] || (bs[c] = { mon: 0, worst: null, h: L.hour });
-  b.mon = Math.round(b.mon + mon); b.worst = worse(b.worst, kind); b.h = L.hour; C.stats.bounties++;
-  if (isPlayer(L, id) || b.mon >= 1000) emit(L, 'crime.bounty', { actor: id, culture: +c, mon: b.mon, worst: b.worst });
+  const was = b.mon; b.mon = Math.round(b.mon + mon); b.worst = worse(b.worst, kind); b.h = L.hour; if (forever) b.forever = true; C.stats.bounties++;
+  // mon: the whole bounty now; added: what this crime put on it
+  if (isPlayer(L, id) || b.mon >= FAMOUS) emit(L, 'crime.bounty', { actor: id, culture: +c, mon: b.mon, added: b.mon - was, worst: b.worst, why: kind, forever: !!b.forever });
 }
 // how fast a bounty fades: its worst crime's rate. Killing royalty never fades and is never paid off, unless the killer is royal
 // himself (owner 2026-09-26): then it is judged as a murder
-export const fadeOf = (a, worst) => CRIMES[worst].fade || (a?.cls === 'royal' ? CRIMES.murder.fade : 0);
-export function clearBounty(L, id, c) { const bs = crimeState(L).bounty[id]; if (!bs) return; delete bs[c]; if (!Object.keys(bs).length) delete crimeState(L).bounty[id]; }
+export const fadeOf = (a, worst, forever = false) => forever ? 0 : CRIMES[worst].fade || (a?.cls === 'royal' ? CRIMES.murder.fade : 0);
+export function clearBounty(L, id, c) {
+  const bs = crimeState(L).bounty[id]; if (!bs || !bs[c]) return;
+  const mon = bs[c].mon; delete bs[c]; if (!Object.keys(bs).length) delete crimeState(L).bounty[id];
+  if (isPlayer(L, id) || mon >= FAMOUS) emit(L, 'crime.bountyCleared', { actor: id, culture: +c });
+}
 // a bounty fades (his every day, the rest every SLOW days)
 export function fadeBounties(L, day) {
   const C = crimeState(L);
-  each(L, C.bounty, day, (id, n) => { for (const c in C.bounty[id]) { const b = C.bounty[id][c], f = fadeOf(L.actors[id], b.worst);
+  each(L, C.bounty, day, (id, n) => { for (const c in C.bounty[id]) { const b = C.bounty[id][c], f = fadeOf(L.actors[id], b.worst, b.forever);
     if (!f) continue; b.mon = +(b.mon * (1 - f) ** n).toFixed(1);
     if (b.mon < K.BOUNTY_GONE) { clearBounty(L, id, c); C.stats.faded++; if (isPlayer(L, id)) emit(L, 'crime.bountyFaded', { actor: id, culture: +c }); } } });
 }
@@ -87,7 +94,7 @@ export function fadeBounties(L, day) {
 export function payOff(L, id, c, where = 'magistrate') {
   const a = L.actors[id], b = crimeState(L).bounty[id]?.[c];
   if (!b) return { ok: false, reason: 'no bounty' };
-  if (!fadeOf(a, b.worst)) return { ok: false, reason: 'killing royalty is never forgiven' };
+  if (!fadeOf(a, b.worst, b.forever)) return { ok: false, reason: b.forever ? 'this manhunt never ends' : 'killing royalty is never forgiven' };
   const cost = Math.ceil(b.mon * (where === 'shrine' ? K.SHRINE : K.MAGISTRATE));
   if (!spend(a, cost)) return { ok: false, reason: 'not enough money', cost };
   clearBounty(L, id, c); crimeState(L).stats.paid++;
@@ -107,7 +114,8 @@ export function penance(L, id, mon, season) {
 // ---- a crime ----
 // o: { by, victim?, zone: [x, y], witnesses: [actor ids who saw it], close: [the witnesses near enough to see through a mask], masked,
 //      value (mon taken, theft), victimSaw (default: he did, unless it was a theft), provoked (self-defence: no crime),
-//      culture (whose land, for trespass with no victim), plot, rng (the caller's stream; else one from the seed and the crime count) }
+//      culture (whose land, for trespass with no victim), plot, rng (the caller's stream; else one from the seed and the crime count),
+//      seenBy: [cultures that know of it without a witness to name], noKarma (karma already moved by the story or travel), quiet (no crime.robbery / crime.murder: the caller tells it) }
 // Kills the victim of a killing. Returns the crime record (or { lawful: true } when provoked).
 export function commit(L, kind, o) {
   const C = crimeState(L), by = L.actors[o.by], victim = o.victim != null ? L.actors[o.victim] : null;
@@ -120,19 +128,20 @@ export function commit(L, kind, o) {
   if (victim && !killing && (o.victimSaw ?? kind !== 'theft') && !seen.includes(victim.id)) seen.push(victim.id);
   // justice: a man his people want is fair game for them
   const wanted = victim ? bountiesOf(L, victim.id) : {};
-  const cultures = [...new Set(seen.map(id => L.actors[id].culture).filter(c => c != null))];
+  // seenBy: whole peoples who know of it with no one to name (the story's deeds)
+  const cultures = [...new Set([...seen.map(id => L.actors[id].culture), ...(o.seenBy || [])].filter(c => c != null))];
   const known = cultures.filter(c => !(wanted[c]?.mon > 0));
   // (seen: everyone who saw it wants the victim; unseen: the victim was wanted anywhere)
   const just = !!victim && (cultures.length ? !known.length : Object.values(wanted).some(b => b.mon >= CRIMES.assault.bounty));
   // a mask hides him, but a witness close by sometimes sees through it (owner 2026-09-26): his people know who it was
   const rr = o.rng || rngFor(L.seed, 'crime', L.hour, L.ids.cr || 0);
   const saw = o.masked ? seen.filter(id => (o.close || []).includes(id) && rr.chance(K.MASK_SEE)) : seen;
-  const blamed = known.filter(c => saw.some(id => L.actors[id].culture === c));
+  const blamed = known.filter(c => saw.some(id => L.actors[id].culture === c) || (!o.masked && (o.seenBy || []).includes(c)));
   // karma, always: who he is does not depend on who saw
   let dk = def.karma;
   if (victim && (victim.karma || 0) <= K.MONSTER) dk *= .5;
   if (just) dk *= K.JUSTICE;
-  addKarma(by, dk);
+  if (!o.noKarma) addKarma(by, dk);   // noKarma: the story or travel already moved his karma
   // what moved: money, a life
   let taken = 0;
   if (kind === 'theft' && victim) { taken = Math.min(Math.max(0, Math.round(o.value || 0)), victim.money.mon); victim.money.mon -= taken; give(by, taken); }
@@ -152,6 +161,10 @@ export function commit(L, kind, o) {
   // tell the world: every crime anyone knows of, and everything he does; an NPC crime nobody saw stays in the numbers
   if (cultures.length || isPlayer(L, by.id) || isPlayer(L, rec.victim))
     emit(L, 'crime.committed', { crime: rec.id, kind, actor: blamed.length || !o.masked ? by.id : null, victim: rec.victim, zone: rec.zone, known: rec.known, masked: rec.masked, unmasked: rec.unmasked, witnesses: seen.length });
+  // for the story's quests: a robbery and a murder, named when someone could name him (quiet: a raid's, which crime.raid carries, or the story's own)
+  const named = blamed.length || !o.masked ? by.id : null;
+  if (kind === 'theft' && taken > 0 && !o.quiet) emit(L, 'crime.robbery', { victim: rec.victim, by: named, mon: taken, zone: rec.zone });
+  if (killing && victim && named && !o.quiet) emit(L, 'crime.murder', { victim: victim.id, by: named, zone: rec.zone });
   return rec;
 }
 

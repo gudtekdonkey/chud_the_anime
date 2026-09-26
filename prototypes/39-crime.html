@@ -824,7 +824,7 @@
 			traits: [],
 			karma: 0,
 			standing: {},
-			money: purse$1(r, o.cls),
+			money: purse$2(r, o.cls),
 			holds: [],
 			int: o.int ?? +Math.min(1, Math.max(0, (r.next() + r.next() + r.next()) / 3 + (cls.rank - 2) * .02)).toFixed(2)
 		};
@@ -845,7 +845,7 @@
 		L.actors[a.id] = a;
 		return a;
 	}
-	function purse$1(r, cls) {
+	function purse$2(r, cls) {
 		const m = {
 			royal: [
 				0,
@@ -1194,6 +1194,25 @@
 			const hr = rngFor(seed, "rel", a.id, b.id), v = Math.max(-1, Math.min(1, kindRelation(a.kind, b.kind) + (border.has(a.id + "|" + b.id) ? -.2 : 0) + hr.range(-.25, .25)));
 			a.relations[b.id] = b.relations[a.id] = +v.toFixed(2);
 		}
+		carveVoids(L, land, seed);
+		const toVoid = /* @__PURE__ */ new Map(), q = land.filter((z) => z.void);
+		for (const z of q) toVoid.set(z, 0);
+		for (let i = 0; i < q.length; i++) {
+			const z = q[i], d = toVoid.get(z);
+			if (d >= 4) continue;
+			for (const [dx, dy] of [
+				[1, 0],
+				[-1, 0],
+				[0, 1],
+				[0, -1]
+			]) {
+				const n = zoneAt(L, z.x + dx, z.y + dy);
+				if (n && n.biome !== "sea" && !toVoid.has(n)) {
+					toVoid.set(n, d + 1);
+					q.push(n);
+				}
+			}
+		}
 		const pr = rngFor(seed, "places");
 		const placed = [];
 		const fit = {
@@ -1236,14 +1255,15 @@
 		for (const g of L.regions) {
 			const zs = land.filter((z) => z.region === g.id), kind = L.cultures[g.culture].kind;
 			const place = (what, minGap = 4) => {
-				const cands = zs.filter((z) => z.kind === "wild" && fit[what][z.biome] && placed.every((o) => Math.abs(o.x - z.x) + Math.abs(o.y - z.y) >= minGap));
+				const cands = zs.filter((z) => z.kind === "wild" && !z.void && fit[what][z.biome] && placed.every((o) => Math.abs(o.x - z.x) + Math.abs(o.y - z.y) >= minGap));
 				if (!cands.length) return null;
-				const z = pr.weighted(cands.map((c) => [c, fit[what][c.biome]]));
+				const edge = (z) => what === "camp" && (toVoid.get(z) ?? 9) <= 3 ? 4 : 1;
+				const z = pr.weighted(cands.map((c) => [c, fit[what][c.biome] * edge(c)]));
 				z.kind = what;
 				placed.push(z);
 				return z;
 			};
-			const seat = place(kind === "bandits" ? "camp" : "town", 5) || zs[0];
+			const seat = place(kind === "bandits" ? "camp" : "town", 5) || zs.find((z) => !z.void) || zs[0];
 			if (!placed.includes(seat)) placed.push(seat);
 			seat.kind = kind === "bandits" ? "camp" : "town";
 			seat.name = placeName(rngFor(seed, "seat", g.id));
@@ -1298,6 +1318,40 @@
 		hills: 2.5,
 		mountains: 6
 	};
+	const VOIDS = {
+		n: 9,
+		share: .15,
+		gap: 18,
+		r: [5, 8]
+	};
+	function carveVoids(L, land, seed) {
+		const r = rngFor(seed, "voids"), wildW = {
+			mountains: 4,
+			marsh: 3,
+			forest: 3,
+			bamboo: 2,
+			hills: 2,
+			plains: 1,
+			paddy: .3,
+			coast: .2
+		};
+		const warp = noise(hash(seed, "voidw"), 6), centres = [], target = land.length * VOIDS.share, pick = land.map((z) => [z, wildW[z.biome] || 1]);
+		let carved = 0;
+		for (let tries = 0; centres.length < VOIDS.n && tries < 400; tries++) {
+			const c = r.weighted(pick);
+			if (centres.some((o) => Math.hypot(o.x - c.x, o.y - c.y) < VOIDS.gap)) continue;
+			centres.push(c);
+			const rad = r.range(...VOIDS.r);
+			for (const z of land) if (Math.hypot(z.x - c.x, z.y - c.y) / rad + (warp(z.x, z.y) - .5) * .7 < 1 && !z.void && carved < target * 1.3) {
+				z.void = true;
+				carved++;
+			}
+		}
+		for (const g of L.regions) {
+			const zs = land.filter((z) => z.region === g.id), open = zs.filter((z) => !z.void).length, need = Math.min(zs.length, 8);
+			if (open < need) zs.sort((a, b) => Math.hypot(a.x - g.center[0], a.y - g.center[1]) - Math.hypot(b.x - g.center[0], b.y - g.center[1])).slice(0, need).forEach((z) => delete z.void);
+		}
+	}
 	function road(L, a, b) {
 		if (!a || !b || a === b) return;
 		const { w } = L.size, start = a.y * w + a.x, goal = b.y * w + b.x, g = /* @__PURE__ */ new Map([[start, 0]]), from = /* @__PURE__ */ new Map(), open = [[0, start]];
@@ -1341,7 +1395,7 @@
 				const n = zoneAt(L, x + dx, y + dy);
 				if (!n) continue;
 				const j = n.y * w + n.x;
-				const c = g.get(i) + (n.road ? .35 : COST[n.biome]);
+				const c = g.get(i) + (n.road ? .35 : COST[n.biome] * (n.void ? 8 : 1));
 				if (c < (g.get(j) ?? 0xe8d4a51000)) {
 					g.set(j, c);
 					from.set(j, i);
@@ -1570,14 +1624,14 @@
 		village: 22,
 		town: 42
 	};
-	const HARVEST = {
+	const HARVEST$1 = {
 		mean: 1.02,
 		spread: .14,
 		blight: .03,
 		blightCut: .45
 	};
 	const FAMINE_AT = .75;
-	const KEEP = {
+	const KEEP$1 = {
 		fort: [5, 8],
 		camp: [5, 8],
 		shrine: [1, 3]
@@ -1604,7 +1658,7 @@
 		monk: 0
 	};
 	const RYO_MON = 1e3;
-	const worth = (m) => (m.mon || 0) + (m.silver || 0) * 16 + (m.ryo || 0) * RYO_MON;
+	const worth$1 = (m) => (m.mon || 0) + (m.silver || 0) * 16 + (m.ryo || 0) * RYO_MON;
 	const INHERIT = {
 		clan: {
 			order: [
@@ -2162,7 +2216,7 @@
 		outlaw: 70,
 		shinobi: 110
 	};
-	const SPEND = {
+	const SPEND$1 = {
 		royal: 5e3,
 		noble: 2e3,
 		retainer: 200,
@@ -2350,8 +2404,8 @@
 	function rollHarvests(L, r) {
 		const P = L.sys.people;
 		for (const g of L.regions) {
-			let y = HARVEST.mean + (r.next() + r.next() + r.next() - 1.5) * HARVEST.spread * 2;
-			if (r.chance(HARVEST.blight)) y *= HARVEST.blightCut;
+			let y = HARVEST$1.mean + (r.next() + r.next() + r.next() - 1.5) * HARVEST$1.spread * 2;
+			if (r.chance(HARVEST$1.blight)) y *= HARVEST$1.blightCut;
 			P.harvest[g.id] = +Math.max(.2, y).toFixed(2);
 		}
 	}
@@ -2478,8 +2532,8 @@
 			if (!KEPT.has(s.kind)) continue;
 			const [x, y] = k.split(",").map(Number), z = zoneAt(L, x, y);
 			if (z.kind !== s.kind) continue;
-			if (s.pop >= KEEP[s.kind][0]) continue;
-			const need = r.int(...KEEP[s.kind]) - s.pop, pool = [];
+			if (s.pop >= KEEP$1[s.kind][0]) continue;
+			const need = r.int(...KEEP$1[s.kind]) - s.pop, pool = [];
 			for (const kk of (regions || (regions = byRegion(L)))[s.region] || []) pool.push(...residents(L, kk));
 			if (pool.length < 40) {
 				for (const g of L.cultures[L.regions[s.region].culture].regions) if (g !== s.region) for (const kk of regions[g] || []) pool.push(...residents(L, kk));
@@ -2495,7 +2549,7 @@
 					"retainer"
 				].includes(a.cls));
 			});
-			if (s.kind === "camp") fits.sort((a, b) => worth(a.money) - worth(b.money) || (a.id < b.id ? -1 : 1));
+			if (s.kind === "camp") fits.sort((a, b) => worth$1(a.money) - worth$1(b.money) || (a.id < b.id ? -1 : 1));
 			else r.shuffle(fits);
 			const chief = s.kind === "camp" ? z.holder : null;
 			for (let i = 0; i < need && fits.length; i++) {
@@ -2975,8 +3029,8 @@
 		}
 		if (a.job === "child" && ag >= AGE.WORK) a.job = trade(L, a, r);
 		if (a.regent && ag >= AGE.ADULT) endRegency(L, a);
-		if (P.wages !== false && a.id !== L.player && a.job !== "child" && ag < 65) a.money.mon = Math.max(0, a.money.mon + Math.round((EARN[a.cls] ?? 40) * Math.min(1, fed)) - (SPEND[a.cls] ?? 35));
-		const w = worth(a.money), norm = PURSE_NORM[a.cls] || 100;
+		if (P.wages !== false && a.id !== L.player && a.job !== "child" && ag < 65) a.money.mon = Math.max(0, a.money.mon + Math.round((EARN[a.cls] ?? 40) * Math.min(1, fed)) - (SPEND$1[a.cls] ?? 35));
+		const w = worth$1(a.money), norm = PURSE_NORM[a.cls] || 100;
 		const food = Math.min(1, fed * (w < norm * .1 ? .8 : 1));
 		const nd = a.needs || (a.needs = {
 			food: 1,
@@ -3236,7 +3290,7 @@
 		}
 	}
 	function pay(from, to, amount) {
-		let left = Math.min(amount, worth(from.money));
+		let left = Math.min(amount, worth$1(from.money));
 		const paid = left;
 		const take = (k, unit) => {
 			while (left > 0 && (from.money[k] || 0) > 0) {
@@ -3261,7 +3315,7 @@
 		const P = L.sys.people;
 		if (h.sex !== "m") [h, w] = [w, h];
 		const bridesHead = headOf(L, w), grooms = headOf(L, h);
-		if (price > 0 && bridesHead !== grooms) price = pay(grooms === h || worth(grooms.money) < price ? h : grooms, bridesHead, price);
+		if (price > 0 && bridesHead !== grooms) price = pay(grooms === h || worth$1(grooms.money) < price ? h : grooms, bridesHead, price);
 		const kind = w.culture != null && L.cultures[w.culture] ? L.cultures[w.culture].kind : null;
 		const father = act$1(L, w.parents[0]), fatherHead = father && father.alive && father.household === father.id ? father : null;
 		const younger = siblings(L, h).some((s) => s.alive && s.sex === "m" && s.born < h.born);
@@ -3744,9 +3798,9 @@
 		const z = zoneAt(L, x, y), g = z && z.region >= 0 ? L.regions[z.region] : null;
 		return g ? g.culture : null;
 	};
-	const purse = (a) => a.money.mon + a.money.ryo * 1e3;
+	const purse$1 = (a) => a.money.mon + a.money.ryo * 1e3;
 	function spend(a, mon) {
-		if (purse(a) < mon) return false;
+		if (purse$1(a) < mon) return false;
 		a.money.mon -= mon;
 		while (a.money.mon < 0) {
 			a.money.ryo--;
@@ -3792,35 +3846,45 @@
 	const bountyOf = (L, id, c) => crimeState(L).bounty[id]?.[c]?.mon || 0;
 	const bountiesOf = (L, id) => crimeState(L).bounty[id] || {};
 	const wantedBy = (L, id, c) => bountyOf(L, id, c) > 0;
-	function addBounty(L, id, c, mon, kind) {
+	function addBounty(L, id, c, mon, kind, forever = false) {
 		const C = crimeState(L), bs = C.bounty[id] || (C.bounty[id] = {}), b = bs[c] || (bs[c] = {
 			mon: 0,
 			worst: null,
 			h: L.hour
 		});
+		const was = b.mon;
 		b.mon = Math.round(b.mon + mon);
 		b.worst = worse(b.worst, kind);
 		b.h = L.hour;
+		if (forever) b.forever = true;
 		C.stats.bounties++;
-		if (isPlayer(L, id) || b.mon >= 1e3) emit(L, "crime.bounty", {
+		if (isPlayer(L, id) || b.mon >= 300) emit(L, "crime.bounty", {
 			actor: id,
 			culture: +c,
 			mon: b.mon,
-			worst: b.worst
+			added: b.mon - was,
+			worst: b.worst,
+			why: kind,
+			forever: !!b.forever
 		});
 	}
-	const fadeOf = (a, worst) => CRIMES[worst].fade || (a?.cls === "royal" ? CRIMES.murder.fade : 0);
+	const fadeOf = (a, worst, forever = false) => forever ? 0 : CRIMES[worst].fade || (a?.cls === "royal" ? CRIMES.murder.fade : 0);
 	function clearBounty(L, id, c) {
 		const bs = crimeState(L).bounty[id];
-		if (!bs) return;
+		if (!bs || !bs[c]) return;
+		const mon = bs[c].mon;
 		delete bs[c];
 		if (!Object.keys(bs).length) delete crimeState(L).bounty[id];
+		if (isPlayer(L, id) || mon >= 300) emit(L, "crime.bountyCleared", {
+			actor: id,
+			culture: +c
+		});
 	}
 	function fadeBounties(L, day) {
 		const C = crimeState(L);
 		each(L, C.bounty, day, (id, n) => {
 			for (const c in C.bounty[id]) {
-				const b = C.bounty[id][c], f = fadeOf(L.actors[id], b.worst);
+				const b = C.bounty[id][c], f = fadeOf(L.actors[id], b.worst, b.forever);
 				if (!f) continue;
 				b.mon = +(b.mon * (1 - f) ** n).toFixed(1);
 				if (b.mon < K.BOUNTY_GONE) {
@@ -3840,9 +3904,9 @@
 			ok: false,
 			reason: "no bounty"
 		};
-		if (!fadeOf(a, b.worst)) return {
+		if (!fadeOf(a, b.worst, b.forever)) return {
 			ok: false,
-			reason: "killing royalty is never forgiven"
+			reason: b.forever ? "this manhunt never ends" : "killing royalty is never forgiven"
 		};
 		const cost = Math.ceil(b.mon * (where === "shrine" ? K.SHRINE : K.MAGISTRATE));
 		if (!spend(a, cost)) return {
@@ -3877,16 +3941,16 @@
 		const seen = [...new Set(o.witnesses || [])].filter((id) => id !== o.by && L.actors[id]?.alive && !(killing && id === o.victim));
 		if (victim && !killing && (o.victimSaw ?? kind !== "theft") && !seen.includes(victim.id)) seen.push(victim.id);
 		const wanted = victim ? bountiesOf(L, victim.id) : {};
-		const cultures = [...new Set(seen.map((id) => L.actors[id].culture).filter((c) => c != null))];
+		const cultures = [...new Set([...seen.map((id) => L.actors[id].culture), ...o.seenBy || []].filter((c) => c != null))];
 		const known = cultures.filter((c) => !(wanted[c]?.mon > 0));
 		const just = !!victim && (cultures.length ? !known.length : Object.values(wanted).some((b) => b.mon >= CRIMES.assault.bounty));
 		const rr = o.rng || rngFor(L.seed, "crime", L.hour, L.ids.cr || 0);
 		const saw = o.masked ? seen.filter((id) => (o.close || []).includes(id) && rr.chance(K.MASK_SEE)) : seen;
-		const blamed = known.filter((c) => saw.some((id) => L.actors[id].culture === c));
+		const blamed = known.filter((c) => saw.some((id) => L.actors[id].culture === c) || !o.masked && (o.seenBy || []).includes(c));
 		let dk = def.karma;
 		if (victim && (victim.karma || 0) <= K.MONSTER) dk *= .5;
 		if (just) dk *= K.JUSTICE;
-		addKarma(by, dk);
+		if (!o.noKarma) addKarma(by, dk);
 		let taken = 0;
 		if (kind === "theft" && victim) {
 			taken = Math.min(Math.max(0, Math.round(o.value || 0)), victim.money.mon);
@@ -3940,6 +4004,18 @@
 			unmasked: rec.unmasked,
 			witnesses: seen.length
 		});
+		const named = blamed.length || !o.masked ? by.id : null;
+		if (kind === "theft" && taken > 0 && !o.quiet) emit(L, "crime.robbery", {
+			victim: rec.victim,
+			by: named,
+			mon: taken,
+			zone: rec.zone
+		});
+		if (killing && victim && named && !o.quiet) emit(L, "crime.murder", {
+			victim: victim.id,
+			by: named,
+			zone: rec.zone
+		});
 		return rec;
 	}
 	function onSight(L, c, id) {
@@ -3965,6 +4041,447 @@
 		const lim = COMPANION.LEAVE_AT + honourOf(L.actors[compId]) * COMPANION.LEAVE_PER + (joining ? COMPANION.JOIN_MARGIN : 0);
 		const ok = (L.actors[leaderId].karma || 0) >= lim;
 		return joining ? ok ? "join" : "refuse" : ok ? "stay" : "leave";
+	}
+	//#endregion
+	//#region src/sim/economy/tune.js
+	const COIN = {
+		mon: {
+			worth: 1,
+			grams: 3.75
+		},
+		silver: {
+			worth: 16,
+			grams: 3.75
+		},
+		ryo: {
+			worth: 1e3,
+			grams: 18
+		}
+	};
+	const GOODS = [
+		"rice",
+		"fish",
+		"salt",
+		"sake",
+		"timber",
+		"iron",
+		"cloth",
+		"silk",
+		"weapons",
+		"horses",
+		"tools"
+	];
+	const GOOD = {
+		rice: {
+			unit: "koku",
+			base: 1e3,
+			days: 60,
+			eps: .8,
+			rot: .0015,
+			cap: 4
+		},
+		fish: {
+			unit: "basket",
+			base: 40,
+			days: 6,
+			eps: 1,
+			rot: .04,
+			cap: 3
+		},
+		salt: {
+			unit: "bale",
+			base: 300,
+			days: 60,
+			eps: .8,
+			rot: 0,
+			cap: 4
+		},
+		sake: {
+			unit: "to",
+			base: 120,
+			days: 30,
+			eps: 1,
+			rot: .002,
+			cap: 3
+		},
+		timber: {
+			unit: "koku",
+			base: 100,
+			days: 30,
+			eps: 1,
+			rot: 0,
+			cap: 3
+		},
+		iron: {
+			unit: "kan",
+			base: 50,
+			days: 40,
+			eps: 1,
+			rot: 0,
+			cap: 3
+		},
+		cloth: {
+			unit: "tan",
+			base: 250,
+			days: 40,
+			eps: 1,
+			rot: 0,
+			cap: 3
+		},
+		silk: {
+			unit: "tan",
+			base: 8e3,
+			days: 60,
+			eps: 1.2,
+			rot: 0,
+			cap: 3
+		},
+		weapons: {
+			unit: "blade",
+			base: 2500,
+			days: 40,
+			eps: 1,
+			rot: 0,
+			cap: 3
+		},
+		horses: {
+			unit: "horse",
+			base: 4e3,
+			days: 60,
+			eps: 1,
+			rot: .001,
+			cap: 3
+		},
+		tools: {
+			unit: "piece",
+			base: 60,
+			days: 40,
+			eps: 1,
+			rot: 0,
+			cap: 3
+		}
+	};
+	const PRICE_EASE = .2;
+	const GUILD_SPEND = .2;
+	const NEED = {
+		rice: 1 / 112,
+		fish: .02,
+		salt: .0012,
+		cloth: .004,
+		timber: .01,
+		tools: .012,
+		iron: .004
+	};
+	const JOBS = {
+		farmer: {
+			kind: "farm",
+			make: { horses: .0025 }
+		},
+		rebel: {
+			kind: "farm",
+			make: { horses: .0015 }
+		},
+		fisher: {
+			kind: "make",
+			make: {
+				fish: 3.5,
+				salt: .12
+			}
+		},
+		woodcutter: {
+			kind: "make",
+			make: { timber: .9 }
+		},
+		miner: {
+			kind: "make",
+			make: { iron: .3 }
+		},
+		smith: {
+			kind: "make",
+			make: {
+				tools: .3,
+				weapons: .008
+			},
+			use: { iron: .4 }
+		},
+		weaver: {
+			kind: "make",
+			make: {
+				cloth: .2,
+				silk: .002
+			}
+		},
+		brewer: {
+			kind: "make",
+			make: { sake: .4 },
+			use: { rice: .05 }
+		},
+		merchant: { kind: "guild" },
+		ronin: {
+			kind: "hire",
+			wage: 16
+		},
+		innkeeper: { kind: "service" },
+		carpenter: { kind: "service" },
+		courier: { kind: "service" },
+		healer: { kind: "service" },
+		monk: { kind: "temple" },
+		abbot: { kind: "temple" },
+		lord: { kind: "none" },
+		ashigaru: {
+			kind: "stipend",
+			wage: 7
+		},
+		guard: {
+			kind: "stipend",
+			wage: 8
+		},
+		retainer: {
+			kind: "stipend",
+			wage: 18
+		},
+		magistrate: {
+			kind: "stipend",
+			wage: 20
+		},
+		steward: {
+			kind: "stipend",
+			wage: 18
+		},
+		"tax collector": {
+			kind: "stipend",
+			wage: 12
+		},
+		"bounty hunter": {
+			kind: "stipend",
+			wage: 8
+		},
+		shinobi: {
+			kind: "stipend",
+			wage: 10
+		},
+		spy: {
+			kind: "stipend",
+			wage: 10
+		},
+		bandit: {
+			kind: "rob",
+			take: 14
+		},
+		smuggler: {
+			kind: "rob",
+			take: 12
+		},
+		thief: {
+			kind: "rob",
+			take: 10
+		}
+	};
+	const MERCH_SHARE = .03;
+	const TEMPLE_SHARE = .06;
+	const TEMPLE_SINK = .002;
+	const SPEND = .04;
+	const TASTE = {
+		royal: {
+			silk: .35,
+			sake: .1,
+			horses: .1,
+			weapons: .05,
+			cloth: .05,
+			service: .2,
+			offering: .15
+		},
+		noble: {
+			sake: .15,
+			horses: .15,
+			weapons: .15,
+			cloth: .15,
+			timber: .1,
+			service: .15,
+			offering: .15
+		},
+		retainer: {
+			sake: .25,
+			weapons: .25,
+			horses: .1,
+			cloth: .15,
+			service: .15,
+			offering: .1
+		},
+		ronin: {
+			sake: .4,
+			weapons: .25,
+			cloth: .1,
+			service: .2,
+			offering: .05
+		},
+		ashigaru: {
+			sake: .35,
+			weapons: .1,
+			cloth: .15,
+			fish: .1,
+			service: .2,
+			offering: .1
+		},
+		monk: {
+			cloth: .2,
+			service: .2,
+			offering: .6
+		},
+		commoner: {
+			sake: .25,
+			fish: .15,
+			cloth: .15,
+			timber: .1,
+			tools: .1,
+			service: .15,
+			offering: .1
+		},
+		rebel: {
+			sake: .25,
+			fish: .15,
+			cloth: .15,
+			timber: .1,
+			tools: .1,
+			weapons: .05,
+			service: .1,
+			offering: .1
+		},
+		outlaw: {
+			sake: .5,
+			weapons: .2,
+			horses: .05,
+			cloth: .05,
+			service: .2
+		},
+		shinobi: {
+			sake: .15,
+			weapons: .3,
+			cloth: .2,
+			tools: .1,
+			service: .15,
+			offering: .1
+		}
+	};
+	const HOARD = .005;
+	const HARVEST = {
+		season: 2,
+		low: .85,
+		high: 1.15,
+		drought: .06,
+		droughtQ: [.3, .6],
+		bumper: .06,
+		bumperQ: [1.25, 1.4]
+	};
+	//#endregion
+	//#region src/sim/economy/money.js
+	const purse = (mon = 0, silver = 0, ryo = 0) => ({
+		mon,
+		silver,
+		ryo
+	});
+	const worth = (m) => m ? (m.mon || 0) + (m.silver || 0) * COIN.silver.worth + (m.ryo || 0) * COIN.ryo.worth : 0;
+	const addTo$1 = (m, add) => {
+		m.mon = (m.mon || 0) + (add.mon || 0);
+		m.silver = (m.silver || 0) + (add.silver || 0);
+		m.ryo = (m.ryo || 0) + (add.ryo || 0);
+		return m;
+	};
+	GOODS.length;
+	const GI = Object.fromEntries(GOODS.map((g, i) => [g, i]));
+	const JOB_LIST = Object.keys(JOBS);
+	const JI = Object.fromEntries(JOB_LIST.map((j, i) => [j, i]));
+	JOB_LIST.map((j) => JOBS[j].kind === "farm");
+	const MIN_STOCK = {
+		rice: 5,
+		fish: 5,
+		salt: 1,
+		sake: 5,
+		timber: 5,
+		iron: 5,
+		cloth: 3,
+		silk: .5,
+		weapons: 1,
+		horses: 1,
+		tools: 2
+	};
+	const minStock = (g) => MIN_STOCK[GOODS[g]] ?? 1;
+	(() => {
+		const f = new Array(16).fill(0), mid = 32;
+		for (let y = 0; y < 64; y++) for (let x = 0; x < 64; x++) {
+			const d = Math.hypot(x - mid, y - mid);
+			if (d > 16 && d < 28) f[Math.floor(y / 16) * 4 + Math.floor(x / 16)]++;
+		}
+		return f.map((n) => n / 256);
+	})();
+	Object.fromEntries(Object.entries(TASTE).map(([c, t]) => [c, Object.entries(t).filter(([k]) => k !== "silk" || c === "royal").flatMap(([k, v]) => [k === "service" ? -1 : k === "offering" ? -2 : GI[k], v])]));
+	TIME.DAYS_PER_SEASON * 4;
+	HARVEST.season * TIME.DAYS_PER_SEASON;
+	GI.rice;
+	JOB_LIST.length;
+	const FIGHTERS = [
+		"ashigaru",
+		"guard",
+		"retainer",
+		"ronin",
+		"bounty hunter",
+		"shinobi"
+	];
+	Object.entries(NEED).filter(([g]) => g !== "rice").map(([g, q]) => [GI[g], q]);
+	const SERVICE = [
+		"innkeeper",
+		"carpenter",
+		"courier",
+		"healer"
+	];
+	GOODS.map((g, i) => minStock(i));
+	GOODS.map((g) => GOOD[g].days);
+	const DT = 14;
+	const per = (x) => 1 - Math.pow(1 - x, DT);
+	NEED.rice;
+	per(SPEND);
+	per(HOARD / TIME.DAYS_PER_SEASON);
+	per(GUILD_SPEND), per(TEMPLE_SHARE), per(TEMPLE_SINK), per(MERCH_SHARE), per(PRICE_EASE), per(.1), per(.03);
+	GOODS.map((g) => Math.pow(1 - GOOD[g].rot, DT));
+	GOODS.map((g) => GOOD[g]);
+	JOB_LIST.map((j, i) => [i, JOBS[j]]).filter(([, d]) => d.make).map(([i, d]) => ({
+		j: i,
+		make: Object.entries(d.make).map(([g, q]) => [
+			GI[g],
+			q,
+			g
+		]),
+		use: d.use ? Object.entries(d.use).map(([g, q]) => [GI[g], q]) : null
+	}));
+	JOB_LIST.map((j, i) => [i, JOBS[j]]).filter(([, d]) => !d.make && d.kind !== "none");
+	const J_ = (name) => JI[name];
+	SERVICE.map(J_);
+	FIGHTERS.map(J_);
+	J_("monk"), J_("abbot");
+	J_("merchant");
+	J_("miner");
+	[
+		"innkeeper",
+		"carpenter",
+		"courier",
+		"healer"
+	].map((j) => JI[j]);
+	//#endregion
+	//#region src/sim/economy/vault.js
+	const E_ = (L) => L.sys.economy;
+	function raidKura(L, pid, by) {
+		const k = E_(L).kura[pid];
+		if (!k) return 0;
+		const v = worth(k.money);
+		addTo$1(L.actors[by].money, k.money);
+		k.money = purse();
+		emit(L, "econ.kura.raided", {
+			plot: pid,
+			owner: k.owner,
+			by,
+			value: Math.round(v)
+		});
+		return v;
 	}
 	//#endregion
 	//#region src/sim/crime/land.js
@@ -4031,6 +4548,7 @@
 			addTo(L.actors[p.title], "claims", pid);
 		} else delete C.contested[pid];
 		C.stats.land.force++;
+		raidStore(L, pid, by);
 		emit(L, "crime.seized", {
 			plot: pid,
 			actor: by,
@@ -4055,6 +4573,9 @@
 			witnesses: rec.witnesses
 		});
 		return rec;
+	}
+	function raidStore(L, pid, by) {
+		if (L.sys.economy && by != null && L.actors[by]) raidKura(L, pid, by);
 	}
 	function restore(L, pid, to, how) {
 		const C = crimeState(L), p = plotRec(L, pid), from = p.holder;
@@ -4145,7 +4666,7 @@
 		if (!spend(L.actors[payer], LAND.BLOOD_MONEY)) return false;
 		give(L.actors[heir], LAND.BLOOD_MONEY);
 		const b = crimeState(L).bounty[payer]?.[culture];
-		if (b && fadeOf(L.actors[payer], b.worst)) {
+		if (b && fadeOf(L.actors[payer], b.worst, b.forever)) {
 			clearBounty(L, payer, culture);
 			emit(L, "crime.bountyPaid", {
 				actor: payer,
@@ -4333,11 +4854,11 @@
 			}
 			if (r.chance(LAND.COURT) && courtCase(L, pid).ok) continue;
 			if (you) continue;
-			if (k.how === "murder" && purse(h) >= LAND.BLOOD_MONEY && r.chance(LAND.BLOOD)) {
+			if (k.how === "murder" && purse$1(h) >= LAND.BLOOD_MONEY && r.chance(LAND.BLOOD)) {
 				payBloodMoney(L, pid, h.id);
 				continue;
 			}
-			if (purse(h) >= priceOf(L, pid) && r.chance(LAND.SALE)) {
+			if (purse$1(h) >= priceOf(L, pid) && r.chance(LAND.SALE)) {
 				buyTitle(L, pid, h.id);
 				continue;
 			}
@@ -4394,7 +4915,7 @@
 			const id = living(L, r, ids, not);
 			if (id == null) continue;
 			const a = L.actors[id];
-			const w = (a.cls === "outlaw" ? 3 : a.cls === "shinobi" ? 1.5 : 1) * (1 + Math.max(0, -(a.karma || 0)) / 30) * (purse(a) < 30 ? 1.5 : 1) - honourOf(a) * .5 + r.next() * .3;
+			const w = (a.cls === "outlaw" ? 3 : a.cls === "shinobi" ? 1.5 : 1) * (1 + Math.max(0, -(a.karma || 0)) / 30) * (purse$1(a) < 30 ? 1.5 : 1) - honourOf(a) * .5 + r.next() * .3;
 			if (w > bw) {
 				bw = w;
 				best = id;
@@ -4403,7 +4924,9 @@
 		return best;
 	}
 	function witnesses$1(L, r, X, zone, not) {
-		const z = zoneAt(L, zone[0], zone[1]), hour = r.int(0, 23), night = hour >= TIME.DUSK || hour < TIME.DAWN;
+		const z = zone && zoneAt(L, zone[0], zone[1]);
+		if (!z) return [];
+		const hour = r.int(0, 23), night = hour >= TIME.DUSK || hour < TIME.DAWN;
 		const p = (WORLD.SEEN[z.kind] ?? WORLD.SEEN.wild) * (night ? .5 : 1);
 		if (!r.chance(p)) return [];
 		const ids = X.byZone.get(z.y * L.size.w + z.x), out = [];
@@ -4416,7 +4939,7 @@
 	const masked = (L, r, id) => r.chance(WORLD.MASK[L.actors[id].cls] ?? WORLD.MASK_ELSE);
 	const close = (r, ws) => ws.filter(() => r.chance(WORLD.CLOSE));
 	function one(L, r, X, kind, perp, victim, o = {}) {
-		const zone = L.actors[victim].home, ws = witnesses$1(L, r, X, zone, [perp, victim]);
+		const v = L.actors[victim], zone = v.home || v.at || null, ws = witnesses$1(L, r, X, zone, [perp, victim]);
 		return commit(L, kind, {
 			by: perp,
 			victim,
@@ -4520,30 +5043,36 @@
 			if (hit.includes(v)) continue;
 			hit.push(v);
 			const wit = witnesses$1(L, r, X, [tz.x, tz.y], [raider, v]);
-			commit(L, "theft", {
+			const rec = commit(L, "theft", {
 				by: chief.id,
 				victim: v,
 				zone: [tz.x, tz.y],
 				witnesses: wit,
 				victimSaw: true,
 				rng: r,
+				quiet: true,
 				value: L.actors[v].money.mon * r.range(...WORLD.RAID_TAKE)
 			});
-			if (r.chance(WORLD.RAID_KILL)) commit(L, "murder", {
+			const killed = r.chance(WORLD.RAID_KILL);
+			if (killed) commit(L, "murder", {
 				by: raider,
 				victim: v,
 				zone: [tz.x, tz.y],
 				witnesses: wit,
-				rng: r
+				rng: r,
+				quiet: true
+			});
+			emit(L, "crime.raid", {
+				camp: [z.x, z.y],
+				by: chief.id,
+				actor: chief.id,
+				victim: v,
+				mon: rec.taken || 0,
+				killed,
+				zone: [tz.x, tz.y],
+				culture: L.regions[tz.region].culture
 			});
 		}
-		emit(L, "crime.raid", {
-			actor: chief.id,
-			zone: [tz.x, tz.y],
-			from: [z.x, z.y],
-			victims: hit,
-			culture: L.regions[tz.region].culture
-		});
 		if (r.chance(WORLD.RAID_SEIZE)) {
 			const v = L.actors[r.pick(hit)], pid = v && v.holds.find((q) => L.plots[q]?.holder === v.id);
 			if (pid) seize(L, pid, chief.id, {
@@ -4579,7 +5108,7 @@
 					});
 					break;
 				}
-				const fine = Math.min(purse(a), Math.round(b.mon));
+				const fine = Math.min(purse$1(a), Math.round(b.mon));
 				spend(a, fine);
 				C.stats.fined++;
 				clearBounty(L, id, c);
@@ -4647,6 +5176,104 @@
 			});
 		}
 	}
+	//#endregion
+	//#region src/sim/crime/hooks.js
+	const regionCulture = (L, e) => e.region != null && L.regions[e.region] ? L.regions[e.region].culture : e.zone ? cultureOfZone(L, ...e.zone) : null;
+	const STORY_CRIME = {
+		theft: "theft",
+		robbery: "theft",
+		"theft from royalty": "theft",
+		banditry: "assault",
+		treachery: "assault",
+		assault: "assault",
+		"robbery of royalty": "assault",
+		fraud: "forgery",
+		murder: "murder"
+	};
+	on("story.deed", (e, L) => {
+		if (!L.sys.crime || e.actor == null || !L.actors[e.actor]) return;
+		const kind = STORY_CRIME[e.crime] || "assault", c = regionCulture(L, e), v = e.victim != null ? L.actors[e.victim] : null;
+		const seenBy = e.seen ? [c, v && v.culture].filter((x) => x != null) : [];
+		commit(L, kind, {
+			by: e.actor,
+			victim: v ? v.id : null,
+			zone: e.zone,
+			seenBy,
+			noKarma: true,
+			culture: c,
+			quiet: true
+		});
+	});
+	on("story.wanted", (e, L) => {
+		if (!L.sys.crime || e.target == null || e.culture == null || e.renewed) return;
+		addBounty(L, e.target, e.culture, e.forever ? CRIMES.regicide.bounty : CRIMES.murder.bounty, e.forever ? "regicide" : "murder", !!e.forever);
+	});
+	on("story.seized", (e, L) => {
+		const C = L.sys.crime;
+		if (!C) return;
+		const p = plotRec(L, e.plot);
+		if (e.holder != null && L.actors[e.holder]) {
+			const h = L.actors[e.holder];
+			if (!h.holds.includes(e.plot)) h.holds.push(e.plot);
+		}
+		const was = L.actors[e.was];
+		if (was && p.title !== was.id) {
+			const i = was.holds.indexOf(e.plot);
+			if (i >= 0) was.holds.splice(i, 1);
+		}
+		if (p.holder != null && p.title !== p.holder) C.contested[e.plot] = {
+			title: p.title,
+			holder: p.holder,
+			from: e.was ?? null,
+			since: L.hour,
+			how: e.cause || "story",
+			crime: null,
+			witnesses: []
+		};
+		else delete C.contested[e.plot];
+		C.stats.land.force++;
+		raidStore(L, e.plot, e.holder);
+	});
+	const TRAVEL_CRIME = {
+		raided: "theft",
+		robbedMerchant: "theft",
+		robbedPilgrims: "theft",
+		robbedWounded: "theft",
+		keptHorse: "theft",
+		killedGuards: "murder",
+		fledGuards: "trespass"
+	};
+	on("travel.deed", (e, L) => {
+		if (!L.sys.crime) return;
+		const a = L.actors[e.actor ?? L.player];
+		if (!a) return;
+		if (e.karma) addKarma(a, e.karma);
+		for (const c in e.standing || {}) addStanding(L, a, +c, e.standing[c]);
+		const kind = TRAVEL_CRIME[e.deed];
+		if (!kind) return;
+		const cs = [...new Set((e.witnesses || []).map((id) => L.actors[id]?.culture).filter((c) => c != null))];
+		for (const c of cs) addBounty(L, a.id, c, CRIMES[kind].bounty, kind);
+	});
+	on("travel.bountyPaid", (e, L) => {
+		if (L.sys.crime && e.culture != null) clearBounty(L, L.player, e.culture);
+	});
+	on("travel.surrender", (e, L) => {
+		if (!L.sys.crime || e.culture == null) return;
+		const a = L.actors[L.player], b = bountiesOf(L, a.id)[e.culture];
+		if (!b) return;
+		const fine = Math.min(purse$1(a), Math.ceil(b.mon));
+		spend(a, fine);
+		const days = Math.ceil((b.mon - fine) / 50);
+		if (!b.forever) clearBounty(L, a.id, e.culture);
+		emit(L, "crime.jailed", {
+			actor: a.id,
+			culture: e.culture,
+			fine,
+			days,
+			forever: !!b.forever,
+			zone: a.at
+		});
+	});
 	//#endregion
 	//#region src/sim/crime/index.js
 	system({
@@ -4979,7 +5606,7 @@
 			25,
 			60
 		].map((k) => `<b style="left:${(k + 100) / 2}%"></b><span style="left:${(k + 100) / 2}%">${k}</span>`).join("");
-		$("purse").innerHTML = `${fmt(purse(me))}<small>carried</small>`;
+		$("purse").innerHTML = `${fmt(purse$1(me))}<small>carried</small>`;
 		const v = S.target && L.actors[S.target];
 		$("target").innerHTML = v ? `<strong>${esc(nameOf(v))}</strong>, ${v.job}, ${Math.floor(ageOf(L, v))} years, ${fmt(v.money.mon)}${v.holds.length ? `, holds ${v.holds.join(" ")}` : ""}${isElderOrRoyal(L, v) ? " <span class=\"pill arrest\">elder or royal: killing is the worst crime</span>" : ""}` : "No one picked. Click a person to step up to them.";
 		const w = witnesses(S.target);
