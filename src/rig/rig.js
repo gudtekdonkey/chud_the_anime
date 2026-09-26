@@ -40,7 +40,6 @@ export function rig(g, fx, p) {
   seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
   // the back hand can carry the blade too, for the counter stances
   const bh = arm(p.ba, 'D');
-  if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
   leg(p.bl, 'D', -.5);
   // torso, near leg
   poly([L(0, -2), L(0, 2), L(7, 2.3), L(8.2, 1.4), L(8.2, -1.6), L(7, -2.4)], 'K');
@@ -58,6 +57,8 @@ export function rig(g, fx, p) {
   poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M');
   seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
   if (f > .5) put(...L(2.6, -3.4), 'M');
+  // the back hand's blade is drawn over the body and the sash, so it is never lost behind them
+  if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; blob(bh[0], bh[1], 2, 'D'); seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
   // near arm and the sword
   const hand = arm(p.fa, 'K');
   if (p.sword === null && !p.sheathing && p.bsword == null) {                    // sheathed: hilt pokes forward-up out of the scabbard
