@@ -6,6 +6,7 @@ import { gather, debrisXY, fling, crack } from '../fx/debris.js';
 import { storm, updateFx } from '../fx/fx.js';
 import { unleashMoon } from '../fx/moon.js';
 import { strike, updateCuts } from '../fx/slash.js';
+import { xTear } from '../fx/void.js';
 import { rr, residue, spark, dust, after } from '../fx/util.js';
 import { held } from '../input.js';
 import { afterAttack, pickStance, setState, once, moveBy, blink, ghost, inputDir } from './actions.js';
@@ -179,8 +180,9 @@ export function update(dt, inp) {
       P.inv = T < .2;
       if (T >= .15 && !P.moved) { P.moved = true; const fx0 = P.x, fy0 = P.y; blink(44, P.blinkDir); residue(fx0, fy0, 8); }
       // two big crescents crossing like an X, 0.1 s apart, the second drawing a cut line through the target
-      if (once('c1', T >= .225)) { strike(-.5, 1, true); moveBy(P.face * 3, 0); }
-      if (once('c2', T >= .325)) { strike(.5, -1, true); moveBy(P.face * 3, 0);
+      // each opens a black slash where the blades cross; both snap shut on the sheath click (0.6 s)
+      if (once('c1', T >= .225)) { strike(-.5, 1, true); xTear(P.x + P.face * 22, P.y - 12, 22, 1, 3.5, .6 - T); moveBy(P.face * 3, 0); }
+      if (once('c2', T >= .325)) { strike(.5, -1, true); xTear(P.x + P.face * 25, P.y - 12, 22, -1, 3.5, .6 - T); moveBy(P.face * 3, 0);
         cuts.push({ x0: P.x + P.face * 2, x1: P.x + P.face * 48, y: Math.round(P.y - 12), life: .1, max: .1 }); }
       const [rd, rr2] = reach(14, 26);
       if (T >= .225 && T < .3) hit('d1', P.x + P.face * rd, P.y - 12, rr2);

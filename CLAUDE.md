@@ -71,7 +71,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `fx/bolts.js` | Jagged whole-pixel lightning (`zap`) |
 | `fx/debris.js` | Stone chips the storm slam gathers and flings, floor cracks |
 | `fx/moon.js` | The Crescent Moon: sweep, hang, shatter, its light on the floor |
-| `fx/void.js` | Cross Rift's tear in reality |
+| `fx/void.js` | The black slash: Cross Rift's tear in reality (`tear`, `xTear`, `tearArc` bent round a crescent), which every offensive skill cuts on its hit beat and shuts on its own (`close`) or on the caller's click |
 | `fx/element.js` | `ELEMENTS` (palette + kit per element), `EL` (the current one), `setElement`, `cc`/`ec` (storm white and cyan to the element's tones) |
 | `fx/matter.js` | The non-lightning elements' matter (flames, goo, drops, gusts, motes), floor stains, the kits `FIRE`/`SLIME`/`WATER`/`WIND`/`PSYCHIC`, `qiFx` |
 | `fx/blood.js` | Blood drops, floor stains and pools |
