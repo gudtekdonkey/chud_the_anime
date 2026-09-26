@@ -1,4 +1,4 @@
-import { OX, OY, RC } from '../config.js';
+import { FW, FH, OX, OY, RC } from '../config.js';
 import { KATANA_ART } from '../weapons/katana.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
@@ -8,8 +8,11 @@ export const RX = 24, RY = 40;
 const DX = OX - RX, DY = OY - RY;
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
 export function rig(g, fx, p) {
-  const put = (x, y, c) => { g.fillStyle = RC[c]; g.fillRect(fx + DX + Math.round(x), DY + Math.round(y), 1, 1); };
-  const blob = (x, y, w, c) => { g.fillStyle = RC[c]; g.fillRect(fx + DX + Math.round(x - (w - 1) / 2), DY + Math.round(y - (w - 1) / 2), w, w); };
+  // pixels past the frame's edge are dropped, so a long weapon never bleeds into the next frame of the sheet
+  const put = (x, y, c) => { const X = DX + Math.round(x), Y = DY + Math.round(y); if (X < 0 || X >= FW || Y < 0 || Y >= FH) return;
+    g.fillStyle = RC[c]; g.fillRect(fx + X, Y, 1, 1); };
+  const blob = (x, y, w, c) => { const X = DX + Math.round(x - (w - 1) / 2), Y = DY + Math.round(y - (w - 1) / 2); if (X < 0 || X + w > FW || Y < 0 || Y + w > FH) return;
+    g.fillStyle = RC[c]; g.fillRect(fx + X, Y, w, w); };
   const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
     for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
   const poly = (pts, c) => {
@@ -46,7 +49,7 @@ export function rig(g, fx, p) {
   // far side first: scabbard, far arm, far leg
   wp.far(kit, p, mouth, sd);
   // the back hand can carry the blade too, for the counter stances
-  const bh = arm(p.ba, 'D');
+  const bh = arm(p.ba, 'D'); kit.bh = bh;                   // a two-handed weapon runs its shaft through both hands
   if (wp.offHand) wp.offHand(kit, p, bh);                  // a second weapon in the back hand (twin blades)
   leg(p.bl, 'D', -.5);
   // torso, near leg
