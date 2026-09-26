@@ -44,11 +44,20 @@ try {
     catch { fail(`never reached ${what} (state now: ${await state()}, log tail: ${(await page.evaluate(() => window.__log.slice(-8))).join(' > ')})`); } };
   const reach = (re, timeout) => until(re.toString(), r => new RegExp(r).test(window.__game.P.state), re.source, timeout);
   const cv = name => until(`charged skill ${name}`, n => window.__game.P.cv && window.__game.P.cv.name === n, name);
-  const FREE = /^(idle|run|idleGlitch|ready\d|runArmed|sheathe)$/;   // states that take a new command
+  const FREE = /^(idle|run|walk|idleGlitch|ready\d|runArmed|sheathe)$/;   // states that take a new command
   const shot = name => page.locator('#game').screenshot({ path: `${OUT}/${name}.png` });
   const run = async (name, fn) => { step = name; await fn(); console.log(`  ok  ${name}`); };
 
   await run('move', async () => { await kb.down('d'); await reach(/^run$/); await sleep(300); await shot('01-run'); await kb.up('d'); await reach(/^idle$/); });
+  await run('hold V: walk', async () => { await kb.down('v'); await kb.down('d'); await reach(/^walk$/); await sleep(300); await shot('01b-walk');
+    await kb.up('d'); await kb.up('v'); await reach(/^idle$/); });
+  await run('personality: a trait mix re-bakes how he stands and walks', async () => {
+    await page.selectOption('#pz-preset', 'Old master');
+    await until('the Old master\'s slower walk', () => window.__game.P.gait.walk < 40);
+    await page.locator('#game').click(); await kb.down('v'); await kb.down('a'); await reach(/^walk$/); await sleep(300); await shot('01c-old-master');
+    await kb.up('a'); await kb.up('v'); await reach(/^idle$/);
+    await page.selectOption('#pz-preset', 'The ronin (as he is)'); await until('his own walk again', () => window.__game.P.gait.walk === 40);
+    await page.locator('#game').click(); });
   await run('J, J: slash 1 flows into slash 2', async () => {
     await kb.press('j'); await reach(/^slash1$/);
     await until('slash 1 follow-through', () => window.__game.P.t > .18);

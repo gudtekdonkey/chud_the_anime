@@ -25,6 +25,7 @@ Click the screen first.
 | Key | Move |
 |---|---|
 | WASD / arrows | Run |
+| Hold V | Walk (how he stands, walks and runs comes from the personality picked under the game) |
 | J | Light-speed quick-draw; press again during the follow-through for the rising answer cut |
 | Shift or L | Ground slide |
 | Space | Jump |
