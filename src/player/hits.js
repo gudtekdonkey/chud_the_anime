@@ -17,7 +17,7 @@ export function hitOne(dummy, i, kind, fx = P.x, fy = P.y) {
   if (P.storm > 0) chainFrom(dummy); else qiAdd(QI_GAIN[kind.match(/^[a-zA-Z]+/)[0]] || 0);
 }
 export function hit(kind, cx, cy, r) {
-  DUMMIES.forEach((d, i) => { if (!P.hitDone[kind + i] && Math.hypot(d.x - cx, (d.y - 10 - cy) * 1.4) <= r) hitOne(d, i, kind); });
+  DUMMIES.forEach((d, i) => { if (!d.out && !P.hitDone[kind + i] && Math.hypot(d.x - cx, (d.y - 10 - cy) * 1.4) <= r) hitOne(d, i, kind); });
 }
 // distance from a point to a segment in the same squashed floor space as hit(), and how far along it the point sits
 function segDist(px, py, x0, y0, x1, y1) {
@@ -25,7 +25,7 @@ function segDist(px, py, x0, y0, x1, y1) {
   return [Math.hypot(qx - dx * t, qy - dy * t), t];
 }
 export function hitSeg(kind, x0, y0, x1, y1, r) {
-  DUMMIES.forEach((d, i) => { if (!P.hitDone[kind + i] && segDist(d.x, d.y - 10, x0, y0, x1, y1)[0] <= r) hitOne(d, i, kind); });
+  DUMMIES.forEach((d, i) => { if (!d.out && !P.hitDone[kind + i] && segDist(d.x, d.y - 10, x0, y0, x1, y1)[0] <= r) hitOne(d, i, kind); });
 }
 // the sheath-click payoff on one dummy: white, a cut across it, slivers and a spray of streaks
 export function burst(d, p = 1) {

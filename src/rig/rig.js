@@ -2,9 +2,10 @@ import { OX, OY, RC } from '../config.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
-export function rig(g, fx, p) {
-  const put = (x, y, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
-  const blob = (x, y, w, c) => { g.fillStyle = RC[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
+// pal: a palette in RC's letters, so the same rig draws the enemy samurai in his own colours
+export function rig(g, fx, p, pal = RC) {
+  const put = (x, y, c) => { g.fillStyle = pal[c]; g.fillRect(fx + Math.round(x), Math.round(y), 1, 1); };
+  const blob = (x, y, w, c) => { g.fillStyle = pal[c]; g.fillRect(fx + Math.round(x - (w - 1) / 2), Math.round(y - (w - 1) / 2), w, w); };
   const seg = (a, b, w, c) => { const n = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) * 2));
     for (let i = 0; i <= n; i++) blob(a[0] + (b[0] - a[0]) * i / n, a[1] + (b[1] - a[1]) * i / n, w, c); };
   const poly = (pts, c) => {
@@ -36,6 +37,9 @@ export function rig(g, fx, p) {
     seg(s, e, 2, c); seg(e, h, 1, c); blob(h[0], h[1], 2, c); return h; };
   const mouth = L(1.5, 2), sd = [-Math.cos(.32), Math.sin(.32)];
 
+  if (p.noUpper) {   // cut in two: only the pelvis and legs are left, and they fold on their own
+    leg(p.bl, 'D', -.5); poly([L(0, -2), L(0, 2), L(2.6, 2.2), L(2.6, -2.2)], 'K'); leg(p.fl, 'K', .5); return;
+  }
   // far side first: scabbard, far arm, far leg
   seg(mouth, add(mouth, sd, 12), 1, 's'); put(...add(mouth, sd, 12), 'S');
   // the back hand can carry the blade too, for the counter stances
@@ -47,16 +51,21 @@ export function rig(g, fx, p) {
   leg(p.fl, 'K', .5);
   // head and hat
   const hc = L(10 - p.bow * .7, .6 + p.bow * 1.1);
-  for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
-  put(hc[0] + 1.5, hc[1], p.dim ? 'e' : 'E');
+  if (!p.noHead) {   // noHead: the head has come off and is its own piece now
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] + dy, 'K');
+    const hf = p.headFlip ? -1 : 1;   // headFlip: the head is wrenched round to face backward
+    put(hc[0] + 1.5 * hf, hc[1], p.dim ? 'e' : 'E');
+    // bare: the enemy samurai, no hat or mantle, bare-headed with a topknot
+    if (p.bare) { for (let dx = -1.5; dx <= 1.5; dx++) put(hc[0] + dx, hc[1] - 2, 'K'); put(hc[0] - hf, hc[1] - 3, 'K'); put(hc[0] - 2 * hf, hc[1] - 4, 'K'); put(hc[0] - 2 * hf, hc[1] - 3, 'D'); }
+  }
   const hx0 = Math.round(hc[0]) - 9 + p.hat, hy0 = Math.round(hc[1]) - 6;
-  HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x - fx + fx, hy0 + y, ch); }));
+  if (!p.bare) HAT_SIDE.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== '.') put(hx0 + x - fx + fx, hy0 + y, ch); }));
   // mantle over the shoulders, its back tip lifting a hair with the flutter
   const f = p.flutter;
   // it drapes flat down the back instead of standing off it, so it no longer reads as a hump
-  poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M');
-  seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
-  if (f > .5) put(...L(2.6, -3.4), 'M');
+  if (!p.bare) { poly([L(8.4, 2.3), L(8.9, -1.6), L(6.8, -2.9), L(3.0, -3.0 - f * .7), L(3.6, -1.2), L(5.4, 2.7)], 'M');
+    seg(L(8.4, 2.1), L(8.8, -1.4), 1, 'm');
+    if (f > .5) put(...L(2.6, -3.4), 'M'); }
   // the back hand's blade is drawn over the body and the sash, so it is never lost behind them
   if (p.bsword != null) { const d = [Math.cos(p.bsword), Math.sin(p.bsword)]; blob(bh[0], bh[1], 2, 'D'); seg(bh, add(bh, d, -2.5), 1, 'K'); put(...bh, 'S'); seg(add(bh, d, 1), add(bh, d, 13), 1, 'W'); }
   // near arm and the sword

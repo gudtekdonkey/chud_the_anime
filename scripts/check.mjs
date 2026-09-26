@@ -49,6 +49,13 @@ try {
   const run = async (name, fn) => { step = name; await fn(); console.log(`  ok  ${name}`); };
 
   await run('move', async () => { await kb.down('d'); await reach(/^run$/); await sleep(300); await shot('01-run'); await kb.up('d'); await reach(/^idle$/); });
+  await run('K on an isolated dummy in reach: the kill line and K prompt, an execution, K ready 0.2 s after', async () => {
+    await sleep(200); await shot('09-k-prompt');
+    await kb.press('k'); await reach(/^exec$/); await sleep(700); await shot('10-execution');
+    await reach(/^idle$/, 4000);
+    const cd = await page.evaluate(() => ({ t: window.__game.P.cd.tele, max: window.__game.P.cdMax.tele }));
+    if (!(cd.max <= .2 + 1e-9)) fail(`K was not reset to 0.2 s after the kill (${JSON.stringify(cd)})`);
+    await until('K ready again', () => !(window.__game.P.cd.tele > 0), undefined, 1000); await sleep(500); await shot('11-after'); });
   await run('J, J: slash 1 flows into slash 2', async () => {
     await kb.press('j'); await reach(/^slash1$/);
     await until('slash 1 follow-through', () => window.__game.P.t > .18);
@@ -57,6 +64,8 @@ try {
   await run('Shift: ground slide', async () => { await kb.press('Shift'); await reach(/^slide$/); await reach(FREE); });
   await run('Space: jump, fall, land', async () => { await kb.press(' '); await reach(/^jump$/); await reach(/^fall$/); await reach(/^land$/); await reach(FREE); });
   await run('K: glitch teleport, then its cooldown refuses a second press', async () => {
+    // out of every dummy's reach first (the top-left corner), so K is the plain teleport, not an assassination
+    await kb.down('a'); await kb.down('w'); await sleep(4200); await kb.up('a'); await kb.up('w'); await reach(FREE);
     await kb.press('k'); await reach(/^tele$/); await reach(FREE);
     await until('K on cooldown', () => window.__game.P.cd.tele > 0);
     await kb.press('k'); await until('the refused press', () => window.__game.P.cdDeny.tele > 0);

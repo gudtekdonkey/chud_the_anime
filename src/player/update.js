@@ -15,6 +15,9 @@ import { meditate, spawnMirror, updateMirrors } from './mirror.js';
 import { TAP, chargeUp, TC, RIFT, release, charged } from './skills.js';
 import { gate, startCd, updateCds } from './cooldowns.js';
 import { DUMMIES } from '../world/dummies.js';
+import { assassinate, tickStages, updateStages } from '../assassin/assassinate.js';
+import { K, updateMarkers } from '../assassin/markers.js';
+import { updateTargets } from '../assassin/targets.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
@@ -24,9 +27,9 @@ export function update(dt, inp) {
   for (const d of DUMMIES) { d.flash = Math.max(0, d.flash - dt); d.wob = Math.max(0, d.wob - dt); }
   S.shake = Math.max(0, S.shake - dt); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
   updateCds(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
-  updateFx(dt);
+  updateFx(dt); updateStages(dt); updateTargets(dt); updateMarkers();
   if (S.hitstop > 0) { S.hitstop -= dt; return; }
-  updateCuts(dt); updateMirrors(dt);
+  updateCuts(dt); updateMirrors(dt); tickStages(dt);
   for (const t of timers.splice(0)) if ((t.t -= dt) <= 0) t.fn(); else timers.push(t); // sequenced payoffs (implosions, chain links)
 
   P.t += dt;
@@ -36,6 +39,7 @@ export function update(dt, inp) {
   if (inp.mx) P.face = Math.sign(inp.mx);
   const moving = inp.mx || inp.my;
 
+  if (s === 'exec') return;   // the execution's stage moves him (assassin/assassinate.js)
   if (inp.die && s !== 'death') { setState('death'); return; }
   if (s === 'sit' || s === 'sitDown') {
     if (moving || inp.slash || inp.jump || inp.slide || inp.tele || inp.double || inp.sweep || inp.sit || inp.moon || inp.rift || inp.mirror) {
@@ -51,6 +55,7 @@ export function update(dt, inp) {
     if (inp.slash) return setState(P.armed ? 'slash1r' : 'slash1');
     if (inp.jump) { setState('jump'); P.vz = 150; return; }
     if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); startCd('slide'); return; }
+    if (inp.tele && K.pick) return assassinate(K.pick);   // an isolated enemy in reach: K flashes to him and executes
     if (inp.tele) { setState('tele'); P.blinkDir = inputDir(inp); startCd('tele'); return; }
     if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'double'; startCd('double'); return; }
     if (inp.rift) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'rift'; return; }   // O and P cool down from the release

@@ -32,7 +32,7 @@ export function chainFrom(d0) {
   ring(d0.x, d0.y - 2, 6, 3, .3, 3, COL.fx2);
   for (let hop = 0; hop < 3; hop++) {
     let b = null, best = 130;
-    for (const d of DUMMIES) { const r = Math.hypot(d.x - a.x, (d.y - a.y) * 1.3); if (!seen.has(d) && r < best) { best = r; b = d; } }
+    for (const d of DUMMIES) { const r = Math.hypot(d.x - a.x, (d.y - a.y) * 1.3); if (!d.out && !seen.has(d) && r < best) { best = r; b = d; } }
     if (!b) break; seen.add(b);
     const x0 = a.x, y0 = a.y - 16, x1 = b.x, y1 = b.y - 16;
     after(.02 + hop * .07, () => { zap(x0, y0, x1, y1, .32, 3.5, '#ffffff', { every: 1, fork: true }); zap(x0, y0, x1, y1, .32, 2, COL.fx, { every: 1 });
