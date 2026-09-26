@@ -55,6 +55,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `traits/knobs.js` | `BASE`: the knobs a personality turns (lean, breath, hands, stride, bounce...), the plain ronin's values; `ARMS` hand targets |
 | `traits/fidgets.js` | `FIDGETS`: small idle actions (tug the hat, crack the neck...) |
 | `traits/traits.js` | `TRAITS`: 52 personality traits as plain data, `GROUPS`, `PRESETS` (ready-made characters) |
+| `traits/cultures.js` | `CULTURES`: each culture's shared trait mix and a pool of personal traits; `personOf(culture, seed)` gives one person's traits |
 | `traits/mix.js` | `mix()`: adds traits by strength into one set of knobs; `defineTrait()`; validates every trait at load |
 | `traits/bake.js` | `bake()`: knobs to idle / walk / run poses. No traits gives today's idle and run exactly |
 | `fx/fx.js` | `updateFx`, `drawFloorFx`, `drawFx`: the effect systems' per-frame update and draw |
@@ -131,6 +132,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 
 - Iterate on design as standalone pages in `prototypes/`, numbered in order (`34-…html` next). Never edit an old prototype; make a new one.
 - Record every decision the owner makes in `docs/design-notes.md`.
+- Every culture moves through the trait system: a character from a culture gets `setPersonality`/`bake(personOf(culture, seed))`, never hand-made idle or walk poses. A culture's mannerisms go in `CULTURES` (a new mannerism is a new trait or fidget).
 - Personality traits (`src/traits/`) never import player, enemy or clothing code, so any rig character can take them. A new trait is a new entry in `TRAITS`; a new knob goes in `BASE` with the plain ronin's value, so no-trait output never changes.
 - Every new move gets an `ANIMS` row with an `about` text (it fills the moveset table); a skill that plays on another move's frames gets a row in `ui/moveset.js` `SKILL_ROWS`.
 - Tuning numbers, colours and timings change only on purpose, never as a side effect of a refactor.
