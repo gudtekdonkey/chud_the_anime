@@ -2,6 +2,7 @@ import { RY } from '../rig/rig.js';
 import { shoulderDraw, shoulderStow } from './grip.js';
 import { pz, HILT, lin, keyed } from '../rig/pose.js';
 import { NODACHI_3D } from './art3d.js';
+import { comboPoses } from '../anims/combo-poses.js';
 
 // ---- The nodachi (the Grave Nodachi pickup): a greatsword worn on the back, hilt over the shoulder. Every cut is heavy, wound up far and followed through low ----
 const along = a => [Math.cos(a), Math.sin(a)];
@@ -39,6 +40,14 @@ const TAIL = [
   [.16, pz({ hx: 2, hy: 4, lean: .5, chest: .4, fl: [1.05, 1.15], bl: [-1.05, .1], fa: [1.7, .05], ba: [1.3, .2], sword: .15, hat: 1, flutter: 1 }), lin],
   [.22, FOLLOW], [.36, pz({ ...FOLLOW, lean: .74, chest: .5 })], [.5, GUARD]];
 const OVER = pz({ hx: 2, hy: 2, lean: -.25, chest: -.5, fl: [.95, .5], bl: [-.85, .2], fa: [2.95, -.1], ba: [2.65, .1], sword: -1.95, hat: 1 });
+// J3 to J6 (anims/combo-poses.js): the greatsword over the back, a wide level wheel, rested on the shoulder for the kick,
+//   up overhead for the launch, and the flash step ends with it laid out behind him
+const ARMS = {
+  wind: { fa: [1.6, 1.5], ba: [1.1, 1.6], sword: 3.0 }, sweep: { fa: [1.5, 0], ba: [1.3, .2], sword: 0 },
+  kick: { fa: [1.3, 1.6], ba: [-.6, .3], sword: -2.75 }, crouch: { fa: [.3, .3], ba: [.1, .4], sword: 2.4 },
+  top: { fa: [2.9, 0], ba: [2.6, .1], sword: -1.5 }, set: { fa: [.5, 1.1], ba: [.3, 1.2], sword: 2.7 },
+  fin: { fa: [1.3, 0], ba: [1.0, .3], sword: 2.8 },
+};
 const STANCES = [
   // resting on the shoulder, the blade pointing back
   pz({ hy: 2, lean: .02, chest: .08, fl: [.45, .55], bl: [-.4, .45], fa: [1.3, 1.6], ba: [-.2, .3], sword: -2.75 }),
@@ -63,6 +72,7 @@ export const NODACHI = { id: 'nodachi', name: 'Nodachi', about: 'A greatsword wo
       [.08, pz({ hx: 1, hy: 6, lean: .55, chest: .3, fl: [.85, 1.4], bl: [-.85, .4], fa: [.4, .3], ba: [.2, .5], sword: 2.5 })],
       [.14, pz({ hx: 2, hy: 3, lean: -.05, chest: -.25, fl: [.9, .6], bl: [-.8, .2], fa: [2.4, 0], ba: [2.0, .2], sword: -1.0, hat: 1, flutter: 1 }), lin],
       [.2, OVER], [.34, pz({ ...OVER, sword: -1.92 })], [.5, GUARD]], 30),
+    ...comboPoses(ARMS, pz({ ...OVER, sword: -1.92 }), GUARD),
     runArmed: POSES_RUN_ARMED(),
   },
   // elsewhere: the hand that would wait on a hip hilt reaches up for the one over his shoulder

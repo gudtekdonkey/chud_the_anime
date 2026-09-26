@@ -169,6 +169,31 @@ try {
     await kb.up('a'); await reach(/^idle$/);
     await page.locator('[data-outfit="Default"]').click();
     if (!await has('mantle') || await has('coat')) fail('the default outfit did not come back'); });
+  await run('basic skill 6: J chains six cuts; six landed cuts earn Flow, and a skill on cooldown casts anyway', async () => {
+    await page.selectOption('#basic', '450'); await until('a six-cut combo', () => window.__game.INV.basic >= 450); await page.locator('#game').click();
+    await page.evaluate(() => { window.__log = []; });
+    for (let i = 0; i < 40 && !await page.evaluate(() => window.__game.P.flow > 0); i++) {
+      const e = await page.evaluate(() => { const P = window.__game.P, L = window.__game.E.filter(e => e.alive);
+        L.sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y)); return L[0] && { x: L[0].x, y: L[0].y }; });
+      if (!e) { await sleep(500); continue; }
+      if (await page.evaluate(q => Math.abs(window.__game.P.y - q.y) > 4 || Math.abs(window.__game.P.x - q.x) > 30, e)) await walkTo(e.x - 16, e.y);
+      await page.evaluate(() => { window.__game.P.face = 1; });
+      await kb.press('d'); await reach(FREE);
+      // J in each cut's follow-through, as a player would, until the chain ends
+      await kb.press('j'); await reach(/^slash/);
+      for (let k = 0; k < 5; k++) { const s0 = await state(); if (!/^slash[1-5]/.test(s0)) break;
+        await until(`${s0} follow-through`, () => window.__game.P.t > .17 || !/^slash/.test(window.__game.P.state));
+        await kb.press('j'); await until('the next cut', q => window.__game.P.state !== q, s0); }
+      await reach(FREE); }
+    const log = await page.evaluate(() => window.__log);
+    if (!log.includes('slash6')) fail(`the chain never reached slash 6 (${log.filter(s => s.startsWith('slash')).join(' > ')})`);
+    if (!await page.evaluate(() => window.__game.P.flow > 0)) fail('six landed cuts did not earn Flow');
+    await shot('15-flow');
+    await kb.press('i'); await reach(/^double$/); await reach(FREE);
+    if (!(await page.evaluate(() => window.__game.P.cd.double > 0))) fail('I is not cooling down');
+    await kb.press('i'); await reach(/^double$/);
+    if (await page.evaluate(() => window.__game.P.flow > 0)) fail('casting through the cooldown did not spend Flow');
+    await reach(FREE); });
   await run('] and [: switch elements; slime slides and charges the moon, then back to storm', async () => {
     const el = () => page.evaluate(() => document.querySelector('#elements [aria-pressed=true]')?.dataset.el);
     await kb.press(']'); if (await el() !== 'fire') fail(`] picked ${await el()}, not fire`);
