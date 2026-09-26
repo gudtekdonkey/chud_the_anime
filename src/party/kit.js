@@ -18,7 +18,9 @@ export const ROLES = {
   katana: { ...DUEL, cd: .75, speed: 1, hit: .16 }, tessen: { ...DUEL, cd: .6, speed: 1.05, hit: .12 },
   yari: { ...LINE, cd: .9, speed: .95, hit: .18 }, naginata: { ...LINE, cd: 1, speed: .95, hit: .2 }, bo: { ...LINE, cd: .8, speed: 1, hit: .16 },
   tanto: { ...FLANK, cd: .45, speed: 1.15, hit: .1 }, kusarigama: { ...FLANK, cd: .8, speed: 1.1, hit: .18 },
-  nodachi: { ...BREAK, cd: 1.35, speed: .85, hit: .24 }, kanabo: { ...BREAK, cd: 1.5, speed: .8, hit: .26 },
+  nodachi: { ...BREAK, cd: 1.35, speed: .85, hit: .24 }, kanabo: { ...BREAK, cd: 1.5, speed: .8, hit: .26 }, tetsubo: { ...BREAK, cd: 1.5, speed: .8, hit: .26 },
+  jitte: { ...DUEL, cd: .6, speed: 1.05, hit: .12 }, daisho: { ...DUEL, cd: .7, speed: 1, hit: .16 }, wakizashi: { ...DUEL, cd: .6, speed: 1.05, hit: .14 },
+  kama: { ...FLANK, cd: .5, speed: 1.1, hit: .12 }, nunchaku: { ...FLANK, cd: .5, speed: 1.1, hit: .12 },
 };
 export const WEAPON_NAME = Object.fromEntries(WEAPONS.map(w => [w.id, w.name.toUpperCase()]));
 // scope: 'party' works whoever wears it; 'wearer' acts on whoever wears it; 'hero' needs his skills; 'ally' needs a companion
@@ -46,7 +48,8 @@ export const STATS = { vigor: { name: 'VIG', long: 'VIGOR', about: 'Takes less f
   speed: { name: 'SPD', long: 'SPEED', about: 'Moves faster.' }, focus: { name: 'FOC', long: 'FOCUS', about: 'Cuts again sooner and builds more Qi.' } };
 export const expNeed = lv => 100 * lv;
 const LEAN_W = { katana: { edge: 1, focus: 1, speed: 1 }, yari: { vigor: 2, focus: 1 }, tanto: { speed: 2, edge: 1 }, nodachi: { edge: 2, vigor: 1 },
-  naginata: { vigor: 1, focus: 1 }, kanabo: { vigor: 2, edge: 1 }, kusarigama: { speed: 1, focus: 2 }, tessen: { focus: 2, speed: 1 }, bo: { vigor: 1, speed: 1, focus: 1 } };
+  naginata: { vigor: 1, focus: 1 }, kanabo: { vigor: 2, edge: 1 }, kusarigama: { speed: 1, focus: 2 }, tessen: { focus: 2, speed: 1 }, bo: { vigor: 1, speed: 1, focus: 1 },
+  tetsubo: { vigor: 2, edge: 1 }, jitte: { focus: 2, vigor: 1 }, daisho: { edge: 2, focus: 1 }, wakizashi: { edge: 1, speed: 1, focus: 1 }, kama: { speed: 2, edge: 1 }, nunchaku: { speed: 2, focus: 1 } };
 const LEAN_T = { vigor: ['heavy', 'lumbering', 'soldier', 'grim', 'stoic', 'veteran', 'brawler'], speed: ['nimble', 'lightFooted', 'restless', 'twitchy', 'eager', 'shinobi', 'bouncy'],
   edge: ['menacing', 'cocky', 'duelist', 'coiled', 'wary'], focus: ['calm', 'serene', 'monk', 'scholar', 'humble', 'regal'] };
 // what a companion values: their weapon's needs plus their personality
