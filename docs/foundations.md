@@ -116,6 +116,10 @@ All four run on the same ledger as ownership and wealth: the world keeps going w
   - **memory** of the ronin: what they saw him do, what they heard.
 - Most NPCs live only in the ledger until he walks into their zone. Named ones (lords, elders, rivals, companions) are always tracked in full.
 
+### People remember (owner, 2026-09-26)
+- Everything he does is remembered by the people who saw it or heard of it: kindness, cruelty, a village saved or burned, a promise kept or broken, how he ruled. Memory lives on the people (the people lane's per-person memory), spreads by word of mouth through their relationships and culture, and outlives him: his heirs inherit his name's reputation, and a tyrant's grandson is met with old hatred.
+- This sits under karma and standing: karma is the sum of who he is, standing what a culture thinks now, memory the particular things particular people will not forget.
+
 ### Companions grow through what you live through together (owner, 2026-09-26)
 - **Bonds are earned in deeds.** Fighting beside the ronin raises a companion's relationship and loyalty to him; reviving them in battle or saving them from a bad situation raises it most. Neglect, abandoning them in a fight, or cruelty lowers it.
 - **They pick up traits from you and from their work.** A companion slowly gains endearing traits from the ronin's example (his conduct, his karma) and from the tasks they do (a woodcutter grows strong and patient, a guard wary). Traits are the 52 personality traits every person already has.
