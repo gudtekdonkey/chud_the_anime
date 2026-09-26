@@ -28,13 +28,15 @@ Decisions made in the design sessions so far, newest last.
 - **Executions, batch 1 (approved):** behind the back, through and past, rising launch, whirlwind, far behind, peek-a-boo, and peek-a-boo from behind (a neck snap).
 - **Skills, round two** (`prototypes/18-skills-ideas.html`):
   - Approved as they are: Counter, Glitch Dodge, Static Trail, Lightning Chain, and Lingering Blades (its spectral blades turn to whichever enemy is nearest when they fire).
-  - Iai Focus: approved. As Focus builds he settles into the draw: hand to the hilt, rear foot slides back, body hunched over the sheath.
+  - Iai Focus: approved, and its stance is the movement bar for every other skill and execution. As Focus builds he settles into the draw: hand to the hilt, rear foot slides back, body hunched over the sheath.
   - Decoy: cut.
   - Blade Recall: never spins. The blade flies point-first, turns slowly to point back at him, and hangs still, drifting a pixel at a time.
     - **Picked:** tap R to call it back. Recalls alternate between *home to the sheath* (the blade flies into the scabbard on the click) and *the catch* (he snatches the grip as it passes, then flicks and sheathes).
     - *The anchor* (he flashes to the blade instead) is kept. Proposed use: **hold R**, a gap-closer, or an escape if the blade was thrown away from danger. Not yet confirmed.
   - Time Slice (**approved**): takes every enemy inside a zone round him, however many. The pass takes as long as it needs (a step of 0.016–0.06 s per enemy) and the zone grows with power.
-  - Breath of Qi is a major skill, with five takes: seiza, standing kata, lotus, harvest, storm breath. Each comes in three power tiers: I a dense stream of motes; II adds matter lifting off the floor; III adds ribbons and a floor sigil. No droplets over his head.
+  - Breath of Qi is a major skill. **All takes are kept, for different jobs** (proposed, to confirm): Seiza becomes the **Qi shield** (kneel and heal behind a dome of light that grows with power, huge at III with Qi floating round it); Standing kata is the quick heal on your feet; Lotus is the full heal at a rest point; Storm breath (loved) is the burst heal and knockback for the whole meter.
+  - Three power tiers each: I is quiet (a trickle of motes); II adds matter lifting off the floor; III adds ribbons of light. Nothing on the floor (no ripples, no sigils) and nothing over his head.
+  - **Harvest** splits off onto its own key (E proposed): hold near the fallen to turn their remains into EXP. Healing stays on C.
 - **Nothing left to fight:** if no enemy is within two screens (960 px) when an attack or execution ends, he skips the blade-out stance and sheathes at once, unbothered.
 
 ## Next

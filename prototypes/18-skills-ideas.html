@@ -44,18 +44,19 @@
   <header>
     <div class="eyebrow">Skills · round two</div>
     <h1>Your notes, applied</h1>
-    <p>Decoy is cut. Blade Recall has three new takes, and in none of them does the blade spin: it flies point-first, turns slowly to point back at him, and hangs still, drifting a pixel at a time. Time Slice takes everyone inside its zone however many there are, the pass is quick enough for a hundred, and the zone grows with your power. Iai Focus now sinks him into the draw as it builds. Breath of Qi has five takes, and each one loops through power I, II and III: far more particles at each step, matter lifting off the floor from II, ribbons and a sigil at III, and no droplets over his head.</p>
+    <p>Decoy is cut. Blade Recall has three new takes, and in none of them does the blade spin: it flies point-first, turns slowly to point back at him, and hangs still, drifting a pixel at a time. Time Slice takes everyone inside its zone however many there are, the pass is quick enough for a hundred, and the zone grows with your power. Iai Focus now sinks him into the draw as it builds. Breath of Qi has five takes, and each one loops through power I, II and III: a quiet power I, more particles at each step, matter lifting off the floor from II, ribbons at III, and nothing on the floor or over his head. Seiza's dome is now the shield, and Harvest has its own key and gathers EXP.</p>
     <div class="bar"><label for="slow"><input type="checkbox" id="slow"> Half speed</label></div>
   </header>
   <section class="sec" id="sec-new"><div class="lead"><h2>Reworked</h2><p>Blade Recall three ways, the new Time Slice, and Iai Focus with its stance.</p></div><div class="grid"></div></section>
-  <section class="sec" id="sec-qi"><div class="lead"><h2>Breath of Qi, five takes</h2><p>Each card loops power I, then II, then III; the tag under the meters shows which. I: a dense stream of motes. II adds stone and dust lifting off the floor and dissolving into Qi. III adds two ribbons of light wound round him and a sigil turning on the floor.</p></div><div class="grid"></div></section>
+  <section class="sec" id="sec-qi"><div class="lead"><h2>Breath of Qi, and Harvest</h2><p>Each card loops power I, then II, then III; the tag under the meters shows which. I: a quiet trickle of motes. II adds stone and dust lifting off the floor and dissolving into Qi. III adds two ribbons of light wound round him. Nothing on the floor: no ripples, no sigils. Seiza's dome is the shield, bigger at each power. Harvest has its own key and gathers EXP.</p></div><div class="grid"></div></section>
   <section class="sec" id="sec-ok"><div class="lead"><h2>Approved as they are</h2><p>Unchanged, here for reference. Lingering Blades already turns each spectral blade to whichever enemy is nearest when it fires, wherever they stand.</p></div><div class="grid"></div></section>
   <div class="ask">
     <h2>Your call</h2>
     <ol>
       <li><b>Blade Recall:</b> picked. Tapping R calls the blade back, alternating home to the sheath and the catch. Is holding R for the anchor right?</li>
             <li><b>Iai Focus:</b> is the stance deep enough?</li>
-      <li><b>Breath of Qi:</b> which take, and do the power layers read?</li>
+      <li><b>Breath of Qi:</b> all five kept. Proposed uses: Seiza is the <b>Qi shield</b> (heal behind the dome); Standing kata is the quick heal on your feet; Lotus is the full heal at a rest point; Storm breath is the burst heal and knockback. Right?</li>
+      <li><b>Harvest:</b> is <kbd>E</kbd> the right key?</li>
     </ol>
   </div>
 </div>
@@ -338,7 +339,7 @@ function drawBlade(g, hx, hy, ang, blade = WH, grip = RC.K, len = 13, alpha = 1)
 // a tiny 3x5 pixel font for the meters
 const GLYPH = { H: '101101111101101', P: '110101110100100', Q: '010101101110011', I: '111010010010111', F: '111100110100100', O: '010101101101010', C: '011100100100011', U: '101101101101111', S: '011100010001110', '+': '000010111010000', ' ': '000000000000000',
   W: '101101101111101', E: '111100110100111', R: '110101110101101', T: '111010010010010', 0: '111101101101111', 1: '010110010010111', 2: '111001111100111',
-  3: '111001111001111', 4: '101101111001001', 5: '111100111001111', 6: '111100111101111', 7: '111001010010010', 8: '111101111101111', 9: '111101111001111' };
+  3: '111001111001111', 4: '101101111001001', 5: '111100111001111', 6: '111100111101111', 7: '111001010010010', 8: '111101111101111', 9: '111101111001111', V: '101101101101010', X: '101101010101101', L: '100100100100111' };
 function ptext(g, s, x, y, col) { g.fillStyle = col; let cx = x; for (const ch of s) { const m = GLYPH[ch]; if (m) for (let i = 0; i < 15; i++) if (m[i] === '1') g.fillRect(cx + i % 3, y + (i / 3 | 0), 1, 1); cx += 4; } }
 function meter(g, x, y, w, frac, col, ghost = 0, ghostCol = WH) {   // a 2px bar with a dark well
   g.fillStyle = '#1c2022'; g.fillRect(x - 1, y - 1, w + 2, 4); g.fillStyle = '#2b3133'; g.fillRect(x, y, w, 2);
@@ -439,7 +440,7 @@ function brWatch(E, t, i) {
 
 // ---------- Breath of Qi: the particle layers every take shares ----------
 // Power I: a dense stream of motes. II adds matter lifting off the floor and dissolving into Qi. III adds two ribbons of light wound round him.
-const QI_RATE = [6, 10, 16];
+const QI_RATE = [2, 8, 16];   // power I is quiet on purpose
 function qiInit(S) { S.v.tier = S.loop % 3; S.v.motes = []; S.v.chips = []; }
 function qiMotes(S, t, n, tx, ty, o = {}) { const cx = o.cx == null ? tx : o.cx, cy = o.cy == null ? ty : o.cy;
   for (let i = 0; i < n; i++) { const a = rr(0, 6.28), r = rr(o.r0 || 22, o.r1 || 62);
@@ -492,6 +493,23 @@ function powerTag(g, tier, x, y) { ptext(g, 'POWER', x, y, '#8c9592'); for (let 
 const SEIZA = pz({ hy: 9, lean: .1, chest: .12, fl: [1.45, 2.9], bl: [1.3, 2.9], fa: [.45, 1.0], ba: [.35, 1.05], hat: 1 });
 const SUPINE = pz({ hy: 9, hx: -3, lean: -1.45, fl: [1.5, .1], bl: [1.45, .3], fa: [-.6, .3], ba: [.4, .2], sword: 1.3 });
 const E_SITUP = pz({ hy: 7, hx: -1, lean: .35, chest: .2, fl: [1.3, 2.3], bl: [-.1, 2.3], fa: [.9, .6], ba: [.7, .7], sword: .8 });
+// the Qi shield: a dome of light standing on the floor round him, dotted latitude bands turning slowly, the half behind him drawn under him;
+// `band` (0..1) is a bright shimmer climbing it; particles float round it when `motes` > 0
+function qiShield(g, t, layer, o) {
+  if (o.a <= 0 || (layer !== 'top' && layer !== 'floor')) return;
+  const front = layer === 'top', rx = o.r, ry = o.h, lats = Math.max(5, Math.round(ry / 5));
+  for (let i = 0; i <= lats; i++) { const q = i / lats * Math.PI / 2 * .96, y0 = o.fy - Math.sin(q) * ry, rr0 = Math.cos(q) * rx, n = Math.max(6, Math.round(rr0 * .9));
+    for (let j = 0; j < n; j++) { const a = j / n * 6.283 + t * (i % 2 ? .5 : -.35), s = Math.sin(a); if ((s > 0) !== front) continue;
+      const x = o.cx + Math.cos(a) * rr0, y = y0 + s * rr0 * .3, lit = o.band != null && Math.abs((o.fy - y) / ry - o.band) < .09;
+      g.globalAlpha = o.a * (front ? .75 : .3) * (lit ? 1.4 : 1); g.fillStyle = lit ? WH : (i + j) % 5 ? CY3 : CY2; g.fillRect(Math.round(x), Math.round(y), 1, 1); } }
+  if (front) { g.globalAlpha = o.a * .85; g.fillStyle = CY2;   // the rim: its outline against the room
+    for (let a = Math.PI; a <= 2 * Math.PI; a += .7 / rx) g.fillRect(Math.round(o.cx + Math.cos(a) * rx), Math.round(o.fy + Math.sin(a) * ry), 1, 1); }
+  for (let k = 0; k < (o.motes || 0); k++) { const ph = k * 2.399, a = t * (.35 + (k % 5) * .07) + ph, s = Math.sin(a); if ((s > 0) !== front) continue;   // floating round it
+    const rad = rx * (.55 + .5 * ((k * .618) % 1)), hh = ry * (.15 + .8 * ((k * .381) % 1)) + Math.sin(t * 1.3 + ph) * 3;
+    const x = o.cx + Math.cos(a) * rad, y = o.fy - hh + s * rad * .3; g.globalAlpha = o.a * (front ? 1 : .45) * (.6 + .4 * Math.sin(t * 3 + ph));
+    g.fillStyle = k % 4 ? CY2 : WH; g.fillRect(Math.round(x), Math.round(y), 1, 1); if (k % 3 === 0) { g.globalAlpha *= .5; g.fillStyle = CY; g.fillRect(Math.round(x - Math.sin(a)), Math.round(y), 1, 1); } }
+  g.globalAlpha = 1;
+}
 
 // ---------- the skills ----------
 const SKILLS = [
@@ -733,8 +751,8 @@ const SKILLS = [
         ptext(g, 'FOCUS', 6, 88, full ? (blink ? WH : CY) : '#8c9592'); meter(g, 28, 89, 36, f, full && blink ? WH : CY); }
     } },
 
-  { name: 'Breath of Qi', vr: 'A · Seiza', sec: 'qi', tag: 'ACTIVE', key: 'Hold <kbd>C</kbd> · spends Qi',
-    note: 'He kneels, hands on his thighs, head bowed, and takes three slow breaths. Each in-breath pulls a stream of Qi in from the air round him into his chest; each out-breath sends a ring across the floor and heals a third. Kneeling heals the most per breath, but he is rooted until he stands.',
+  { name: 'Breath of Qi', vr: 'A · Seiza, the shield', sec: 'qi', tag: 'ACTIVE', key: 'Hold <kbd>C</kbd> · spends Qi',
+    note: 'He kneels, hands on his thighs, head bowed, and a dome of light rises round him from the floor. Three slow breaths: each in-breath pulls a stream of Qi in from the air into his chest, and each out-breath sends a shimmer up the dome and heals a third. The dome grows with power: close round him at I, wider at II, and at III a huge shield with Qi floating slowly round it. As he stands it folds back into the floor.',
     rx: 96, ry: 70, dur: 3.4, B0: .7, BP: .78,
     setup(S) { qiInit(S); },
     breaths(t) { let n = 0; for (let i = 0; i < 3; i++) if (t >= this.B0 + i * this.BP + .45) n++; return n; },
@@ -745,23 +763,26 @@ const SKILLS = [
       R.pose = t < GET ? at([[0, idleB(t)], [.22, IDLE], [.36, pz({ ...CROUCH, hy: 5, lean: .3, fl: [1.1, 1.8], bl: [-.1, 2.0] })], [.55, SEIZA]], t) : at([[GET, SEIZA], [GET + .12, pz({ ...CROUCH, hy: 5, fl: [1.1, 1.8], bl: [-.1, 2.0] })], [GET + .3, READY], [GET + .45, IDLE]], t);
       if (t >= .55 && t < GET) R.pose = pz({ ...SEIZA, breath: br, hat: br > .6 ? 0 : 1 });
       const tx = R.x + 1, ty = R.y - 14;
-      if (inb) { qiMotes(S, t, QI_RATE[T], tx, ty, { r0: 18, r1: 70 }); if (T >= 1) qiChips(S, t, T, R.x, R.y, tx, ty, 40); }
+      if (inb) { qiMotes(S, t, T ? QI_RATE[T] / 2 : QI_RATE[T], tx, ty, { r0: 18, r1: 70 });   // halved at II and III so the dome never buries him
+         if (T >= 1) qiChips(S, t, T, R.x, R.y, tx, ty, 40); }
       else if (t > .55 && t < GET) qiMotes(S, t, T, tx, ty, { r0: 20, r1: 50, slow: 1.4 });   // a thin drift between breaths
-      for (let i = 0; i < 3; i++) S.once('pulse' + i, t >= sk.B0 + i * sk.BP + .45, () => {
-        F.ring(S, R.x, R.y + 1, 6, 3, .45, 22 + T * 8, CY2); if (T >= 1) F.ring(S, R.x, R.y + 1, 4, 2, .6, 34 + T * 8, CY3); if (T >= 2) F.ring(S, R.x, R.y + 1, 8, 3, .3, 50, WH); });
-      S.once('rise', t >= GET + .3, () => { F.ring(S, R.x, R.y + 1, 8, 3, .4, 26, WH); F.flashR(S, .03); });
+      for (let i = 0; i < 3; i++) S.once('pulse' + i, t >= sk.B0 + i * sk.BP + .45, () => F.ring(S, R.x + 1, R.y - 14, 2, 2, .25, 5, WH));   // at his chest, never on the floor
+      S.once('fold', t >= GET - .05, () => { const sh = sk.SH[T]; for (let k = 0; k < 14 + T * 10; k++) { const a = rr(Math.PI, 2 * Math.PI);
+        F.spark(S, R.x + Math.cos(a) * sh[0], R.y + Math.sin(a) * sh[1], rr(-10, 10), rr(-20, -4), rr(.3, .5), [CY, CY2, WH][k % 3]); } });
       qiUpdate(S, t);
     },
-    draw(S, g, layer, t) { const R = S.R, sk = this, v = S.v;
-      if (layer === 'floor' && v.tier >= 2) sigil(g, t, R.x, R.y + 1, 24, kk(t, .5, .8) * (1 - kk(t, 2.9, 3.2)));
-      qiDraw(g, S, t, layer, v.tier >= 2 ? { cx: R.x, fy: R.y, h: 30, a: kk(t, .55, .9) * (1 - kk(t, 2.85, 3.1)) } : null);
+    SH: [[17, 32, 0], [26, 40, 14], [46, 62, 40]],   // the dome per power: half-width, height, floating motes
+    draw(S, g, layer, t) { const R = S.R, sk = this, v = S.v, sh = sk.SH[v.tier], up = ease(kk(t, .5, .95)), down = kk(t, 2.8, 2.95);
+      let band = null; for (let i = 0; i < 3; i++) { const b = sk.B0 + i * sk.BP + .45; if (t >= b && t < b + .4) band = kk(t, b, b + .4); }
+      qiShield(g, t, layer, { cx: R.x + 1, fy: R.y + 1, r: sh[0] * (1 - down * .6), h: sh[1] * up * (1 - down), a: kk(t, .5, .7) * (1 - down), band, motes: sh[2] });
+      qiDraw(g, S, t, layer, null);
       if (layer === 'hud') { const n = sk.breaths(t), last = n ? sk.B0 + (n - 1) * sk.BP + .45 : -9, e = ease(kk(t, last, last + .25));
         const hpPrev = .28 + .235 * Math.max(0, n - 1), hpNow = .28 + .235 * n, hp = n ? hpPrev + (hpNow - hpPrev) * e : .28;
         const qiPrev = 1 - Math.max(0, n - 1) / 3, qiNow = 1 - n / 3, qi = n ? qiPrev + (qiNow - qiPrev) * e : 1;
         qiHud(g, t, S, hp, qi, n && t - last < .3 ? hpNow : 0, n && t - last < .45 ? qiPrev : qi); } } },
 
   { name: 'Breath of Qi', vr: 'B · Standing kata', sec: 'qi', tag: 'ACTIVE', key: 'Hold <kbd>C</kbd> · spends Qi',
-    note: 'He stays on his feet in a low horse stance. On each in-breath his arms rise slowly overhead and Qi rises to his hands in columns from the floor round him; on each out-breath he presses his palms down in front of his belly, the Qi sinks to a point of light there, and a ring rolls out across the floor. Three breaths. It heals a little less than kneeling, but he is standing, so letting go of the key puts him straight back into a fight.',
+    note: 'He stays on his feet in a low horse stance. On each in-breath his arms rise slowly overhead and Qi rises to his hands in columns from the floor round him; on each out-breath he presses his palms down in front of his belly, the Qi sinks to a point of light there, and it flares there. Three breaths. It heals a little less than kneeling, but he is standing, so letting go of the key puts him straight back into a fight.',
     rx: 96, ry: 72, dur: 3.9, B0: .5, BP: 1.0,
     STAND: pz({ hy: 3, lean: .02, fl: [.45, .45], bl: [-.45, .45], fa: [.35, .9], ba: [.3, .95] }),
     RAISE: pz({ hy: 1, lean: -.06, chest: -.12, breath: 1, fl: [.35, .3], bl: [-.35, .3], fa: [2.9, .15], ba: [2.75, .25] }),
@@ -779,11 +800,10 @@ const SKILLS = [
             v.motes.push({ sx, sy, tx: up[0], ty: up[1], t0: t, dur: rr(.4, .7), curl: rr(-6, 6) }); }
           if (T >= 1) qiChips(S, t, T, R.x, R.y, up[0], up[1], 34); }
         if (t >= b + .55 && t < b + .85) qiMotes(S, t, Math.ceil(QI_RATE[T] / 3), R.x + 1, R.y - 9, { cx: up[0], cy: up[1], r0: 2, r1: 8, sq: 1 });   // out: sinking to the belly
-        S.once('pulse' + i, t >= b + .9, () => { F.ring(S, R.x, R.y + 1, 6, 3, .45, 24 + T * 8, CY2); F.ring(S, R.x + 1, R.y - 9, 2, 2, .25, 6, WH); if (T >= 1) F.ring(S, R.x, R.y + 1, 4, 2, .6, 36 + T * 8, CY3); }); }
+        S.once('pulse' + i, t >= b + .9, () => F.ring(S, R.x + 1, R.y - 9, 2, 2, .25, 6, WH)); }
       qiUpdate(S, t);
     },
     draw(S, g, layer, t) { const R = S.R, sk = this, v = S.v;
-      if (layer === 'floor' && v.tier >= 2) sigil(g, t, R.x, R.y + 1, 26, kk(t, .4, .7) * (1 - kk(t, 3.4, 3.7)));
       qiDraw(g, S, t, layer, v.tier >= 2 ? { cx: R.x, fy: R.y, h: 40, a: kk(t, .5, .8) * (1 - kk(t, 3.4, 3.7)) } : null);
       if (layer === 'top') { let glow = 0; for (let i = 0; i < 3; i++) { const b = sk.B0 + i * sk.BP; glow = Math.max(glow, kk(t, b + .55, b + .85) * (1 - kk(t, b + .9, b + 1.2))); }
         if (glow > 0) { const x = Math.round(R.x + 1), y = Math.round(R.y - 9); g.globalAlpha = glow; g.fillStyle = WH; g.fillRect(x, y, 1, 1); g.fillStyle = CY2;
@@ -806,11 +826,9 @@ const SKILLS = [
       R.z = sk.z(t);
       const tx = R.x + 1, ty = R.y - 14 - R.z, on = t > .8 && t < 3.2;
       if (on) { qiMotes(S, t, Math.ceil(QI_RATE[T] * .6), tx, ty, { r0: 20, r1: 66 }); if (T >= 1 && Math.random() < .3 + T * .3) qiChips(S, t, 1, R.x, R.y, tx, ty, 30); }
-      for (let i = 0; i < 4; i++) S.once('p' + i, t >= 1.1 + i * .55, () => { F.ring(S, R.x, R.y + 1, 6, 2.5, .6, 26 + T * 8, CY2); if (T >= 1) F.ring(S, R.x, R.y + 1, 4, 2, .7, 38 + T * 8, CY3); });
       qiUpdate(S, t);
     },
     draw(S, g, layer, t) { const R = S.R, sk = this, v = S.v, z = sk.z(t), a = kk(t, .7, 1.1) * (1 - kk(t, 3.2, 3.5));
-      if (layer === 'floor') { sigil(g, t, R.x, R.y + 1, 18 + v.tier * 4, a * .9); if (v.tier >= 2) sigil(g, -t * 1.3, R.x, R.y + 1, 36, a * .6); }
       qiDraw(g, S, t, layer, v.tier >= 2 ? { cx: R.x, fy: R.y, z, h: 34, r: 13, a } : null);
       if ((layer === 'floor' || layer === 'top') && a > 0) {   // the ring of Qi round him: the half behind him goes under him
         const n = 10 + v.tier * 6, cy = R.y - 13 - z;
@@ -820,9 +838,9 @@ const SKILLS = [
         g.globalAlpha = 1; }
       if (layer === 'hud') { const k = ease(kk(t, 1.0, 3.2)); qiHud(g, t, S, .22 + .78 * k, 1 - k); } } },
 
-  { name: 'Breath of Qi', vr: 'D · Harvest', sec: 'qi', tag: 'ACTIVE', key: 'Hold <kbd>C</kbd> near the fallen · costs no Qi',
-    note: 'He kneels among the samurai he has cut down and holds out an open hand to each in turn. Their remains come apart pixel by pixel into Qi that streams across the floor into him, until nothing is left of them. It costs no Qi at all, only bodies: each fallen enemy heals once, then is gone. A reason to fight near where you have already killed.',
-    rx: 96, ry: 70, dur: 3.9, BOD: [[58, 62, -1], [140, 60, 1], [124, 88, 1]], H0: [.65, 1.4, 2.15],
+  { name: 'Harvest', vr: 'EXP from the fallen', sec: 'qi', tag: 'ACTIVE', key: 'Hold <kbd>E</kbd> near the fallen · its own key, healing stays on <kbd>C</kbd>',
+    note: 'He kneels among the samurai he has cut down and holds out an open hand to each in turn. Their remains come apart pixel by pixel into Qi that streams across the floor into him, until nothing is left of them, and it fills the EXP bar instead of his health. Each body gives once, then is gone. Here the third body tips the bar over and he levels up.',
+    rx: 96, ry: 70, dur: 3.9, LVT: 2.64, BOD: [[58, 62, -1], [140, 60, 1], [124, 88, 1]], H0: [.65, 1.4, 2.15],
     setup(S) { const sk = this; qiInit(S);
       sk.BOD.forEach(([x, y, f], k) => { const E = mkE(x, y, { face: f < 0 ? 1 : -1, pose: E_STAG }), i0 = S.pieces.length;
         die(S, E, [[x - 12, y - 13, x + 12, y - 14]], { dir: sgn(), vx: 0 }); S.pieces.slice(i0).forEach(P => P.body = k);
@@ -847,13 +865,16 @@ const SKILLS = [
       }
       if (t > .5 && t < 2.95) qiMotes(S, t, T + 1, tx, ty, { r0: 20, r1: 50, slow: 1.3 });
       S.pieces = S.pieces.filter(P => P.pts.length);
+      S.once('lv', t >= sk.LVT, () => { F.flashR(S, .04); for (let q = 0; q < 16 + T * 8; q++) F.spark(S, R.x + rr(-6, 6), R.y - rr(0, 24), rr(-8, 8), -rr(30, 70), rr(.4, .7), [CY, CY2, WH][q % 3]); });
       qiUpdate(S, t);
     },
     draw(S, g, layer, t) { const R = S.R, sk = this, v = S.v;
-      if (layer === 'floor' && v.tier >= 2) sigil(g, t, R.x, R.y + 1, 22, kk(t, .45, .75) * (1 - kk(t, 2.9, 3.2)));
       qiDraw(g, S, t, layer, v.tier >= 2 ? { cx: R.x, fy: R.y, h: 28, a: kk(t, .5, .8) * (1 - kk(t, 2.9, 3.2)) } : null);
       if (layer === 'top') sk.H0.forEach((h, i) => { if (t >= h - .12 && t < h + .7) { const j = joints(R); if (Math.random() < .7) { g.fillStyle = Math.random() < .5 ? WH : CY2; g.fillRect(Math.round(j.hand[0] + R.face), Math.round(j.hand[1]), 1, 1); } } });
-      if (layer === 'hud') { let hp = .2; sk.H0.forEach(h => hp += .27 * ease(kk(t, h + .1, h + .75))); qiHud(g, t, S, hp, .35, 0, 0, true); } } },
+      if (layer === 'hud') { let x = .34; sk.H0.forEach(h => x += .24 * ease(kk(t, h + .1, h + .75))); const up = x >= 1, e = up ? x - 1 : x;
+        const lv = up ? '5' : '4', blink = up && t - sk.LVT < 1 && (t * 10 | 0) % 2;
+        ptext(g, 'EXP', 6, 86, blink ? WH : '#8c9592'); meter(g, 22, 87, 40, e, WH, up && t - sk.LVT < .3 ? 1 : 0, CY2); ptext(g, 'LV ' + lv, 68, 86, blink ? WH : up ? CY : '#8c9592');
+        powerTag(g, v.tier, 150, 88); } } },
 
   { name: 'Breath of Qi', vr: 'E · Storm breath', sec: 'qi', tag: 'ACTIVE', key: 'Tap <kbd>C</kbd> · spends the whole meter',
     note: 'One breath, taken all at once. He plants his feet and throws his arms back, and every scrap of Qi on the screen rushes into him while the room darkens. A held beat, eyes blazing. Then he exhales, palms driving forward, and a shockwave rolls out across the floor that heals him by a big step and throws everyone near him off their feet. They land on their backs and take a moment to get up. The whole meter in one go: a heal and an escape.',
@@ -867,7 +888,7 @@ const SKILLS = [
         [sk.EX + .5, pz({ ...sk.EXHALE, lean: .2, chest: .1, flutter: 0 })], [sk.EX + .9, READY], [3.2, READY], [3.5, IDLE]], t);
       if (t > sk.IN1 && t < sk.EX) R.jit = Math.random() < .3 ? sgn() : 0;
       const tx = R.x + 1, ty = R.y - 15;
-      if (t >= sk.IN0 && t < sk.IN1) { for (let q = 0; q < QI_RATE[T] + 4; q++) qiFrom(S, t, rr(-4, 204), rr(-4, 104), tx, ty, rr(.3, .5));   // from the whole screen
+      if (t >= sk.IN0 && t < sk.IN1) { for (let q = 0; q < QI_RATE[T] * 1.5; q++) qiFrom(S, t, rr(-4, 204), rr(-4, 104), tx, ty, rr(.3, .5));   // from the whole screen
         if (T >= 1) qiChips(S, t, T * 2, R.x, R.y, tx, ty, 70); }
       S.once('ex', t >= sk.EX, () => { S.white = 1; S.stop = .08; S.shake = .22; F.flashR(S, .04);
         F.ring(S, R.x, R.y + 1, 8, 3, .55, 110 + T * 30, WH); F.ring(S, R.x, R.y + 1, 6, 2, .7, 80 + T * 20, CY2); F.ring(S, R.x, R.y - 14, 4, 4, .3, 30, CY2);
