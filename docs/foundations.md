@@ -116,6 +116,12 @@ All four run on the same ledger as ownership and wealth: the world keeps going w
   - **memory** of the ronin: what they saw him do, what they heard.
 - Most NPCs live only in the ledger until he walks into their zone. Named ones (lords, elders, rivals, companions) are always tracked in full.
 
+### Companions grow through what you live through together (owner, 2026-09-26)
+- **Bonds are earned in deeds.** Fighting beside the ronin raises a companion's relationship and loyalty to him; reviving them in battle or saving them from a bad situation raises it most. Neglect, abandoning them in a fight, or cruelty lowers it.
+- **They pick up traits from you and from their work.** A companion slowly gains endearing traits from the ronin's example (his conduct, his karma) and from the tasks they do (a woodcutter grows strong and patient, a guard wary). Traits are the 52 personality traits every person already has.
+- **Bad traits can fade.** A good example wears a companion's bad traits away over time (a drunk sobers, a coward steadies); a bad example can do the reverse.
+- The people lane owns relationships and traits changing over time; the party code (`src/party/`) reports the deeds (fought together, revived, saved) as events.
+
 ### Jobs
 - **NPC jobs** by class: farmer, fisher, woodcutter, miner, smith, merchant, innkeeper, monk, retainer, ashigaru, guard, magistrate, tax collector, courier, bandit, bounty hunter, shinobi, lord. A job decides where they go, what they carry, what they fight with, and what they produce into the ledger.
 - **His jobs** (contracts): posted at inns, shrines and magistrates, or offered by NPCs who need something: escort a caravan, hunt a bandit, kill a man, guard a village through a raid, recover a stolen blade, collect a debt, carry a message through enemy land, win a duel for someone's honour.
