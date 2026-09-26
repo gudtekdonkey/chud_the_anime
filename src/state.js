@@ -28,3 +28,5 @@ export const pops = [], glints = [];
 export const frags = [], slashes = [], cuts = [], zaps = [], rings = [], timers = [], moons = [], voids = [], mirrors = [];
 // he lands inside a burst of electric smoke: dark puffs that swell and rise, and bolts swirling round him
 export const smoke = [], cracks = [], debris = [];
+// the non-lightning elements' matter (flames, goo, drops, gusts, motes) and the floor stains it leaves
+export const mats = [], stains = [];

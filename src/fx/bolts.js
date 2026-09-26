@@ -1,14 +1,18 @@
 import { zaps } from '../state.js';
 import { rr, sgn } from './util.js';
+import { EL } from './element.js';
 
 // ---- Bolts: jagged whole-pixel lightning ----
-export function zap(x0, y0, x1, y1, life, jit, col, o = {}) { const z = { x0, y0, x1, y1, life, max: life, jit, col, tick: 2, on: true, ...o }; z.pts = boltPts(z); zaps.push(z); return z; }
+export function zap(x0, y0, x1, y1, life, jit, col, o = {}) {
+  if (EL.cur.kit) { EL.cur.kit.bolt(x0, y0, x1, y1, life, col, o); return { pts: [] }; } // elements that aren't lightning throw their own matter
+  const z = { x0, y0, x1, y1, life, max: life, jit, col, tick: 2, on: true, ...o }; z.pts = boltPts(z); zaps.push(z); return z; }
 export function line(out, x0, y0, x1, y1) { // Bresenham, so bolts are whole pixels with no smoothing
   x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1);
   const dx = Math.abs(x1 - x0), dy = -Math.abs(y1 - y0), sx = x0 < x1 ? 1 : -1, sy = y0 < y1 ? 1 : -1; let e = dx + dy;
   for (;;) { out.push(x0, y0); if (x0 === x1 && y0 === y1) break; const e2 = 2 * e; if (e2 >= dy) { e += dy; x0 += sx; } if (e2 <= dx) { e += dx; y0 += sy; } }
 }
-export function boltPts(z) { // a jagged polyline: every ~4px a vertex kicked 1..jit px sideways, plus an optional fork
+export function boltPts(z) { return (SHAPES[EL.cur.bolt] || jagPts)(z); }
+function jagPts(z) { // a jagged polyline: every ~4px a vertex kicked 1..jit px sideways, plus an optional fork
   const dx = z.x1 - z.x0, dy = z.y1 - z.y0, L = Math.hypot(dx, dy) || 1, nx = -dy / L, ny = dx / L, seg = Math.max(2, Math.round(L / 4));
   const vs = [[z.x0, z.y0]], out = [];
   for (let i = 1; i < seg; i++) { const t = i / seg, o = sgn() * rr(1, z.jit); vs.push([z.x0 + dx * t + nx * o, z.y0 + dy * t + ny * o]); }
@@ -19,3 +23,14 @@ export function boltPts(z) { // a jagged polyline: every ~4px a vertex kicked 1.
     line(out, fx, fy, mx, my); line(out, mx, my, fx + Math.cos(a) * l, fy + Math.sin(a) * l); }
   return out;
 }
+
+// ---- Energy's shape: same endpoints and life as a bolt, a different body ----
+const SHAPES = {
+  jag: null,
+  beam(z) { // energy: a dead-straight line with a pulsing dotted sheath and a bright node at each end
+    const dx = z.x1 - z.x0, dy = z.y1 - z.y0, L = Math.hypot(dx, dy) || 1, nx = Math.round(-dy / L), ny = Math.round(dx / L) || (nx ? 0 : 1), out = [], core = [];
+    line(core, z.x0, z.y0, z.x1, z.y1); out.push(...core);
+    const ph = Math.random() * 3 | 0; for (let i = 0; i < core.length; i += 2) if ((i / 2 + ph) % 3 === 0) out.push(core[i] + nx, core[i + 1] + ny, core[i] - nx, core[i + 1] - ny);
+    for (const [x, y] of [[z.x0, z.y0], [z.x1, z.y1]]) { const X = Math.round(x), Y = Math.round(y); out.push(X + 1, Y, X - 1, Y, X, Y + 1, X, Y - 1); }
+    return out; },
+};

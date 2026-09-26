@@ -161,6 +161,15 @@ try {
     await kb.up('a'); await reach(/^idle$/);
     await page.locator('[data-outfit="Default"]').click();
     if (!await has('mantle') || await has('coat')) fail('the default outfit did not come back'); });
+  await run('] and [: switch elements; slime slides and charges the moon, then back to storm', async () => {
+    const el = () => page.evaluate(() => document.querySelector('#elements [aria-pressed=true]')?.dataset.el);
+    await kb.press(']'); if (await el() !== 'fire') fail(`] picked ${await el()}, not fire`);
+    await kb.press(']'); if (await el() !== 'slime') fail(`] picked ${await el()}, not slime`);
+    await kb.press('Shift'); await reach(/^slide$/); await reach(FREE);
+    await until('the O cooldown to end', () => !(window.__game.P.cd.moon > 0), undefined, 12000);
+    await kb.down('o'); await reach(/^moonHold$/); await until('the O charge', () => window.__game.P.charge > .7); await shot('09-slime-charge');
+    await kb.up('o'); await reach(/^moon$/); await reach(FREE);
+    await kb.press('['); await kb.press('['); if (await el() !== 'storm') fail(`[ [ left ${await el()}, not storm`); });
   await run('X: die and come back', async () => { await kb.press('x'); await reach(/^death$/); await reach(/^idleGlitch$/, 5000); });
   step = '';
 
