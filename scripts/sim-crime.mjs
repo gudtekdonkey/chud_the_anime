@@ -10,7 +10,7 @@ console.log(`world ${seed}: generated in ${(performance.now() - t0).toFixed(0)} 
 const alive0 = Object.values(L.actors).filter(a => a.alive).length;
 
 // ---- his crimes, in the start village: a theft nobody saw, a theft three people saw, a masked assault, a murder that takes a plot ----
-const me = L.actors[L.player], [zx, zy] = me.at, folk = Object.values(L.actors).filter(a => a.alive && a.home && a.home[0] === zx && a.home[1] === zy);
+const me = L.actors[L.player], [zx, zy] = me.at, folk = Object.values(L.actors).filter(a => a.alive && a.home && a.home[0] === zx && a.home[1] === zy && (L.hour - a.born) / HOURS_PER_YEAR >= 18);
 const c = L.cultures[L.regions[L.zones[zy * 100 + zx].region].culture].id, [v1, v2, v3] = folk.filter(a => !a.holds.length), w = folk.slice(-3).map(a => a.id);
 commit(L, 'theft', { by: me.id, victim: v1.id, witnesses: [], value: 30 });
 check(me.karma === -3 && bountyOf(L, me.id, c) === 0, `unseen theft: karma ${me.karma}, no bounty`);
@@ -37,13 +37,14 @@ check(fadeOf(me, 'regicide') === 0 && fadeOf({ cls: 'royal' }, 'regicide') > 0, 
 // ---- the world lives ----
 const days = [], H = hoursFromYears(years);
 t0 = performance.now();
-const aliveNow = () => Object.values(L.actors).filter(a => a.alive).length, slain = [];
-for (let y = 0; y < years; y++) { const n = aliveNow(), t = performance.now(); advance(L, HOURS_PER_YEAR); days.push((performance.now() - t) / 112); slain.push((n - aliveNow()) / n); }
+// the share of grown people (18 and over, the ones the world shows) alive at the start of each year who die in it
+const grown = () => Object.values(L.actors).filter(a => a.alive && (L.hour - a.born) / HOURS_PER_YEAR >= 18), slain = [];
+for (let y = 0; y < years; y++) { const g = grown(), t = performance.now(); advance(L, HOURS_PER_YEAR); days.push((performance.now() - t) / 112); slain.push(g.filter(a => !a.alive).length / g.length); }
 const ms = performance.now() - t0;
 const C = crimeState(L), s = C.stats;
 console.log(`\nlived ${years} years (${H / 24} days) in ${ms.toFixed(0)} ms: ${(ms / (H / 24)).toFixed(3)} ms a day on average (per year: ${days.map(d => d.toFixed(3)).join(' ')})`);
 console.log('crimes by kind', s.byKind);
-console.log(`died by the sword each year (share of the living): ${slain.map(x => (x * 100).toFixed(0) + '%').join(' ')}`);
+console.log(`died by the sword each year (share of grown people): ${slain.map(x => (x * 100).toFixed(0) + '%').join(' ')}`);
 console.log(`known ${s.known} · unseen ${s.unseen} · masked ${s.masked} · justice (the victim was wanted) ${s.justice}`);
 console.log(`bounties raised ${s.bounties} · paid ${s.paid} · faded ${s.faded} · caught ${s.caught} (fined ${s.fined}, executed ${s.executed}) · raids ${s.raids} · feuds ${s.feuds} · hunters ${s.hunters}`);
 const open = Object.entries(C.bounty).flatMap(([id, bs]) => Object.values(bs).map(b => b.mon));

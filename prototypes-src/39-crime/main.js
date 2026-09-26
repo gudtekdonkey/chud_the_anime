@@ -1,7 +1,7 @@
 // Prototype 39: karma, standing, bounties, title and possession on the simulation core (docs/sim-crime.md).
 // The page holds only what is on screen (where people stand, what is selected); everything else is the ledger.
 import { generateWorld, advance, calendar, tilesOf, TERRAIN, ownerOf, plotId, PLOT, PLOTS, nameOf, ageOf, on, zoneAt, rngFor, HOURS_PER_SEASON, HOURS_PER_YEAR } from '../../src/sim/index.js';
-import { crimeState, commit, takePlotByMurder, seize, bountiesOf, standingOf, karmaName, payOff, onSight, outlawDoors, companionVerdict, honourOf,
+import { K, crimeState, commit, takePlotByMurder, seize, bountiesOf, standingOf, karmaName, payOff, onSight, outlawDoors, companionVerdict, honourOf,
   claimantOf, buyTitle, priceOf, payBloodMoney, payBloodPrice, petitionGrant, courtCase, forgeDeed, purse, isElderOrRoyal, CRIMES, LAND } from '../../src/sim/crime/index.js';
 
 const $ = id => document.getElementById(id);
@@ -15,7 +15,8 @@ const fmt = mon => { mon = Math.round(mon); return mon >= 1000 ? `${Math.floor(m
 const cname = c => L.cultures[c].name.replace(/^the /, '');
 
 // ---- the people of the zone, standing where they live: a household on its plot, the rest round the middle ----
-const folk = () => Object.values(L.actors).filter(a => a.home && a.home[0] === S.zone[0] && a.home[1] === S.zone[1] && a.id !== me.id);
+// children stay at home until 18, unseen (owner 2026-09-26)
+const folk = () => Object.values(L.actors).filter(a => a.home && a.home[0] === S.zone[0] && a.home[1] === S.zone[1] && a.id !== me.id && ageOf(L, a) >= K.ADULT);
 function spotOf(a) {
   if (S.spots[a.id]) return S.spots[a.id];
   const r = rngFor(L.seed, 'proto39', a.id), head = L.actors[a.household] || a, pid = (head.holds || [])[0] || (head.claims || [])[0];
@@ -26,7 +27,7 @@ function spotOf(a) {
 }
 const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 const sight = () => $('night').checked ? SIGHT / 2 : SIGHT;
-function witnesses(not) { return folk().filter(a => a.alive && a.id !== not && ageOf(L, a) >= 6 && dist(spotOf(a), S.pos) <= sight()).map(a => a.id); }
+function witnesses(not) { return folk().filter(a => a.alive && a.id !== not && dist(spotOf(a), S.pos) <= sight()).map(a => a.id); }
 
 // ---- the map ----
 const COLS = { grass: '#34413a', field: '#4f4a36', paddy: '#34504b', forest: '#243328', bamboo: '#2f4634', water: '#233847', rock: '#43464a', sand: '#5b5646',

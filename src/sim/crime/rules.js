@@ -21,6 +21,7 @@ export const K = {
   JUSTICE: .3,           // killing a man his own witnesses want: this share of the karma, and no bounty from them
   THEFT_SHARE: .5,
   MASK_SEE: .3,          // a witness close by sees through a mask this often (owner 2026-09-26)       // a theft's bounty grows by this share of what was taken
+  ADULT: 18,            // children stay at home until 18, unseen (owner 2026-09-26): never a culprit, victim, witness or hunter
   ELDER_AGE: 60,         // killing someone this old is killing an elder
   // standing: fast. It moves toward a baseline set by karma (who he is) by this share of the gap each day
   STANDING_DRIFT: .02, STANDING_FROM_KARMA: 1 / 200,

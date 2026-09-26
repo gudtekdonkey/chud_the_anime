@@ -112,7 +112,11 @@ Once a game day, per region (rates are for a region of 70 people, scaled by its 
 - **Magistrates**: once a week, each wanted NPC is caught with a chance of 0.4% a day (0.8% if he lives among the people who want him; a camp chief a third as often). A killer (murder or worse) is executed 70% of the time; anyone else pays the bounty as a fine, as far as his purse goes, and is free.
 - **The dead**: `kill` marks a death; the people lane handles what follows (heirs, graves). A holder who dies ends his contested record; his land then follows the people lane's inheritance.
 
-**A violent time** (owner, 2026-09-26): about 30% of the people die by the sword each year (`WORLD.VIOLENCE`): murders are 90% of it, and feuds, raids and executions make up the rest. The crime lane kills; it makes nobody. Without births from the people lane the land empties: seed 12345 falls from 6,741 people to under 600 in 10 years (about 30% a year while grown men and women are left, less once only children remain, since children are never picked as victims or culprits). The people lane's births have to be tuned against this number.
+**A violent time** (owner, 2026-09-26): about 30% of grown people (18 and over) die by the sword each year (`WORLD.VIOLENCE`): murders are 90% of it, and feuds, raids and executions make up the rest. The 10-year test holds 27–31% a year.
+
+**Children stay at home until 18, unseen** (owner, 2026-09-26): nobody under 18 is ever a culprit, a victim, a witness or a hunter (`K.ADULT`), and the prototype does not show them. They join the world the season they turn 18.
+
+**Births** (owner, 2026-09-26: "we should have births") belong to the people lane (`src/sim/people/`), not here. The crime lane only kills: without births, seed 12345 falls from 6,741 people to about 1,100 in 10 years. The people lane's births have to replace about 30% of grown people a year, 18 years later.
 
 Cost: seed 12345, 10 years, about 0.4 ms a game day on average in Node (the budget is 1 ms), more in the first years while the world is full. The people index (who lives in which region and zone) is a cache rebuilt once a game season, never saved.
 
@@ -152,9 +156,11 @@ Every event carries `h` (the game hour). Names are `crime.*`.
 - Anyone 60 or older is an elder. Killing royalty is never forgiven, unless the killer is royal.
 - A close witness sometimes sees through a mask.
 - A violent time: about 30% of the people die every year.
+- There are births; babies stay at home until 18 and are not seen.
+- Everything in this document approved (owner, 2026-09-26).
 
 ## Still open
 
 1. **"Many men are slave to their masters"** (owner, 2026-09-26). Not built yet; see the question in the lane's report.
 2. **Karma's reach.** Standing drifts back to karma ÷ 200: should low karma alone make peoples wary of him even without a crime seen?
-3. **Births against 30% deaths**: the people lane's birth rate has to match, or the world empties within a decade.
+3. **Births against 30% deaths**: approved (owner, 2026-09-26); the people lane builds them, and its birth rate has to match.

@@ -1581,6 +1581,7 @@
 		JUSTICE: .3,
 		THEFT_SHARE: .5,
 		MASK_SEE: .3,
+		ADULT: 18,
 		ELDER_AGE: 60,
 		STANDING_DRIFT: .02,
 		STANDING_FROM_KARMA: 1 / 200,
@@ -2342,7 +2343,7 @@
 		const w = L.size.w, byRegion = L.regions.map(() => []), heads = L.regions.map(() => []), byZone = /* @__PURE__ */ new Map();
 		for (const id in L.actors) {
 			const a = L.actors[id];
-			if (!a.alive || !a.home || isPlayer(L, id)) continue;
+			if (!a.alive || !a.home || isPlayer(L, id) || ageOf(L, a) < K.ADULT) continue;
 			const z = zoneAt(L, a.home[0], a.home[1]);
 			if (!z || z.region < 0) continue;
 			const zi = z.y * w + z.x;
@@ -2368,7 +2369,7 @@
 		if (!ids || !ids.length) return null;
 		for (let i = 0; i < 6; i++) {
 			const id = r.pick(ids), a = L.actors[id];
-			if (a.alive && !not.includes(id) && ageOf(L, a) >= 14) return id;
+			if (a.alive && !not.includes(id) && ageOf(L, a) >= K.ADULT) return id;
 		}
 		return null;
 	};
@@ -2482,7 +2483,7 @@
 				return true;
 			}
 			one(L, r, X, "murder", p, v);
-			const kin = (L.actors[v].children || []).find((k) => L.actors[k]?.alive && ageOf(L, L.actors[k]) >= 16) ?? (L.actors[v].spouse != null && L.actors[L.actors[v].spouse]?.alive ? L.actors[v].spouse : null);
+			const kin = (L.actors[v].children || []).find((k) => L.actors[k]?.alive && ageOf(L, L.actors[k]) >= K.ADULT) ?? (L.actors[v].spouse != null && L.actors[L.actors[v].spouse]?.alive ? L.actors[v].spouse : null);
 			if (kin == null) return false;
 			fd.b = kin;
 			fd.a = p;
@@ -2605,7 +2606,7 @@
 			const mon = C.bounty[me.id][c].mon;
 			if (mon < K.HUNT_BOUNTY || C.hunters.length >= K.HUNT_MAX || C.hunters.some((h) => h.culture === +c) || !r.chance(Math.min(K.HUNT_CAP, mon * K.HUNT_PER_MON))) continue;
 			const cult = L.cultures[c], seat = L.regions[r.pick(cult.regions)].seat;
-			const all = cult.regions.flatMap((g) => X.byRegion[g]).filter((id) => L.actors[id].alive && L.actors[id].culture === +c && ageOf(L, L.actors[id]) >= 16);
+			const all = cult.regions.flatMap((g) => X.byRegion[g]).filter((id) => L.actors[id].alive && L.actors[id].culture === +c && ageOf(L, L.actors[id]) >= K.ADULT);
 			const hunters = all.filter((id) => L.actors[id].job === "bounty hunter"), ronin = all.filter((id) => L.actors[id].cls === "ronin");
 			const fighters = all.filter((id) => L.actors[id].rank >= 2 && L.actors[id].cls !== "monk");
 			const pool = hunters.length ? hunters : ronin.length ? ronin : fighters;
@@ -2673,7 +2674,7 @@
 		return mon >= 1e3 ? `${Math.floor(mon / 1e3)} ryō ${mon % 1e3} mon` : `${mon} mon`;
 	};
 	const cname = (c) => L.cultures[c].name.replace(/^the /, "");
-	const folk = () => Object.values(L.actors).filter((a) => a.home && a.home[0] === S.zone[0] && a.home[1] === S.zone[1] && a.id !== me.id);
+	const folk = () => Object.values(L.actors).filter((a) => a.home && a.home[0] === S.zone[0] && a.home[1] === S.zone[1] && a.id !== me.id && ageOf(L, a) >= K.ADULT);
 	function spotOf(a) {
 		if (S.spots[a.id]) return S.spots[a.id];
 		const r = rngFor(L.seed, "proto39", a.id), head = L.actors[a.household] || a, pid = (head.holds || [])[0] || (head.claims || [])[0];
@@ -2691,7 +2692,7 @@
 	const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
 	const sight = () => $("night").checked ? SIGHT / 2 : SIGHT;
 	function witnesses(not) {
-		return folk().filter((a) => a.alive && a.id !== not && ageOf(L, a) >= 6 && dist(spotOf(a), S.pos) <= sight()).map((a) => a.id);
+		return folk().filter((a) => a.alive && a.id !== not && dist(spotOf(a), S.pos) <= sight()).map((a) => a.id);
 	}
 	const COLS = {
 		grass: "#34413a",

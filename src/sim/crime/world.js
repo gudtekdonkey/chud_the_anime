@@ -9,13 +9,13 @@ import { seize, takePlotByMurder } from './land.js';
 // ---- The world without him: NPC crime and justice, off screen, once a game day (docs/sim-crime.md) ----
 // Worked by region (100) and camp (~90), never by person or tile: a few dice per region a day, so a day costs well under a millisecond.
 
-// ---- who lives where: derived from the ledger, rebuilt each season (a cache, not state: nothing here is saved; the dead are skipped) ----
+// ---- who lives where: derived from the ledger, rebuilt each season (a cache, not state: nothing here is saved; the dead and children are skipped) ----
 const INDEX = new WeakMap();
 function index(L, season) {
   let X = INDEX.get(L);
   if (X && X.season === season) return X;
   const w = L.size.w, byRegion = L.regions.map(() => []), heads = L.regions.map(() => []), byZone = new Map();
-  for (const id in L.actors) { const a = L.actors[id]; if (!a.alive || !a.home || isPlayer(L, id)) continue;
+  for (const id in L.actors) { const a = L.actors[id]; if (!a.alive || !a.home || isPlayer(L, id) || ageOf(L, a) < K.ADULT) continue;   // children stay home
     const z = zoneAt(L, a.home[0], a.home[1]); if (!z || z.region < 0) continue; const zi = z.y * w + z.x;
     byRegion[z.region].push(id); (byZone.get(zi) || byZone.set(zi, []).get(zi)).push(id);
     if (a.holds.length && a.holds.some(p => L.plots[p]?.holder === id)) heads[z.region].push(id); }
@@ -26,7 +26,7 @@ function index(L, season) {
   INDEX.set(L, X); return X;
 }
 const living = (L, r, ids, not = []) => { if (!ids || !ids.length) return null;
-  for (let i = 0; i < 6; i++) { const id = r.pick(ids), a = L.actors[id]; if (a.alive && !not.includes(id) && ageOf(L, a) >= 14) return id; } return null; };
+  for (let i = 0; i < 6; i++) { const id = r.pick(ids), a = L.actors[id]; if (a.alive && !not.includes(id) && ageOf(L, a) >= K.ADULT) return id; } return null; };
 // who turns to crime: of a few, the one most likely to (an outlaw, low karma, poor, little honour)
 function culprit(L, r, ids, not = []) {
   let best = null, bw = -1e9;
@@ -85,7 +85,7 @@ function feudDay(L, r, X) {
     const [p, v] = r.chance(.5) ? [fd.a, fd.b] : [fd.b, fd.a];
     if (!r.chance(WORLD.FEUD_MURDER)) { one(L, r, X, 'assault', p, v); return true; }
     one(L, r, X, 'murder', p, v);
-    const kin = (L.actors[v].children || []).find(k => L.actors[k]?.alive && ageOf(L, L.actors[k]) >= 16) ?? (L.actors[v].spouse != null && L.actors[L.actors[v].spouse]?.alive ? L.actors[v].spouse : null);
+    const kin = (L.actors[v].children || []).find(k => L.actors[k]?.alive && ageOf(L, L.actors[k]) >= K.ADULT) ?? (L.actors[v].spouse != null && L.actors[L.actors[v].spouse]?.alive ? L.actors[v].spouse : null);
     if (kin == null) return false;
     fd.b = kin; fd.a = p; fd.heat = .6; return true;
   });
@@ -144,7 +144,7 @@ export function huntersDay(L, cal, r) {
     if (mon < K.HUNT_BOUNTY || C.hunters.length >= K.HUNT_MAX || C.hunters.some(h => h.culture === +c) || !r.chance(Math.min(K.HUNT_CAP, mon * K.HUNT_PER_MON))) continue;
     const cult = L.cultures[c], seat = L.regions[r.pick(cult.regions)].seat;
     // a bounty hunter of that people, else a ronin, else any fighting man
-    const all = cult.regions.flatMap(g => X.byRegion[g]).filter(id => L.actors[id].alive && L.actors[id].culture === +c && ageOf(L, L.actors[id]) >= 16);
+    const all = cult.regions.flatMap(g => X.byRegion[g]).filter(id => L.actors[id].alive && L.actors[id].culture === +c && ageOf(L, L.actors[id]) >= K.ADULT);
     const hunters = all.filter(id => L.actors[id].job === 'bounty hunter'), ronin = all.filter(id => L.actors[id].cls === 'ronin');
     const fighters = all.filter(id => L.actors[id].rank >= 2 && L.actors[id].cls !== 'monk');
     const pool = hunters.length ? hunters : ronin.length ? ronin : fighters;
