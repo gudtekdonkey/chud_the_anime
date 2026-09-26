@@ -145,7 +145,7 @@ The living world as plain data (the ledger): the 100 × 100 zone grid, regions, 
 
 ## Working conventions
 
-- Iterate on design as standalone pages in `prototypes/`, numbered in order (`42-…html` next; 35 to 41 are reserved by the parallel lanes in `docs/sim-core.md`). Never edit an old prototype; make a new one.
+- Iterate on design as standalone pages in `prototypes/`, numbered in order (`43-…html` next; 35 to 42 are reserved by the parallel lanes in `docs/sim-core.md`). Never edit an old prototype; make a new one.
 - Record every decision the owner makes in `docs/design-notes.md`.
 - Every culture moves through the trait system: a character from a culture gets `setPersonality`/`bake(personOf(culture, seed))`, never hand-made idle or walk poses. A culture's mannerisms go in `CULTURES` (a new mannerism is a new trait or fidget).
 - Personality traits (`src/traits/`) never import player, enemy or clothing code, so any rig character can take them. A new trait is a new entry in `TRAITS`; a new knob goes in `BASE` with the plain ronin's value, so no-trait output never changes.

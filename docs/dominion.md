@@ -1,6 +1,6 @@
 # Dominion: building, holding land, ruling, and war
 
-A proposal (Claude, 2026-09-26), for the owner to shape. The owner asked for "the building system and the plot merging system / land control system: how you can make a village → city, domain, province, at one of our multiple plots etc... recruit standing armies, wage war on others". It sits on `docs/foundations.md` (the world grid, title and possession, koku, heirs) and the systems the parallel lanes are building (`docs/sim-core.md`). NPC lords play by exactly the same rules, so the world's politics come from this too.
+**Approved by the owner (2026-09-26): "Correct this is perfect."** Built by the dominion lane (`docs/sim-core.md`). The owner asked for "the building system and the plot merging system / land control system: how you can make a village → city, domain, province, at one of our multiple plots etc... recruit standing armies, wage war on others". It sits on `docs/foundations.md` (the world grid, title and possession, koku, heirs) and the systems the parallel lanes are building (`docs/sim-core.md`). NPC lords play by exactly the same rules, so the world's politics come from this too.
 
 ## 1. The ladder of land
 
@@ -87,6 +87,14 @@ A settlement is any zone with homes in it. It grows by tiers, from what is built
 - **Story:** wars, uprisings, succession fights and sieges become world events and quests; the story lane's "war between cultures" becomes a real war when this system runs it.
 - **Land:** claiming, the recipes that build, the auto-managing steward.
 - **The world:** the ladder maps onto the grid (zones, regions as provinces), and the map shows domains, provinces and realms as they change.
+
+## Defaults until the owner says otherwise (Claude, 2026-09-26)
+The owner approved the design without answering these, so the lane starts from:
+1. English names with the Japanese in brackets: plot, estate, zone (*mura*), domain (*han*), province (*kuni*), realm.
+2. In a battle he is at, he gives his squads simple orders (hold, charge, follow me, fall back) and fights with his own blade.
+3. Buildings go anywhere on tiles he holds, by footprint.
+4. He can unite every province, and the game goes on (rebellions, successions, his heirs).
+5. Vassals can rise and take back possession of their land, never its title.
 
 ## Open, for the owner
 1. The ladder's names: Japanese (*mura*, *han*, *kuni*) or English (zone, domain, province, realm)?

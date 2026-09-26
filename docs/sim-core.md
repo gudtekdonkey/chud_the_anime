@@ -51,6 +51,7 @@ Each lane owns its folder, its `L.sys` key, its event prefix and its prototype n
 | Karma, crime, title and possession | `src/sim/crime/` | `crime`, `crime.*` | 39 |
 | Quests and world events | `src/sim/story/` | `story`, `story.*`, `event.*` | 40 |
 | Travel events and glitch storms | `src/sim/travel/`, glitch storm effects | `travel`, `travel.*`, `storm.*` | 41 |
+| Dominion: building, the land ladder, governing, armies, war | `src/sim/dominion/` | `dominion`, `dom.*`, `war.*` | 42 |
 
 ## Prototype pages on the core
 
