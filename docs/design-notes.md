@@ -15,11 +15,12 @@ Decisions made in the design sessions so far, newest last.
 ## Moves (game/index.html)
 
 - **Idle:** a calm breath about 2.7 s long. The chest rises, the hips stay put and the cloth barely moves. No robotic bobbing.
-- **J:** a light-speed quick-draw. He's already through the cut; afterimages show the motion. Press again for a second cut.
+- **J:** one fluid, eased cut: the hips lead, then the chest, then the arms and blade, with a lunge and a held follow-through. Press J again during the follow-through to flow into the second cut.
+- **After attacking:** he waits in a guard stance with the blade out, and can run with it trailing. After about 2 s of calm he resheathes, slowly: a flick, a beat, the blade slid home, the click, a moment of stillness.
 - **Slide (was wall slide):** he leans back, lead leg out, back arm up behind for balance.
 - **K, glitch teleport:** electric flurry on arrival, then random glitching for a few seconds. With no enemy near, you can spam it.
 - **I, glitch double slash:** approved as is.
-- **U, storm slam:** a slow kneel, a rising cyclone, then a big slam that shakes the screen.
+- **U, storm slam:** a slow kneel, then a full second gathering power while stone chips and dust lift off the floor and circle him. He rises in a cyclone with the debris, then slams; the debris flies out and the screen shakes.
 - **C, sit:** back to the camera, cross-legged like a monk. Standing up plays before anything else.
 
 ## Next

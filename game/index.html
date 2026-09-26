@@ -115,14 +115,15 @@ const ANIMS = {
   jump:     { n: 4,  fps: 12, loop: false, about: 'A hop off the floor with the knees tucked. You can steer in the air. His shadow and reflection stay on the ground.' },
   fall:     { n: 3,  fps: 12, loop: true,  about: 'The way down from a jump, the back arm up.' },
   land:     { n: 3,  fps: 16, loop: false, about: 'Touchdown: knees soak it up, with a dust puff.' },
-  slash1:   { n: 12, fps: 30, loop: false, about: 'A light-speed quick-draw: a still wind-up and a glint, then he is already 22 px ahead and through the cut. Afterimages show every stage of the motion he went through, with speed lines and a crescent. He holds the follow-through. Press slash again to chain slash 2.' },
-  slash2:   { n: 12, fps: 30, loop: false, about: 'The answer cut: he sinks low, then is instantly past in a rising cut with the blade overhead, trailing afterimages of the rise.' },
-  j1ghost:  { n: 4,  fps: 30, loop: false, hidden: true, about: '' },
-  j2ghost:  { n: 4,  fps: 30, loop: false, hidden: true, about: '' },
-  sheathe:  { n: 6,  fps: 18, loop: false, about: 'After every attack: he flicks the blade, slides it home into the scabbard, it clicks, and his hand lets go of the hilt.' },
+  slash1:   { n: 16, fps: 30, loop: false, about: 'One fluid cut, 0.5 s: from the sheath, the hips sink and the chest turns away, then hips, chest, arms and blade drive through in that order with a lunge, into a held follow-through, and he settles into his guard stance. Press J again during the follow-through to flow straight into slash 2.' },
+  slash1r:  { n: 16, fps: 30, loop: false, hidden: true, about: '' },
+  ready:    { n: 16, fps: 8,  loop: true,  about: 'Guard stance after an attack: feet wide, hips low, both hands on the hilt, blade angled up, breathing. After about 2 s of calm he resheathes.' },
+  runArmed: { n: 8,  fps: 14, loop: true,  about: 'Running with the blade out, trailing low behind him.' },
+  slash2:   { n: 16, fps: 30, loop: false, about: 'The answer cut, flowing on from slash 1\'s follow-through: he sinks and coils, then rises through a cut that ends with the blade overhead and the chest open, and settles back into guard.' },
+  sheathe:  { n: 19, fps: 15, loop: false, about: 'Unhurried, 1.2 s, only once he has waited in guard: a sharp flick, a beat, the blade laid across and slid home slowly, the click, a moment of stillness, then his hands let go.' },
   tele:     { n: 8,  fps: 22, loop: false, about: 'Glitch teleport: he drops into a sprinter\'s crouch and breaks into slices, blinks 56 px, and lands kneeling in a flurry of crackling electricity before rising. For a few seconds afterwards his body glitches at random, as if the jump is still settling. Glitch slivers hang at both ends.' },
   double:   { n: 16, fps: 24, loop: false, about: 'Glitch double slash: a deep quick-draw crouch, vanish, then a long low lunge cut and a second cut down past his body. He freezes in the final pose, sheathes, and on the click the target bursts.' },
-  sweep:    { n: 24, fps: 20, loop: false, about: 'Storm slam: he kneels slowly and draws, rises out of the kneel with the blade whirling in a cyclone of lightning, leaps, and brings the blade all the way down. The slam cracks the floor, throws out a ring of bolts and shakes the screen.' },
+  sweep:    { n: 44, fps: 20, loop: false, about: 'Storm slam: he kneels slowly and draws, then waits a full second gathering power. Chips of stone and dust lift off the floor, drift in and circle him, faster and faster, with crackles jumping between them. He rises with the blade whirling in a cyclone, the debris spiralling up with him, leaps, and brings the blade all the way down. The slam flings the debris out, cracks the floor, throws a ring of bolts and shakes the screen.' },
   sitDown:  { n: 4,  fps: 8,  loop: false, about: 'Replaces wall sit: he turns his back to the camera and lowers himself to the floor.' },
   standUp:  { n: 4,  fps: 12, loop: false, about: 'Getting up from the monk sit: he rises, stands with his back to you, then turns. Plays before anything he does from sitting.' },
   sit:      { n: 8,  fps: 3,  loop: true,  about: 'Sitting cross-legged like a monk, back to the camera, katana laid beside him, breathing slowly. Any move gets him up.' },
@@ -154,7 +155,7 @@ const RC = { K: '#0c0d11', D: '#2c323b', M: '#1b1e25', m: '#30353e', H: '#2a2f37
   E: '#6ff3e4', W: '#e9eeee', S: '#7d868e', s: '#2c3037' };
 const HAT_SIDE = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHHGG..', '.GBBBBBBBBBBBBBBBBG.', '..KBBBBBBBBBBBBBBK..'];
 // angles in radians: limbs 0 = straight down, + swings forward; knee + folds the shin back; elbow + folds the forearm forward
-const REST = { hx: 0, hy: 0, lean: .04, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
+const REST = { hx: 0, hy: 0, lean: .04, chest: 0, breath: 0, fl: [.1, .08], bl: [-.1, .04], fa: [.12, .18], ba: [-.08, .12],
   sword: null, sheathing: false, hat: 0, flutter: 0 };
 const pz = o => ({ ...REST, ...o });
 const HILT = [.42, 1.0];          // front hand resting on the hilt at the hip
@@ -183,8 +184,12 @@ function rig(g, fx, p) {
   const hip = [OX + p.hx, OY - 11 + p.hy];
   const up = [Math.sin(p.lean), -Math.cos(p.lean)], fw = [Math.cos(p.lean), Math.sin(p.lean)];
   // breath lifts the chest, shoulders and head but not the hips, so it reads as breathing, not bobbing
+  // the chest pivots at the waist (u = 4), so a cut can be driven by the hips and then the chest
+  const up2 = [Math.sin(p.lean + p.chest), -Math.cos(p.lean + p.chest)], fw2 = [Math.cos(p.lean + p.chest), Math.sin(p.lean + p.chest)];
   const L = (u, v) => { const b = u > 4 ? p.breath * Math.min(1, (u - 4) / 3) : 0;
-    return [hip[0] + up[0] * u + fw[0] * v, hip[1] + up[1] * u + fw[1] * v - b]; };
+    if (u <= 4) return [hip[0] + up[0] * u + fw[0] * v, hip[1] + up[1] * u + fw[1] * v];
+    const w = [hip[0] + up[0] * 4, hip[1] + up[1] * 4];
+    return [w[0] + up2[0] * (u - 4) + fw2[0] * v, w[1] + up2[1] * (u - 4) + fw2[1] * v - b]; };
   const dir = a => [Math.sin(a), Math.cos(a)];
   const add = (a, d, k) => [a[0] + d[0] * k, a[1] + d[1] * k];
   const leg = ([th, kn], c, off) => { const h = L(0, off), k = add(h, dir(th), 5), f = add(k, dir(th - kn), 6);
@@ -234,6 +239,24 @@ const run8 = Array.from({ length: 8 }, (_, i) => { const a = i / 8 * Math.PI * 2
 const BREATH = [0, 0, 0, .15, .45, .75, .95, 1, 1, 1, .85, .6, .3, .1, 0, 0];
 const FLUT = [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0];
 const idle16 = BREATH.map((b, i) => pz({ breath: b, fa: [.12 + b * .03, .18], ba: [-.08 - b * .03, .12], flutter: FLUT[i] }));
+const ease = k => k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, lin = k => k;
+// sample eased keyframes [time, pose, easing?] into frames
+function keyed(keys, fps) {
+  const n = Math.round(keys[keys.length - 1][0] * fps) + 1;
+  return Array.from({ length: n }, (_, i) => { const t = i / fps; let j = 0;
+    while (j < keys.length - 2 && keys[j + 1][0] <= t) j++;
+    const [t0, a] = keys[j], [t1, b, e] = keys[j + 1];
+    return lerpP(a, b, (e || ease)(Math.min(1, Math.max(0, (t - t0) / (t1 - t0))))); });
+}
+// his battle stance: feet wide, hips low, both hands on the hilt, blade angled up at the enemy
+const GUARD = pz({ hy: 3, lean: .14, chest: .06, fl: [.6, 1.0], bl: [-.65, .4], fa: [1.2, .55], ba: [1.05, .75], sword: -.85 });
+const J1_WIND = pz({ hx: -1, hy: 4, lean: -.1, chest: -.4, fl: [.6, 1.05], bl: [-.75, .45], fa: [2.6, .6], ba: [2.3, .8], sword: -2.45 });
+const J1_FOLLOW = pz({ hx: 2, hy: 4, lean: .6, chest: .5, fl: [1.1, 1.25], bl: [-1.1, .1], fa: [1.0, .2], sword: 1.3, ba: [.6, .2], hat: 1 });
+const J1_TAIL = [
+  [.16, pz({ hx: 2, hy: 3, lean: .45, chest: .35, fl: [1.0, 1.1], bl: [-1.0, .1], fa: [1.8, .1], sword: .1, ba: [1.2, .3], hat: 1, flutter: 1 }), lin],
+  [.22, J1_FOLLOW],
+  [.36, pz({ ...J1_FOLLOW, lean: .56, chest: .46 })],
+  [.5, GUARD]];
 const LUNGE = pz({ hx: 3, hy: 2, lean: .55, fl: [1.0, .9], bl: [-.95, .1] });
 const POSES = {
   idle: idle16,
@@ -252,47 +275,29 @@ const POSES = {
     ...[0, 1, 2].map(() => pz({ lean: .2, fl: [1.0, 1.7], bl: [.2, 1.9], fa: [.6, .6], ba: [-1.5, .2], flutter: 1 }))],
   fall: [0, 1, 2].map(i => pz({ lean: .1, fl: [.4, .4 + i * .1], bl: [-.3, .5], fa: [.9, .3], ba: [-2.0, .2], flutter: i % 2 })),
   land: [pz({ hy: 4, lean: .35, fl: [.8, 1.4], bl: [-.5, 1.0] }), pz({ hy: 2, lean: .2, fl: [.4, .7], bl: [-.3, .5] }), pz({ hy: 1 })],
-  // J: a light-speed quick-draw. A still wind-up, then on frame 3 he is simply already through the cut;
-  // the engine paints the motion he went through as afterimages (the jNghost sheets below)
-  slash1: [
-    pz({ fa: [.3, .7] }),
-    pz({ hy: 1, lean: -.05, fl: [.2, .4], bl: [-.25, .2], fa: HILT }),
-    pz({ hy: 2, lean: -.12, fl: [.3, .6], bl: [-.4, .3], fa: [.3, 1.2], ba: [-.05, .8] }),
-    ...[0, 1, 2, 3, 4, 5].map(i => pz({ hx: 3, hy: 3 - (i > 3 ? 1 : 0), lean: .72 - i * .01, fl: [1.1, 1.0], bl: [-1.05, .1], fa: [1.3, .05], sword: .9, ba: [-1.65, .1], hat: 1, flutter: i < 2 ? 1 : 0 })),
-    pz({ hx: 2, hy: 2, lean: .35, fl: [.6, .6], bl: [-.6, .2], fa: [.9, .5], sword: 1.25, ba: [-.8, .3] }),
-    pz({ hx: 1, hy: 1, lean: .2, fl: [.35, .35], bl: [-.35, .2], fa: [.7, .7], sword: 1.35, ba: [-.5, .3] }),
-    pz({ hx: 1, hy: 1, lean: .15, fl: [.3, .3], bl: [-.3, .2], fa: [.65, .75], sword: 1.4, ba: [-.4, .3] }),
-  ],
-  j1ghost: [
-    pz({ hy: 2, lean: .3, fl: [.5, .7], bl: [-.5, .2], fa: HILT, ba: [-.6, .3] }),
-    pz({ hx: 1, hy: 3, lean: .5, fl: [.8, .8], bl: [-.8, .15], fa: [1.0, .6], sword: -.25, ba: [-1.1, .2] }),
-    pz({ hx: 2, hy: 3, lean: .62, fl: [1.0, .9], bl: [-.95, .1], fa: [1.55, .1], sword: -.05, ba: [-1.45, .1] }),
-    pz({ hx: 3, hy: 3, lean: .7, fl: [1.1, 1.0], bl: [-1.05, .1], fa: [1.8, 0], sword: .35, ba: [-1.6, .1] }),
-  ],
-  slash2: [
-    pz({ hx: 1, hy: 2, lean: .2, fl: [.4, .5], bl: [-.5, .2], fa: [.6, .3], sword: 1.3, ba: [-.6, .3] }),
-    pz({ hx: 1, hy: 3, lean: .35, fl: [.55, .9], bl: [-.6, .35], fa: [.3, .2], sword: 2.0, ba: [-.3, .5] }),
-    pz({ hx: 1, hy: 4, lean: .4, fl: [.6, 1.1], bl: [-.6, .4], fa: [.25, .2], sword: 2.1, ba: [-.25, .5] }),
-    ...[0, 1, 2, 3, 4, 5].map(i => pz({ hx: 3, hy: i > 3 ? 1 : 0, lean: -.26, fl: [.9, .3], bl: [-.8, .15], fa: [2.85, -.1], sword: -1.75, ba: [-1.9, .2], hat: 1, flutter: i < 2 ? 1 : 0 })),
-    pz({ hx: 2, hy: 1, lean: -.05, fl: [.6, .4], bl: [-.5, .2], fa: [2.0, .2], sword: -.6, ba: [-1.2, .3] }),
-    pz({ hx: 2, hy: 2, lean: .12, fl: [.5, .5], bl: [-.45, .2], fa: [1.4, .3], sword: .6, ba: [-.8, .3] }),
-    pz({ hx: 1, hy: 1, lean: .1, fl: [.3, .3], bl: [-.3, .2], fa: [1.1, .4], sword: 1.0, ba: [-.5, .3] }),
-  ],
-  j2ghost: [
-    pz({ hy: 3, lean: .35, fl: [.55, .9], bl: [-.6, .35], fa: [.3, .2], sword: 2.0, ba: [-.3, .5] }),
-    pz({ hx: 1, hy: 2, lean: .12, fl: [.7, .6], bl: [-.7, .25], fa: [1.2, .1], sword: .2, ba: [-1.0, .3] }),
-    pz({ hx: 2, hy: 1, lean: -.1, fl: [.85, .4], bl: [-.75, .2], fa: [2.0, 0], sword: -.8, ba: [-1.5, .2] }),
-    pz({ hx: 3, hy: 0, lean: -.2, fl: [.9, .3], bl: [-.8, .15], fa: [2.6, -.1], sword: -1.4, ba: [-1.8, .2] }),
-  ],
-  // the flick, the slide home, the click, the hand letting go
-  sheathe: [
-    pz({ hy: 1, lean: .12, fa: [1.5, .1], sword: .85, ba: [-.3, .3] }),
-    pz({ hy: 1, lean: .1, fa: [1.15, .45], sheathing: true, ba: [-.25, .3] }),
-    pz({ hy: 1, lean: .08, fa: [.85, .7], sheathing: true, ba: [-.2, .3] }),
-    pz({ lean: .06, fa: [.6, .9], sheathing: true, ba: [-.15, .2] }),
-    pz({ lean: .05, fa: HILT, ba: [-.1, .15] }),
-    pz({ fa: [.25, .5] }),
-  ],
+  // J: one fluid cut, keyframed and eased. The hips go first, then the chest, then the arms and blade.
+  slash1: keyed([[0, pz({ fa: HILT, ba: [-.1, .6] })],
+    [.09, pz({ hx: -1, hy: 3, lean: -.12, chest: -.3, fl: [.55, .9], bl: [-.7, .4], fa: [.3, 1.3], ba: [-.05, .9] })],
+    ...J1_TAIL], 30),
+  slash1r: keyed([[0, GUARD], [.09, J1_WIND], ...J1_TAIL], 30),
+  slash2: keyed([[0, J1_FOLLOW],
+    [.08, pz({ hx: 1, hy: 5, lean: .5, chest: .25, fl: [.8, 1.3], bl: [-.8, .4], fa: [.5, .3], sword: 2.3, ba: [.4, .5] })],
+    [.14, pz({ hx: 2, hy: 2, lean: -.12, chest: -.3, fl: [.9, .5], bl: [-.8, .2], fa: [2.5, 0], sword: -1.2, ba: [2.1, .2], hat: 1, flutter: 1 }), lin],
+    [.2, pz({ hx: 2, hy: 1, lean: -.22, chest: -.45, fl: [.9, .4], bl: [-.8, .2], fa: [2.9, -.1], sword: -1.85, ba: [2.6, .1], hat: 1, flutter: 1 })],
+    [.34, pz({ hx: 2, hy: 1, lean: -.2, chest: -.42, fl: [.9, .4], bl: [-.8, .2], fa: [2.88, -.1], sword: -1.82, ba: [2.55, .1], hat: 1 })],
+    [.5, GUARD]], 30),
+  // after an attack he waits in a guard stance, blade out, breathing
+  ready: [0, 0, .3, .7, 1, 1, 1, .7, .3, 0, 0, 0, .2, .5, .2, 0].map((b, i) => pz({ ...GUARD, breath: b, sword: GUARD.sword + b * .04, flutter: i === 5 || i === 13 ? 1 : 0 })),
+  runArmed: run8.map(q => pz({ ...q, lean: .4, fa: [.9, .3], sword: 2.55 })),
+  // the resheathe, unhurried: the flick, a beat, the blade laid across, slid home slowly, the click, a moment of stillness, the release
+  sheathe: keyed([[0, GUARD],
+    [.12, pz({ hy: 3, lean: .2, chest: .1, fl: [.6, 1.0], bl: [-.65, .4], fa: [1.45, .05], sword: 1.15, ba: [-.4, .3] }), lin],
+    [.3, pz({ hy: 3, lean: .2, chest: .1, fl: [.6, 1.0], bl: [-.65, .4], fa: [1.42, .06], sword: 1.2, ba: [-.4, .3] })],
+    [.45, pz({ hy: 2, lean: .12, fl: [.4, .7], bl: [-.45, .3], fa: [1.2, .45], sheathing: true, ba: [.45, 1.1] })],
+    [.75, pz({ hy: 1, lean: .08, fl: [.25, .4], bl: [-.3, .2], fa: [.6, .9], sheathing: true, ba: [.35, 1.1] })],
+    [.82, pz({ hy: 1, lean: .06, fl: [.2, .3], bl: [-.25, .15], fa: HILT, ba: [.3, 1.0] })],
+    [1.0, pz({ hy: 1, lean: .06, fl: [.2, .3], bl: [-.25, .15], fa: HILT, ba: [.3, 1.0] })],
+    [1.2, pz({ fa: [.2, .3] })]], 15),
   tele: [
     pz({ hy: 2, lean: .4, fl: [.5, .9], bl: [-.5, .3], fa: HILT, ba: [-.9, .2] }),
     pz({ hy: 3, lean: .58, fl: [.6, 1.1], bl: [-.6, .4], fa: HILT, ba: [-1.2, .2], flutter: 1 }),
@@ -322,6 +327,8 @@ const POSES = {
   sweep: [
     ...[0, 1, 2, 3, 4, 5].map(i => { const k = i / 5; return pz({ hy: Math.round(k * 6), lean: .05 + k * .35, fl: [.2 + k * 1.0, .2 + k * 1.75], bl: [-.1 - k * .05, .1 + k * 2.3],
       fa: i < 2 ? HILT : [.9 - k * .3, .4], sword: i < 2 ? null : 1.45, ba: [-.1, .2 + k * .4] }); }),
+    ...Array.from({ length: 20 }, (_, i) => pz({ hx: i > 13 ? (i % 2 ? 1 : 0) : 0, hy: 6, lean: .4 + (i > 6 && i < 14 ? .03 : 0), fl: [1.2, 1.95], bl: [-.15, 2.4],
+      fa: [.6, .4], sword: 1.45, ba: [-.1, .6], breath: [0, 0, .3, .7, 1, 1, .7, .3][i % 8], flutter: i > 9 ? i % 2 : 0 })),
     ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => { const k = i / 7; return pz({ hy: Math.round(6 - k * 8), lean: .3 - k * .45, fl: [1.2 - k * .9, 1.9 - k * 1.7], bl: [-.1 - k * .2, 2.3 - k * 2.1],
       fa: [1.6 + k * 1.2, .1], sword: -1.2 + i * 2.4, ba: [-1.2 - k * 1.2, .1], hat: i % 2 ? -1 : 0, flutter: i % 2 }); }),
     pz({ hy: -3, lean: -.2, fl: [.4, .5], bl: [-.3, .6], fa: [3.0, 0], sword: -1.62, ba: [2.9, .1], hat: -1, flutter: 1 }),
@@ -397,6 +404,7 @@ function placeholderSheet(name) {
   return { img: c, fw: FW, fh: FH, n, ox: OX, oy: OY, custom: false };
 }
 
+for (const k in POSES) if (ANIMS[k]) ANIMS[k].n = POSES[k].length;   // keyframed moves decide their own length
 const SHEETS = {};
 for (const k in ANIMS) SHEETS[k] = placeholderSheet(k);
 const dur = k => ANIMS[k].n / ANIMS[k].fps;
@@ -482,7 +490,45 @@ function boltPts(z) { // a jagged polyline: every ~4px a vertex kicked 1..jit px
   return out;
 }
 // he lands inside a burst of electric smoke: dark puffs that swell and rise, and bolts swirling round him
-const smoke = [], cracks = [];
+const smoke = [], cracks = [], debris = [];
+// matter he pulls in: each chip orbits him on a flat ellipse, tightening and speeding up, and lifts with him
+const STONE = ['#5f6562', '#3a3f3d', '#6d7370', '#4f5552', '#2e3231'];
+function gather(x, y) {
+  if (debris.length > 46) return;
+  const a = rr(0, 6.28);
+  debris.push({ cx: x, cy: y, a, r: rr(40, 66), r1: rr(9, 20), h: 0, h1: rr(2, 12), w: rr(1.2, 2.6) * sgn(), size: Math.random() < .3 ? 2 : 1,
+    col: Math.random() < .12 ? COL.fx : STONE[Math.random() * STONE.length | 0], state: 'in', vx: 0, vy: 0, vh: 0, life: 9 });
+}
+const debrisXY = d => [Math.round(d.cx + Math.cos(d.a) * d.r), Math.round(d.cy + Math.sin(d.a) * d.r * .45 - d.h)];
+function fling(x, y) {
+  for (const d of debris) { const [dx, dy] = [Math.cos(d.a), Math.sin(d.a)];
+    d.state = 'out'; d.px = d.cx + dx * d.r; d.py = d.cy + dy * d.r * .45; d.vx = dx * rr(90, 170); d.vy = dy * rr(40, 80); d.vh = rr(30, 70); d.life = rr(.5, .9); }
+}
+function updateDebris(dt) {
+  const sweeping = P.state === 'sweep';
+  for (const d of debris) {
+    if (d.state === 'in') {
+      if (!sweeping) { d.state = 'out'; d.px = d.cx + Math.cos(d.a) * d.r; d.py = d.cy + Math.sin(d.a) * d.r * .45; d.vx = d.vy = 0; d.vh = 0; d.life = .6; continue; }
+      d.cx = P.x; d.cy = P.y;
+      d.r += (d.r1 - d.r) * Math.min(1, dt * 2.2);                       // drift in
+      const spin = 1 + Math.min(4, P.t * 1.6);                           // and spin faster as the power builds
+      d.a += d.w * spin * dt;
+      d.h += ((d.h1 + P.z * 2.2) - d.h) * Math.min(1, dt * 3);           // lift, and rise with him in the cyclone
+    } else {
+      d.px += d.vx * dt; d.py += d.vy * dt; d.vx *= .97; d.vy *= .97;
+      d.vh -= 260 * dt; d.h = Math.max(0, d.h + d.vh * dt); if (d.h === 0) { d.vx *= .6; d.vy *= .6; }
+      d.life -= dt;
+    }
+  }
+  for (let i = debris.length - 1; i >= 0; i--) if (debris[i].life <= 0) debris.splice(i, 1);
+}
+function drawDebris(d) {
+  const [x, y] = d.state === 'in' ? debrisXY(d) : [Math.round(d.px), Math.round(d.py - d.h)];
+  g.globalAlpha = d.state === 'out' ? Math.min(1, d.life * 2) : 1;
+  if (d.h > 1) { g.fillStyle = 'rgba(20,24,24,.3)'; g.fillRect(x, y + Math.round(d.h), d.size, 1); }
+  g.fillStyle = d.col; g.fillRect(x, y, d.size, d.size);
+  g.globalAlpha = 1;
+}
 // jagged dark cracks from the slam point, cyan at the tip, lingering a second
 function crack(x, y) {
   for (let i = 0; i < 7; i++) { const a = i / 7 * Math.PI * 2 + rr(-.3, .3), out = []; let px = x, py = y;
@@ -493,6 +539,7 @@ function storm(x, y) {
   P.flurry = .55; P.after = 3;   // the flurry of bolts, then a few seconds of random glitching as the jump settles
 }
 function updateFx(dt) {
+  updateDebris(dt);
   P.glitchNow = Math.max(0, (P.glitchNow || 0) - dt);
   if (P.after > 0) { P.after -= dt;
     if (Math.random() < dt * 2.2 * Math.min(1, P.after / 1.5 + .3)) { P.glitchNow = rr(.05, .12);
@@ -573,7 +620,7 @@ function drawFx() {
   g.globalAlpha = 1;
 }
 
-function setState(s) { P.state = s; P.t = 0; P.hitDone = {}; P.ev = {}; P.combo = false; }
+function setState(s) { if (s === 'idle' || s === 'run') P.armed = false; P.state = s; P.t = 0; P.hitDone = {}; P.ev = {}; P.combo = false; }
 // true the first time an in-state beat is reached, so a strike fires once even if a frame skips past it
 const once = (k, when) => when && !P.ev[k] && (P.ev[k] = true);
 function collide(nx, ny) {
@@ -629,7 +676,7 @@ function update(dt, inp) {
   P.t += dt;
   const s = P.state, T = P.t, D = dur(s), u = T / D;
   const free = s === 'idle' || s === 'run' || s === 'idleGlitch' || s === 'sit' || s === 'sitDown';
-  const canAttack = free || s === 'land' || s === 'sheathe';
+  const canAttack = free || s === 'land' || s === 'sheathe' || s === 'ready' || s === 'runArmed';
   if (inp.mx) P.face = Math.sign(inp.mx);
   const moving = inp.mx || inp.my;
 
@@ -644,7 +691,7 @@ function update(dt, inp) {
   }
   if (s === 'standUp') { if (T >= D) { /* handled in the switch */ } else return; }
   if (canAttack) {
-    if (inp.slash) return setState('slash1');
+    if (inp.slash) return setState(P.armed ? 'slash1r' : 'slash1');
     if (inp.jump) { setState('jump'); P.vz = 150; return; }
     if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); return; }
     if (inp.tele) { setState('tele'); P.blinkDir = inputDir(inp); return; }
@@ -654,6 +701,12 @@ function update(dt, inp) {
   }
 
   switch (s) {
+    case 'ready': case 'runArmed': {
+      // blade out: he waits in guard or runs with it trailing; after ~2 s of calm he puts it away
+      if (moving) { const [dx, dy] = inputDir(inp); moveBy(dx * 74 * dt, dy * 74 * dt); if (s !== 'runArmed') setState('runArmed'); P.still = 0; }
+      else { if (s === 'runArmed') setState('ready'); P.still += dt; if (P.still > 2) { P.still = 0; setState('sheathe'); } }
+      break;
+    }
     case 'idle': case 'run': case 'idleGlitch': case 'sit': case 'sitDown': {
       if (moving) {
         const [dx, dy] = inputDir(inp);
@@ -685,24 +738,17 @@ function update(dt, inp) {
       break;
     }
     case 'land': if (T >= D) setState(moving ? 'run' : 'idle'); break;
-    case 'slash1': case 'slash2': {
-      // a glint in the eye, then he is simply through the cut: the body teleports ahead and the motion is left behind as afterimages
-      if (once('glint', T >= .06)) spark(P.x + P.face * 2, P.y - 21, 0, 0, .08, '#ffffff', false);
-      if (once('strike', T >= .1)) {
-        const x0 = P.x, y0 = P.y, gs = s === 'slash1' ? 'j1ghost' : 'j2ghost';
-        moveBy(P.face * (s === 'slash1' ? 22 : 18), 0);
-        for (let k = 0; k < 4; k++) P.ghosts.push({ state: gs, f: k, x: x0 + (P.x - x0) * (k + .5) / 4, y: y0 - P.z, face: P.face,
-          age: -k * .01, max: .2, a: .6, col: k % 2 ? COL.fx2 : '#ffffff' });
-        for (let k = 0; k < 8; k++) { const life = rr(.07, .15);
-          frags.push({ x: rr(Math.min(x0, P.x), Math.max(x0, P.x)), y: P.y - rr(3, 26), w: 4 + (Math.random() * 10 | 0), col: k % 3 ? '#ffffff' : COL.fx2,
-            vx: P.face * rr(20, 60), vy: 0, life, max: life, jx: 0, on: true }); }
-        strike(s === 'slash1' ? .15 : -.35, s === 'slash1' ? 1 : -1, false);
-        const lo = Math.min(x0, P.x), hi = Math.max(x0, P.x) + P.face * 14;
-        hit(s, Math.max(Math.min(lo, hi), Math.min(Math.max(lo, hi), dummy.x)), P.y - 12, 20);
-      }
-      if (T > .1 && T < .2) { moveBy(P.face * 22 * dt, 0); if (Math.random() < .3) dust(1, -P.face); }
-      if (s === 'slash1' && inp.slash && u > .4) P.combo = true;
-      if (T >= D) setState(P.combo ? 'slash2' : 'sheathe');
+    case 'slash1': case 'slash1r': case 'slash2': {
+      // one fluid motion: the lunge travels with the hips through the cut, the strike lands as the blade passes level
+      const SK = s === 'slash2' ? .14 : .16;
+      if (T >= SK - .05 && T < SK + .08) moveBy(P.face * (s === 'slash2' ? 60 : 85) * dt, 0);
+      if (once('strike', T >= SK)) { strike(s === 'slash2' ? -.35 : .15, s === 'slash2' ? -1 : 1, false); ghost();
+        for (let k = 0; k < 5; k++) { const life = rr(.06, .12); frags.push({ x: P.x - P.face * rr(4, 20), y: P.y - rr(4, 24), w: 3 + (Math.random() * 7 | 0), col: k % 2 ? '#ffffff' : COL.fx2, vx: P.face * rr(10, 30), vy: 0, life, max: life, jx: 0, on: true }); } }
+      if (once('trail', T >= SK + .03)) ghost();
+      if (T >= SK && T < SK + .1) hit(s === 'slash2' ? 'slash2' : 'slash1', P.x + P.face * 14, P.y - 12, 22);
+      if (s !== 'slash2' && inp.slash && T > .15) P.combo = true;
+      if (s !== 'slash2' && P.combo && T >= .3) { setState('slash2'); break; }   // flow straight out of the follow-through
+      if (T >= D) { P.armed = true; P.still = 0; setState(moving ? 'runArmed' : 'ready'); }
       break;
     }
     case 'tele': {
@@ -729,16 +775,24 @@ function update(dt, inp) {
           cuts.push({ x0: dummy.x - 16, x1: dummy.x + 16, y: Math.round(dummy.y - 14), life: .14, max: .14 });
           residue(dummy.x, dummy.y, 10);
           for (let i = 0; i < 16; i++) { const a = rr(0, 6.28); spark(dummy.x, dummy.y - 14, Math.cos(a) * rr(80, 160), Math.sin(a) * rr(60, 120), rr(.12, .22), ['#ffffff', COL.fx2, COL.fx][i % 3], true); } } }
-      if (T >= D) { P.moved = false; P.inv = false; setState('idle'); }
+      if (T >= D) { P.moved = false; P.inv = false; P.armed = false; setState('idle'); }
       break;
     }
     case 'sheathe': {
-      if (once('click', T >= 4 / 18)) spark(P.x + P.face * 3, P.y - 12, P.face * 6, -12, .1, '#ffffff', false);
-      if (T >= D) setState(moving ? 'run' : 'idle');
+      if (once('flick', T >= .12)) for (let k = 0; k < 4; k++) spark(P.x + P.face * rr(8, 14), P.y - rr(6, 12), P.face * rr(20, 50), rr(-10, 10), .15, COL.fx2, true);
+      if (once('click', T >= .82)) { P.armed = false; spark(P.x + P.face * 3, P.y - 12, P.face * 6, -12, .12, '#ffffff', false); }
+      if (moving) { setState(P.armed ? 'runArmed' : 'run'); break; }
+      if (T >= D) setState('idle');
       break;
     }
     case 'sweep': {
-      const cx = P.x, cy = P.y - 13, RISE = .3, TOP = .7, SLAM = .8;
+      const cx = P.x, cy = P.y - 13, KNEEL = .3, RISE = 1.3, TOP = 1.7, SLAM = 1.8;
+      // the gather: stone chips lift off the floor all around, drift in and start circling him
+      if (T >= KNEEL && T < RISE) { const k = (T - KNEEL) / (RISE - KNEEL);
+        if (Math.random() < .35 + k * .5) gather(P.x, P.y);
+        if (Math.random() < k * .5 && debris.length > 3) { const a = debris[Math.random() * debris.length | 0], b = debris[Math.random() * debris.length | 0];
+          if (a !== b) zap(...debrisXY(a), ...debrisXY(b), rr(.04, .07), 1.4, Math.random() < .6 ? COL.fx : COL.fx2); }
+        if (Math.random() < .4) { const a = rr(0, 6.28), R = rr(34, 60); spark(P.x + Math.cos(a) * R, P.y + Math.sin(a) * R * .45, -Math.cos(a) * 40, -Math.sin(a) * 18, .5, '#8f9692'); } }
       // the cyclone: bolts whipping round him in a rising spiral while he comes up out of the kneel
       if (T >= RISE && T < TOP) { const k = (T - RISE) / (TOP - RISE);
         P.z = Math.round(k * 7);
@@ -747,6 +801,7 @@ function update(dt, inp) {
         if (Math.random() < .5) { const a = rr(0, 6.28); spark(cx + Math.cos(a) * 30, P.y - 1, -Math.cos(a) * 60, -rr(5, 20), .3, '#8f9692'); } }
       if (T >= TOP && T < SLAM) P.z = 8;
       if (once('slam', T >= SLAM)) {
+        fling(P.x, P.y);
         P.z = 0; P.flash = .05; hitstop = .08; shake = .3; P.shakeAmp = 3;
         const n = 10 + (Math.random() * 4 | 0);
         for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + rr(-.2, .2), R = rr(48, 60);
@@ -759,7 +814,7 @@ function update(dt, inp) {
       if (T >= SLAM && T < SLAM + .1) hit('sw', cx + P.face * 8, P.y - 6, 60);
       if (T > SLAM + .04 && Math.random() < (1 - (T - SLAM) / .4) * .7) { const a = rr(0, 6.28), R = rr(10, 55), x = cx + Math.cos(a) * R, y = P.y + Math.sin(a) * R * .5;
         zap(x, y, x + rr(-7, 7), y + rr(-4, 4), rr(.06, .12), 2, Math.random() < .7 ? COL.fx : COL.fx2); }
-      if (T >= D) { P.z = 0; setState('sheathe'); }
+      if (T >= D) { P.z = 0; P.armed = true; P.still = 0; setState('ready'); }
       break;
     }
     case 'standUp': {
@@ -829,7 +884,8 @@ function render() {
   g.drawImage(bg, 0, 0);
   drawFloorFx();
   // depth-sort the pillars, the dummy and the player by their feet
-  const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), { y: dummy.y, d: () => drawDummy(g) }, { y: P.y, d: drawPlayer }];
+  const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), { y: dummy.y, d: () => drawDummy(g) }, { y: P.y, d: drawPlayer },
+    ...debris.map(d => ({ y: d.state === 'in' ? d.cy + Math.sin(d.a) * d.r * .45 : d.py, d: () => drawDebris(d) }))];
   items.sort((a, b) => a.y - b.y).forEach(i => i.d());
   drawFx();
   for (const q of parts) {
