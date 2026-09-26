@@ -12,6 +12,7 @@ The living world as plain data: the ledger of `docs/foundations.md`. Pure JavaSc
 | `cultures.js` | `CLASSES` (rank, dress, weapons, jobs), `KINDS` (the culture kinds: classes, traits, despised traits), `kindRelation`, name makers |
 | `worldgen.js` | `generateWorld(seed)`: 100 × 100 zones, terrain, 100 regions, 20 cultures and their relations, towns, villages, camps, forts, shrines, roads, people |
 | `actors.js` | the person record, `makeActor`, `marry`, `bear`, `ageOf`, `nameOf`, `populate` (the first generation, the ronin) |
+| `wild.js` | `WILD`, `wildDepth(L, x, y)` (zones to the nearest settlement), `wildRing(L, x, y)` → `settled` / `edge` / `void` (owner, 2026-09-26: bandits on the edge, mystical creatures in the voids) |
 | `zone.js` | `tilesOf(L, zx, zy)` (64 × 64 tiles, made from the seed), `TERRAIN`, `plotAt`, `plotId`, `ownerOf(L, plotId)` → `{ title, holder }` |
 | `save.js` | `serialize`, `deserialize`, `saveWorld(L)`, `loadWorld()` (IndexedDB, localStorage as a fallback) |
 | `index.js` | everything above, the one import |
@@ -20,7 +21,7 @@ The living world as plain data: the ledger of `docs/foundations.md`. Pure JavaSc
 
 ## The shape of the world
 
-- `L.zones[y * 100 + x]`: `{ x, y, biome, region, kind, road, name?, holder? }`. `kind`: sea, wild, town (a region's seat), village, camp (outlaws: a hostile base), fort, shrine.
+- `L.zones[y * 100 + x]`: `{ x, y, biome, region, kind, road, name?, holder?, void? }`. `void`: a void carved by worldgen, where nobody lives (`wild.js`). `kind`: sea, wild, town (a region's seat), village, camp (outlaws: a hostile base), fort, shrine.
 - `L.regions[id]`: `{ id, name, culture, seat: [x, y], zones, center, lord }`.
 - `L.cultures[id]`: `{ id, kind, name, regions, relations: { otherId: -1..1 }, hue }`.
 - `L.actors[id]`: one record for every person, the ronin included (`L.player`): `{ id, given, family, sex, born, alive, culture, cls, job, rank, home, spouse, parents, children, household, weapon, traits, karma, standing, money: { mon, silver, ryo }, holds, int, lord?, chief?, at? }`. `int` is intelligence, 0..1 (owner, 2026-09-26: personality decides whether and how willingly someone acts, intelligence how good their choices are).

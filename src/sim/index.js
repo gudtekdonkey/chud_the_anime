@@ -6,4 +6,5 @@ export * from './cultures.js';
 export * from './actors.js';
 export * from './worldgen.js';
 export * from './zone.js';
+export * from './wild.js';
 export * from './save.js';

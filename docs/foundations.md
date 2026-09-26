@@ -150,6 +150,15 @@ Events are the ledger's big moves, felt in every zone they reach:
 ### Answered (owner, 2026-09-26)
 - 90% of the story comes from the world; only the structure is written. Glitch storms are in, with no story behind the powers. NPCs age, marry and pass land to heirs.
 
+## The wild: settled lands, the bandits' edge, the voids (owner, 2026-09-26)
+
+- **Three rings.** People live in the settled lands and don't travel far out of them. On the edge of the inhabited lands are the bandits. Out in the real extreme lands, the **voids**, live mystical creatures: very powerful, and the reason nobody goes there.
+- **The creatures are rare by day, and at night still elusive** (signs of them far more often than the thing itself).
+- **Before level 11 he cannot fight one.** The first meetings scare him off, and after that they knock him out (both are cut scenes); he wakes somewhere safe. The point: he explores a little, gets caught by these random meetings, and learns he has to stay, build and get far stronger if he wants to succeed.
+- **From level 11** they come for him at night, and they can be fought. They are still far stronger than he is.
+- **At about level 30** he gets his first power spike: a mystical skill that makes him quite powerful. Past it, he stands a real chance against them.
+- Built: `src/sim/wild.js` (the rings; worldgen carves the voids), `src/sim/travel/beasts.js` (the creatures). Numbers in `docs/sim-travel.md` → "The voids". The dominion lane owns what the voids mean for settling land and moving armies (`docs/dominion.md` → "The voids").
+
 ## Engineering decisions (Claude's, unless the owner objects)
 - **One actor for everyone**: the ronin, enemies, companions, villagers, lords and animals are the same entity: body (rig, clothes, weapon), personality, inventory, a brain (player, AI or orders), a faction, karma and standing.
 - **Everything is data with stable IDs** (items, weapons, clothes, cultures, recipes, actions, executions), so saves and new content never break each other.
