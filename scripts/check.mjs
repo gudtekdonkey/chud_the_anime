@@ -243,13 +243,6 @@ try {
     await until('the storm over (C in the storm is Storm breath)', () => !(window.__game.P.storm > 0), null, 15000);
     await kb.press('c'); await reach(/^sitDown$/); await reach(/^sit$/); await shot('07-sit');
     await kb.down('w'); await reach(/^standUp$/); await kb.up('w'); await reach(/^(idle|run)$/); });
-  await run('hold C: Breath of Qi (the kata spends a notch of Qi and heals; with less than a notch it fizzles)', async () => {
-    await until('the storm over', () => !(window.__game.P.storm > 0), null, 15000);
-    const q0 = await page.evaluate(() => window.__game.P.qi);
-    await kb.down('c');
-    if (q0 >= 1 / 3) { await reach(/^kata$/); await until('an out-breath', q => window.__game.P.qi < q - .2, q0, 5000); await shot('07b-kata'); await kb.up('c'); }
-    else { await sleep(600); if (/^(kata|seiza|lotus)$/.test(await state())) fail(`a breath started on ${q0.toFixed(2)} Qi`); await kb.up('c'); }
-    await reach(FREE, 5000); });
   await run('every weapon (the picker) slashes, stands in a stance and sheathes', async () => {
     for (const id of ['yari', 'nodachi', 'tanto', 'naginata', 'kanabo', 'kusarigama', 'tessen', 'bo', 'tetsubo', 'kama', 'jitte', 'daisho', 'nunchaku', 'wakizashi', 'katana']) {
       await page.selectOption('#weapon', id); await until(`weapon ${id}`, w => window.__game.P.weapon === w, id);
@@ -307,6 +300,48 @@ try {
     const hp = (await inv()).hp; await kb.press('h');
     await until('a red number', () => window.__game.N.some(q => q.kind === 'take')); await shot('15-hurt-number');
     const h2 = (await inv()).hp; if (!(h2 < hp)) fail(`H left his health at ${h2} (was ${hp})`); });
+  // ---- Breath of Qi on C: Qi earned by cutting the nearest samurai, as a player would ----
+  const qiUp = async (goal, storm = false) => {
+    for (let i = 0; i < 60; i++) {
+      if (await page.evaluate(([g, st]) => st ? window.__game.P.storm > 0 : window.__game.P.qi >= g && !(window.__game.P.storm > 0), [goal, storm])) return;
+      const e = await page.evaluate(() => { const P = window.__game.P, L = window.__game.E.filter(e => e.alive);
+        L.sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y)); return L[0] && { x: L[0].x, y: L[0].y }; });
+      if (!e) { await sleep(500); continue; }
+      if (await page.evaluate(q => Math.abs(window.__game.P.y - q.y) > 4 || Math.abs(window.__game.P.x - q.x) > 30, e)) await walkTo(e.x - 16, e.y);
+      await kb.press('d'); await reach(FREE); await kb.press('j'); await reach(/^slash/); await reach(FREE, 4000);
+      // a full meter wakes the storm: when it is not wanted, wait it out and cut on
+      if (!storm && await page.evaluate(() => window.__game.P.storm > 0)) await until('the storm over', () => !(window.__game.P.storm > 0), null, 15000); }
+    fail(storm ? 'never woke the storm by cutting' : `never earned ${goal} Qi by cutting`); };
+  await run('hold C with less than a notch of Qi: the breath fizzles and he does not sit or breathe', async () => {
+    await until('the storm over', () => !(window.__game.P.storm > 0), null, 15000);
+    await until('Qi ebbed under a notch', () => window.__game.P.qi < 1 / 3, null, 20000);
+    await kb.down('c'); await sleep(700);
+    if (/^(kata|seiza|lotus)$/.test(await state())) fail('a breath started with less than a notch of Qi');
+    await kb.up('c'); await reach(FREE, 5000); });
+  await run('hold C: the Standing kata spends a notch of Qi and heals', async () => {
+    await qiUp(.4); await reach(FREE);
+    const h = await page.evaluate(() => ({ q: window.__game.P.qi, hp: window.__game.INV.hp }));
+    if (!(h.hp < 1)) { await kb.press('h'); await until('a cut', hp => window.__game.INV.hp < hp, h.hp); }
+    const hp0 = (await inv()).hp;
+    await kb.down('c'); await reach(/^kata$/);
+    await until('an out-breath', q => window.__game.P.qi < q - .2, h.q, 6000); await shot('07b-kata'); await kb.up('c');
+    await reach(FREE, 6000); const hp1 = (await inv()).hp;
+    if (!(hp1 > hp0)) fail(`the kata did not heal (${hp0} → ${hp1})`); });
+  await run('hold C and down: Seiza raises the shield and spends Qi', async () => {
+    await qiUp(.4); await reach(FREE); const q0 = await page.evaluate(() => window.__game.P.qi);
+    await kb.down('s'); await kb.down('c'); await reach(/^seiza$/);
+    await until('the shield up', () => window.__game.P.shield === true, null, 3000); await shot('07c-seiza');
+    await until('an out-breath', q => window.__game.P.qi < q - .2, q0, 6000); await kb.up('c'); await kb.up('s');
+    await reach(FREE, 6000); if (await page.evaluate(() => window.__game.P.shield)) fail('the shield stayed up after Seiza'); });
+  await run('hold C at the shrine: Lotus pours the meter into health', async () => {
+    await qiUp(.4); await walkTo(78, 98); const q0 = await page.evaluate(() => window.__game.P.qi);
+    await kb.down('c'); await reach(/^lotus$/); await sleep(400); await shot('07d-lotus');
+    await until('the meter draining', q => window.__game.P.qi < q - .1, q0, 6000); await kb.up('c'); await reach(FREE, 8000); });
+  await run('C in the storm: Storm breath spends the storm at once, heals and throws the samurai', async () => {
+    await qiUp(1, true); const hp0 = (await inv()).hp;
+    await kb.press('c'); await reach(/^sbreath$/); await sleep(300); await shot('07e-storm-breath');
+    await until('the storm spent', () => !(window.__game.P.storm > 0) && window.__game.P.qi === 0, null, 6000); await reach(FREE, 8000);
+    const hp1 = (await inv()).hp; if (!(hp1 >= hp0)) fail(`Storm breath lowered his health (${hp0} → ${hp1})`); });
   // ---- the party (prototypes/34-companions.html) ----
   await run('Tab: bring the three back, dress one and hand Kuro the katana from the bag', async () => {
     await kb.press('Tab'); await until('the kit screen', () => window.__game.KIT.open);
@@ -358,8 +393,14 @@ try {
     for (const [k, cd, hold] of [['j'], ['i', 'double'], ['i', 'double', 900], ['o', 'moon', 400], ['p', 'rift'], ['u', 'sweep'], ['n', 'mirror']]) {
       await reach(FREE, 8000); if (cd) await until(`${k} to be ready`, c => !(window.__game.P.cd[c] > 0), cd, 16000);
       await until('the old slashes to close', () => !window.__game.V.length, undefined, 4000);
-      if (hold) { await kb.down(k); await sleep(hold); await kb.up(k); } else await kb.press(k);
-      await until(`a black slash from ${k}${hold ? ' (held)' : ''}`, () => window.__game.V.length > 0, undefined, 4000); }
+      // a tap can land on a frame that is not free yet (a turn, the end of a glitch): press again, at most twice, before calling it lost
+      for (let tries = 0; ; tries++) {
+        if (hold) { await kb.down(k); await sleep(hold); await kb.up(k); } else await kb.press(k);
+        // the key took if he left the free states (U's slam opens its slash only after a 1.8 s wind-up)
+        const took = await page.waitForFunction(f => window.__game.V.length > 0 || !new RegExp(f).test(window.__game.P.state), FREE.source, { timeout: 600 }).then(() => true, () => false);
+        if (took) { await until(`a black slash from ${k}${hold ? ' (held)' : ''}`, () => window.__game.V.length > 0, undefined, 4000); break; }
+        if (tries >= 2) fail(`${k}${hold ? ' (held)' : ''} was never taken (state now: ${await state()})`);
+        await reach(FREE, 8000); } }
     await reach(FREE, 8000); });
   await run('X: die and come back', async () => { await kb.press('x'); await reach(/^death$/); await reach(/^idleGlitch$/, 5000); });
   step = '';
