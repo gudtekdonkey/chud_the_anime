@@ -136,7 +136,7 @@ try {
       // before any screenshot: the game runs on through one, and he stands up whole 2.9 s after he dies), a pool spreads
       { const b = (await G()).gore; if (b.severs < 1 || !b.cut.some(p => p !== 'sword')) fail(`no sever on the killing blow (cut: ${b.cut.join(' ')})`);
         if (b.swords < 1) fail('his sword did not drop'); if (b.pools < 1) fail('no pool under him');
-        await until('the pieces at rest on the floor', () => window.__rest.pieces >= 2 && window.__rest.resting >= 2 && window.__rest.lowest < 4, undefined, 300000);   // they settle in ~2 game s; a long session draws a frame in seconds
+        await until('the pieces at rest on the floor', () => window.__rest.pieces >= 2 && window.__rest.resting >= 2 && window.__rest.lowest < 4, undefined, 300000).catch(async e => { console.error('  the pieces:', JSON.stringify(await page.evaluate(() => ({ rest: window.__rest, gore: window.__iso.gore, t: window.__iso.t })))); throw e; });   // on a miss, what they did   // they settle in ~2 game s; a long session draws a frame in seconds
         const c = { ...(await G()).gore, ...(await page.evaluate(() => window.__rest)) }; await shot('sever', ['hero', 'foe']); ok(`cut ${c.cut.join(' + ')}; ${c.resting} pieces at rest, the lowest at ${c.lowest.toFixed(1)}; ${c.clatters} clatters; flicks ${c.flicks}`);
         if (c.flicks < 1) fail('the sheathe never flicked the blade clean'); }
 
