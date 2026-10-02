@@ -85,7 +85,7 @@ export function initControl({ canvas, root, A, H, hero, allies, foes }) {
     const dg = /^Digit([1-9])$/.exec(e.code);
     if (dg) { e.preventDefault(); if (e.ctrlKey || e.metaKey) { const n = saveGroup(+dg[1]); A.log(`group-save:${dg[1]}:${n}`); } else if (!e.altKey && recallGroup(A, +dg[1], e.shiftKey)) A.log(`group-recall:${dg[1]}`); return; }
     if (e.code === 'Escape') { clearSel(); st.radial = null; st.drag = null; }
-    if (e.code === 'KeyG') { holdOrFollow(A); gave(); }
+    if (e.code === 'KeyG' && !e.altKey) { holdOrFollow(A); gave(); }   // Alt+G is the hair panel's grid
   });
   addEventListener('keyup', e => keys.delete(e.code)); addEventListener('blur', () => keys.clear());
 

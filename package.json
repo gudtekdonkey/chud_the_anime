@@ -11,7 +11,8 @@
     "check": "vite build && node scripts/check.mjs",
     "check:hd": "vite build && CHECK_HD=1 node scripts/check.mjs",
     "check:iso": "vite build && node scripts/check-iso.mjs",
-    "check:gear": "node scripts/check-gear.mjs"
+    "check:gear": "node scripts/check-gear.mjs",
+    "check:hair": "vite build && node scripts/check-hair.mjs"
   },
   "devDependencies": {
     "playwright": "1.56.1",

@@ -43,13 +43,16 @@ import { addSkill } from './hud/skill-bar.js';
 import { installGore } from './gore.js';
 import { startOutfit, wireGear } from './gear/ui.js';
 import { encode } from './gear/outfits.js';
+import { runHairGrid } from './hair/grid.js';
+import { mountHairPanel } from './hair/panel.js';
+import { HEADS } from './hair/head.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
 const pipe = makePipeline(canvas);
 SETTINGS.fpsFor = fpsFor; setStyle(Q.has('style') ? +Q.get('style') : 3);   // the owner's pick: Painterly (gfx/style.js)
 const scene = new THREE.Scene(), cam = new THREE.Camera(); cam.matrixAutoUpdate = false;
-if (Q.has('arsenal')) runArsenal({ scene, cam, pipe, Q }); else if (Q.has('sheet')) runSheet(); else if (Q.has('idles')) runGallery({ scene, cam, pipe, Q }); else runGame(Q.has('reel') ? REELS[Q.get('reel')] || REELS.chain : null);
+if (Q.has('arsenal')) runArsenal({ scene, cam, pipe, Q }); else if (Q.has('sheet')) runSheet(); else if (Q.has('hairgrid')) runHairGrid({ scene, pipe, cam, root, Q, wireOverlay }); else if (Q.has('idles')) runGallery({ scene, cam, pipe, Q }); else runGame(Q.has('reel') ? REELS[Q.get('reel')] || REELS.chain : null);
 
 // ?iso&sheet: the contact sheet (sheet.js), frozen
 function runSheet() {
@@ -101,6 +104,7 @@ function runGame(reel) {
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
   if (!battle) personaPanel(root, { hero, foe });
   wireGear(root, outfit, o => hero.dress(o, scene));   // the outfit picker (gear/)
+  mountHairPanel(root);   // hair and hat pickers (hair/panel.js)
   wirePicker(root, id => equip(hero, id), Q.get('weapon') || 'katana');   // the 15 weapons (weapons/)
   // the rest of today's game in 3D (port.js): the party, items and Harvest, today's HUD, the combo prompts, click to move;
   // not in the squad battle, which has its own companions, left click and E
@@ -202,6 +206,6 @@ function runGame(reel) {
       get folk() { return folk.map(n => ({ ...who(n), kind: n.kind, culture: n.culture, list: n.list, idles: n.a.idler ? n.a.idler.n : 0, played: n.a.idler ? n.a.idler.played.slice() : [] })); },
       get persona() { return { hero: hero.list || [], heroIdles: hero.a.idler ? hero.a.idler.played.slice() : [], heroCur: hero.a.idler ? hero.a.idler.cur : null, foe: foe ? foe.list || [] : [], behave: foe && foe.bh, ...PROBE }; },
       get skills() { return skills && skills.state(); },   // the I O P N U C skills (skills/skills.js); `reserved` is F R Q X's (skills/reserved.js)
-      get look() { return lookKind; }, get outfit() { return hero.outfit ? encode(hero.outfit) : null; }, get dressed() { return hero.look.rig ? hero.look.rig.report || null : null; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get gore() { return gore && gore.view(); }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
+      get look() { return lookKind; }, get outfit() { return hero.outfit ? encode(hero.outfit) : null; }, get dressed() { return hero.look.rig ? hero.look.rig.report || null : null; }, get heads() { return { hero: { ...HEADS.hero, drawn: hero.look.rig?.headSlot?.key }, foe: { ...HEADS.foe, drawn: foe?.look.rig?.headSlot?.key } }; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get gore() { return gore && gore.view(); }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }
