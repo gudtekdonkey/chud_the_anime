@@ -1,6 +1,6 @@
 // ---- The HUD from prototype 20 (today's ui/hud.js, built as displayed) over the 3D view, at the game's pixel scale:
 // health and Qi top left (Qi notched in thirds, STORM while Storm Chain runs), the skill bar under them, the party under
-// that, mon and glitch shards top right, the bottom bar (weapon, quick slots 1-4, four charm slots), the banners. Over
+// that, mon and lantern ash (`INV.shards`) top right, the bottom bar (weapon, quick slots 1-4, four charm slots), the banners. Over
 // the world: the lock-on brackets and E prompt on big items, the lift and Harvest prompts, K with a partner, the combo
 // prompts, the numbers. Drawn with today's HUD pieces (ui/hud-kit.js, ui/pixfont.js, ui/icons.js) onto today's
 // 480×270 canvas (hud/canvas.js), which the pipeline lays over the frame (gfx/post.js setHud).

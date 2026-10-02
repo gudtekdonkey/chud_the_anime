@@ -1,10 +1,9 @@
 import { zoneAt } from '../ledger.js';
 import { nameOf } from '../actors.js';
-import { people, homeRegion, who, stranger, plural } from './kit.js';
-import { stormEffects } from './storms.js';
+import { people, homeRegion, who, stranger } from './kit.js';
 
 // ---- Scenes on the road that are not (at first) a fight: a merchant, pilgrims, a wounded stranger, a funeral, a runaway horse,
-// the weather turning, a glitch storm crossing the road, and the time a storm takes from him ----
+// and the weather turning ----
 const RICE = 30;   // mon for a day's rice when the economy has no price for this region (docs/sim-travel.md: what we read from econ)
 const riceHere = (L, region) => { const p = L.sys.economy?.prices?.[region]?.rice; return typeof p === 'number' && p > 0 ? Math.round(p) : RICE; };
 const DAY = 24;
@@ -117,31 +116,5 @@ export const MEET_SCENES = {
       if (w === 'snow') return { text: 'Slow going. Your feet stop hurting after a while, which is worse.', hours: 2, hurt: .1 };
       return { text: 'Wet through, you go on.', hours: w === 'rain' ? 1 : 0 };
     },
-  },
-  // a glitch storm crossing the road: always felt when he steps into one, not rolled like the rest
-  storm: {
-    make(L, c, r) {
-      const k = c.storm.k, fx = stormEffects(k), heavy = k > .55;
-      return { title: 'A glitch storm', who: [], data: { k: +k.toFixed(2), storm: c.storm.storm.id, fx },
-        choices: [{ id: 'through', label: 'Walk through it' }, { id: 'wait', label: 'Wait at its edge' }, { id: 'round', label: 'Go round' }],
-        text: heavy ? 'The road ahead is torn. Strips of the world slide sideways and back, the light stutters, and a white seam opens in the air and closes again without a sound.'
-          : 'At the edge of sight, a strip of the hills slides a hand\'s width sideways and snaps back. Then another. The air tastes of copper.' };
-    },
-    resolve(L, sc, ch, r) {
-      const fx = sc.data.fx;
-      if (ch === 'wait') return { text: 'You sit with your back to a stone while the world flickers past. When it has gone, the grass is wrong for a while.', hours: r.int(4, 10) };
-      if (ch === 'round') return { text: 'A long way round, keeping the tear always on your left.', hours: r.int(3, 6) };
-      const out = { text: 'You walk into it. Your blade hums in its sheath; your own edges keep trying to be somewhere else.', loot: [], events: [['storm.crossed', { storm: sc.data.storm, k: sc.data.k }]] };
-      if (r.chance(fx.loot)) { const n = r.int(1, 3); out.loot.push({ item: 'shard', n }); out.text += ` ${n} glitch ${plural(n, 'shard lies', 'shards lie')} in the road, humming.`; }
-      if (r.chance(fx.lostTime)) { out.hours = r.int(3, 18); out.text += ` You come out the other side and the sun is in the wrong place. ${out.hours} hours, gone.`; out.events.push(['storm.lostTime', { storm: sc.data.storm, player: true, hours: out.hours }]); }
-      return out;
-    },
-  },
-  // inside a storm, crossing another zone of it: the time it takes (rolled from stormEffects, never chosen)
-  slip: {
-    make(L, c, r) { const h = r.int(2, 12);
-      return { title: 'Lost time', who: [], data: { hours: h }, choices: [{ id: 'on', label: 'Go on' }],
-        text: `A step, a flicker, and the light has changed. Your shadow points the other way. ${h} hours are gone, and you remember none of them.` }; },
-    resolve: (L, sc) => ({ text: 'You go on.', hours: sc.data.hours, events: [['storm.lostTime', { player: true, hours: sc.data.hours }]] }),
   },
 };

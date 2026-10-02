@@ -1,20 +1,18 @@
 import { zoneAt } from '../ledger.js';
 import { calendar } from '../time.js';
-import { stormAt } from './storms.js';
 import { bandNear } from './roads.js';
 import { wildDepth, wildRing } from '../wild.js';
 import { voidInner } from './beasts.js';
 
 // ---- Which encounter, how often: the chances as he crosses a zone (owner, 2026-09-26: random events while travelling) ----
 // context() gathers everything a chance reads: road or wild, the region's danger and weather, its people and their enemies nearby,
-// the hour and season, a band on the road, a storm, his karma, his standing with these people and any bounty on him.
+// the hour and season, a band on the road, his karma, his standing with these people and any bounty on him.
 // Each ENCOUNTERS row is plain: a weight from the context (0 = cannot happen here). Scenes (scenes-*.js) make and resolve them.
 
 export const TRAVEL = {
   chance: { road: .06, wild: .045 },  // per zone crossed (about 25 real seconds), before danger and the rest
   cap: .45, gap: 2,                   // never more than this per zone; at least `gap` quiet zones between two encounters
   karmaScale: 100,                    // karma is read as karma / karmaScale, clamped to -1..1 (the crime lane's scale is open)
-  stormFelt: .1,                      // stepping into a storm this strong is an encounter of its own
 };
 
 const clamp = (v, a = -1, b = 1) => Math.max(a, Math.min(b, v));
@@ -28,7 +26,7 @@ export function context(L, x, y) {
   const depth = wildDepth(L, x, y), ring = wildRing(L, x, y, depth);
   const heatHere = st.heat[culture.id] || 0, heat = Object.values(st.heat).reduce((a, b) => Math.max(a, b), 0);
   return { x, y, z, region: z.region, culture, kind: culture.kind, road: z.road, cal, night: cal.night, season: cal.season,
-    danger: s.danger, weather: s.weather, famine: s.famine > 0, storm: stormAt(L, x + .5, y + .5), band: bandNear(st, x, y),
+    danger: s.danger, weather: s.weather, famine: s.famine > 0, band: bandNear(st, x, y),
     karma: clamp((p.karma || 0) / TRAVEL.karmaScale), standing: p.standing?.[culture.id] || 0, heat, heatHere,
     hunted: Object.keys(st.heat).filter(c => st.heat[c] > 0).map(Number), enemy, safe: st.safeUntil > L.hour, escort: !!st.escort,
     mon: p.money?.mon || 0, depth, ring, inner: ring === 'void' ? voidInner(L, x, y) : 0, level: p.level || 1 };

@@ -74,7 +74,7 @@ export function drawPickup(it, t) {
       g.fillRect(x - r, y, 1, 1); g.fillRect(x + r, y, 1, 1); g.fillRect(x, y - r, 1, 1); g.fillRect(x, y + r, 1, 1); g.restore(); }
     return; }
   const s = wsOf(it.kind);
-  if (it.kind === 'shard') {   // it will not sit still: a slice of it slips sideways now and then
+  if (it.kind === 'shard') {   // lantern ash (id 'shard'): it will not sit still: a slice of it slips sideways now and then
     const x0 = Math.round(it.x - 1), z = 2 + Math.round(Math.sin(t * 2.2 + ph)), y0 = Math.round(it.y) - s.h - z;
     g.fillStyle = 'rgba(18,22,22,.4)'; g.fillRect(x0, Math.round(it.y), 3, 1);
     const jit = (Math.floor((t + ph) * 12) % 9) === 0;
