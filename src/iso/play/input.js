@@ -1,11 +1,15 @@
-// ---- Keys for the slice: WASD / arrows move (the stick maps straight to the screen), Shift or L rolls, J cuts.
-// A press is remembered 0.2 s (the owner's Q3A input buffer) until a state can take it; held keys are read each step.
+// ---- Keys for the slice: WASD / arrows move (the stick maps straight to the screen), Shift or L rolls, J cuts; the new
+// skills' keys (skills/skills.js) are bound here too. A press is remembered 0.2 s (the owner's Q3A input buffer) until a
+// state can take it; held keys are read each step.
 const DOWN = new Set(), PRESS = [];
 const MAP = { KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
   ShiftLeft: 'roll', ShiftRight: 'roll', KeyL: 'roll', KeyJ: 'cut' };
+const MOVE = new Set(['up', 'down', 'left', 'right']);
 export const BUFFER = .2;
+// another key the slice takes as a press (a skill): the code and the press's name
+export const bindKey = (code, k) => { MAP[code] = k; };
 export function initInput(target) {
-  addEventListener('keydown', e => { const k = MAP[e.code]; if (!k) return; e.preventDefault(); if (!e.repeat && (k === 'roll' || k === 'cut')) PRESS.push({ k, age: 0 }); DOWN.add(k); });
+  addEventListener('keydown', e => { const k = MAP[e.code]; if (!k) return; e.preventDefault(); if (!e.repeat && !MOVE.has(k)) PRESS.push({ k, age: 0 }); DOWN.add(k); });
   addEventListener('keyup', e => { const k = MAP[e.code]; if (k) DOWN.delete(k); });
   addEventListener('blur', () => DOWN.clear());
   target.addEventListener('pointerdown', () => target.focus());
@@ -20,3 +24,4 @@ export function readInput() {
 // a remembered press of kind k, used (and forgotten) if `take` says the state can take it now
 export function consume(k, take) { const i = PRESS.findIndex(p => p.k === k); if (i < 0 || !take()) return false; PRESS.splice(i, 1); return true; }
 export const pending = k => PRESS.some(p => p.k === k);
+export const held = k => DOWN.has(k);

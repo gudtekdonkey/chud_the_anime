@@ -1,4 +1,5 @@
 import { P, S, INV } from '../state.js';
+import { RESERVED_TREES } from './trees-reserved.js';
 
 // ---- Growth (owner picks 2026-10-01, "Ronin Growth Ideas": 1B a tree per skill gated by power, 2B wild until he masters it) ----
 // Both live on INV.sk (state.js) so the HUD and the kit screen read them. The page's skills picker (S.skillTest) overrides for testing:
@@ -57,6 +58,8 @@ export const TREES = {
   breath: { rung: { name: 'DEEP LUNGS', about: 'Each out-breath heals 15% more.', fx: { heal: 1.15 } },
     a: { name: 'STILL WATER', about: 'Each out-breath spends 20% less Qi.', deepAbout: '35% less.', fx: { cost: .8 }, deep: { cost: .65 } },
     b: { name: 'SECOND WIND', about: 'Each out-breath takes 0.5 s off every cooldown.', deepAbout: '1 s.', fx: { cool: .5 }, deep: { cool: 1 } } },
+  // F, R, Q and X: built in the iso slice first, their trees as data here (not in SKILLS until today's game has the keys)
+  ...RESERVED_TREES,
 };
 export const pts = k => test() === 'trees' ? Math.max(sk(k).pts, AT.deep) : sk(k).pts;
 // is this node of the tree working now: enough points, enough power, and (past the rung) the branch picked

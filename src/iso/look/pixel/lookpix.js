@@ -52,7 +52,8 @@ export function pixelLook({ foe = false } = {}) {
     mount(s) { scene = s; s.add(root); },
     show(f) {
       root.position.set(Math.round(f.x * 2) / 2, f.y, Math.round(f.z * 2) / 2);
-      const B = drawFigure(S, f.pose, CLOTH0, { a: f.yaw, p: 1, cp: BODY.B, sp: BODY.A }, { W: BW, H: BH, X0: BX0, Y0: BY0, enemy: foe ? 1 : 0 });
+      const pose = f.pose.blade && f.pose.blade.away ? { ...f.pose, blade: { out: 1, g: f.pose.hN || f.pose.blade.g, ang: -1.4, two: 0, vis: 0 } } : f.pose;   // the blade thrown: the vendored engine has no empty saya, so the hand keeps only the hilt
+      const B = drawFigure(S, pose, CLOTH0, { a: f.yaw, p: 1, cp: BODY.B, sp: BODY.A }, { W: BW, H: BH, X0: BX0, Y0: BY0, enemy: foe ? 1 : 0 });
       data.set(toPix(B).d); tex.needsUpdate = true;
       mat.uniforms.uFlash.value = f.flash ? 1 : 0; mat.uniforms.uFade.value = 1 - (f.alpha ?? 1);
       mat.uniforms.uTint.value = f.tint ? f.tintA : 0; if (f.tint) mat.uniforms.uTintCol.value.set(...f.tint);

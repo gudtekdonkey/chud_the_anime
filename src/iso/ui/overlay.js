@@ -39,7 +39,8 @@ export function buildPage() {
     <label>Look <select id="o-look"><option value="3d">3D model</option><option value="pixel">Pixel (2D drawing)</option></select><kbd>M</kbd></label>
     <label>Style <select id="o-style"><option value="3">Painterly</option><option value="1">Pixel-render</option><option value="2">Anime limited</option><option value="0">Toon + dither</option></select><kbd>V</kbd></label>
     <label><input type="checkbox" id="o-clash">Clashes (impact frames, lines)<kbd>C</kbd></label>
-    <label><input type="checkbox" id="o-cine">Finisher close-up<kbd>X</kbd></label>
+    <label><input type="checkbox" id="o-cine">Finisher close-up<kbd>Z</kbd></label>
+    <label><input type="checkbox" id="o-assist">Counter assist: the closing ring</label>
     <h2>Pipeline</h2>
     <label><input type="checkbox" id="o-lowres">Low-res target<kbd>1</kbd></label>
     <label><input type="checkbox" id="o-toon">Toon bands<kbd>2</kbd></label>
@@ -54,13 +55,13 @@ export function buildPage() {
     <label>Bodies <select id="o-body"><option value="39.5">Picked: oblique, body from 39.5°</option><option value="upright">Upright: full height, 20°</option><option value="54">True 54°</option></select><kbd>B</kbd></label>
     <label>Hat tilt <select id="o-tilt"><option>0</option><option>8</option><option>14</option><option>20</option></select></label>
     <label>Brim <select id="o-brim"><option value="1">Wide, as drawn</option><option value=".72">Medium</option></select></label>
-    <label>Facings <select id="o-free"><option value="0">8, stepped (sprites)</option><option value="1">Free (any angle)</option></select><kbd>F</kbd></label>
+    <label>Facings <select id="o-free"><option value="0">8, stepped (sprites)</option><option value="1">Free (any angle)</option></select><kbd>T</kbd></label>
     <h2>World</h2>
     <label><input type="checkbox" id="o-fog">Ground mist<kbd>9</kbd></label>
     <label><input type="checkbox" id="o-rain">Rain<kbd>0</kbd></label>
     <h2>Controls</h2>
-    <div class="keys"><div><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> run</div><div>J3 on him: the close-up (any key skips)</div><div><kbd>J</kbd> cut, again for J2, J3</div><div><kbd>Shift</kbd>/<kbd>L</kbd> roll (cancels a cut)</div><div>J out of a run: the lunge</div></div>
-    <p class="note">The samurai answers if you stand close (open with <code>&amp;calm</code> to stop him).</p>
+    <div class="keys"><div><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> run</div><div>J3 on him: the close-up (any key skips)</div><div><kbd>J</kbd> cut, again for J2, J3</div><div><kbd>Shift</kbd>/<kbd>L</kbd> roll (cancels a cut)</div><div>J out of a run: the lunge</div><div><kbd>F</kbd> counter: tap as the blow comes (0.2 s)</div><div><kbd>R</kbd> throw the blade; tap to call it back, hold to go to it</div><div><kbd>Q</kbd> Lightning Chain</div><div><kbd>X</kbd> Time Slice (a full Qi meter)</div></div>
+    <p class="note">The samurai answer if you stand close (open with <code>&amp;calm</code> to stop them; <code>&amp;foes=1</code> for one, up to 5).</p>
   </aside>`;
   document.body.appendChild(root);
   const canvas = root.querySelector('#iso');
@@ -69,7 +70,7 @@ export function buildPage() {
 
 // wire the controls to the settings; `onLook(kind)` swaps the model
 export function wireOverlay(root, onLook) {
-  const $ = id => root.querySelector('#' + id), boxes = { lowres: '1', toon: '2', dither: '3', palette: '4', outline: '5', nearest: '6', rim: '7', glint: '8', fog: '9', rain: '0', clash: 'C', cine: 'X' };
+  const $ = id => root.querySelector('#' + id), boxes = { lowres: '1', toon: '2', dither: '3', palette: '4', outline: '5', nearest: '6', rim: '7', glint: '8', fog: '9', rain: '0', clash: 'C', cine: 'Z' };
   const set = (k, v) => { if (k === 'glint') LOOK3D.glint = v; else PIPE[k] = v; if (PIPE.onChange) PIPE.onChange(); };
   const get = k => k === 'glint' ? LOOK3D.glint : PIPE[k];
   for (const k of Object.keys(boxes)) { const el = $('o-' + k); el.checked = !!get(k); el.onchange = () => set(k, el.checked ? 1 : 0); }
@@ -89,7 +90,7 @@ export function wireOverlay(root, onLook) {
     if (k) { const el = $('o-' + k); el.checked = !el.checked; el.onchange(); return; }
     if (e.code === 'KeyM') cycle($('o-look'), el => onLook(el.value));
     if (e.code === 'KeyB') cycle($('o-body'), el => setBody(el.value));
-    if (e.code === 'KeyF') cycle($('o-free'), el => { SETTINGS.free = +el.value; });
+    if (e.code === 'KeyT') cycle($('o-free'), el => { SETTINGS.free = +el.value; });
     if (e.code === 'KeyV') cycle($('o-style'), el => { setStyle(+el.value); syncBoxes(); });
   });
 }

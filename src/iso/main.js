@@ -23,6 +23,7 @@ import { REELS, M as REEL_M, reelPos } from './reel.js';
 import { piece } from './gfx/build.js';
 import { shadeMat } from './gfx/shade.js';
 import { RAMP } from './gfx/palette.js';
+import { initSkills, skillControl, skillsRender, drawSkills, drawSkillHud, skillState } from './skills/skills.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
@@ -45,15 +46,21 @@ function runGame(reel) {
   const room = buildRoom(scene);
   let lookKind = Q.get('look') === 'pixel' ? 'pixel' : '3d';
   const hero = new Hero({ x: 250, z: 120, h: 0, look: lookKind }), foe = new Foe({ x: 330, z: 110, h: -Math.PI / 2, look: lookKind }, Q.has('calm') || !!reel);
-  const chars = [hero, foe]; for (const c of chars) c.look.mount(scene);
+  // a squad (&foes=N, 3 by default, up to 5) so the chain and Time Slice have someone to leap to; the first is the one the loop was built on
+  const SPAWN = [[372, 176], [296, 206], [200, 212], [420, 84]], foes = [foe];
+  for (let i = 1; i < (reel ? 1 : Math.max(1, Math.min(5, +(Q.get('foes') ?? 3)))); i++) foes.push(new Foe({ x: SPAWN[i - 1][0], z: SPAWN[i - 1][1], h: -Math.PI / 2, look: lookKind }, Q.has('calm')));
+  const chars = [hero, ...foes]; for (const c of chars) c.look.mount(scene);
+  // the nearest samurai standing (the one a cut turns to)
+  const nearFoe = () => { let b = foe, bd = 1e9; for (const f of foes) { if (f.dead || f.frozen) continue; const d = Math.hypot(f.x - hero.x, f.z - hero.z); if (d < bd) { bd = d; b = f; } } return b; };
   const script = [];
   if (reel) {   // place them as the page does, hide the samurai unless the scenario has one, and queue its commands
     foe.a.alpha = 0; foe.reel = true; const place = (c, x, z, h) => { const [wx, wz] = reelPos(x, z); c.a.x = wx / AF; c.a.z = wz / AF; c.a.h = c.a.ht = h;
       c.a.feet.N.lock = c.a.feet.F.lock = 0; c.a.feet.N.off = c.a.feet.F.off = 0; c.a.prev = null; c.a.update(W.dt); c.a.sample(true); return c.a; };   // moved: let go of the planted feet
     reel.build({ hero: (x, z, h) => place(hero, x, z, h), foe: (x, z, h) => { foe.a.alpha = 1; return place(foe, x, z, h); }, at: (t, fn) => script.push([t, fn]), M: REEL_M });
     script.sort((a, b) => a[0] - b[0]); PIPE.cine = Q.has('cine') ? 1 : 0; PIPE.clash = Q.has('clash') ? 1 : 0; }
-  hitRules({ hero, foe });
+  const game = { hero, foe, foes }; hitRules(game);
   initInput(canvas);
+  initSkills({ hero, foes, scene, game });
   // the model switch: every character's look is swapped; nothing else is told
   const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } root.querySelector('#o-look').value = kind; };
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
@@ -72,10 +79,11 @@ function runGame(reel) {
   const trailOf = c => { const b = c.bladeWorld(); c.trail.push(b ? { t: W.t, mid: b.mid, tip: b.tip } : { t: W.t, gap: 1 }); while (c.trail.length && W.t - c.trail[0].t > .2) c.trail.shift(); };
   const runScript = () => { while (script.length && script[0][0] <= W.t) script.shift()[1](); };
   // the finisher's close-up (fx/cine.js): J3 starting on a samurai within reach
-  function presentation(dt) { if (hero.state === 'J3' && hero.prevState !== 'J3' && !foe.dead && Math.hypot(foe.x - hero.x, foe.z - hero.z) < 40) startCine(hero, foe);
+  function presentation(dt) { const nf = nearFoe(); if (hero.state === 'J3' && hero.prevState !== 'J3' && !nf.dead && Math.hypot(nf.x - hero.x, nf.z - hero.z) < 40) startCine(hero, nf);
     hero.prevState = hero.state; cineStep(W.stop > 0 ? 0 : dt); }
   function tick() {
-    if (W.stop <= 0 && !reel) { hero.control(readInput(), foe, W.t); foe.control(hero, W.t, 1 / 60); }   // a hit-stop holds the presses (they outlive it)
+    if (W.stop <= 0 && !reel) { const inp = readInput(); if (!skillControl()) hero.control(inp, nearFoe(), W.t);   // a hit-stop holds the presses (they outlive it); a skill owns him first (skills/)
+      for (const f of foes) if (!f.frozen) f.control(hero, W.t, 1 / 60); }
     presentation(1 / 60);
     for (let i = 0; i < 2; i++) if (W.step(reel ? runScript : null)) for (const c of chars) if (c.a.out !== c.sampled) { c.sampled = c.a.out; trailOf(c); }
   }
@@ -92,10 +100,11 @@ function runGame(reel) {
     for (const c of chars) { if (c.shown !== c.a.out || c.lookKind === '3d') { const f = c.frame(c === hero); if (f) c.look.show(f); c.shown = c.a.out; } }
     const g = pipe.fx; g.clearRect(0, 0, pipe.fxCanvas.width, pipe.fxCanvas.height);
     for (const c of chars) drawTrail(g, c.trail.map(s => s.gap ? s : { t: s.t, a: toPx(s.mid), b: toPx(s.tip) }), c.a.out ? c.a.out.t : W.t, STYLE.s.trail);
-    drawFx(g, W);
+    drawFx(g, W); skillsRender(); drawSkills(g);
     if (PIPE.clash) { drawFocus(g, W);   // focus lines on a hit; speed lines behind a roll, a lunge or a skid
       for (const c of chars) if (['roll', 'lunge', 'skid', 'knock'].includes(c.state)) { const [x, y] = toPx([c.x, 10, c.z]), v = [Math.sin(c.a.h), Math.cos(c.a.h) * OBL.a]; speedLines(g, x, y, v[0], v[1], W.t); } }
     for (const c of chars) c.look.stamp(g);
+    if (!reel) drawSkillHud(g);
     pipe.render(scene, cam);
   }
   const toPx = p => toScreen(p[0], p[1], p[2]);
@@ -123,8 +132,10 @@ function runGame(reel) {
     window.__iso = { ready: true, STATS, PIPE, SETTINGS,
       get hero() { return { ...who(hero), armed: hero.armed, iframes: hero.iframes, hits: hero.hits, taken: hero.taken }; },
       get foe() { return { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) }; },
+      get foes() { return foes.map(f => ({ ...who(f), hp: f.hp, dead: f.dead, frozen: f.frozen, hits: f.hits, deaths: f.deaths, reacts: f.reacts.slice(-6) })); },
+      get skills() { return skillState(); }, get gray() { return MOMENT.gray; }, get away() { return !!hero.bladeAway; },
       // where each one's feet are on the canvas, 0..1 (for the check's close-up shots)
-      get px() { return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)) }; },
+      get px() { const n = nearFoe(); return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)), near: toPx([n.x, 0, n.z]).map((v, i) => v / (i ? 540 : VW)) }; },
       get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }

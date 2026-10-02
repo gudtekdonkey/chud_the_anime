@@ -14,6 +14,8 @@ All of it lives in `src/iso/`. It is a test bed for the owner's picks, not the g
 | `npm run dev`, then `/?iso` | the slice with hot reload (`/?iso&look=pixel` starts on the pixel look, `&calm` keeps the samurai from attacking) |
 | `npm run build`, open `dist/index.html?iso` | the same single-file build as today's game; the flag picks |
 | `/?iso&reel=chain` | one of the Animation Flow page's scenarios (idle, start, turn, stop, roll, chain, lunge, sheathe) on its script and clock; `node scripts/iso-reel.mjs chain 3` lays it out as the page's contact sheets do (with `AF_DIR` at the page's source, the page's own sheet above it) into `test-output/iso/reel-chain-vs.png` |
+| `/?iso&foes=1` | one samurai (3 by default, up to 5); `&calm` keeps them all from attacking |
+| `/?iso&power=3&pick=chain:b&trees&qi=0&assist` | the new skills' setup the Tab screen would hold: the power tier, a tree's fork, every tree full, the Qi meter at start, the counter's assist ring |
 | `/?iso&style=1` | start on a style (0 Toon + dither, 1 Pixel-render, 2 Anime limited, 3 Painterly) |
 | `/?iso&sheet` | a frozen contact sheet: four moments of the loop × the eight facings (`&rows=4,5,6,7` the other four, `&look=pixel`, `&foe`, `&zoom=1.9`) |
 | `npm run check:iso` | builds, then `scripts/check-iso.mjs` plays the loop in Chromium and asserts it (below); screenshots in `test-output/iso/` |
@@ -24,13 +26,14 @@ three.js is a new dependency (`three`, pinned in `package.json`): run `npm insta
 
 **Controls.** WASD or the arrows run (the stick maps straight to the screen, all 8 directions). `J` cuts; again in
 the follow-through for J2, then J3. `J` out of a fast run is the lunge. `Shift` or `L` rolls, and cancels a cut once
-it has struck. Presses are remembered 0.2 s.
+it has struck. `F` counters (tap as the blow comes), `R` throws the blade (tap again to call it back, hold to go to
+it), `Q` casts Lightning Chain, `X` Time Slice on a full Qi meter (below). Presses are remembered 0.2 s.
 
 **The overlay** (beside the game, every choice also a key): the frame time; `M` the model (3D / Pixel); `V` the style
-(Painterly, Pixel-render, Anime limited, Toon + dither); `C` clashes; `X` the finisher's close-up; the pipeline
+(Painterly, Pixel-render, Anime limited, Toon + dither); `C` clashes; `Z` the finisher's close-up (it was X: X is Time Slice now); the pipeline
 steps `1` low-res target, `2` toon bands, `3` dither, `4` palette, `5` outline, `6` pixel upscale, `7` rim light,
 `8` keep the glints, and the number of bands; `B` the bodies' camera (picked 39.5°, upright 20°, true 54°), the hat's
-tilt and brim; `F` the facings (8 stepped, as baked sprites would be, or free); `9` mist, `0` rain.
+tilt and brim; `T` the facings (it was F: F is the counter now) (8 stepped, as baked sprites would be, or free); `9` mist, `0` rain.
 
 The default style is **Painterly** (owner 2026-10-02 over the "Ronin 3D Styles" page: "Painterly with Anime Limited
 clashing and attack full screen animation"). The camera and hat defaults are the 3D faces page's picks: bodies from
@@ -141,6 +144,30 @@ weight is the owner's 3 / 5 / 8 frames; the white flash 2 frames; heavy hits sha
 The near limbs are drawn at his right side and the far at his left, a few units apart; the page's rig has no
 lateral axis, so a 3D artist's clips are what will add twists and sideways reach.
 
+## The new skills: F, R, Q, X (`skills/`)
+
+The four keys the design reserved, built here first (design-notes, "The reserved keys, built in the 3D test level").
+Each lives in its own file and owns the hero while it plays; `skills/skills.js` is the one seam main.js asks first each
+step (`skillControl`), and binds the keys into the slice's buffered input.
+
+| File | Owns |
+|---|---|
+| `skills/skills.js` | The seam: keys, presses through the 0.2 s buffer (refused on a cooldown or a gate, never remembered), who owns the hero, the events each skill listens to (chained onto the world's), the rules' `onStrike` hook (the counter) |
+| `skills/kit.js` | Cooldowns, the Qi meter Time Slice spends, the power tier's numbers (`TIER`), growth (`tv`, `castStart`, `landed`: 1B's rules on the shared trees in `player/trees-reserved.js`), the words over his head |
+| `skills/moves.js` | The skills' moves, additions in the Animation Flow page's language: the counter stance, the block, *receive and flow*, *along the blade*; the throw, the call, home, the catch, the anchor; the cast, the yank, the draw-cut, the dragged samurai; the iai crouch, the cut held in stopped time, the kneel; and the samurai's thrust |
+| `skills/counter.js` | F: the stance, the 0.2 s window (counter vs block), the answer per attack, indicator A (glint and star) and B (the closing ring) |
+| `skills/recall.js` | R: the thrown blade as its own mesh (lit in the active style), its flight, turn and hang, the thread, the three recalls, the cuts on the way through, the kills on the click |
+| `skills/chain.js` | Q: the links (Storm Chain's bolts and rule), the hook, the yank, the drag, the draw-cut |
+| `skills/timeslice.js` | X: the zone, stopped time (the samurai taken out of the world's step, `MOMENT.gray` in the post pass), the pass along the shortest path, the click |
+| `skills/sfx.js` | Their effects in each style's hand (bolts, thread, rings, the star, streaks, hairlines) |
+| `skills/hud.js` | The skill bar (four slots and the Qi meter, bottom centre) and the words over his head, in the HUD's pixel font |
+
+Shared files touched, minimally: `play/input.js` (`bindKey`, `held`), `play/rules.js` (a cut lands on every samurai
+in front of it; `onStrike` / `onLanded` hooks), `play/foe.js` (a squad keeps a step apart, `ATTACKS`, `frozen`),
+`play/char.js` and `look/three/rig.js` (the blade away: no katana in the hand or the saya), `play/hero.js` (`noCut`),
+`gfx/post.js` (`MOMENT.gray`), `look/pixel/lookpix.js` (the vendored engine has no empty saya: the hand keeps only the
+hilt while the blade is thrown), `ui/overlay.js` (Z, T, the assist box), `main.js` (the squad, the seam).
+
 ## Placeholder, and what a 3D artist replaces
 
 - **The model** (`look/three/ronin.js`): boxes, cones and rings placed in code. A modelled Iron Ash (a real head and
@@ -159,7 +186,12 @@ No page errors; the run in all 8 directions (he moves where the keys point and i
 the roll (its i-frames, ~25 units); walking up to the samurai and J1 → J2 → J3 with all three hits landing and three
 reactions, an impact frame in the hit-stops and the finisher's close-up; a cut cancelled into the roll; hitting him
 until he dies, and his respawn; the four styles switched live with a cut in each; the same chain with the pixel look;
-one screenshot per pipeline step flipped. SwiftShader draws a few frames a second, so the page runs with
+one screenshot per pipeline step flipped. Then the new skills: F timed in the page on the samurai's blow (a press
+0.33–0.46 s into it counters and the answer lands; 0.02–0.2 s only blocks; a counter that kills plays the close-up);
+on a calm squad of three: Q (at least two links, the yank, the draw-cut on the dragged man, the cooldown, refused on
+it); R three times (the blade hangs and he is empty-handed, J refused; home, the catch, the anchor in turn, the blade
+back each time); X (time stops for the squad, at least two taken and all of them fall on the click, colour back, the
+close-up, the meter spent; refused on an empty meter); Q in the other three styles; growth counted. SwiftShader draws a few frames a second, so the page runs with
 `&tick=8` (8 game steps a frame) and every wait is on the game's clock.
 
 ## Performance
