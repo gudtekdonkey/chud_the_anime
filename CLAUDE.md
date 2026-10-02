@@ -12,6 +12,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `npm run check` | Builds, then `scripts/check.mjs` plays a key sequence in Chromium and asserts the states and no page errors. Screenshots and the state log go to `test-output/` |
 | `npm run check:hd` | The same check at 2× (`?hd`), screenshots in `test-output/hd/` |
 | `node scripts/iso-reel.mjs chain 3` | After a build: one of the Animation Flow page's scenarios as the slice plays it, laid out as the page's contact sheets (`AF_DIR` at the page's source draws the page's sheet above it), into `test-output/iso/reel-<name>[-vs].png` |
+| `node scripts/squad-sim.mjs [s] [seed]` | The squad AI's engine side (`src/iso/ai/`, `squad/{orders,squad,mind}.js`) fighting a whole battle in Node on plain-number bodies: no three.js, no DOM (what the 2D game would drive) |
 | `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle; then the squad battle (`scripts/check-iso-squad.mjs`): drag-select, groups, right-click orders, formations, follow / hold, the tank's aggro, the archer's distance, the protector, charge / fall back, the assassin. Screenshots in `test-output/iso/` |
 
 - Dependencies are pinned to exact versions. Keep them exact.

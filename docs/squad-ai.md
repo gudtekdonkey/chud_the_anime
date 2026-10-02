@@ -75,6 +75,10 @@ shouts) sits above it in a director. Intelligence and personality stay apart, as
 | `src/iso/squad/squad.js` | the selection, groups, giving an order / a setting (to the selection, or all), anchors and slots each step |
 | `src/iso/squad/mind.js` | a companion's think: the role's options (tank, protector, assassin; striker / ranged / support on the shared ones), the leash, the order and the tactic as considerations |
 
+`node scripts/squad-sim.mjs [seconds] [seed]` runs these alone in Node on bodies made of plain numbers (walk at the speed, a swing
+lands after 0.3 s): the party charges, the samurai take turns, the tank taunts, the archers kite, someone goes down and is
+lifted, the yard is cleared, with no three.js and no DOM. That script is the template for driving them from the 2D game.
+
 The slice's side (`src/iso/squad/`, three.js and DOM): `npc.js` (an agent's body: intents to the flow's clips, the swing,
 the hit and the parry, downed and lifted), `combat.js` (whose blow lands on whom, arrows, the taunt; the hero's own hits
 keep the slice's hit-stop and clashes), `battle.js` (the cast, the AI's world, the step order, waves, the hook),
@@ -87,6 +91,31 @@ An agent is any object with `{ id, name, team, kind, x, z, h, hp, maxHp, alive, 
 intent }` and, for the guard, `busy`, `blocking`, `swing`. A world is `{ t, dt, agents, rng, blocked(), noises, tokens,
 knows(), onTarget(), log() }`. The 2D game would give its samurai and companions the same fields and a body that turns
 the intent (`idle`, `move`, `strafe`, `attack`, `shoot`, `block`, `taunt`, `revive`) into its own poses.
+
+## The action interface (where the decisions meet the bodies)
+
+The decision layer never plays a clip. Each think it hands its body one action through two calls, the same shape as
+the enemy types' interface (`enemy.can(action)`, `enemy.do(action, target)`; the claude/3d-enemies lane), so their
+bodies and these decisions merge without either knowing the other's insides (`ai/brain.js act()`):
+
+```
+body.can(action)               may the body start it now (not mid-swing, has a bow for 'shoot', ...)
+body.do(action, target, o)     take it as what to do next; the body runs it until it is done or replaced
+```
+
+| action | target | o | the body (`squad/npc.js` today) |
+|---|---|---|---|
+| `idle` | an agent to face, or none | `facePt: [x, z]` | stand: the guard with the blade out once engaged, else at rest |
+| `move` | none | `x, z, speed` (world units / s), `face`, `sneak` | run there (blade out when engaged); stop on arrival |
+| `strafe` | none | `x, z, face, speed` | sidestep there facing `face` (circling) |
+| `attack` | the foe | `combo` (cuts), `exec` (a killing blow) | close to reach, then the swing: the samurai's telegraphed fcut, a companion's J chain |
+| `shoot` | the foe | | the bow: draw, loose an arrow leading him |
+| `block` | none | `face` | the guard raised: a parry window |
+| `taunt` | none | | the taunt: the foes within 85 turn on him |
+| `revive` | a downed friend | | go to him and lift him |
+
+Missing for the enemy types (to add to their interface when they land): `flee` is a `move` today, and a spearman's
+reach, a heavy's unblockable swing and a ninja's vanish would each want an action (and an option that scores it).
 
 ## The enemies
 

@@ -41,6 +41,11 @@ export class Npc extends Char {
   get sneaking() { return !!(this.intent && this.intent.sneak); }
   get tank() { return this.role === 'tank'; }
   get taunting() { return this.W && this.W.t - this.mind.tauntT < 3; }
+  // ---- the ACTION INTERFACE the decision layer drives (docs/squad-ai.md; the same shape as the enemy types' can / do):
+  // can(action): may the body start it now; do(action, target, o): take it as what to do next (the body runs it)
+  can(k) { if (!this.alive || this.downed) return false; if (k === 'shoot') return this.ranged && !this.busy; if (k === 'block') return !this.ranged && !this.swing;
+    return k === 'idle' || k === 'move' || !this.busy; }
+  do(k, target = null, o = {}) { this.intent = { ...o, k, target: target ?? o.target ?? null }; return true; }
   setLook(kind, scene) { super.setLook(kind, scene); this.dressLook(); }
   // the bow (a 3D prop held upright in the far hand, placed after each pose) and the companions' paler steel
   dressLook() { const look = this.look, rig = look.rig; if (!rig || this.wpnId !== 'bow') return;

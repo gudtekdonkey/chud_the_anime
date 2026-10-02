@@ -51,7 +51,7 @@ export function guardReact(W, ag) {
     (s.judged || (s.judged = new Set())).add(ag.id);
     if (dist(e, ag) > (e.reach || 20) + 10 || W.t - m.parryT < 1) continue;
     const p = (ag.blockP ?? (.08 + .3 * ag.temper.discipline + .25 * ag.temper.wit)) * (s.heavy ? .35 : 1);
-    if (W.rng() < p) { ag.intent = { k: 'block', face: e, why: 'block' }; m.why = 'block'; return true; } }
+    if (W.rng() < p && act(ag, { k: 'block', face: e, why: 'block' })) { m.why = 'block'; return true; } }
   return false;
 }
 
@@ -113,6 +113,8 @@ export function thinkSide(W, team, think) {
     if (ag.busy) continue;
     const c = think(W, ag, dt); if (!c) continue;
     if (c.it.k !== 'attack') dropToken(W, ag); else if (ag.team === 1) takeToken(W, ag, c.it.target);
-    ag.intent = c.it; m.why = c.it.why || c.it.k; }
+    act(ag, c.it); m.why = c.it.why || c.it.k; }
 }
+// hand an intent to the body: through its action interface (can / do) when it has one, else as a plain field
+export function act(ag, it) { if (!ag.do) { ag.intent = it; return true; } if (ag.can && !ag.can(it.k)) return false; return ag.do(it.k, it.target, it); }
 export { friends };
