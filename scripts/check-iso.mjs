@@ -8,6 +8,7 @@
 import { chromium } from 'playwright';
 import { preview } from 'vite';
 import fs from 'node:fs';
+import { portSteps } from './check-iso-port.mjs';
 
 const OUT = 'test-output/iso'; fs.mkdirSync(OUT, { recursive: true });
 let step = '';
@@ -44,9 +45,9 @@ async function shot(name, who = ['hero'], then) {
 
 try {
   step = 'boot';
-  await page.goto(new URL('?iso&test&calm&tick=8', base).href);
+  await page.goto(new URL('?iso&test&calm&tick=8&solo&combo=free', base).href);   // the core loop alone: no companions, the plain J ladder (the port's steps below load again)
   await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 });
-  await page.locator('canvas').click();
+  await page.evaluate(() => document.querySelector('canvas').focus());   // a click would be a click to move
   // what he has been through, recorded every frame in the page (a poll from here can miss a state that lasts 2 frames)
   await page.evaluate(() => { window.__seen = new Set(); window.__seq = []; const f = () => { const h = window.__iso.hero; window.__seen.add(h.state); if (h.iframes) window.__seen.add('iframes'); if (window.__iso.cine) window.__seen.add('cine'); if (window.__iso.impact) window.__seen.add('impact');
     if (window.__seq.at(-1) !== h.state) window.__seq.push(h.state); requestAnimationFrame(f); }; f(); });
@@ -133,9 +134,13 @@ try {
 
   // ---- one shot per pipeline step, toggled off and on again
   step = 'pipeline toggles';
-  for (const [key, name] of [['Digit1', 'lowres'], ['Digit2', 'toon'], ['Digit3', 'dither'], ['Digit4', 'palette'], ['Digit5', 'outline'], ['Digit7', 'rim'], ['Digit8', 'glint']]) {
+  for (const [key, name] of [['Alt+Digit1', 'lowres'], ['Alt+Digit2', 'toon'], ['Alt+Digit3', 'dither'], ['Alt+Digit4', 'palette'], ['Alt+Digit5', 'outline'], ['Alt+Digit7', 'rim'], ['Alt+Digit8', 'glint']]) {
     await page.keyboard.press(key); await gameWait(.1); await shot(`pipe-${name}-flipped`); await page.keyboard.press(key); }
   ok();
+  errorsCheck();
+
+  // ---- the rest of today's game in 3D (scripts/check-iso-port.mjs)
+  await portSteps({ page, base, fail, ok, setStep: s => { step = s; }, shot, OUT });
   errorsCheck();
   console.log('\ncheck:iso passed');
 } catch (e) { if (!process.exitCode) { console.error(e); process.exitCode = 1; } }

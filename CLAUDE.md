@@ -12,7 +12,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `npm run check` | Builds, then `scripts/check.mjs` plays a key sequence in Chromium and asserts the states and no page errors. Screenshots and the state log go to `test-output/` |
 | `npm run check:hd` | The same check at 2× (`?hd`), screenshots in `test-output/hd/` |
 | `node scripts/iso-reel.mjs chain 3` | After a build: one of the Animation Flow page's scenarios as the slice plays it, laid out as the page's contact sheets (`AF_DIR` at the page's source draws the page's sheet above it), into `test-output/iso/reel-<name>[-vs].png` |
-| `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle. Screenshots in `test-output/iso/` |
+| `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle (on `&solo&combo=free`); then `scripts/check-iso-port.mjs` on a fresh load: the HUD, the party (following, fighting, down / lifted / dead, EXP), a paired execution, Harvest, the big items, pickups, quick slots, combo prompts, click to move, swipes. Screenshots in `test-output/iso/` |
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
@@ -167,8 +167,14 @@ Phase 0 of the new direction: Iron Ash V3 in a night courtyard, the Sea of Stars
 | `iso/ui/overlay.js` | The ?iso page and its overlay: frame time, the model switch, the pipeline toggles, camera and hat, controls; every choice a key |
 | `iso/sheet.js` | `?iso&sheet`: a frozen contact sheet of the loop's moments in the 8 facings, either look |
 | `iso/reel.js` | `?iso&reel=<name>`: the Animation Flow page's demo scenarios on its script and clock (`window.__reel.steps(n)`), for `scripts/iso-reel.mjs`'s side-by-side sheets against the page's own |
+| `iso/port.js`, `iso/ctx.js` | The rest of today's game in 3D (docs/iso-slice.md): `initPort` and the four hooks main.js calls a step; `CTX` (the hero, the samurai, the characters; `busy` / `held`: a system has taken someone over) |
+| `iso/party/` | Companions: `ally.js` (a body: actor, look, kit, traits, health, down / lift / death, the verbs a brain gives), `ally-look.js` (their look behind the seam), `party.js` (`PARTY`: presence, hits, EXP, the squad AI's interface), `paired.js` (paired executions staged in 3D, the solo finisher) |
+| `iso/items/` | `inv.js` (today's INV, Qi, `hurt`), `big.js` (shrine, grave nodachi, sealed chest, rift tablet in 3D and their acts), `pickups.js`, `quick.js` (1-4), `items.js` (E: tap, hold Harvest / lift; the fallen), `item-fx.js` |
+| `iso/hud/` | `canvas.js` (hands screen.js the HUD canvas), `hud.js` (prototype 20's HUD and the world prompts at 480×270, laid over the frame by `gfx/post.js setHud`), `skill-bar.js` (`addSkill`), `world-ui.js` |
+| `iso/combo/prompts.js`, `iso/input/` | The combo prompts; `click.js` click to move (`CLICK.blocked` for the squad AI's selection), `path.js` A* round the solids, `touch.js` swipes and the stick |
 
-- Everything in `src/iso/` keeps to the slice: never import it from today's game, and never import today's game modules (`screen.js` grabs `#game`) into it.
+- Everything in `src/iso/` keeps to the slice: never import it from today's game. Into it, import only today's modules with no drawing or game loop of their own (state.js, items/inventory.js, party/kit.js, traits/, ui/hud-kit.js, ui/pixfont.js, ui/icons.js, items/item-sprites.js, fx/numbers.js), and only after `iso/hud/canvas.js` (it hands `screen.js` the HUD's canvas); never input.js, game.js or a player/ module.
+- The slice's keys: 1-4 are the quick slots, so the overlay's pipeline steps are Alt + digit. A system that takes the hero or a character over sets `CTX.busy` / `CTX.held` (`iso/ctx.js`) and main.js skips their controllers.
 - A character's look is swapped through `look/look.js` only. The controller hands it the flow's side pose; a new look (a modelled character, a baked sprite sheet) implements the same four calls.
 - The moves are the Animation Flow page's data: change them there first (or mark an addition in `moves-extra.js`), so the slice keeps matching what the owner approved.
 

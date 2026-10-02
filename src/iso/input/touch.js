@@ -20,7 +20,7 @@ let lastTap = -1e9, downs = new Map();
 
 export function initTouch(canvas, mouseToo = false) {
   const finger = e => e.pointerType === 'touch' || (mouseToo && e.pointerType === 'mouse');
-  canvas.addEventListener('pointerdown', e => { if (!finger(e)) return; e.preventDefault(); canvas.setPointerCapture?.(e.pointerId);
+  canvas.addEventListener('pointerdown', e => { if (!finger(e)) return; e.preventDefault(); try { canvas.setPointerCapture(e.pointerId); } catch { /* a synthetic pointer has nothing to capture */ }
     const r = canvas.getBoundingClientRect(), left = (e.clientX - r.left) / r.width < STICK, now = performance.now();
     const d = { x: e.clientX, y: e.clientY, t: now, left, max: 0, far: null, scale: r.width / 480 };
     downs.set(e.pointerId, d);

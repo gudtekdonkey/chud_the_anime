@@ -75,7 +75,7 @@ function itemPrompts() {
     brackets(b, IT.lockT, -1); if (!e || e.item) prompt((b.x0 + b.x1) / 2, b.y0 - 13, verbOf(it), IT.lockT, false); }
   if (e && e.lift) { const [x, y] = toHud(e.lift.x, 22, e.lift.z); keyCap(x, y - 10, 'E', IT.lifting ? 'LIFTING' : 'HOLD: LIFT ' + e.lift.c.name, CY); }
   else if (e && e.harvest && !IT.harvesting && heroFree()) { const [x, y] = toHud(e.harvest.x, 8, e.harvest.z); keyCap(x, y - 10, 'E', 'HOLD: HARVEST', CY); }
-  const c = !CP.prompt && pairCandidate(); if (c) { const [x, y] = toHud(c.f.x, 34, c.f.z); keyCap(x, y - 10, 'K', 'WITH ' + c.al.c.name, CY); }
+  const c = !CP.prompt && !CP.chain && pairCandidate(); if (c) { const [x, y] = toHud(c.f.x, 34, c.f.z); keyCap(x, y - 10, 'K', 'WITH ' + c.al.c.name, CY); }
   // a companion bleeding out: their clock over them
   for (const al of PARTY.downed()) { const [x, y] = toHud(al.x, 20, al.z); g.fillStyle = '#0c0d11'; g.fillRect(Math.round(x) - 9, Math.round(y), 18, 3); g.fillStyle = W.t % .4 < .2 ? LOW : WH; g.fillRect(Math.round(x) - 8, Math.round(y) + 1, Math.round(16 * al.downT / BLEED), 1); }
 }

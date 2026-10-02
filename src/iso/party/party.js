@@ -24,9 +24,9 @@ export const PARTY = {
   // hooks: fn(ally, ...) — the squad AI and the HUD listen here
   on: { down: [], lift: [], die: [], level: [], hit: [], kill: [] },
   // the decision a companion with no brain and no order makes (today's): a samurai near him → fight it, else follow
-  // (a fight: he has his blade out, or the samurai is on him or on one of them)
+  // (a fight: he has his blade out, the samurai was cut lately, or he is swinging)
   defaultBrain(al) { const hero = CTX.hero, f = nearestFoe(hero.x, hero.z, FIGHT);
-    const on = f && (hero.armed || Math.hypot(f.x - hero.x, f.z - hero.z) < 60 || this.standing().some(a => Math.hypot(f.x - a.x, f.z - a.z) < 40) || W.t - (f.a.hitAt ?? -9) < 3);
+    const on = f && (hero.armed || f.state === 'fcut' || W.t - (f.a.hitAt ?? -9) < 3);
     return on ? { kind: 'attack', target: f } : { kind: 'follow' }; },
   // whom a samurai goes for: whoever standing is nearest him (him or a companion)
   targetFor(foe) { let best = CTX.hero, d0 = Math.hypot(CTX.hero.x - foe.x, CTX.hero.z - foe.z);
@@ -92,5 +92,5 @@ export function tickParty(dt) {
   const bodies = [CTX.hero, ...PARTY.allies.filter(a => !a.dead)];
   for (const al of PARTY.allies) { if (al.dead || CTX.held.has(al)) continue;
     for (const o of bodies) { if (o === al) continue; const dx = al.x - o.x, dz = al.z - o.z, d = Math.hypot(dx, dz);
-      if (d > 1e-3 && d < 8) { const k = (8 - d) / d * .25; al.a.x += dx * k / AF; al.a.z += dz * k / AF; } } }
+      if (d > 1e-3 && d < 13) { const k = (13 - d) / d * .2; al.a.x += dx * k / AF; al.a.z += dz * k / AF; } } }
 }

@@ -57,8 +57,8 @@ export class Ally extends Char {
   }
   // run toward (x, z) round the walls (path.js), easing in; true once there
   go(x, z, near, follow = false) {
-    const a = this.a, d = Math.hypot(x - this.x, z - this.z);
-    if (d < near) { this.path = null; return true; }
+    const a = this.a, d = Math.hypot(x - this.x, z - this.z), moving = this.state === 'run' || this.state === 'runArmed' || this.state === 'start';
+    if (d < near || (!moving && d < near * 2.2)) { this.path = null; return true; }   // (standing, a little more before they set off again)
     if (!this.path || Math.hypot(this.path.to[0] - x, this.path.to[1] - z) > 8) { const pts = findPath(this.x, this.z, x, z, this.r); this.path = { to: [x, z], pts: pts || [[x, z]] }; }
     let [px, pz] = this.path.pts[0]; if (Math.hypot(px - this.x, pz - this.z) < 4 && this.path.pts.length > 1) { this.path.pts.shift(); [px, pz] = this.path.pts[0]; }
     const hero = CTX.hero, top = 110 * this.spd * (follow && hero ? Math.max(.55, Math.min(1.15, d / 30)) : 1);
@@ -89,7 +89,7 @@ export class Ally extends Char {
   }
   // the follow slot: ranks of six behind him, the first rank closest (today's rule)
   slotXY() { const hero = CTX.hero, n = Math.min(6, CTX.party ? CTX.party.standing().length : 3), row = Math.floor(this.slot / 6), col = this.slot % 6;
-    const b = hv(hero.a.h), back = 16 + row * 12, side = (col - (Math.min(n, 6) - 1) / 2) * 12;
+    const b = hv(hero.a.h), back = 22 + row * 16, side = (col - (Math.min(n, 6) - 1) / 2) * 18;   // a hat's width apart (its brim is 19 across)
     return [hero.x - b[0] * back + b[1] * side, hero.z - b[1] * back - b[0] * side]; }
   // a hit taken; returns 'down' or 'dead' when it ends them standing
   hurt(n, from) {

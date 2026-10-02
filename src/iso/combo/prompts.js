@@ -24,7 +24,7 @@ export const comboMax = () => Math.max(3, LADDER.filter(([n]) => (INV.basic || 0
 // each answer's cut: the first of its moves that exists in the slice
 const MOVES = { R: ['lunge'], J: ['J2'], L: ['spin', 'J1'], U: ['launch', 'J1'], D: ['kick', 'J1'] };
 const clipOf = ans => MOVES[ans].find(n => CLIPS[n] && CUT[n]) || 'J1';
-export const CP = { on: true, chain: 0, prompt: null, queued: null, recover: 0, pend: null, grades: [], log: [], last: null, hits: 0, misses: 0 };
+export const CP = { on: true, chain: 0, prompt: null, queued: null, recover: 0, pend: null, grades: [], log: [], answers: [], last: null, hits: 0, misses: 0 };
 
 // a direction (screen heading, flow.js hOf) read against the samurai: R at him, L away, U / D up and down the screen
 export function readDir(dir, foe) { if (dir == null) return 'J'; const hero = CTX.hero, rel = wrapA(dir - hOf(foe.x - hero.x, foe.z - hero.z));
@@ -49,7 +49,7 @@ export function onLanded(foe) {
 // an answer: 'J' (tap / J alone), a direction (PC: the stick with J; touch: a swipe), or 'K'
 export function answer(ans) {
   const p = CP.prompt; if (!p) return false;
-  const t = W.t, d = t - p.beat;
+  const t = W.t, d = t - p.beat; CP.answers.push({ want: p.ans, got: ans, d: +d.toFixed(3) }); if (CP.answers.length > 12) CP.answers.shift();
   if (ans !== p.ans) { grade('MISS', '#ff5a4a'); CP.misses++; endChain(null, RECOVER); return true; }
   if (ans === 'K') { CP.prompt = null; CP.chain = 0; grade(Math.abs(d) <= PERFECT ? 'PERFECT' : 'GOOD', COL.fx2); if (CTX.execute) CTX.execute(p.foe); return true; }
   const g = Math.abs(d) <= PERFECT ? 'PERFECT' : d <= LATE ? 'GOOD' : 'LATE'; grade(g, g === 'PERFECT' ? COL.fx2 : g === 'GOOD' ? '#ffffff' : '#9aa3a1'); CP.hits++;
@@ -71,7 +71,7 @@ export function tickPrompts(dt, inp) {
     if (consume('cut', () => true)) CP.pend = { t: W.t, dir: inp.dir };
     if (CP.pend) { if (CP.pend.dir == null && inp.dir != null) CP.pend.dir = inp.dir;
       if (CP.pend.dir != null || W.t - CP.pend.t >= CHORD || p.ans === 'J') { const d = CP.pend.dir; CP.pend = null; answer(readDir(d, p.foe)); } }
-    else if (W.t > p.end) { grade('MISS', '#ff5a4a'); CP.misses++; endChain(null, RECOVER); }
+    else if (W.t > p.end) { CP.answers.push({ want: p.ans, got: null }); grade('MISS', '#ff5a4a'); CP.misses++; endChain(null, RECOVER); }
   } else if (CP.chain) consume('cut', () => true);   // between links a J answers nothing: the next prompt comes with the hit
   const q = CP.queued;
   if (q && W.t >= q.at) { CP.queued = null; const n0 = STATS.log.length; CTX.hero.startCut(q.clip, q.foe.dead ? null : q.foe, null); CP.watch = { n0, name: q.clip }; }

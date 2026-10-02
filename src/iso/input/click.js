@@ -16,6 +16,7 @@ import { hOf } from '../anim/flow.js';
 import { W } from '../play/sim.js';
 import { COL } from '../../config.js';
 
+const CUTS = new Set(['J1', 'J2', 'J3', 'lunge', 'roll']);
 export const CLICK = { goal: null, path: null, blocked: () => false, mark: null, log: [], swipeMouse: false };
 const press = code => { dispatchEvent(new KeyboardEvent('keydown', { code })); dispatchEvent(new KeyboardEvent('keyup', { code })); };
 // a pointer on the canvas → render pixels → the floor (y = 0) under it
@@ -27,7 +28,7 @@ function pick(p) {
   for (const f of living()) if (over(f.x, f.z, 14, 26)) return { kind: 'foe', foe: f };
   for (const it of BIG) if (usable(it) && over(it.x, it.z, it.w + 4, it.h)) return { kind: 'item', it, x: it.x, z: it.z };
   for (const al of PARTY.downed()) if (over(al.x, al.z, 14, 16)) return { kind: 'lift', al, x: al.x, z: al.z };
-  for (const f of FALLEN) if (Math.hypot(f.x - p.x, f.z - p.z) < 14) return { kind: 'harvest', x: f.x, z: f.z };
+  for (const f of FALLEN) if (Math.hypot(f.x - p.x, f.z - p.z) < 8) return { kind: 'harvest', x: f.x, z: f.z };
   for (const it of PICKUPS) if (!it.relic && Math.hypot(it.x - p.x, it.z - p.z) < 8) return { kind: 'floor', x: it.x, z: it.z };
   return { kind: 'floor', x: p.x, z: p.z };
 }
@@ -48,6 +49,7 @@ export function clickAt(p) {
 export function clickDir(keysDir) {
   const g = CLICK.goal, hero = CTX.hero; if (!g) return null;
   if (keysDir != null || CTX.busy) { if (keysDir != null) CLICK.goal = null; return null; }
+  if (CUTS.has(hero.state) && g.kind !== 'foe') { CLICK.goal = null; return null; }   // he cut: the click is spent
   if (g.kind === 'foe' && g.foe.dead) { CLICK.goal = null; return null; }
   const tx = g.kind === 'foe' ? g.foe.x : g.x, tz = g.kind === 'foe' ? g.foe.z : g.z, d = Math.hypot(tx - hero.x, tz - hero.z);
   const near = g.kind === 'foe' ? 22 : g.kind === 'item' ? LOCK - 6 : g.kind === 'floor' ? 3 : 14;

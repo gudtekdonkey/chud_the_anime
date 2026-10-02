@@ -7,7 +7,8 @@ import './hud/canvas.js';
 import { CTX, lone } from './ctx.js';
 import { W } from './play/sim.js';
 import { STATS } from './play/rules.js';
-import { PARTY, initParty, tickParty, partyKill } from './party/party.js';
+import { PARTY, initParty, tickParty, partyKill, hurtAlly } from './party/party.js';
+import { BAG } from '../party/kit.js';
 import { startPaired, startSolo, tickPaired, swallowsHit, pairCandidate, PAIR } from './party/paired.js';
 import { buildBig, BIG } from './items/big.js';
 import { initItemKeys, tickItems, addFallen, drawFallen, IT, FALLEN } from './items/items.js';
@@ -38,16 +39,21 @@ export function initPort({ scene, hero, foes, chars, canvas, root, pipe, lookKin
   initItemKeys(); initClick(canvas); initTouch(canvas, Q.has('swipe')); CLICK.swipeMouse = Q.has('swipe');
   addEventListener('keydown', e => { if (e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.code === 'KeyK') { e.preventDefault(); if (CP.prompt && CP.prompt.ans === 'K') answer('K'); else startPaired(); }
+    // H (testing, as today's): cut the nearest companion down, or finish one who is down; with nobody, a cut on him
+    if (e.code === 'KeyH') { let b = null, d0 = 1e9; for (const al of PARTY.allies) { if (al.dead) continue; const d = Math.hypot(al.x - hero.x, al.z - hero.z); if (d < d0) { d0 = d; b = al; } }
+      if (b) hurtAlly(b, 9, null); else { const n = hurt(.1); if (n) numAt(hero, n * 100, 'take'); } }
     if (e.code === 'KeyT') { CP.on = !CP.on; const el = root.querySelector('#o-combo'); if (el) el.checked = CP.on; } });
   addControls(root);
   const seen = new Map(foes.map(f => [f, { deaths: f.deaths, hits: f.hits }])); let heroHits = hero.hits, taken = hero.taken;
   const port = {
     // the direction his controller gets this step: the keys, else the touch stick or a swipe's dash, else a click's path
-    input(inp) { const td = touchDir(); if (inp.dir == null && td != null) inp.dir = td; const cd = clickDir(inp.dir); if (inp.dir == null && cd != null) inp.dir = cd; this.inp = inp; return inp; },
+    // (the prompts go first: a J while one is up is its answer, never his controller's own chain)
+    input(inp) { const td = touchDir(); if (inp.dir == null && td != null) inp.dir = td;
+      if (W.stop <= 0) tickPrompts(1 / 60, inp);   // (the keys' or the stick's direction answers; a click's path never does)
+      const cd = clickDir(inp.dir); if (inp.dir == null && cd != null) inp.dir = cd; return inp; },
     // after the hero's and the samurai's controllers, once a game step (1/60 s)
     tick(dt) {
-      const inp = this.inp || { dir: null };
-      if (W.stop <= 0) { tickPrompts(dt, inp); tickPaired(dt); tickParty(dt); tickItems(dt); tickClick(); }
+      if (W.stop <= 0) { tickPaired(dt); tickParty(dt); tickItems(dt); tickClick(); }
       tickMeters(dt); tickWorldUi(dt);
       // what the controllers did this step, read off their counters: hits landed, hits taken, deaths
       if (hero.hits > heroHits) { heroHits = hero.hits; const f = foes.find(o => o.a.hitAt === W.t) || foes[0]; qiAdd(QI_HIT); numAt(f, f.dead ? 20 : 10, f.dead ? 'big' : 'deal'); onLanded(f); }
@@ -66,11 +72,11 @@ export function initPort({ scene, hero, foes, chars, canvas, root, pipe, lookKin
     setLook(kind) { CTX.lookKind = kind; },
   };
   // the check's read-only view (dev or ?test)
-  port.debug = () => ({ party: PARTY.allies.map(a => ({ id: a.c.id, name: a.c.name, x: a.x, z: a.z, state: a.state, hp: a.hp, downed: a.downed, dead: a.dead, lv: a.c.lv, exp: a.c.exp, hits: a.hits, weapon: a.c.kit.weapon })),
+  port.debug = () => ({ bag: { wear: BAG.wear.length, weapons: BAG.weapons.length, charms: BAG.charms.length }, party: PARTY.allies.map(a => ({ id: a.c.id, name: a.c.name, x: a.x, z: a.z, state: a.state, hp: a.hp, downed: a.downed, dead: a.dead, lv: a.c.lv, exp: a.c.exp, hits: a.hits, weapon: a.c.kit.weapon })),
     pair: { cd: PAIR.cd, run: PAIR.run && PAIR.run.ex.id, done: PAIR.done, log: PAIR.log.slice(), candidate: !!pairCandidate() }, busy: CTX.busy,
     inv: { hp: INV.hp, qi: P.qi, storm: P.storm, mon: INV.mon, shards: INV.shards, exp: INV.exp, lv: INV.lv, weapon: P.weapon, quick: INV.quick.map(q => q && { ...q }), charms: INV.charms.slice(), edge: INV.edge, power: INV.power, upgrades: INV.upgrades, banner: S.banner && S.banner.big, smoke: S.smoke, useSlot: USE.slot, using: USE.id },
     items: { locked: IT.locked && IT.locked.id, used: Object.fromEntries(BIG.map(i => [i.id, i.used])), fallen: FALLEN.map(f => ({ x: f.x, z: f.z, left: f.left })), harvesting: !!IT.harvesting, lifting: !!IT.lifting, harvested: IT.harvested, pickups: PICKUPS.length, got: GOT.n },
-    combo: { on: CP.on, chain: CP.chain, prompt: CP.prompt && { ans: CP.prompt.ans, kind: CP.prompt.kind, beat: CP.prompt.beat }, grades: CP.grades.slice(-12), log: CP.log.slice(-12), recover: CP.recover, queued: CP.queued && CP.queued.clip },
+    combo: { on: CP.on, chain: CP.chain, prompt: CP.prompt && { ans: CP.prompt.ans, kind: CP.prompt.kind, beat: CP.prompt.beat }, grades: CP.grades.slice(-12), answers: CP.answers.slice(), log: CP.log.slice(-12), recover: CP.recover, queued: CP.queued && CP.queued.clip },
     click: { goal: CLICK.goal && CLICK.goal.kind, log: CLICK.log.slice(-8) }, touch: { log: TOUCH.log.slice(-12), dir: TOUCH.dir }, lone: foes.map(f => lone(f)), stats: STATS.log.length });
   port.clickAt = (cx, cy) => clickAt(floorAt(canvas, cx, cy));
   return port;
