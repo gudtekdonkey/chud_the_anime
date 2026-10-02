@@ -1,0 +1,211 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Combo Prompts</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@500;700&family=Figtree:wght@400;600&display=swap">
+<style>
+  /* One dark look, the game's own: the arena's grey floor, near-black panels, cyan only where something is live or picked.
+     Layout: the playable arena first, the tunables beside it (under it on a phone), then the design and the questions. */
+  :root { color-scheme: dark; --ground: #121416; --panel: #1b1e21; --rule: #30353a; --ink: #eef1f0; --muted: #9aa3a1; --cyan: #6ff3e4; --red: #ff7a6c; --chip: #23272b;
+    --display: "Pixelify Sans", ui-monospace, monospace; --body: Figtree, system-ui, sans-serif; }
+  body { background: var(--ground); color: var(--ink); font: 15px/1.55 var(--body); margin: 0; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 64px; display: grid; gap: 28px; }
+  header { display: grid; gap: 8px; max-width: 78ch; }
+  .eyebrow { font: 500 13px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  h1 { font: 700 clamp(28px, 5vw, 42px)/1.05 var(--display); margin: 0; text-wrap: balance; }
+  h2 { font: 700 22px/1.15 var(--display); margin: 0; text-wrap: balance; }
+  h3 { font: 700 16px/1.2 var(--display); margin: 0; letter-spacing: .02em; }
+  p { margin: 0; color: var(--muted); max-width: 78ch; }
+  p b, li b, td b { color: var(--ink); font-weight: 600; }
+  .note { border-left: 2px solid var(--cyan); padding-left: 10px; }
+  .stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
+  @media (min-width: 1000px) { .stage { grid-template-columns: minmax(0, 1fr) 360px; } }
+  #play { position: relative; display: block; aspect-ratio: 16 / 9; overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; outline: none; border: 1px solid var(--rule); background: #474c4a; }
+  #play:focus-visible, #play:focus { border-color: var(--cyan); }
+  #game { position: absolute; left: 0; top: 0; display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; image-rendering: pixelated; transform-origin: 0 0; }
+  #playhint { position: absolute; inset: auto 8px 8px auto; font: 500 12px/1 var(--display); letter-spacing: .06em; color: var(--ink); background: rgba(12,13,17,.8); border: 1px solid var(--rule); padding: 6px 8px; cursor: pointer; }
+  #play:focus #playhint { display: none; }
+  .under { display: flex; flex-direction: column; gap: 8px; min-width: 0; align-self: stretch; }
+  .readout { display: flex; flex-wrap: wrap; gap: 6px 16px; font: 500 13px/1.3 var(--display); letter-spacing: .04em; color: var(--muted); }
+  .readout b { color: var(--cyan); font-weight: 500; }
+  #hud { font-size: 12px; color: var(--muted); }
+  #hud b { color: var(--ink); font-weight: 600; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 14px; color: var(--muted); }
+  kbd { font: 500 12px/1 var(--display); color: var(--ink); background: var(--chip); border: 1px solid #3a4046; padding: 3px 5px; }
+  .panel { background: var(--panel); border: 1px solid var(--rule); padding: 12px; display: grid; gap: 12px; }
+  .ctl { display: grid; gap: 6px; }
+  .ctl > span, .ctl > label { font: 500 12px/1 var(--display); letter-spacing: .1em; text-transform: uppercase; color: var(--cyan); }
+  .seg { display: flex; flex-wrap: wrap; gap: 4px; }
+  button { font: 13px/1.2 var(--body); color: var(--ink); background: var(--chip); border: 1px solid #3a4046; padding: 6px 9px; cursor: pointer; }
+  button[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+  .rng { display: grid; grid-template-columns: minmax(0, 1fr) 6.5em; gap: 8px; align-items: center; }
+  input[type=range] { width: 100%; accent-color: var(--cyan); }
+  output { font: 500 13px/1 var(--display); color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+  .group { font: 700 13px/1 var(--display); letter-spacing: .08em; color: var(--ink); border-top: 1px solid var(--rule); padding-top: 10px; }
+  .logwrap { flex: 1 1 0; min-height: 240px; overflow: auto; border: 1px solid var(--rule); background: var(--panel); }
+  #log { list-style: none; margin: 0; padding: 6px 10px; display: grid; gap: 2px; font: 13px/1.35 var(--body); color: var(--muted); }
+  #log li { display: grid; grid-template-columns: 3.6em 5.4em minmax(0, 1fr); gap: 8px; }
+  .lt { font-variant-numeric: tabular-nums; color: #6c7472; }
+  .lk { font: 500 12px/1.5 var(--display); letter-spacing: .06em; text-transform: uppercase; }
+  .k-link .lk { color: var(--cyan); } .k-miss .lk { color: var(--red); } .k-prompt .lk, .k-chain .lk { color: var(--ink); }
+  .sec { display: grid; gap: 14px; border-top: 1px solid var(--rule); padding-top: 22px; }
+  .cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 18px; }
+  .cols > div { display: grid; gap: 6px; align-content: start; min-width: 0; }
+  ul.plain { margin: 0; padding-left: 20px; color: var(--muted); display: grid; gap: 4px; max-width: 78ch; }
+  .tbl { overflow-x: auto; }
+  table { border-collapse: collapse; font-size: 14px; min-width: 560px; }
+  th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--rule); vertical-align: top; color: var(--muted); }
+  th { font: 500 12px/1.2 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--cyan); }
+  td:first-child { color: var(--ink); white-space: nowrap; }
+  .phone { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; }
+  @media (min-width: 760px) { .phone { grid-template-columns: 420px minmax(0, 1fr); } }
+  .mock { position: relative; aspect-ratio: 19.5 / 9; max-width: 100%; border: 2px solid #3a4046; background: #474c4a; font: 500 11px/1.2 var(--display); letter-spacing: .06em; color: var(--ink); overflow: hidden; }
+  .mock div { position: absolute; padding: 4px; }
+  .mz-l { inset: 18% 55% 0 0; border-right: 1px dashed var(--cyan); color: var(--cyan); display: grid; place-items: end start; }
+  .mz-r { inset: 18% 0 0 45%; color: var(--cyan); display: grid; place-items: end end; text-align: right; }
+  .mhud { inset: 0 0 auto 0; height: 18%; background: rgba(12,13,17,.6); display: flex; align-items: center; gap: 8px; }
+  .mrail { right: 6px; top: 22%; display: grid; gap: 4px; }
+  .mrail span { display: block; width: 22px; height: 22px; border: 1px solid var(--cyan); background: rgba(12,13,17,.7); text-align: center; line-height: 20px; }
+  .mstick { left: 12%; top: 55%; width: 38px; height: 38px; border: 1px solid var(--ink); border-radius: 50%; }
+  .mtrail { left: 62%; top: 52%; width: 70px; height: 2px; background: var(--cyan); transform: rotate(-12deg); }
+  .q { display: grid; gap: 8px; padding: 14px; background: var(--panel); border: 1px solid var(--rule); }
+  .opts { display: grid; gap: 6px; }
+  .opt { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; text-align: left; padding: 8px 10px; }
+  .opt .id { font: 700 14px/1.3 var(--display); color: var(--cyan); }
+  .opt .rec { font: 500 11px/1 var(--display); letter-spacing: .08em; text-transform: uppercase; color: var(--ground); background: var(--cyan); padding: 2px 5px; margin-left: 6px; }
+  .picks { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; position: sticky; bottom: env(safe-area-inset-bottom, 0px); background: var(--panel); border: 1px solid var(--cyan); padding: 10px 12px; }
+  #pickline { font: 500 14px/1.4 var(--display); letter-spacing: .04em; color: var(--ink); min-width: 0; overflow-wrap: anywhere; flex: 1 1 260px; }
+  #copied { font-size: 13px; color: var(--cyan); }
+  @media (prefers-reduced-motion: reduce) { .picks { position: static; } }
+</style>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Prototype 46 · combat input</div>
+    <h1>Combo prompts and swipe moves</h1>
+    <p>Play it. Hit a samurai with <kbd>J</kbd> (or tap the right half on a phone) and the next link of the chain shows as a prompt over him: an arrow, with a ring closing on the beat. Answer it in time and the next cut plays; each direction is a different cut. On a phone the same prompt is answered with a swipe that way. These are the game's own modules: the ronin, his cuts, the black slash, the samurai's hits and reactions.</p>
+    <p class="note">This uses today's rig and side-on attacks on today's floor. The new 3/4 camera and the Iron Ash art come later; the input design carries over to them unchanged.</p>
+  </header>
+
+  <section class="stage" aria-label="The playable arena">
+    <div class="under">
+      <div id="play" tabindex="0" aria-label="Arena. Click or tap to play: keys and gestures work while it is focused.">
+        <canvas id="game" width="480" height="270"></canvas>
+        <button type="button" id="playhint">CLICK OR TAP TO PLAY</button>
+      </div>
+      <div class="readout" aria-live="polite"><span>Chain: <b id="count">no chain yet</b></span><span>Gesture: <b id="said">none yet</b></span></div>
+      <div class="readout"><span id="stats"></span></div>
+      <div class="legend" id="legend"></div>
+      <div class="legend"><span><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> move</span><span><kbd>J</kbd> slash</span><span><kbd>Space</kbd> jump</span><span><kbd>Shift</kbd> slide</span><span><kbd>K</kbd> blink / execute</span><span><kbd>I</kbd> <kbd>O</kbd> <kbd>P</kbd> <kbd>U</kbd> <kbd>N</kbd> skills</span></div>
+      <div class="legend"><span><b>Touch or mouse drag:</b> left side: a floating stick · right side: tap slash · swipe dash (toward a close enemy: lunge cut) · swipe up jump · hold charge · double tap K · flick back and forth parry · two-finger tap a skill</span></div>
+      <div id="hud"></div>
+      <h3>Input log</h3>
+      <div class="logwrap" tabindex="0" aria-label="Input log"><ul id="log"></ul></div>
+    </div>
+
+    <div class="panel" aria-label="Tunables">
+      <div class="group">COMBO</div>
+      <div class="ctl"><span>Mode</span><div class="seg" id="s-mode"></div></div>
+      <div class="ctl"><span>PC answers with</span><div class="seg" id="s-scheme"></div></div>
+      <div class="ctl"><label for="r-win">Window after the beat</label><div class="rng"><input type="range" id="r-win" min="0.15" max="0.9" step="0.05"><output id="r-win-v"></output></div></div>
+      <div class="ctl"><label for="r-lead">Prompt lead (ring closing)</label><div class="rng"><input type="range" id="r-lead" min="0" max="0.5" step="0.02"><output id="r-lead-v"></output></div></div>
+      <div class="ctl"><label for="r-len">Chain length (basic skill)</label><div class="rng"><input type="range" id="r-len" min="2" max="8" step="1"><output id="r-len-v"></output></div></div>
+      <div class="ctl"><span>Slow motion on a prompt</span><div class="seg" id="s-slow"></div></div>
+      <div class="ctl"><span>Assist</span><div class="seg" id="s-assist"></div></div>
+      <div class="ctl"><span>On a miss</span><div class="seg" id="s-miss"></div></div>
+      <div class="ctl"><span>Prompt sits</span><div class="seg" id="s-where"></div></div>
+      <div class="ctl"><span>Finisher offers K</span><div class="seg" id="s-kfin"></div></div>
+      <div class="group">TOUCH</div>
+      <div class="ctl"><span>Layout</span><div class="seg" id="s-layout"></div></div>
+      <div class="ctl"><span>Hold does</span><div class="seg" id="s-hold"></div></div>
+      <div class="ctl"><span>Two-finger tap</span><div class="seg" id="s-two"></div></div>
+      <div class="ctl"><label for="r-swipe">Swipe: shortest</label><div class="rng"><input type="range" id="r-swipe" min="12" max="60" step="2"><output id="r-swipe-v"></output></div></div>
+      <div class="ctl"><label for="r-speed">Swipe: slowest</label><div class="rng"><input type="range" id="r-speed" min="0.1" max="0.8" step="0.02"><output id="r-speed-v"></output></div></div>
+      <div class="ctl"><label for="r-holdms">Hold after</label><div class="rng"><input type="range" id="r-holdms" min="160" max="600" step="20"><output id="r-holdms-v"></output></div></div>
+      <div class="ctl"><label for="r-dbl">Double tap within</label><div class="rng"><input type="range" id="r-dbl" min="120" max="400" step="10"><output id="r-dbl-v"></output></div></div>
+      <div class="group">ARENA</div>
+      <div class="ctl"><span>Samurai</span><div class="seg" id="s-dummies"></div></div>
+      <div class="ctl"><span>Weapon</span><div class="seg" id="s-weapon"></div></div>
+      <div class="ctl"><span>Scale</span><div class="seg" id="s-hd"></div><p id="hdnote" hidden>This frame does not allow the reload. Open the prototype file with ?hd for 2×.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>What each answer does</h2>
+    <p>A direction means the same on every screen: <b>→ is always toward the enemy</b> (the arrow drawn on screen points at him, so it flips when he is on your left). Every link is one of the J ladder's own cuts from <code>player/combo.js</code>, picked by the answer instead of by count, so timing, hits, the black slash and the hit pause are the game's.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Prompt</th><th>PC (direction + J)</th><th>Phone</th><th>Cut</th><th>What it is good for</th></tr></thead>
+      <tbody>
+        <tr><td>→ toward him</td><td>→ + J</td><td>swipe toward him</td><td>J1 lunge cut</td><td>The longest forward drive (85 px/s through the strike): closes the gap he was shoved back.</td></tr>
+        <tr><td>↑</td><td>↑ + J</td><td>swipe up</td><td>J5 rising launch</td><td>Off the floor with a cut rising straight up.</td></tr>
+        <tr><td>← away</td><td>← + J</td><td>swipe away</td><td>J3 spin cut</td><td>Whirls round with his back to him for a beat and cuts all round: hits a second samurai behind.</td></tr>
+        <tr><td>↓</td><td>↓ + J</td><td>swipe down</td><td>J4 front kick</td><td>No blade: a shove of dust that staggers.</td></tr>
+        <tr><td>J / tap</td><td>J alone</td><td>tap</td><td>J2 answer cut</td><td>Sinks, coils and rises overhead.</td></tr>
+        <tr><td>» the finisher</td><td>→ + J</td><td>swipe toward him</td><td>J6 flash step</td><td>Always the last link: 46 px past him, the cut line through all he passed.</td></tr>
+        <tr><td>K</td><td>K</td><td>tap or double tap</td><td>an execution</td><td>After a finisher that lands next to a lone samurai: the chain ends in K's executions.</td></tr>
+      </tbody>
+    </table></div>
+    <p>Timing: the white ring closes on the <b>beat</b> (the prompt lead after the hit). Within 0.05 s of it is <b>PERFECT</b> (a little Qi and a burst of sparks), before it or in the first 60% of the window after it is <b>GOOD</b>, the rest is <b>LATE</b> (still a hit). After the window closes it is a <b>MISS</b>. A press that comes before the current cut's chain beat (0.3 s) is held until that beat, as J is today, so the cuts always flow out of each other's follow-through and never cut off a swing.</p>
+  </section>
+
+  <section class="sec">
+    <h2>Reading a swipe</h2>
+    <p>Every stroke on the right side is read when the finger lifts (a hold and a double tap are read while it is down). All thresholds are CSS pixels and milliseconds, the same on every phone, and all of them are on the panel.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Gesture</th><th>Rule</th><th>Why that number</th></tr></thead>
+      <tbody>
+        <tr><td>Tap → J</td><td>up within 220 ms, moved under 12 px</td><td>A thumb tap drifts 3 to 8 px; 12 px keeps short swipes from reading as taps.</td></tr>
+        <tr><td>Swipe → a direction</td><td>26 px or more, at 0.28 px/ms or faster; the direction from start to end in 8 sectors of 45°</td><td>A deliberate flick on a phone is 40 to 120 px at 0.5 to 2 px/ms; the speed floor turns a slow drag into nothing instead of a wrong move.</td></tr>
+        <tr><td>Toward a close enemy → lunge cut</td><td>a swipe whose direction is within 40° of a samurai inside 96 px</td><td>Otherwise a swipe is a dash (the slide) that way; up is always jump.</td></tr>
+        <tr><td>Hold → charge or guard</td><td>still (under 14 px) for 280 ms</td><td>Long enough that a slow tap never charges, short enough to feel immediate.</td></tr>
+        <tr><td>Double tap → K</td><td>a second touch down within 230 ms and 48 px of a tap</td><td>Read on the second touch going down: the first tap's cut is still in its wind-up (the strike is at 0.16 s), so it gives way to K, and a single tap never waits.</td></tr>
+        <tr><td>Flick → parry</td><td>there and back within 380 ms: the path 2.2× the net distance or more, two legs of 10 px or more</td><td>A swipe has a path about equal to its distance; a back-and-forth has at least double.</td></tr>
+        <tr><td>Two fingers → a skill</td><td>the second finger down within 160 ms, neither moving</td><td>Two thumbs landing together; a second finger later is a new gesture.</td></tr>
+        <tr><td>One-thumb drag → move</td><td>still moving after 170 ms, never at swipe speed</td><td>Only in the one-thumb layout: a slow drag becomes the stick, a fast stroke stays a swipe.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="sec">
+    <h2>How it fits the game</h2>
+    <div class="cols">
+      <div><h3>Dead Cells flow</h3><p>Dead Cells feels fluid because every input is buffered and lands on the next allowed beat, and because direction and attack are one decision. Here the prompt is that decision: the answer is read at once, held to the current cut's chain beat (0.3 s, the same GO the J ladder uses) and played from the follow-through. Nothing pauses unless slow motion is switched on. A prompt only appears after a landed cut, so a whiff ends the chain on its own, with no extra rule.</p></div>
+      <div><h3>The J ladder</h3><p>The six cuts in <code>CUTS</code> stay exactly as they are. Today J plays them in order; with prompts the answer picks which one comes next, and the last link is always J6's flash step. <code>comboMax()</code> keeps its job: basic skill (landed cuts: 2 links to start, 3 at 40, 4 at 120, 5 at 250, 6 at 450) sets how long a chain may run. Free mode on the panel is today's game.</p></div>
+      <div><h3>Flow</h3><p>Every answered link is a landed basic cut, so <code>landCut()</code> counts it unchanged: six in a row within 1.6 s still earn Flow for 8 s. Proposed: a PERFECT also keeps the Flow gap open for its full 1.6 s again, so a clean chain carries Flow from one fight into the next.</p></div>
+      <div><h3>Executions (K)</h3><p>When the finisher lands and a lone samurai is in K's reach, the last prompt is K: the chain ends in an execution, and K's chaining rules take it from there. The stretch, not built: one prompt inside an execution, on its killing beat, for the bloodier ending (it needs a hook in <code>assassin/</code>).</p></div>
+      <div><h3>Growth</h3><p>Basic skill already lengthens the chain. The skill trees can widen what a chain offers: once a skill is mastered its key can appear as a link (an I prompt casts the glitch double slash inside the chain, off cooldown, the way Flow does), and a tree's fork can trade a longer window for a harder prompt. Power I, II and III could add the diagonals as extra prompts.</p></div>
+      <div><h3>Accessibility</h3><p>Auto plays every link on the beat; Hold to continue answers each prompt while J (or a finger) is held; Generous widens the window by half and lets a wrong answer stand without ending the chain; slow motion is separate. The prompt never relies on colour: an arrow, a letter or a dot, a double chevron and a white frame for the finisher, a red frame and K for the execution, and the grade as a word. Reduced motion turns off the screen shake.</p></div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>The phone</h2>
+    <div class="phone">
+      <div class="mock" aria-hidden="true">
+        <div class="mhud">HP · QI · SKILLS</div>
+        <div class="mz-l">FLOATING STICK</div>
+        <div class="mstick"></div>
+        <div class="mz-r">TAP · SWIPE · HOLD<br>DOUBLE TAP · FLICK</div>
+        <div class="mtrail"></div>
+        <div class="mrail"><span>I</span><span>O</span><span>P</span></div>
+      </div>
+      <ul class="plain">
+        <li><b>Left 45%:</b> a floating stick that starts wherever the thumb lands. A short push walks, a full one runs.</li>
+        <li><b>Right side:</b> every combat gesture. The prompt over the enemy is answered with the same swipe that dashes, so there is one thing to learn.</li>
+        <li><b>The HUD's skill slots become buttons</b> on a rail at the right edge (top), proposed: two-finger tap casts only one chosen skill, and Breath of Qi and the long-hold skills (O, P) need a held button anyway.</li>
+        <li><b>One thumb</b> (the panel's other layout): a slow drag moves, a fast stroke is a swipe. Playable, but moving and fighting at once is harder.</li>
+        <li>A left-handed option mirrors the halves. The game itself is landscape; on this page, a column narrower than 720 px shows the arena closer (up to 2×) and follows him, so the prompt stays readable on a phone held upright. A swipe on the arena never scrolls the page.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec" aria-labelledby="qhead">
+    <h2 id="qhead">Questions</h2>
+    <p>Each question is pre-filled with the recommendation. Pick what you want, then copy the line at the bottom.</p>
+    <div id="questions" class="cols"></div>
+    <div class="picks"><span id="pickline"></span><button type="button" id="copy">Copy picks</button><span id="copied" aria-live="polite"></span></div>
+  </section>
+</div>
+<div hidden><input type="checkbox" id="clear"><select id="power"><option value="0">0</option></select><select id="skills"><option value="mastered">mastered</option></select></div>
+<script type="module" src="./main.js"></script>
+<script type="module" src="./questions.js"></script>
