@@ -93,7 +93,8 @@ export function severStep(dt) {
       const vt = new THREE.Vector3(vp.x, 0, vp.z), sp = vt.length();   // friction against the slide, at most µ·j
       if (sp > 1e-4) { const jt = Math.min(sp / (1 + rw.clone().cross(vt.clone().normalize()).lengthSq() / pc.I), .6 * j), d = vt.normalize().multiplyScalar(-jt);
         pc.v.add(d); pc.w.addScaledVector(rw.clone().cross(d), 1 / pc.I); } }
-    if (touch) { pc.w.multiplyScalar(Math.exp(-2.2 * dt)); pc.v.x *= Math.exp(-1.2 * dt); pc.v.z *= Math.exp(-1.2 * dt);
+    if (touch) { const late = pc.age > 1.2 ? 5 : 1;   // a piece still rocking on a corner after a while settles: everything comes to rest in ~2 s
+      pc.w.multiplyScalar(Math.exp(-2.2 * late * dt)); pc.v.x *= Math.exp(-1.2 * late * dt); pc.v.z *= Math.exp(-1.2 * late * dt);
       if (!pc.landed) { pc.landed = 1; if (!pc.sword) { dust(W0, pc.c.x / AF, pc.c.z / AF, 5, { spd: 22, life: .4 }); blood.spray(pc.c.x, pc.c.y + .5, pc.c.z, [pc.v.x, 4, pc.v.z], 'light', { k: .4, spd: .5 }); } } }
     const p = { x: pc.c.x, z: pc.c.z }; collide(p, Math.min(2.5, pc.I)); if (p.x !== pc.c.x || p.z !== pc.c.z) { pc.v.x *= -.3; pc.v.z *= -.3; pc.c.x = p.x; pc.c.z = p.z; }
     if (touch && pc.v.length() < 1.6 && pc.w.length() < .7) { pc.sleep += dt; if (pc.sleep > .25) { pc.rest = true; SV.stats.rest++; } } else pc.sleep = 0;

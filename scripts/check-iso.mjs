@@ -117,12 +117,13 @@ try {
   step = 'kill'; await settle(); { for (let i = 0; i < 12 && !(await G()).foe.dead; i++) { const f = (await G()).foe, h = (await G()).hero;
       if (Math.hypot(f.x - h.x, f.z - h.z) > 26) { await walkTo(f.x - 22, f.z, 6); await settle(); }
       await page.keyboard.press('KeyJ'); await gameWait(.32); }
-    await until('the samurai dying', () => window.__iso.foe.dead); await gameWait(.6); await shot('death', ['hero', 'foe']);
-    // the killing blow took the part nearest the blade: a piece and his sword fall, come to rest on the floor, a pool spreads
+    await until('the samurai dying', () => window.__iso.foe.dead);
+    // the killing blow took the part nearest the blade: a piece and his sword fall and come to rest on the floor (read
+    // before any screenshot: the game runs on through one, and he stands up whole 2.9 s after he dies), a pool spreads
     { const b = (await G()).gore; if (b.severs < 1 || !b.cut.some(p => p !== 'sword')) fail(`no sever on the killing blow (cut: ${b.cut.join(' ')})`);
       if (b.swords < 1) fail('his sword did not drop'); if (b.pools < 1) fail('no pool under him');
       await until('the pieces at rest on the floor', () => window.__iso.gore.foePieces >= 2 && window.__iso.gore.resting >= 2 && window.__iso.gore.lowest < 4);
-      const c = (await G()).gore; await shot('sever', ['foe']); ok(`cut ${c.cut.join(' + ')}; ${c.resting} pieces at rest, the lowest at ${c.lowest.toFixed(1)}; ${c.clatters} clatters; flicks ${c.flicks}`);
+      const c = (await G()).gore; await shot('sever', ['hero', 'foe']); ok(`cut ${c.cut.join(' + ')}; ${c.resting} pieces at rest, the lowest at ${c.lowest.toFixed(1)}; ${c.clatters} clatters; flicks ${c.flicks}`);
       if (c.flicks < 1) fail('the sheathe never flicked the blade clean'); }
     await until('the respawn', () => !window.__iso.foe.dead && window.__iso.foe.hp === 5, undefined, 90000); ok(`deaths ${(await G()).foe.deaths}`); }
   step = 'close-ups of J1 and J2'; await settle(); { const f = (await G()).foe; await walkTo(f.x - 22, f.z, 6); await settle();
@@ -159,17 +160,18 @@ try {
     await until('him standing again', () => !window.__iso.foe.dead && window.__iso.foe.state === 'guard', undefined, 90000);
     { const f = (await G()).foe; await walkTo(f.x - 40, f.z, 8); } await settle();
     await until('the K prompt (alone, in reach)', () => window.__iso.gore.kpick);
-    const n0 = (await G()).gore.execs; await forget(); await shot(`exec-${NAMES.indexOf(name)}-prompt`, ['hero', 'foe']);
+    await shot(`exec-${NAMES.indexOf(name)}-prompt`, ['hero', 'foe']);
+    const g0 = await G(); await forget();
     await page.keyboard.press('KeyK');
-    await until('the execution', n => window.__iso.gore.execOn, undefined);
+    await until('the execution', () => window.__iso.gore.execOn);
     if ((await G()).gore.exec !== name) fail(`played ${(await G()).gore.exec}`);
     await until('the killing cut', () => window.__iso.gore.cut.some(p => p !== 'sword'));
-    await shot(`exec-${NAMES.indexOf(name)}`, ['hero', 'foe']);
-    await until('the ronin handed back', () => !window.__iso.gore.execOn && window.__iso.hero.state === 'idle');
-    await until('the stage ending', n => window.__iso.gore.execs > n, n0);
-    const g = await G(); if (!g.foe.dead) fail('the samurai survived his execution');
+    const cut = (await G()).gore.cut; await shot(`exec-${NAMES.indexOf(name)}`, ['hero', 'foe']);
+    await until('the ronin handed back', () => !window.__iso.gore.execOn && window.__iso.hero.state !== 'xR');
+    await until('the stage ending', n => window.__iso.gore.execs > n, g0.gore.execs);
+    const g = await G(); if (g.foe.deaths <= g0.foe.deaths) fail('the samurai survived his execution');
     if (!(await page.evaluate(() => window.__seen.has('cine')))) fail('no close-up');
-    if (g.gore.foePieces < 1) fail('no pieces'); ok(`cut ${g.gore.cut.join(' + ')}; ${g.gore.foePieces} pieces; the close-up played; flicks ${g.gore.flicks}`);
+    if (g.gore.severs <= g0.gore.severs) fail('no pieces cut'); ok(`cut ${cut.join(' + ')}; ${g.gore.severs - g0.gore.severs} pieces; the close-up played; flicks ${g.gore.flicks}`);
   }
   errorsCheck();
   console.log('\ncheck:iso passed');

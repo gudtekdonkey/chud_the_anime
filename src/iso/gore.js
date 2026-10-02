@@ -7,7 +7,6 @@
 // execution (exec/). Nothing here changes timing, hitboxes or the moves.
 import * as THREE from 'three';
 import { W } from './play/sim.js';
-import { STATS } from './play/rules.js';
 import { CUT } from './play/hero.js';
 import { consume } from './play/input.js';
 import { hv, rnd } from './anim/flow.js';
@@ -75,7 +74,6 @@ export function installGore({ hero, foe, scene }) {
     cut(foe, part, { v: [h.dir[0] * 18 + fwd[0] * 14, 26 + rnd() * 12, h.dir[2] * 18 + fwd[1] * 14], w: [(rnd() - .5) * 16, (rnd() - .5) * 8, (rnd() - .5) * 16] });
     cut(foe, 'sword', { v: [fwd[0] * 26 + (rnd() - .5) * 10, 34, fwd[1] * 26 + (rnd() - .5) * 10], w: [(rnd() - .5) * 18, (rnd() - .5) * 12, (rnd() - .5) * 18] });
     B.pool(foe.x + fwd[0] * 7, foe.z + fwd[1] * 7, 7.5, 2.4, .7);
-    STATS.log.push(`sever:${part}`);
   };
   const baseStrike = W.on.strike;
   W.on.strike = a => { const n = hero.taken; baseStrike(a); if (hero.taken === n) return;
@@ -86,7 +84,7 @@ export function installGore({ hero, foe, scene }) {
   const free = ['idle', 'guard', 'run', 'runArmed', 'start', 'stop', 'skid', 'sheathe'];
   const canExec = () => { const n = hero.state, c = CUT[n]; return !!KM.pick && !EX.on && (free.includes(n) || (c && hero.a.ct >= c.hit + 2 / 60)); };
   const baseHero = hero.control.bind(hero), baseFoe = foe.control.bind(foe);
-  hero.control = (inp, f, t) => { if (EX.on) return; if (consume('exec', canExec)) { startExec(hero, foe, api); STATS.log.push(`exec:${EX.log.at(-1)}`); return; } baseHero(inp, f, t); };
+  hero.control = (inp, f, t) => { if (EX.on) return; if (consume('exec', canExec)) { startExec(hero, foe, api); return; } baseHero(inp, f, t); };
   foe.control = (h, t, dt) => { if (EX.st && EX.st.foe === foe) return; baseFoe(h, t, dt); };
 
   // the blade's blood thrown off by the flick: a line of drops on the floor ahead of him
