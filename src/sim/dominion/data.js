@@ -1,10 +1,10 @@
 // ---- Dominion's tables: the ladder's names, settlement tiers, buildings, units, laws, offices, and every tuning number (docs/sim-dominion.md) ----
 // Plain data. Every number here is a starting value to tune in play; change them on purpose, never as a side effect.
 
-// the ladder (defaults 1: English names with the Japanese in brackets)
+// the ladder, named in English only (owner 2026-10-01, D1C: no Japanese in brackets)
 export const LADDER = [
-  { id: 'plot', name: 'plot' }, { id: 'estate', name: 'estate' }, { id: 'zone', name: 'zone', jp: 'mura' },
-  { id: 'domain', name: 'domain', jp: 'han' }, { id: 'province', name: 'province', jp: 'kuni' }, { id: 'realm', name: 'realm' },
+  { id: 'plot', name: 'plot' }, { id: 'estate', name: 'estate' }, { id: 'zone', name: 'zone' },
+  { id: 'domain', name: 'domain' }, { id: 'province', name: 'province' }, { id: 'realm', name: 'realm' },
 ];
 
 // settlement tiers: homes (home units), buildings it must have, people, on a road, trade with n towns. -1 is no settlement (no homes)
@@ -77,8 +77,11 @@ export const UNITS = {
   rebel:    { pow: .8, wage: 0, rice: 1, cost: 0, weapons: ['naginata', 'kama'], from: 'a rising' },
 };
 export const MILITIA = .5;   // a settlement's own defenders (a tenth of its people) fight at this strength a head
-// squads under an officer take simple orders when he is at the battle (default 2)
+// each squad takes its own order in a battle he is at (owner 2026-10-01, D2C), and keeps it as its standing order: pow is its weight in
+// the fight, loss its share of the losses. hold is neutral (every NPC squad holds, so NPC battles are as before); follow counts only
+// when he stands in the battle's zone (else it holds)
 export const ORDERS = ['hold', 'charge', 'follow', 'fallback'];
+export const ORDER = { hold: { pow: 1, loss: 1 }, charge: { pow: 1.25, loss: 1.5 }, follow: { pow: 1.15, loss: 1, him: true }, fallback: { pow: .5, loss: .4 } };
 
 // laws: each changes unrest, yield, recruiting or money (docs/dominion.md section 4)
 export const LAWS = {
@@ -130,4 +133,5 @@ export const N = {
   TRAIN_DECAY: .0005,
   DESERT_AFTER: 7, BANDIT_AFTER: 30,
   DEATH: [[40, .01], [55, .03], [65, .07], [200, .15]],   // lords' yearly death chance by age (stand-in until the people lane)
+  LOT_PITCH: 5,           // tiles: a town's lots are 4 × 4 cells on a 5-tile grid (a 1-tile lane between), some merged or halved (build.js lotsOf)
 };

@@ -1,12 +1,12 @@
 import { system, on } from '../ledger.js';
 import { rngFor } from '../rng.js';
-import { D, key, unkey, setZone, plotChanged, refreshDomains, refreshProvinces, refreshRealms, top } from './land.js';
+import { D, key, unkey, setZone, plotChanged, refreshDomains, refreshProvinces, refreshRealms, unitySeason, top } from './land.js';
 import { setupWorld } from './init.js';
 import { buildDay, upkeepSeason } from './build.js';
 import { settleSeason, tradeYear } from './settle.js';
 import { lordsSeason, successionYear, fillOffices, indexHomes, succeed } from './govern.js';
 import { armyDay } from './army.js';
-import { warDay, tributeSeason, declareWar } from './war.js';
+import { warDay, tributeSeason, conquestSeason, declareWar } from './war.js';
 import { lordsDay } from './ai.js';
 import { ripens } from './seams.js';
 
@@ -17,7 +17,7 @@ system({
   id: 'dominion', order: 60,
   init: setupWorld,
   onDay(L, cal, r) { buildDay(L); armyDay(L, r); warDay(L, cal, r); lordsDay(L, cal, r); },
-  onSeason(L, cal, r) { settleSeason(L, r); upkeepSeason(L); tributeSeason(L); lordsSeason(L, r); refreshDomains(L); refreshProvinces(L); refreshRealms(L); },
+  onSeason(L, cal, r) { settleSeason(L, r); upkeepSeason(L); tributeSeason(L); conquestSeason(L, r); lordsSeason(L, r); refreshDomains(L); refreshProvinces(L); refreshRealms(L); unitySeason(L); },
   onYear(L, cal, r) {
     successionYear(L, r); tradeYear(L);
     for (const [k, z] of Object.entries(D(L).zt)) if (ripens(L, z) && !D(L).lords[z.holder]?.outlaw) setZone(L, k, { title: z.holder }, 'held');
@@ -53,7 +53,7 @@ export { D as dominion, key, unkey, lordOf, top, sameSide, lordName, zoneRec, se
 export { settlementAt, lordOfSettlement, nextNeeds, vassalState } from './settle.js';
 export { recipeOf, costOf, canPlace, prereq, plan, supply, work, hire, damage, repair } from './build.js';
 export { officeQ, appoint, candidates, setTax, setLaw, swearFealty, lordState } from './govern.js';
-export { menOf, strength, armiesOf, armiesAt, recruitWhy, recruit, newArmy, setOfficer, setOrder, disband, pathTo, march, atWar, armyLabel } from './army.js';
-export { reasonFor, declareWar, activeWars, sideOf, makePeace, termsFor, settleBattle, take } from './war.js';
-export { claimPlot, worth, spend, gain } from './seams.js';
-export { refreshDomains, refreshProvinces, refreshRealms, tradeYear };
+export { menOf, strength, battlePower, armiesOf, armiesAt, recruitWhy, recruit, newArmy, setOfficer, setOrder, orderSquad, squadsAt, disband, pathTo, march, atWar, armyLabel } from './army.js';
+export { reasonFor, declareWar, activeWars, sideOf, makePeace, termsFor, settleBattle, take, conquestSeason } from './war.js';
+export { claimPlot, worth, spend, gain, zoneClaimant, conquestRipens } from './seams.js';
+export { refreshDomains, refreshProvinces, refreshRealms, unitySeason, tradeYear };

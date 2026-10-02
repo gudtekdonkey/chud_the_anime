@@ -6,7 +6,7 @@ import { dominion as D, TIERS, tierName, lordName, holdingsOf, menOf, top } from
 
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 20);
 const count = {}; on('*', e => { if (e.type.startsWith('dom.') || e.type.startsWith('war.')) count[e.type] = (count[e.type] || 0) + 1; });
-const wars = [], tiers = []; on('war.peace', e => wars.push(e)); on('dom.tier', e => tiers.push(e));
+const wars = [], tiers = [], zoneHow = {}; on('war.peace', e => wars.push(e)); on('dom.tier', e => tiers.push(e)); on('dom.zone', e => { zoneHow[e.how] = (zoneHow[e.how] || 0) + 1; });
 let t0 = performance.now(); const L = generateWorld(seed, 0); console.log(`world ${seed}: made in ${(performance.now() - t0).toFixed(0)} ms (dominion set up with it)`);
 const d = () => D(L);
 
@@ -39,12 +39,13 @@ const s1 = snapshot();
 console.log(`\n== Land concentration ==\nindependent rulers ${s0.rulers} → ${s1.rulers}; realms ${s0.realms} → ${s1.realms}; domains ${s0.domains} → ${s1.domains}`);
 console.log(`the top 5 rulers held ${s0.top5} of the koku, now ${s1.top5}; the top 10 ${s0.top10} → ${s1.top10}`);
 console.log(`provinces with a holder ${s0.provincesHeld} → ${s1.provincesHeld}; zones held by force without title: ${s1.occ} of ${s1.held}`);
+console.log(`zones taken in war and held without title: ${Object.values(d().zt).filter(z => z.taken).length}; zone titles moved by ${Object.entries(zoneHow).map(([k, n]) => `${k} ${n}`).join(', ')}${d().united ? `; ONE LAND under ${lordName(L, d().united.ruler)}` : ''}`);
 
 console.log('\n== The biggest by koku (a ruler with his sworn vassals) ==');
 const big = Object.values(d().lords).filter(l => !l.gone && !l.liege && !l.outlaw && L.actors[l.id].alive && l.zones.length).sort((a, b) => b.kokuAll - a.kokuAll).slice(0, 10);
 for (const l of big) { const h = holdingsOf(L, l.id), a = L.actors[l.id], vass = Object.values(d().lords).filter(x => x.liege === l.id && !x.gone).length;
   console.log(`  ${String(Math.round(l.kokuAll)).padStart(6)} koku  ${nameOf(a)} (${L.cultures[a.culture]?.name ?? 'no culture'}): ${h.rank}${h.realm ? `, ${h.realm.name}` : ''}; ${l.zones.length} zones, ${h.domains.length} domains, ${h.provinces.length} provinces, ${vass} vassal lords, ${Object.values(d().armies).filter(x => top(L, x.lord) === l.id).reduce((s, x) => s + menOf(x), 0)} men`); }
-console.log('\n== The domains (han) by koku of their zones ==');
+console.log('\n== The domains by koku of their zones ==');
 const domK = m => m.zones.reduce((s, k) => s + (d().set[k] ? d().set[k].yield : 0), 0);
 for (const m of Object.values(d().dom).sort((a, b) => domK(b) - domK(a)).slice(0, 8)) console.log(`  ${String(Math.round(domK(m))).padStart(6)} koku  ${m.name}: ${m.zones.length} zones, held by ${lordName(L, m.holder)}${m.holder !== m.title ? ` (title: ${lordName(L, m.title)})` : ''}`);
 

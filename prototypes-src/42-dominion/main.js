@@ -1,7 +1,8 @@
 import { generateWorld, advance, calendar, zoneAt, tilesOf, TERRAIN, ZONE, PLOTS, PLOT, plotId, plotAt, ownerOf, nameOf, on, TIME } from '../../src/sim/index.js';
 import { dominion as D, key, unkey, top, lordName, lordOf, estatesOf, plotsHeld, holdingsOf, settlementAt, lordOfSettlement, nextNeeds, costOf, canPlace, prereq, plan, hire,
-  setTax, setLaw, appoint, officeQ, recruit, recruitWhy, armiesOf, menOf, march, setOrder, disband, claimPlot, plotChanged, worth, gain, activeWars,
+  setTax, setLaw, appoint, officeQ, recruit, recruitWhy, armiesOf, menOf, march, orderSquad, disband, claimPlot, plotChanged, worth, gain, activeWars,
   BUILDINGS, TIERS, tierName, LAWS, OFFICES, UNITS, ORDERS } from '../../src/sim/dominion/index.js';
+import { usesLots, lotsOf, lotsTaken } from '../../src/sim/dominion/build.js';
 
 // ---- prototype 42: the ronin on the world map, holding a few plots, building, growing a settlement, raising men; the realms over years ----
 const $ = id => document.getElementById(id);
@@ -55,6 +56,10 @@ function say(e) {
     case 'dom.recruit': if (e.actor === P) s = `${e.n} ${e.cls} join his host`; break;
     case 'dom.petition': case 'dom.riot': if (e.actor === P) s = `${e.name || zn(e.zone)}: ${t === 'dom.riot' ? 'riots' : 'a petition'} (${e.why || 'unrest'})`; break;
     case 'dom.desert': if (e.actor === P) s = `${e.n} men desert his host (unpaid or hungry)`; break;
+    case 'dom.zone': if (e.how === 'prescription' || e.how === 'court') s = `${zn(e.zone)} becomes ${who(e.holder)}'s on paper (${e.how === 'court' ? 'a court confirms him: no witness of the taking is left' : 'held three years with nobody left to claim it'})`; break;
+    case 'dom.united': s = `<b>${e.title}.</b> ${who(e.actor)} holds all ${e.provinces} provinces${e.realm ? ` as ${e.realm}` : ''}. The world goes on`; break;
+    case 'dom.divided': s = `The one land under ${who(e.actor)} breaks apart after ${e.years} years`; break;
+    case 'war.ready': if (e.squads && e.squads.length) s = `Battle at ${zn(e.zone)}: his ${e.squads.length} squad${e.squads.length > 1 ? 's' : ''} wait for his orders`; break;
     case 'dom.crewLeft': if (e.actor === P) s = 'His hired hands walk off: he could not pay them'; break;
   }
   if (!s) return;
@@ -125,6 +130,8 @@ function drawZone() {
     if (!b.at) continue;
     zg.globalAlpha = b.st === 'up' ? 1 : .35 + .5 * b.done / b.labour; zg.fillStyle = b.st === 'ruin' ? '#3a2a26' : FAM[B.fam]; zg.fillRect(b.at[0] * TZ, b.at[1] * TZ, B.w * TZ, B.h * TZ); zg.globalAlpha = 1;
     zg.strokeStyle = '#0b0d0e'; zg.strokeRect(b.at[0] * TZ + .5, b.at[1] * TZ + .5, B.w * TZ - 1, B.h * TZ - 1); }
+  if (usesLots(L, s, P)) { const taken = lotsTaken(L, s);   // a town he did not found: its set lots (he picks what, never where)
+    lotsOf(L, H.x, H.y).forEach((l, i) => { zg.strokeStyle = taken.has(i) ? '#0b0d0e88' : '#d9c9a0aa'; zg.setLineDash([2, 2]); zg.strokeRect(l.x * TZ + .5, l.y * TZ + .5, l.w * TZ - 1, l.h * TZ - 1); zg.setLineDash([]); }); }
   if (hover && BUILDINGS[pick].w !== 'ring') { const B = BUILDINGS[pick], ok = !canPlace(L, P, pick, H.x, H.y, hover[0], hover[1]);
     zg.fillStyle = ok ? '#6ff3e455' : '#e0737a55'; zg.fillRect(hover[0] * TZ, hover[1] * TZ, B.w * TZ, B.h * TZ); zg.strokeStyle = ok ? '#6ff3e4' : '#e0737a'; zg.strokeRect(hover[0] * TZ + .5, hover[1] * TZ + .5, B.w * TZ - 1, B.h * TZ - 1); }
 }
@@ -187,12 +194,12 @@ function armyPanel() {
       <div class="stat">Morale ${Math.round(a.morale * 100)}% · ${a.unpaid ? `<span class="bad">unpaid ${a.unpaid} days</span>` : 'paid'} · ${a.sq.reduce((t, q) => t + q.n * UNITS[q.cls].wage, 0)} mon a day</div>
       ${a.sq.map((q, i) => `<div class="row stat">${q.n} ${q.cls} · trained ${Math.round(q.tr * 100)}% · kit ${Math.round(q.eq * 100)}%<select data-a="${a.id}" data-i="${i}" aria-label="Order" style="margin-left:auto">${ORDERS.map(o => `<option ${q.order === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div>`).join('')}
       <div class="bar">${key(...a.at) !== hk ? `<button type="button" data-home="${a.id}">March home</button>` : ''}<button type="button" data-dis="${a.id}">Disband</button></div></div>`).join('') || '<p class="note">No men yet.</p>'}
-    <p class="note">Squad orders (hold, charge, follow, fall back) are for battles he is at; in the ledger they fight on their own.</p>`;
+    <p class="note">Each squad its own order (hold, charge, follow, fall back), kept until changed. In a battle he is at he gives them in a slowed moment; in the ledger a charge hits harder and bleeds more (×1.25, losses ×1.5), a fall back is spared (×0.5, losses ×0.4), follow counts only where he stands (×1.15), hold is as before.</p>`;
   $('r-ash').addEventListener('click', () => { const r = recruit(L, P, 'ashigaru', 5, hk); if (r.error) alertNote(r.error); a1Home(r); refresh(); });
   $('r-ron').addEventListener('click', () => { const r = recruit(L, P, 'ronin', 3, town.k); if (r.error) alertNote(r.error); else r.home = hk; refresh(); });
   for (const b of $('army').querySelectorAll('[data-home]')) b.addEventListener('click', () => { march(L, b.dataset.home, [H.x, H.y], 'march'); refresh(); });
   for (const b of $('army').querySelectorAll('[data-dis]')) b.addEventListener('click', () => { disband(L, b.dataset.dis); refresh(); });
-  for (const c of $('army').querySelectorAll('select[data-a]')) c.addEventListener('change', () => setOrder(L, c.dataset.a, +c.dataset.i, c.value));
+  for (const c of $('army').querySelectorAll('select[data-a]')) c.addEventListener('change', () => orderSquad(L, c.dataset.a, +c.dataset.i, c.value));
 }
 const a1Home = r => { if (r && !r.error) r.home = hk; };
 const alertNote = msg => { chron.unshift(`<div class="bad">${msg}</div>`); };
@@ -213,7 +220,7 @@ function status() {
   $('date').textContent = `Year ${c.year}, ${c.season} ${c.dayOfSeason}`;
   $('purse').innerHTML = `Purse <b>${m.ryo} ryō ${m.mon} mon</b>`;
   $('rank').innerHTML = `Rank <b>${hd.rank}</b>`;
-  $('world').innerHTML = `<b>${rulers}</b> rulers · <b>${Object.keys(d().realms).length}</b> realms · <b>${activeWars(L).length}</b> wars`;
+  $('world').innerHTML = `<b>${rulers}</b> rulers · <b>${Object.keys(d().realms).length}</b> realms · <b>${activeWars(L).length}</b> wars${d().united ? ` · <b>one land</b> under ${who(d().united.ruler)}` : ''}`;
 }
 function refresh() { status(); draw(); drawZone(); settlePanel(); buildList(); governPanel(); armyPanel(); lordsPanel(); $('chron').innerHTML = chron.join('') || '<div>Nothing yet.</div>'; }
 const days = n => { advance(L, n * 24); refresh(); };

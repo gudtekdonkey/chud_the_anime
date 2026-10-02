@@ -1,9 +1,10 @@
 import { zoneAt, emit } from '../ledger.js';
 import { ownerOf, plotId, PLOTS } from '../zone.js';
 import { nameOf } from '../actors.js';
+import { calendar } from '../time.js';
 import { N } from './data.js';
 
-// ---- The ladder of land: plot → estate → zone (mura) → domain (han) → province (kuni) → realm (docs/dominion.md section 1) ----
+// ---- The ladder of land: plot → estate → zone → domain → province → realm (English only, owner 2026-10-01) (docs/dominion.md section 1) ----
 // Each step has a title (on paper) and a holder (who has it now); raids and conquest move the holder, only lawful transfer moves a title.
 // Plots are the core's (L.plots / ownerOf). Estates are computed from the plots a person holds (they merge themselves). Zones, domains,
 // provinces and realms are records under L.sys.dominion (zt, dom, prov, realms).
@@ -53,8 +54,9 @@ export const lordName = (L, id) => !id ? 'nobody' : L.actors[id] ? nameOf(L.acto
 
 // ---- zones: a zone's title and holder. Every change goes through setZone, so each lord's zones / titles lists stay true ----
 export const zoneRec = (L, k) => D(L).zt[k] || null;
+const SUCCESSION = new Set(['heir', 'escheat', 'rose']);   // govern.js transferAll: the holder's line goes on
 export function setZone(L, k, { title, holder }, how) {
-  const d = D(L), z = d.zt[k] || (d.zt[k] = { title: null, holder: null }), was = { ...z };
+  const d = D(L), z = d.zt[k] || (d.zt[k] = { title: null, holder: null }), was = { title: z.title, holder: z.holder, since: z.since };
   if (title !== undefined && title !== z.title) { drop(L, z.title, 'titles', k); z.title = title; add(L, title, 'titles', k);
     const [x, y] = unkey(k), r = zoneAt(L, x, y).region; if (r >= 0 && !d.regZ[r].includes(k)) d.regZ[r].push(k); }
   if (holder !== undefined && holder !== z.holder) {
@@ -65,6 +67,8 @@ export function setZone(L, k, { title, holder }, how) {
       if (o.holder === old || (o.title && o.title === z.title)) {
         if (o.holder === holder) continue; (L.plots[pid] || (L.plots[pid] = { title: o.title, holder: o.holder })).holder = holder; } }
   }
+  // a conquest's record (z.taken, war.js take) lasts while the conqueror's line holds the land without its title (owner 2026-10-01, land B)
+  if (z.taken && (z.title === z.holder || !z.holder || (was.holder !== z.holder && !SUCCESSION.has(how)))) delete z.taken;
   // news when the title moves; a change of holder alone is told by the event that caused it (war.taken, dom.uprising, dom.succession, war.treaty)
   if (was.title !== z.title && how !== 'world') emit(L, 'dom.zone', { zone: unkey(k), title: z.title, holder: z.holder, was, how });
   return z;
@@ -109,7 +113,7 @@ export function estatesOf(L, id) {
 }
 const cap = s => s[0].toUpperCase() + s.slice(1);
 
-// ---- domains (han): a lord's titled zones within REACH of each other, joined under a named seat (a town or castle) ----
+// ---- domains: a lord's titled zones within REACH of each other, joined under a named seat (a town or castle) ----
 function clusters(keys) {
   const pts = keys.map(k => [k, ...unkey(k)]), used = new Uint8Array(pts.length), out = [];
   for (let s = 0; s < pts.length; s++) { if (used[s]) continue; used[s] = 1; const c = [s];
@@ -160,7 +164,7 @@ export function refreshDomains(L) {
   }
 }
 
-// ---- provinces (kuni): the world's 100 regions. Hold the seat and most of its lordly zones: the province is held;
+// ---- provinces: the world's 100 regions. Hold the seat and most of its lordly zones: the province is held;
 // hold the seat's title and most of the zones' titles: the province's title is yours (or it passes by treaty) ----
 export function refreshProvinces(L) {
   const d = D(L);
@@ -192,6 +196,29 @@ export function refreshRealms(L) {
   }
 }
 export const realmOf = (L, id) => { const t = top(L, id); return Object.values(D(L).realms).find(r => r.title === t) || null; };
+
+// ---- one land (owner 2026-10-01, D4B: unite, an epilogue, then go on): when one ruler's side holds every province, dom.united fires once
+// for that unification with what the game's epilogue screen needs ("Epilogue: the year of one land. Continue?"). The sim never stops:
+// uprisings, rebellious vassals and heirs keep the world moving, and dom.divided tells when the one land breaks. The pause is the game's ----
+export function unitySeason(L) {
+  const d = D(L); let ruler = null, n = 0;
+  for (const reg of L.regions) { if (!d.zt[key(...reg.seat)]) continue;   // a region with no lordly seat is no province
+    const p = d.prov[reg.id], t = p && p.holder && alive(L, p.holder) ? top(L, p.holder) : null;
+    if (!t || (ruler && t !== ruler)) { ruler = null; break; } ruler = t; n++; }
+  const u = d.united;
+  if (ruler && (!u || u.ruler !== ruler)) { d.unions = (d.unions || 0) + 1; d.united = { ruler, since: L.hour, n: d.unions }; emit(L, 'dom.united', epilogue(L, ruler, n)); }
+  else if (!ruler && u) { d.united = null; emit(L, 'dom.divided', { actor: u.ruler, years: +((L.hour - u.since) / (24 * 112)).toFixed(1), n: u.n }); }
+}
+// the summary for the epilogue: who, when, how much, and how he ruled (owner: tyrant, peaceful, or giving it back; people remember)
+function epilogue(L, ruler, provinces) {
+  const d = D(L), l = d.lords[ruler], a = L.actors[ruler], rm = realmOf(L, ruler), side = Object.values(d.lords).filter(x => !x.gone && alive(L, x.id) && top(L, x.id) === ruler);
+  const wars = Object.values(d.wars).filter(w => w.end && (w.a === ruler || w.d === ruler));
+  return { actor: ruler, player: ruler === L.player, n: d.unions, year: calendar(L.hour).year, title: 'Epilogue: the year of one land', provinces,
+    zones: side.reduce((t, x) => t + x.zones.length, 0), koku: Math.round(l ? l.kokuAll : 0), realm: rm ? rm.name : null, capital: rm ? L.regions[rm.capital].name : null,
+    seat: l && l.seat ? unkey(l.seat) : null, vassals: side.length - 1, karma: a.karma || 0, tax: l ? l.tax : null, laws: l ? Object.keys(l.laws) : [],
+    wars: { fought: wars.length, won: wars.filter(w => w.treaty && w.treaty.winner === ruler).length },
+    men: Object.values(d.armies).filter(x => alive(L, x.lord) && top(L, x.lord) === ruler).reduce((t, x) => t + x.sq.reduce((u, q) => u + q.n, 0), 0) };
+}
 
 // ---- everything one person holds, for a page or the HUD ----
 export function holdingsOf(L, id) {

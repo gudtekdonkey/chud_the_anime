@@ -1,12 +1,12 @@
 import { emit, zoneAt } from '../ledger.js';
 import { marry, ageOf } from '../actors.js';
-import { plotId } from '../zone.js';
+import { plotId, ownerOf } from '../zone.js';
 import { N, TRAIT, traitSum } from './data.js';
 import { D, key, unkey, alive, lordOf, setZone, top, sameSide, fealtyChanged, landOf, landOfKey } from './land.js';
 import { damage, passBuildings } from './build.js';
 import { officeQ, swearFealty } from './govern.js';
-import { menOf, strength, armiesAt, march, atWar, moveDay } from './army.js';
-import { addKarma, addStanding, gain, spend, worth, killActor, transferTitle } from './seams.js';
+import { menOf, strength, battlePower, orderOf, squadsAt, armiesAt, march, atWar, moveDay } from './army.js';
+import { addKarma, addStanding, gain, spend, worth, killActor, transferTitle, witnessesOf, conquestRipens } from './seams.js';
 
 // ---- War: a reason or a karma cost, campaigns along the roads, sieges, battles resolved in the ledger when he is absent, possession
 // changing hands, and peace treaties that transfer titles (cession, tribute, marriage, hostages, fealty) (docs/dominion.md section 6) ----
@@ -114,18 +114,18 @@ const generalF = (L, lord) => { const l = D(L).lords[lord], g = l && l.off.gener
 export function battle(L, w, A, B, k, r) {
   const d = D(L), [x, y] = unkey(k), z = zoneAt(L, x, y), ground = d.zt[k] && d.zt[k].holder;
   if (A.concat(B).some(a => a.lord === L.player) && L.actors[L.player].at && key(...L.actors[L.player].at) === k) {
-    const p = d.pending[k]; if (!p) { d.pending[k] = { war: w.id, h: L.hour }; emit(L, 'war.ready', { war: w.id, zone: [x, y] }); return; }
+    const p = d.pending[k]; if (!p) { d.pending[k] = { war: w.id, h: L.hour }; emit(L, 'war.ready', { war: w.id, zone: [x, y], squads: squadsAt(L, L.player, k) }); return; }
     if (L.hour - p.h < 24) return; delete d.pending[k];
   }
   const s = d.set[k], hold = side => ground && sameSide(L, ground, side === 'a' ? w.a : w.d) ? (TERRAIN[z.biome] || 1) * (1 + (s ? s.walls * .3 : 0)) : 1;
-  const pa = A.reduce((t, a) => t + strength(L, a), 0) * generalF(L, A[0].lord) * hold('a'), pb = B.reduce((t, a) => t + strength(L, a), 0) * generalF(L, B[0].lord) * hold('d');
+  const pa = A.reduce((t, a) => t + battlePower(L, a, k), 0) * generalF(L, A[0].lord) * hold('a'), pb = B.reduce((t, a) => t + battlePower(L, a, k), 0) * generalF(L, B[0].lord) * hold('d');
   return fight(L, w, A, B, k, pa, pb, r);
 }
 function fight(L, w, A, B, k, pa, pb, r, { siege = false } = {}) {   // A: the attacker's side, B: the defender's
   const win = r.next() < pa * pa / (pa * pa + pb * pb + 1e-9) ? 'a' : 'd';
   const [W, Lo, pw, pl] = win === 'a' ? [A, B, pa, pb] : [B, A, pb, pa];
   const fierce = 1 + .15 * Math.min(1, traitSum(L.actors[A[0].lord], TRAIT.bold) + traitSum(L.actors[B[0].lord], TRAIT.bold));
-  const lw = hurt(L, W, Math.min(.5, (.06 + .2 * pl / (pw + 1e-9)) * fierce), r), ll = hurt(L, Lo, Math.min(.9, (.3 + .3 * r.next()) * fierce), r);
+  const lw = hurt(L, W, Math.min(.5, (.06 + .2 * pl / (pw + 1e-9)) * fierce), r, k), ll = hurt(L, Lo, Math.min(.9, (.3 + .3 * r.next()) * fierce), r, k);
   for (const a of W) a.morale = Math.min(1, a.morale + .15);
   for (const a of Lo) { a.morale = Math.max(0, a.morale - .3); if (D(L).armies[a.id] && !siege) march(L, a.id, unkey(a.home), 'home'); }
   lordOf(L, W[0].lord).glory = (lordOf(L, W[0].lord).glory || 0) + 1;
@@ -136,11 +136,11 @@ function fight(L, w, A, B, k, pa, pb, r, { siege = false } = {}) {   // A: the a
     d: { lord: B[0].lord, men: B.reduce((t, a) => t + menOf(a), 0) + ld, lost: ld }, siege });
   return win;
 }
-// losses spread over the squads; an officer can fall with his men
-function hurt(L, armies, frac, r) {
+// losses spread over the squads, each by its order (a charge bleeds, a fall back is spared); an officer can fall with his men
+function hurt(L, armies, frac, r, zk = null) {
   let lost = 0;
   for (const a of armies) { if (!D(L).armies[a.id]) continue;
-    for (const q of a.sq) { const k = Math.round(q.n * frac * r.range(.8, 1.2)); q.n -= Math.min(q.n, k); lost += Math.min(q.n + k, k);
+    for (const q of a.sq) { const f = zk ? Math.min(.95, frac * orderOf(L, a, q, zk).loss) : frac, k = Math.round(q.n * f * r.range(.8, 1.2)); q.n -= Math.min(q.n, k); lost += Math.min(q.n + k, k);
       if (q.off && r.chance(frac * .4)) { killActor(L, q.off, 'battle'); emit(L, 'war.fallen', { actor: q.off, army: a.id }); q.off = null; } }
     a.sq = a.sq.filter(q => q.n > 0); if (!a.sq.length) delete D(L).armies[a.id]; }
   return lost;
@@ -159,7 +159,7 @@ function siegeDay(L, a, r) {
   const store = N.SIEGE_STORE + (s.cnt.granary || 0) * 30 + s.store * 2, starving = a.siegeDays > store;
   const garrison = Math.max(1, s.pop * .1 * .5 * (starving ? Math.max(.2, 1 - (a.siegeDays - store) * .05) : 1)) + armiesAt(L, k).filter(x => x.lord !== a.lord && sameSide(L, x.lord, z.holder)).reduce((t, x) => t + strength(L, x), 0);
   const shin = a.sq.filter(q => q.cls === 'shinobi').reduce((t, q) => t + q.n, 0);
-  const walls = 1 + s.walls * .6 / (1 + Math.min(1, shin * .15)), pa = strength(L, a) * generalF(L, a.lord), pd = garrison * walls;
+  const walls = 1 + s.walls * .6 / (1 + Math.min(1, shin * .15)), pa = battlePower(L, a, k) * generalF(L, a.lord), pd = garrison * walls;
   if (pa > pd * 1.5 || (starving && pa > pd) || a.siegeDays > 60) {   // storm it
     if (r.next() < pa * pa / (pa * pa + pd * pd)) { emit(L, 'war.assault', { war: w.id, zone: unkey(k), actor: a.lord, held: false }); take(L, w, k, a.lord, r); }
     else { a.morale = Math.max(0, a.morale - .1); for (const q of a.sq) q.n = Math.max(0, q.n - Math.ceil(q.n * .12)); a.sq = a.sq.filter(q => q.n > 0);
@@ -174,6 +174,8 @@ export function take(L, w, k, lord, r) {
   const a = Object.values(d.armies).find(x => x.siege === k); if (a) a.siege = null;
   if (s) { s.siege = null; s.hit = L.hour; s.unrest = Math.min(1, s.unrest + .3); gain(L, lord, s.pop * 15); s.pop = Math.round(s.pop * .85);
     for (const id of s.b) if (r.chance(.15)) damage(L, id, r.range(.3, 1), 'sack'); }
+  // a conquest no treaty cedes is held but contested until the crime lane's rule passes its title (land B: index.js, seams.js conquestRipens)
+  if (w && z.title && !sameSide(L, z.title, lord) && !d.lords[lord]?.outlaw) z.taken = { h: L.hour, by: lord, from, war: w.id, wit: witnessesOf(L, k, lord, r) };
   if (w) { w.taken.push(k); w.score = Math.max(-100, Math.min(100, w.score + (sideOf(L, w, lord) === 'a' ? 1 : -1) * (k === w.goal ? 30 : 15))); }
   if (from) { const lf = lordOf(L, from); lf.grudges[lord] = +Math.min(1, (lf.grudges[lord] || 0) + .3).toFixed(2); }
   emit(L, 'war.taken', { war: w ? w.id : null, zone: unkey(k), name: s ? s.name : null, from, to: lord, title: z.title });
@@ -249,6 +251,17 @@ function endWar(L, w, how, t) {
   for (const a of Object.values(d.armies)) if (a.siege) { const z = d.zt[a.siege]; if (!z || !atWar(L, a.lord, z.holder)) { const s = d.set[a.siege]; if (s) s.siege = null; a.siege = null; march(L, a.id, unkey(a.home), 'home'); } }
   emit(L, 'war.peace', { war: w.id, a: w.a, d: w.d, how, score: Math.round(w.score), days: Math.round((L.hour - w.started) / 24) });
 }
+// every season: conquered land that no treaty ceded passes to its holder by the crime lane's rule (owner 2026-10-01, land B): time, when
+// nobody of the old lord's line is left to claim it, or a court, when no witness of the taking is left. The zone's title and its lord's
+// own plots pass (crime's passTitle when crime runs); vassals keep theirs. Until then it stays held but contested
+export function conquestSeason(L, r) {
+  const d = D(L);
+  for (const k in d.zt) { const z = d.zt[k]; if (!z.taken) continue;
+    const how = conquestRipens(L, z, r); if (!how) continue;
+    const old = z.title, to = z.holder, [x, y] = unkey(k);
+    setZone(L, k, { title: to }, how);   // first, so dom.zone tells it (how: prescription | court), not the plots' zone rule
+    for (let n = 0; n < 16; n++) { const pid = plotId(x, y, n), o = ownerOf(L, pid); if (o.title === old && !d.vas[o.title]) transferTitle(L, pid, to, how); } }
+}
 // tribute is paid each season; a lord who cannot pay earns a grudge and a reason for war
 export function tributeSeason(L) {
   for (const l of Object.values(D(L).lords)) { l.tribute = l.tribute.filter(t => t.left > 0 && alive(L, t.to));
@@ -258,7 +271,7 @@ export function tributeSeason(L) {
 export function settleBattle(L, k, winner, lossA = .1, lossD = .4, r) {
   const d = D(L), p = d.pending[k]; if (!p) return null; const w = d.wars[p.war]; delete d.pending[k];
   const list = Object.values(d.armies).filter(a => key(...a.at) === k), A = list.filter(a => sideOf(L, w, a.lord) === 'a'), B = list.filter(a => sideOf(L, w, a.lord) === 'd');
-  hurt(L, A, lossA, r); hurt(L, B, lossD, r); w.score += winner === 'a' ? 15 : -15;
+  hurt(L, A, lossA, r, k); hurt(L, B, lossD, r, k); w.score += winner === 'a' ? 15 : -15;   // spread by each squad's order
   for (const a of (winner === 'a' ? B : A)) if (d.armies[a.id]) march(L, a.id, unkey(a.home), 'home');
   emit(L, 'war.battle', { war: w.id, zone: unkey(k), winner: winner === 'a' ? w.a : w.d, live: true });
   return w;

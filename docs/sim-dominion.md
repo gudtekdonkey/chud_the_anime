@@ -14,18 +14,18 @@ The dominion lane: the land ladder, settlements that grow, building, governing, 
 | File | Owns |
 |---|---|
 | `index.js` | The system (the day, season and year steps), the listeners for other lanes' events, the public API (re-exports) |
-| `data.js` | `LADDER`, `TIERS`, `BUILDINGS`, `UNITS`, `LAWS`, `OFFICES`, `ORDERS`, `TRAIT` (traits that bear on ruling and war), `N` (every other number) |
+| `data.js` | `LADDER`, `TIERS`, `BUILDINGS`, `UNITS`, `LAWS`, `OFFICES`, `ORDERS`, `ORDER` (what each order does), `TRAIT` (traits that bear on ruling and war), `N` (every other number) |
 | `seams.js` | Every stand-in for another lane, one function each (see "Seams") |
-| `land.js` | The ladder: lords, zone titles (`setZone`), the zone rule, estates, domains, provinces, realms, `holdingsOf`, `rankOf`, the chain of fealty (`top`), islands (`landOf`) |
+| `land.js` | The ladder: lords, zone titles (`setZone`), the zone rule, estates, domains, provinces, realms, one land (`unitySeason`, `dom.united`), `holdingsOf`, `rankOf`, the chain of fealty (`top`), islands (`landOf`) |
 | `settle.js` | Settlements: tiers, people, the season's tax, food, trade, unrest and loyalty, petitions, riots, uprisings, household vassals, trade between towns |
-| `build.js` | Buildings: recipe-shaped costs, placement by footprint, construction by work, hired hands, damage, repair, upkeep |
+| `build.js` | Buildings: recipe-shaped costs, placement by footprint or on a town's lots (`usesLots`, `lotsOf`, `lotsTaken`, `freeLot`), construction by work, hired hands, damage, repair, upkeep |
 | `govern.js` | Offices (quality and honesty), tax, laws, fealty and vassal lords' loyalty, succession |
-| `army.js` | Armies: recruiting, squads, officers, orders, pay and food, desertion, training, equipment, paths along the roads, marching |
-| `war.js` | Reasons for war, declaring, what armies do in a war, battles, sieges, taking possession, raids, peace and treaties, tribute |
+| `army.js` | Armies: recruiting, squads, officers, each squad's order (`orderSquad`, `battlePower`, `squadsAt`), pay and food, desertion, training, equipment, paths along the roads, marching |
+| `war.js` | Reasons for war, declaring, what armies do in a war, battles, sieges, taking possession, raids, peace and treaties, tribute, conquered land's title by the crime lane's rule (`conquestSeason`) |
 | `ai.js` | NPC lords' choices: tax, laws, building, the army's size, war, fealty, rebellion; outlaw chiefs' raids |
 | `init.js` | The world as dominion first finds it |
 
-## The ladder (defaults 1: English names with the Japanese in brackets)
+## The ladder (owner 2026-10-01, D1C: English names only)
 
 Every step has a **title** (on paper) and a **holder** (who has it now). Conquest, raids and uprisings move the holder; only lawful transfer (treaty, inheritance, grant, the crime lane's rules) moves a title.
 
@@ -33,9 +33,9 @@ Every step has a **title** (on paper) and a **holder** (who has it now). Conques
 |---|---|---|
 | Plot | the core's `L.plots` / `ownerOf` | claimed by the land lane (prototype 42 stands in with `claimPlot`) |
 | Estate | computed by `estatesOf(L, id)`, never stored: `{ id, plots, zones, name }` | the plots a person holds, merged where they touch (across zone edges too). Emits `dom.estate` when a plot joins one |
-| Zone (*mura*) | `L.sys.dominion.zt["x,y"] = { title, holder, since }` | hold the title of all 16 plots (a vassal's plot counts for his liege): `checkZoneTitle`. At world start every town, village and fort zone is its region lord's, camps are held by their chief with no title |
-| Domain (*han*) | `dom[id] = { id, name, seat, zones, title, holder, founded }` | two or more titled zones within `N.REACH` (6 zones, Chebyshev) of each other, joined under a seat of town tier or more. The ronin founds his with `foundDomain` (a choice; `dom.domainReady` tells him when he can); NPC lords found theirs at once. The domain's title follows the seat's zone title; its zones are the titled zones clustered round the seat; two domains of one lord in one cluster merge |
-| Province (*kuni*) | `prov[regionId] = { title, holder }` | held by whoever holds the region's seat and more than half its lordly zones; its title by whoever holds the seat's title and more than half the zones' titles (otherwise the title stays where it was) |
+| Zone | `L.sys.dominion.zt["x,y"] = { title, holder, since, taken? }` (`taken`: below, "Conquered land") | hold the title of all 16 plots (a vassal's plot counts for his liege): `checkZoneTitle`. At world start every town, village and fort zone is its region lord's, camps are held by their chief with no title |
+| Domain | `dom[id] = { id, name, seat, zones, title, holder, founded }` | two or more titled zones within `N.REACH` (6 zones, Chebyshev) of each other, joined under a seat of town tier or more. The ronin founds his with `foundDomain` (a choice; `dom.domainReady` tells him when he can); NPC lords found theirs at once. The domain's title follows the seat's zone title; its zones are the titled zones clustered round the seat; two domains of one lord in one cluster merge |
+| Province | `prov[regionId] = { title, holder }` | held by whoever holds the region's seat and more than half its lordly zones; its title by whoever holds the seat's title and more than half the zones' titles (otherwise the title stays where it was) |
 | Realm | `realms[id] = { id, name, title, holder, capital, provinces, founded }` | a ruler (a lord with no liege) whose own and sworn vassals' province titles number two or more. Its holder is whoever's side holds the capital province |
 
 **Rank is koku:** `lord.koku` is the yearly koku of the settlements he holds; `lord.kokuAll` adds his sworn vassal lords' (the rank shown, "a lord of 10,000 koku").
@@ -92,7 +92,7 @@ Fields: `k, x, y, name, region, culture, founder, tier (-1 none .. 5), pop, b (b
 - People move toward room × appeal (with the people lane, only the nameless part; see the `migrate` seam): appeal = 1 − unrest × 0.5 − hunger × 0.8 − 0.3 if lately raided + markets (+0.08) and inns (+0.04) − the toll law; growth about 0.5% a season; a small place (under 40) with appeal over 0.6 draws 1–3 settlers a season; above the target, a quarter of the excess leaves each season.
 - Recruits this season: ashigaru 12% of the people (24% under conscription); retainers 2% of a village or more (+2 at a seat); ronin 2 + 2% where there is an inn (+2 with amnesty); monks 4 with a temple; one shinobi in a town.
 - Trouble: unrest over 0.5 opens a petition (`dom.petition`, once until it falls below 0.4); over 0.65 (less with curfew or a weapon ban) a riot is 35% likely (a building damaged, half tax for a season); over 0.8 with loyalty under 0.35 an uprising is 50% likely.
-- **Uprisings (default 5: possession, never title):** land held by force rises for its lord on paper (possession returns to him); otherwise the least loyal vassal household (or a new rebel) takes possession, with 15% of the people as rebels (half with a weapon ban). The title never moves.
+- **Uprisings (owner, D5A: possession, never title):** land held by force rises for its lord on paper (possession returns to him); otherwise the least loyal vassal household (or a new rebel) takes possession, with 15% of the people as rebels (half with a weapon ban). The title never moves.
 
 Lords keep a year of rice for their men (+10 koku) and sell 80% of the rest each season at the rice price of their seat's region.
 
@@ -114,7 +114,9 @@ Lords keep a year of rice for their men (+10 koku) and sell 80% of the rest each
 
 Every row in `BUILDINGS` has footprint, cost (timber, stone, iron, tiles, mon), labour-days, the tier it needs, the buildings it needs, workers to run it, upkeep (2% of its mon a season) and its effects. Materials are bought at 30 / 40 / 200 / 15 mon a unit (stand-in prices).
 
-- **Placement (default 3: anywhere on tiles he holds, by footprint):** every tile on a plot he holds, not blocked by a feature (forest, bamboo, rock, water, marsh or anything built blocks until the land lane's clearing), on the right ground, not on another building. Walls and palisades run round the settlement and need the settlement's ruler.
+- **Placement (owner 2026-10-01, D3C: free on his plots, lots in towns he takes):** on plots he holds, by footprint: every tile on a plot he holds, not blocked by a feature (forest, bamboo, rock, water, marsh or anything built blocks until the land lane's clearing), on the right ground, not on another building. Walls and palisades run round the settlement and need the settlement's ruler.
+- **Lots** (`usesLots(L, s, who)`): a settlement in a zone worldgen made a town, village, fort or camp, or one founded by someone else (`s.founder !== who`: a settlement he took), is built on its set lots. He chooses what goes in a lot, never where: `canPlace` takes only a free lot's top-left tile, the building must fit the lot, and its tiles must still be clear and of the right ground; the settlement's ruler needs no plot there, anyone else must hold the lot's plots. NPC lords build on lots too: `plan(..., { at: false })` puts the building on the smallest free lot it fits, nearest the middle (`freeLot`), and gives it that lot's tiles (`at`); a town with no free lot of that size builds no more of it ("no free lot it fits"). The buildings that stand when the world begins are put on lots the same way (6,549 of 6,549 on seed 12345).
+- **The layout** (`lotsOf(L, zx, zy)`, derived from the seed and the zone, a cache like `tilesOf`, never ledger state): 4 × 4 cells on a 5-tile grid (`N.LOT_PITCH`; a 1-tile lane between), the middle row and column left as lanes (where roads run); the centre's 2 × 2 cells are one 9 × 9 lot kept for a castle keep; about 18% of cells join their right neighbour (9 × 4: temple, manor, longhouse, barracks), and over half the cells near the middle halve into two 4 × 2 lots (homes). About 120 lots a zone (seed 12345's biggest town: 1 keep, 15 large, 69 whole, 36 half lots). A lot is taken while a building's footprint covers any of it (`lotsTaken`), ruins included. A save from before lots keeps its old buildings without tiles (`at: null`), so they take no lot.
 - **Construction by work, continuing while he is away:** the settlement's corvée (5% of its people a day, shared among its lord's builds, × the steward: 0.8–1.2) plus hired hands (8 mon a day each; unpaid hands walk off: `dom.crewLeft`). His buildings and any with hired hands move daily; an NPC lord's corvée is counted a week at a time.
 - **Damage:** riots, raids and sacks. Below half health a building stops counting; at 0 it is a ruin. **Repair** costs half its labour for the damage and 10% (30% for a ruin) of its price. Unpaid upkeep wears buildings 10% a season.
 
@@ -142,7 +144,7 @@ Every row in `BUILDINGS` has footprint, cost (timber, stone, iron, tiles, mon), 
 - **Strength** = Σ men × class strength × (0.5 + training) × (0.6 + 0.4 × equipment), × (0.5 + morale), × 0.7 when out of food.
 - **Every day** (a week at a time for an army at rest): it eats its lord's rice in friendly land (refilling 30 days' supply) or its own supply elsewhere; it is paid from his purse. Unpaid, morale falls 0.02 a day; hungry, 0.04. After 7 days unpaid or 3 hungry, 3% of each squad a day deserts (retainers last); after 30 days unpaid deserters go to the hills (`dom.desert` with `bandits`).
 - **Training** at home: 0.0008 a day + a dojo's 0.004 + a barracks' 0.002, × the general (0.8–1.2); up to 0.95. **Equipment:** 0.002 a day per smithy in his land (up to three), up to 0.5 + 0.15 per smithy.
-- **Squads and officers:** `setOfficer`, and `setOrder` with hold, charge, follow, fall back (default 2: the orders he gives when he is at the battle; the ledger ignores them).
+- **Squads and officers:** `setOfficer`. **Each squad its own order** (owner 2026-10-01, D2C): `orderSquad(L, armyId, squadIdx, order)` (`setOrder` is the same function, the old name) stores it on the squad (`sq[i].order`), and the squad keeps it as its standing order. Battles read it (`battlePower`, and the losses in `hurt`), from `ORDER` in `data.js`: hold ×1 (as before; every NPC squad holds, so NPC battles are unchanged), charge strength ×1.25 and losses ×1.5, follow ×1.15 only where he stands in the battle's zone (otherwise it holds), fall back ×0.5 and losses ×0.4. In a battle he is at, he gives them in the game's slowed or paused moment (`docs/dominion.md` section 6: the game's job); `war.ready` lists his squads there and their orders (`squadsAt`).
 - **Marching:** weighted A* over zones (roads 0.35, plains 1, hills 2.5, mountains 6, sea impassable), 3 zones a day on a road, 1.5 off it, 25% faster with a stable at home; armies stay on their own island.
 
 ## War
@@ -153,13 +155,15 @@ Every row in `BUILDINGS` has footprint, cost (timber, stone, iron, tiles, mon), 
 - **NPC choice** (every 28 days, at peace): among rulers holding land in his and neighbouring regions on his island, he declares if his side is stronger by 1.6 × (−0.4 per boldness, −0.25 with a reason, +0.4 per kindness, +0.6 without a reason), estimating their strength better the cleverer he is; 30% likely with a reason, 10% without. A weak lord (under 30% of a neighbour, under 400 koku, not proud) may swear fealty instead.
 - **Campaigns** (orders every 3 days, an army that holds thinks again in 9): drive out invaders in his land (if strong enough), retake his land held by the enemy, else the attacker marches on the goal or the nearest enemy settlement (within 40 zones), and the weaker defender holds at home.
 - **Battles in the ledger** (he is absent): each side's strength × its general (0.85–1.15) × terrain for the side holding the ground (hills 1.25, mountains 1.4, forest and bamboo 1.15, marsh 1.1) × (1 + walls × 0.3). The attacker wins with p = a² / (a² + d²). The loser loses 30–60%, the winner 6–26% (scaled by the loser's strength); bold generals make both bloodier. Officers can fall (`war.fallen`). The loser marches home; morale +0.15 / −0.3; score ± (10 + losses / 5, up to 20).
-- **He is there:** when one of the armies is his and he stands in the zone, the battle waits a day (`war.ready`) for the game's live fight to report back through `settleBattle(L, zone, 'a' | 'd', lossA, lossD, r)`; otherwise the ledger fights it.
+- **He is there:** when one of the armies is his and he stands in the zone, the battle waits a day (`war.ready`, with `squads`: his squads there and their orders, for the game's order screen) for the game's live fight to report back through `settleBattle(L, zone, 'a' | 'd', lossA, lossD, r)` (the losses spread over the squads by their orders); otherwise the ledger fights it, each squad by its order. A storming army's squads count by their orders too.
 - **Sieges:** the garrison is a tenth of the people at half strength (plus friendly armies) behind walls × (1 + walls × 0.6, less with shinobi). Stores last 30 days + 30 a granary + the granary's koku; then the garrison starves 5% a day. The besiegers forage (+0.5 days of food a day) and storm when 1.5× stronger, or stronger and the town starves, or after 60 days; a failed assault costs 12%. Hungry besiegers lift the siege.
 - **Taking possession** (`war.taken`): the zone's holder changes, never its title; its lord's own plots follow, vassals keep theirs; plunder (15 mon a person), 15% of buildings sacked, 15% of the people flee, unrest +0.3, a grudge.
 - **Raids** (outlaws, weekly-ish, on settlements within 8 zones): plunder (8 mon a person, 200 more without a storehouse); a raid 2.5× stronger than the defence on a hamlet or smaller seizes it.
 - **Peace** (weekly): score ≥ 60 (or the loser's armies under 15% with score > 20) ends the war in a treaty; after 3 years, exhaustion (no transfers: occupied land stays held but contested). With him in the war, the winner's offer (`war.peaceOffered`) waits two weeks for his own terms through `makePeace`.
 - **Treaties** `termsFor` → `makePeace(L, warId, { winner, loser, cede, tribute, hostage, marriage, vassal })`: cession of the zones he took that are the loser's on paper (titles pass; a good envoy keeps one); tribute of 10% of the loser's wealth a season for a year (less with a good envoy); a hostage (the loser's grown child moves to the winner's seat); a marriage between their children; fealty from a loser under 35% of the winner's koku. Everything else taken goes back to its lord on paper. Unpaid tribute is a grudge.
-- **Possession ripens:** a zone nobody holds on paper (a camp, a lordless village) becomes its holder's after two years held (not an outlaw's). The crime lane decides the real rule.
+- **Possession ripens:** a zone nobody holds on paper (a camp, a lordless village) becomes its holder's after two years held (three with the crime lane: its prescription) (not an outlaw's).
+- **Conquered land** (owner 2026-10-01, land B: the crime lane's rule): a zone taken in a war (`war.taken`, not by an outlaw, from a title holder of the other side) keeps `zt[k].taken = { h, by, from, war, wit }`: when, by whom, from whom, and up to five witnesses of the taking (grown people living there, crime's `LAND.WITNESS_KEEP` and `K.ADULT`). Each season (`conquestSeason`, through `seams.js conquestRipens`) its title passes to its holder by **prescription** when it has been held 3 years (`LAND.PRESCRIPTION_YEARS`) with nobody alive to claim it (the title holder, or his heir: crime's claimant, `zoneClaimant`), or by **court** when the claimant sues (`LAND.COURT`, 10% a season) after 3 years held (`LAND.COURT_YEARS`) and no witness of the taking is alive. The zone's title and its old lord's own plots pass (crime's `passTitle` when crime runs; vassals keep theirs); `dom.zone` tells it with `how: 'prescription' | 'court'`. While the old lord's line and a witness live, the land stays held but contested, so claim wars keep a reason. `taken` goes when the zone's title and holder meet again (a treaty, an uprising for its lord, a retaking) or the holder changes other than by succession (the conqueror's heir keeps the clock). Alone the same rule runs on crime's numbers and dominion's heirs; nobody but lords dies alone, so witnesses outlive it and the court almost never sits (the 20-year test moves no title this way); with every lane the people die and it does (seed 12345, 12 years: 14 by court, 5 by prescription).
+- **One land** (owner 2026-10-01, D4B): each season (`unitySeason`), when every province (a region with a lordly seat) has a holder and all of them answer to one ruler, `dom.united` fires once for that unification with the epilogue's summary; `L.sys.dominion.united = { ruler, since, n }` while it lasts (it passes to his heir in a succession, with no second epilogue) and `unions` counts them; when it breaks, `dom.divided`. The sim never stops: uprisings, rebellious vassals and heirs keep the world moving. The pause and the screen ("Epilogue: the year of one land. Continue?") are the game's. No test world unites in 20 years (outlaw camps and islands hold out).
 
 ## Events
 
@@ -167,7 +171,9 @@ Every row in `BUILDINGS` has footprint, cost (timber, stone, iron, tiles, mon), 
 
 | Event | Data |
 |---|---|
-| `dom.zone` | `zone, title, holder, was, how`: a zone's title moved (holder-only changes are told by the event that caused them) |
+| `dom.zone` | `zone, title, holder, was, how`: a zone's title moved (holder-only changes are told by the event that caused them). `how` adds `prescription` and `court` (conquered land) |
+| `dom.united` | `actor (the ruler), player, n (which unification), year, title ('Epilogue: the year of one land'), provinces, zones, koku, realm, capital, seat, vassals, karma, tax, laws, wars: { fought, won }, men`: once per unification |
+| `dom.divided` | `actor, years, n`: the one land broke |
 | `dom.estate` | `actor, plots, zone, name` |
 | `dom.domain` | `domain, name, zone, actor, how` (founded, grew, shrank, passed, merged, dissolved), `zones` |
 | `dom.domainReady` | `actor, zone`: he can found a domain |
@@ -187,7 +193,7 @@ Every row in `BUILDINGS` has footprint, cost (timber, stone, iron, tiles, mon), 
 | `war.battle` | `war, zone, winner, a: { lord, men, lost }, d, siege, live?` |
 | `war.fallen` | `actor, army` |
 | `war.taken`, `war.raid` | `war, zone, name, from, to, title` / `actor, won, loot, seized` |
-| `war.ready`, `war.peaceOffered` | `war, zone` / `war, winner` |
+| `war.ready`, `war.peaceOffered` | `war, zone, squads: [{ army, i, cls, n, off, order }]` / `war, winner` |
 | `war.peace`, `war.treaty` | `war, a, d, how, score, days` / `winner, loser, cede, tribute, hostage, marriage, vassal` |
 
 About 850 events a year on the test world alone (`scripts/dominion-sim.mjs` prints the counts), about 2,000 with every lane (people's deaths make successions, crime's titles move zones). The core's `LOG_CAP` went from 4,000 to 5,000 when dominion joined `scripts/sim-all.mjs`, so the log still spans what it did (about 0.4–0.5 of a year).
@@ -217,6 +223,7 @@ Each is one function. Economy, people and crime have landed (2026-10-01): each s
 | `mortality(L, actor, r)` | people | off while the people lane runs | yearly 1% (<40), 3% (<55), 7% (<65), 15% |
 | `migrate(L, s, target, appeal)` | people | **wired**: where the people lane keeps the place (`L.sys.people.settle`), `pop` = its ledger count as it stands + the nameless, and only the nameless drift toward the target less the ledger count (`s.named` remembers last season's ledger part). The people lane's births, deaths, moves and newcomers are counted once, by it; dominion's appeal still moves the nameless. A place it does not keep (founded on wild plots): all of it as alone | growth 0.5% a season × appeal, a few settlers to a small good place, a quarter of the excess leaves |
 | `transferTitle(L, plot, to, how)`, `ripens(L, zone)` | crime | **wired**: crime's `passTitle` (holds, claims, the contested record, `crime.title`); a zone with no title ripens after crime's `LAND.PRESCRIPTION_YEARS` (3) held | set the plot's title; two years held |
+| `zoneClaimant(L, z)`, `conquestRipens(L, z, r)`, `witnessesOf(L, k, not, r)` | crime | **wired** (land B): crime's claimant (`heirOf` from `crime/land.js`), its prescription and court rule and numbers (`LAND`, `K.ADULT`) on conquered zones | the same rule and numbers, dominion's `heirOf` |
 | `addKarma`, `addStanding` | crime | **wired**: crime's (clamped to −100..100 and −1..1; standing drifts back to karma) | edit `actor.karma` / `actor.standing` |
 | `blocked`, `tileGround` | land | no lane yet | forest, bamboo, rock, water, marsh and built tiles block |
 | `claimPlot(L, plot, who)` | land | no lane yet | a nature plot becomes his (prototype 42 only) |
@@ -238,15 +245,22 @@ Dominion builds no claiming and no recipes itself; `plan(..., { pay: true })` (b
 - `region.lord` follows succession; `actor.lord` (the region id) passes to the heir; `actor.job` 'lord' passes too.
 - `actor.hostage` (the lord who holds them) and `actor.home` (moved to his seat); `actor.cause` on a death by the stand-in.
 - New actors: rebel leaders of uprisings and new lords of families that rise (`makeActor`).
-- `L.ids.b`, `L.ids.army`, `L.ids.war`, `L.ids.han`, `L.ids.realm`.
+- `L.ids.b`, `L.ids.army`, `L.ids.war`, `L.ids.han` (the domains' ids keep their old prefix, `han1`…, so saves still load; only names are English), `L.ids.realm`.
 
 ## Cost
 On the test world (seed 12345, 100 regions, ~180 lords and outlaw chiefs, ~180 armies, ~440 settlements) a game day costs about 1.7–1.9 ms on average on the cloud container this was built on (a 2.1 GHz Xeon VM, where `generateWorld` takes ~330 ms against the ~230 ms in `docs/sim-core.md`): about 1.3 ms for the daily step, 0.4 for the seasons, 0.2 for the years. It was 17 ms before tuning. Idle armies and NPC construction settle weekly, lords decide every 14 days (7 at war) and weigh war every 28, and every per-hour index (armies by lord and zone, side strength, chains of fealty, seats, occupied zones) is a derived cache outside the ledger. After 20 years dominion's state is ~2.5 MB of the save (mostly ~10,000 building records).
 
-With every lane loaded (`scripts/sim-all.mjs`, 5 years, seeds 12345 and 777) dominion costs about 1.1 ms a game day at the core's reference speed; the seams add little (the economy's `plotKoku` is cached per zone).
+With every lane loaded (`scripts/sim-all.mjs`, 5 years, seeds 12345 and 777) dominion costs about 1.1 ms a game day at the core's reference speed; the seams add little (the economy's `plotKoku` is cached per zone). The owner's answers of 2026-10-01 add about 0.1–0.2 ms a game day alone (2.1 → 2.3–2.5 ms on this container: the seasonal home index for witnesses, the lots an NPC lord's building looks through, and a world that now takes another course); with every lane 1.2–1.4 ms.
 
-## Open, for the owner
-The five defaults in `docs/dominion.md` still stand until the owner answers: (1) English names with the Japanese in brackets, (2) simple orders to his squads at a battle he is at, (3) building anywhere on tiles he holds, (4) he can unite every province and the game goes on, (5) vassals and uprisings take back possession, never title. Also open:
-- How fast wars should be: about 11–14 wars a year on the test worlds; in 20 years 51 independent rulers become 24 (seed 12345: the top 10 go from 26% to 88% of the koku) or 49 become 35 (seed 777: 25% to 73%). Faster or slower consolidation?
-- Should conquered land a treaty did not cede stay "held but contested" forever (today), or should the title pass after some years (the crime lane's rule)?
-- Should NPC lords go to war with no reason at all (today: rare, bold lords only, at a karma cost)?
+## The owner's answers (2026-10-01)
+Over the proposals page "Dominion Open Questions": "Dominion: D1C D2C D3C D4B D5A · pace B · land B · noreason A".
+- **D1C** English names only (the ladder above; `LADDER` lost its `jp`).
+- **D2C** each squad its own order (Armies).
+- **D3C** free on his plots, lots in towns he takes (Buildings).
+- **D4B** unite, an epilogue, then go on (War, "One land").
+- **D5A** vassals and uprisings take back possession, never title: unchanged.
+- **pace B** war as fast as today: unchanged.
+- **land B** conquered land passes by the crime lane's rule (War, "Conquered land").
+- **noreason A** war with no reason stays rare, bold lords only, at a karma cost: unchanged.
+
+Measured after the answers (dominion alone, 20 years): seed 12345, independent rulers 51 → 21 (23 before), zones held without title 92 of 430 (105 before); seed 777, 49 → 24 (29 before), 115 of 473 (109 before). Alone no conquered zone's title moved (see "Conquered land"), so the change is the new random draws; the contested zones are mostly outlaws' seizures (60 of 101 on seed 12345 at year 10) and 31 conquests. With every lane (12 years, seed 12345): 19 conquered zones' titles passed by the rule (14 by court, 5 by prescription); 69 zones held without title against 95 before (34 not outlaws' against 29: the rest is the world taking another course), 37 independent rulers against 32.

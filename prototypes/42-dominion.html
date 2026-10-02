@@ -102,6 +102,7 @@
         </div>
         <div class="bar"><h3 style="margin-right:auto">Build</h3><label for="crew">Hire hands per new building <select id="crew"><option>0</option><option>2</option><option selected>4</option><option>8</option></select></label></div>
         <div class="blist" id="blist"></div>
+        <p class="note">On plots he holds he builds anywhere by footprint. In a town he did not found (one he takes) buildings go on its set lots, drawn dashed: he picks what goes in a lot, never where. NPC lords build on lots in their towns too.</p>
       </div>
       <div class="grid2">
         <div class="box" id="govern"></div>
@@ -1937,6 +1938,25 @@
 		"follow",
 		"fallback"
 	];
+	const ORDER = {
+		hold: {
+			pow: 1,
+			loss: 1
+		},
+		charge: {
+			pow: 1.25,
+			loss: 1.5
+		},
+		follow: {
+			pow: 1.15,
+			loss: 1,
+			him: true
+		},
+		fallback: {
+			pow: .5,
+			loss: .4
+		}
+	};
 	const LAWS = {
 		noArms: {
 			name: "ban weapons for commoners",
@@ -2067,7 +2087,8 @@
 			[55, .03],
 			[65, .07],
 			[200, .15]
-		]
+		],
+		LOT_PITCH: 5
 	};
 	//#endregion
 	//#region src/sim/dominion/land.js
@@ -2172,11 +2193,20 @@
 	}
 	const sameSide = (L, a, b) => a && b && top(L, a) === top(L, b);
 	const lordName = (L, id) => !id ? "nobody" : L.actors[id] ? nameOf(L.actors[id]) : id;
+	const SUCCESSION = /* @__PURE__ */ new Set([
+		"heir",
+		"escheat",
+		"rose"
+	]);
 	function setZone(L, k, { title, holder }, how) {
 		const d = D(L), z = d.zt[k] || (d.zt[k] = {
 			title: null,
 			holder: null
-		}), was = { ...z };
+		}), was = {
+			title: z.title,
+			holder: z.holder,
+			since: z.since
+		};
 		if (title !== void 0 && title !== z.title) {
 			drop(L, z.title, "titles", k);
 			z.title = title;
@@ -2202,6 +2232,7 @@
 				}
 			}
 		}
+		if (z.taken && (z.title === z.holder || !z.holder || was.holder !== z.holder && !SUCCESSION.has(how))) delete z.taken;
 		if (was.title !== z.title && how !== "world") emit(L, "dom.zone", {
 			zone: unkey(k),
 			title: z.title,
@@ -2511,6 +2542,63 @@
 		const t = top(L, id);
 		return Object.values(D(L).realms).find((r) => r.title === t) || null;
 	};
+	function unitySeason(L) {
+		const d = D(L);
+		let ruler = null, n = 0;
+		for (const reg of L.regions) {
+			if (!d.zt[key(...reg.seat)]) continue;
+			const p = d.prov[reg.id], t = p && p.holder && alive$1(L, p.holder) ? top(L, p.holder) : null;
+			if (!t || ruler && t !== ruler) {
+				ruler = null;
+				break;
+			}
+			ruler = t;
+			n++;
+		}
+		const u = d.united;
+		if (ruler && (!u || u.ruler !== ruler)) {
+			d.unions = (d.unions || 0) + 1;
+			d.united = {
+				ruler,
+				since: L.hour,
+				n: d.unions
+			};
+			emit(L, "dom.united", epilogue(L, ruler, n));
+		} else if (!ruler && u) {
+			d.united = null;
+			emit(L, "dom.divided", {
+				actor: u.ruler,
+				years: +((L.hour - u.since) / 2688).toFixed(1),
+				n: u.n
+			});
+		}
+	}
+	function epilogue(L, ruler, provinces) {
+		const d = D(L), l = d.lords[ruler], a = L.actors[ruler], rm = realmOf(L, ruler), side = Object.values(d.lords).filter((x) => !x.gone && alive$1(L, x.id) && top(L, x.id) === ruler);
+		const wars = Object.values(d.wars).filter((w) => w.end && (w.a === ruler || w.d === ruler));
+		return {
+			actor: ruler,
+			player: ruler === L.player,
+			n: d.unions,
+			year: calendar(L.hour).year,
+			title: "Epilogue: the year of one land",
+			provinces,
+			zones: side.reduce((t, x) => t + x.zones.length, 0),
+			koku: Math.round(l ? l.kokuAll : 0),
+			realm: rm ? rm.name : null,
+			capital: rm ? L.regions[rm.capital].name : null,
+			seat: l && l.seat ? unkey(l.seat) : null,
+			vassals: side.length - 1,
+			karma: a.karma || 0,
+			tax: l ? l.tax : null,
+			laws: l ? Object.keys(l.laws) : [],
+			wars: {
+				fought: wars.length,
+				won: wars.filter((w) => w.treaty && w.treaty.winner === ruler).length
+			},
+			men: Object.values(d.armies).filter((x) => alive$1(L, x.lord) && top(L, x.lord) === ruler).reduce((t, x) => t + x.sq.reduce((u, q) => u + q.n, 0), 0)
+		};
+	}
 	function holdingsOf(L, id) {
 		const d = D(L), l = d.lords[id];
 		return {
@@ -3767,6 +3855,20 @@
 		const p = L.plots[pid];
 		if (p && p.title !== id && p.holder !== id) dropFrom(L.actors[id], "holds", pid);
 	};
+	function heirOf$1(L, a, not = null) {
+		if (!a) return null;
+		const h = findHeir(L, a).heir;
+		if (h && h.id !== not) return h.id;
+		const ok = (id) => id != null && id !== a.id && id !== not && L.actors[id]?.alive;
+		const kids = (a.children || []).filter(ok).sort((x, y) => L.actors[x].born - L.actors[y].born);
+		if (kids.length) return kids[0];
+		if (ok(a.spouse)) return a.spouse;
+		for (const p of a.parents || []) {
+			const sib = (L.actors[p]?.children || []).filter(ok).sort((x, y) => L.actors[x].born - L.actors[y].born);
+			if (sib.length) return sib[0];
+		}
+		return ok(a.household) ? a.household : null;
+	}
 	function passTitle(L, pid, to, how) {
 		const C = crimeState(L), p = plotRec(L, pid), from = p.title;
 		if (from === to) return;
@@ -3906,6 +4008,41 @@
 		return rec;
 	}
 	const ripens = (L, z) => !z.title && z.holder && L.hour - (z.since || 0) >= (L.sys.crime ? LAND.PRESCRIPTION_YEARS : 2) * HOURS_PER_YEAR;
+	function zoneClaimant(L, z) {
+		const t = L.actors[z.title];
+		if (!t) return null;
+		const c = t.alive ? t.id : L.sys.crime ? heirOf$1(L, t, z.holder) : heirOf(L, t);
+		return c === z.holder ? null : c;
+	}
+	const HOMES = /* @__PURE__ */ new WeakMap();
+	const SEASON = 672;
+	function witnessesOf(L, k, not, r) {
+		const sn = Math.floor(L.hour / SEASON);
+		let c = HOMES.get(L);
+		if (!c || c.s !== sn) {
+			c = {
+				s: sn,
+				m: /* @__PURE__ */ new Map()
+			};
+			HOMES.set(L, c);
+			for (const id in L.actors) {
+				const a = L.actors[id];
+				if (a.alive && a.home) {
+					const hk = a.home[0] + "," + a.home[1];
+					(c.m.get(hk) || c.m.set(hk, []).get(hk)).push(a);
+				}
+			}
+		}
+		const here = (c.m.get(k) || []).filter((a) => a.alive && a.id !== not && a.home && a.home[0] + "," + a.home[1] === k && ageOf(L, a) >= K.ADULT).map((a) => a.id);
+		return r.shuffle(here).slice(0, LAND.WITNESS_KEEP);
+	}
+	function conquestRipens(L, z, r) {
+		if (!z.taken || !z.title || !z.holder || z.title === z.holder) return null;
+		const held = L.hour - z.taken.h;
+		if (zoneClaimant(L, z) == null) return held >= LAND.PRESCRIPTION_YEARS * HOURS_PER_YEAR ? "prescription" : null;
+		if (held >= LAND.COURT_YEARS * HOURS_PER_YEAR && !z.taken.wit.some((id) => L.actors[id]?.alive) && r.chance(LAND.COURT)) return "court";
+		return null;
+	}
 	function addKarma(L, id, d) {
 		const a = L.actors[id];
 		if (!a) return;
@@ -3967,6 +4104,95 @@
 		}
 		return Math.round(mon);
 	}
+	const WORLD = /* @__PURE__ */ new Set([
+		"town",
+		"village",
+		"fort",
+		"camp"
+	]);
+	const usesLots = (L, s, who) => !!s && (WORLD.has(zoneAt(L, s.x, s.y).kind) || s.founder !== who);
+	const LOTS = /* @__PURE__ */ new Map();
+	function lotsOf(L, zx, zy) {
+		const ck = L.seed + ":" + zx + "," + zy;
+		let out = LOTS.get(ck);
+		if (out) return out;
+		const P = N.LOT_PITCH, n = Math.floor(58 / P) + 1, lane = n >> 1, used = /* @__PURE__ */ new Set(), cell = (i, j) => [2 + i * P, 2 + j * P];
+		const keep = (c) => c === lane - 2 || c === lane - 1;
+		out = [{
+			x: cell(lane - 2, 0)[0],
+			y: cell(0, lane - 2)[1],
+			w: 2 * P - 1,
+			h: 2 * P - 1,
+			kind: "keep"
+		}];
+		for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+			if (i === lane || j === lane || keep(i) && keep(j) || used.has(i + "," + j)) continue;
+			const [x, y] = cell(i, j), h = hash(L.seed, "lot", zx, zy, i, j) % 100, inner = Math.max(Math.abs(i + .5 - lane), Math.abs(j + .5 - lane)) <= 4;
+			if (h < 18 && i + 1 < n && i + 1 !== lane && !(keep(i + 1) && keep(j)) && !used.has(i + 1 + "," + j)) {
+				used.add(i + 1 + "," + j);
+				out.push({
+					x,
+					y,
+					w: 2 * P - 1,
+					h: P - 1,
+					kind: "large"
+				});
+			} else if (inner && h < 55) out.push({
+				x,
+				y,
+				w: P - 1,
+				h: 2,
+				kind: "small"
+			}, {
+				x,
+				y: y + 2,
+				w: P - 1,
+				h: 2,
+				kind: "small"
+			});
+			else out.push({
+				x,
+				y,
+				w: P - 1,
+				h: P - 1,
+				kind: "lot"
+			});
+		}
+		const c = 32, dist = (l) => Math.hypot(l.x + l.w / 2 - c, l.y + l.h / 2 - c);
+		out = [out[0], ...out.slice(1).sort((a, b) => dist(a) - dist(b))];
+		out.at = new Map(out.map((l, i) => [l.x + "," + l.y, i]));
+		LOTS.set(ck, out);
+		return out;
+	}
+	function lotsTaken(L, s) {
+		const lots = lotsOf(L, s.x, s.y), d = D(L), taken = /* @__PURE__ */ new Set();
+		for (const id of s.b) {
+			const o = d.bld[id], ob = BUILDINGS[o.t];
+			if (!o.at || ob.w === "ring") continue;
+			const i = lots.at.get(o.at[0] + "," + o.at[1]);
+			if (i !== void 0 && ob.w <= lots[i].w && ob.h <= lots[i].h) {
+				taken.add(i);
+				continue;
+			}
+			lots.forEach((l, j) => {
+				if (o.at[0] < l.x + l.w && l.x < o.at[0] + ob.w && o.at[1] < l.y + l.h && l.y < o.at[1] + ob.h) taken.add(j);
+			});
+		}
+		return taken;
+	}
+	function freeLot(L, s, type, taken = lotsTaken(L, s)) {
+		const b = BUILDINGS[type];
+		if (b.w === "ring") return null;
+		let best = null;
+		lotsOf(L, s.x, s.y).forEach((l, i) => {
+			if (taken.has(i) || b.w > l.w || b.h > l.h || l.kind === "keep" !== (type === "keep")) return;
+			if (!best || l.w * l.h < best.l.w * best.l.h) best = {
+				i,
+				l
+			};
+		});
+		return best;
+	}
 	function canPlace(L, who, type, zx, zy, tx, ty) {
 		const b = BUILDINGS[type];
 		if (!b) return "no such building";
@@ -3976,8 +4202,16 @@
 		if (why) return why;
 		if (b.w === "ring") return s && lordOfSettlement(L, s) === who ? null : "walls go round a settlement you hold";
 		if (tx < 0 || ty < 0 || tx + b.w > 64 || ty + b.h > 64) return "off the edge of the zone";
+		const lots = usesLots(L, s, who), ruler = lots && lordOfSettlement(L, s) === who;
+		if (lots) {
+			const i = lotsOf(L, zx, zy).findIndex((l) => l.x === tx && l.y === ty), l = lotsOf(L, zx, zy)[i];
+			if (!l) return "in a town you did not found, buildings go on its lots";
+			if (b.w > l.w || b.h > l.h) return `a ${type} does not fit this lot`;
+			if (l.kind === "keep" !== (type === "keep")) return l.kind === "keep" ? "this lot is kept for a castle keep" : "a keep needs the middle lot";
+			if (lotsTaken(L, s).has(i)) return "the lot is taken";
+		}
 		for (let y = ty; y < ty + b.h; y++) for (let x = tx; x < tx + b.w; x++) {
-			if (ownerOf(L, plotAt(zx, zy, x, y)).holder !== who) return "every tile must be on a plot you hold";
+			if (!ruler && ownerOf(L, plotAt(zx, zy, x, y)).holder !== who) return lots ? "a lot in a town you do not rule must be on plots you hold" : "every tile must be on a plot you hold";
 			if (blocked(L, zx, zy, x, y)) return `a ${tileGround(L, zx, zy, x, y)} tile is in the way (clear it first)`;
 			if (b.ground && !b.ground.includes(tileGround(L, zx, zy, x, y))) return `it needs ${b.ground.join(" or ")} ground`;
 		}
@@ -4001,6 +4235,8 @@
 		const d = D(L), k = key(zx, zy), b = BUILDINGS[type];
 		const why = at ? canPlace(L, who, type, zx, zy, tx, ty) : prereq(L, d.set[k], type, zoneAt(L, zx, zy));
 		if (why) return { error: why };
+		const onLot = !at && b.w !== "ring" && usesLots(L, d.set[k], who), lot = onLot ? freeLot(L, d.set[k], type) : null;
+		if (onLot && !lot) return { error: "no free lot it fits" };
 		const cost = costOf(L, type, k);
 		if (pay && !spend(L, who, cost)) return { error: `it costs ${cost} mon` };
 		const s = d.set[k] || newSettlement(L, zx, zy, who), id = `b${L.ids.b = (L.ids.b || 0) + 1}`;
@@ -4008,7 +4244,7 @@
 			id,
 			t: type,
 			k,
-			at: at && b.w !== "ring" ? [tx, ty] : null,
+			at: lot ? [lot.l.x, lot.l.y] : at && b.w !== "ring" ? [tx, ty] : null,
 			owner: who,
 			st: "build",
 			hp: 0,
@@ -4423,6 +4659,7 @@
 				for (const id of s.b) if (d.bld[id].owner === from) d.bld[id].owner = to;
 			}
 		}
+		if (d.united && d.united.ruler === from) d.united.ruler = to;
 		delete d.vas[to];
 		fealtyChanged(L);
 		emit(L, "dom.succession", {
@@ -4443,13 +4680,22 @@
 	//#endregion
 	//#region src/sim/dominion/army.js
 	const menOf = (a) => a.sq.reduce((s, q) => s + q.n, 0);
+	const squadPow = (q) => q.n * UNITS[q.cls].pow * (.5 + q.tr) * (.6 + .4 * q.eq);
+	const fed = (a) => (.5 + a.morale) * (a.sup > 0 || a.hungry < 3 ? 1 : .7);
 	function strength(L, a) {
 		let p = 0;
-		for (const q of a.sq) {
-			const u = UNITS[q.cls];
-			p += q.n * u.pow * (.5 + q.tr) * (.6 + .4 * q.eq);
-		}
-		return p * (.5 + a.morale) * (a.sup > 0 || a.hungry < 3 ? 1 : .7);
+		for (const q of a.sq) p += squadPow(q);
+		return p * fed(a);
+	}
+	const himAt = (L, a, k) => a.lord === L.player && !!L.actors[L.player]?.at && L.actors[L.player].at[0] + "," + L.actors[L.player].at[1] === k;
+	const orderOf = (L, a, q, k) => {
+		const o = ORDER[q.order] || ORDER.hold;
+		return o.him && !himAt(L, a, k) ? ORDER.hold : o;
+	};
+	function battlePower(L, a, k) {
+		let p = 0;
+		for (const q of a.sq) p += squadPow(q) * orderOf(L, a, q, k).pow;
+		return p * fed(a);
 	}
 	const CACHE = /* @__PURE__ */ new WeakMap();
 	function hourly(L) {
@@ -4587,11 +4833,19 @@
 			from: home
 		});
 	}
-	function setOrder(L, armyId, i, order) {
+	function orderSquad(L, armyId, i, order) {
 		const a = D(L).armies[armyId];
 		if (a && a.sq[i] && ORDERS.includes(order)) a.sq[i].order = order;
 		return a;
 	}
+	const squadsAt = (L, lord, k) => armiesAt(L, k).filter((a) => a.lord === lord).flatMap((a) => a.sq.map((q, i) => ({
+		army: a.id,
+		i,
+		cls: q.cls,
+		n: q.n,
+		off: q.off,
+		order: q.order || "hold"
+	})));
 	function disband(L, armyId, i = null) {
 		const d = D(L), a = d.armies[armyId];
 		if (!a) return;
@@ -5377,13 +5631,18 @@
 		refreshRealms(L);
 		L.log = L.log.filter((e) => !e.type.startsWith("dom."));
 	}
+	const TAKEN = /* @__PURE__ */ new WeakMap();
 	function seedBuilding(L, s, t, owner) {
 		const d = D(L), id = `b${L.ids.b = (L.ids.b || 0) + 1}`, b = BUILDINGS[t];
+		let taken = TAKEN.get(s);
+		if (!taken) TAKEN.set(s, taken = /* @__PURE__ */ new Set());
+		const lot = freeLot(L, s, t, taken);
+		if (lot) taken.add(lot.i);
 		d.bld[id] = {
 			id,
 			t,
 			k: s.k,
-			at: null,
+			at: lot ? [lot.l.x, lot.l.y] : null,
 			owner,
 			st: "up",
 			hp: 1,
@@ -5617,7 +5876,8 @@
 				};
 				emit(L, "war.ready", {
 					war: w.id,
-					zone: [x, y]
+					zone: [x, y],
+					squads: squadsAt(L, L.player, k)
 				});
 				return;
 			}
@@ -5625,7 +5885,7 @@
 			delete d.pending[k];
 		}
 		const s = d.set[k], hold = (side) => ground && sameSide(L, ground, side === "a" ? w.a : w.d) ? (TERRAIN[z.biome] || 1) * (1 + (s ? s.walls * .3 : 0)) : 1;
-		return fight(L, w, A, B, k, A.reduce((t, a) => t + strength(L, a), 0) * generalF(L, A[0].lord) * hold("a"), B.reduce((t, a) => t + strength(L, a), 0) * generalF(L, B[0].lord) * hold("d"), r);
+		return fight(L, w, A, B, k, A.reduce((t, a) => t + battlePower(L, a, k), 0) * generalF(L, A[0].lord) * hold("a"), B.reduce((t, a) => t + battlePower(L, a, k), 0) * generalF(L, B[0].lord) * hold("d"), r);
 	}
 	function fight(L, w, A, B, k, pa, pb, r, { siege = false } = {}) {
 		const win = r.next() < pa * pa / (pa * pa + pb * pb + 1e-9) ? "a" : "d";
@@ -5641,7 +5901,7 @@
 			pa
 		];
 		const fierce = 1 + .15 * Math.min(1, traitSum(L.actors[A[0].lord], TRAIT.bold) + traitSum(L.actors[B[0].lord], TRAIT.bold));
-		const lw = hurt(L, W, Math.min(.5, (.06 + .2 * pl / (pw + 1e-9)) * fierce), r), ll = hurt(L, Lo, Math.min(.9, (.3 + .3 * r.next()) * fierce), r);
+		const lw = hurt(L, W, Math.min(.5, (.06 + .2 * pl / (pw + 1e-9)) * fierce), r, k), ll = hurt(L, Lo, Math.min(.9, (.3 + .3 * r.next()) * fierce), r, k);
 		for (const a of W) a.morale = Math.min(1, a.morale + .15);
 		for (const a of Lo) {
 			a.morale = Math.max(0, a.morale - .3);
@@ -5676,12 +5936,12 @@
 		});
 		return win;
 	}
-	function hurt(L, armies, frac, r) {
+	function hurt(L, armies, frac, r, zk = null) {
 		let lost = 0;
 		for (const a of armies) {
 			if (!D(L).armies[a.id]) continue;
 			for (const q of a.sq) {
-				const k = Math.round(q.n * frac * r.range(.8, 1.2));
+				const f = zk ? Math.min(.95, frac * orderOf(L, a, q, zk).loss) : frac, k = Math.round(q.n * f * r.range(.8, 1.2));
 				q.n -= Math.min(q.n, k);
 				lost += Math.min(q.n + k, k);
 				if (q.off && r.chance(frac * .4)) {
@@ -5728,7 +5988,7 @@
 		const store = N.SIEGE_STORE + (s.cnt.granary || 0) * 30 + s.store * 2, starving = a.siegeDays > store;
 		const garrison = Math.max(1, s.pop * .1 * .5 * (starving ? Math.max(.2, 1 - (a.siegeDays - store) * .05) : 1)) + armiesAt(L, k).filter((x) => x.lord !== a.lord && sameSide(L, x.lord, z.holder)).reduce((t, x) => t + strength(L, x), 0);
 		const shin = a.sq.filter((q) => q.cls === "shinobi").reduce((t, q) => t + q.n, 0);
-		const walls = 1 + s.walls * .6 / (1 + Math.min(1, shin * .15)), pa = strength(L, a) * generalF(L, a.lord), pd = garrison * walls;
+		const walls = 1 + s.walls * .6 / (1 + Math.min(1, shin * .15)), pa = battlePower(L, a, k) * generalF(L, a.lord), pd = garrison * walls;
 		if (pa > pd * 1.5 || starving && pa > pd || a.siegeDays > 60) {
 			if (r.next() < pa * pa / (pa * pa + pd * pd)) {
 				emit(L, "war.assault", {
@@ -5779,6 +6039,13 @@
 			s.pop = Math.round(s.pop * .85);
 			for (const id of s.b) if (r.chance(.15)) damage(L, id, r.range(.3, 1), "sack");
 		}
+		if (w && z.title && !sameSide(L, z.title, lord) && !d.lords[lord]?.outlaw) z.taken = {
+			h: L.hour,
+			by: lord,
+			from,
+			war: w.id,
+			wit: witnessesOf(L, k, lord, r)
+		};
 		if (w) {
 			w.taken.push(k);
 			w.score = Math.max(-100, Math.min(100, w.score + (sideOf(L, w, lord) === "a" ? 1 : -1) * (k === w.goal ? 30 : 15)));
@@ -5957,6 +6224,21 @@
 			score: Math.round(w.score),
 			days: Math.round((L.hour - w.started) / 24)
 		});
+	}
+	function conquestSeason(L, r) {
+		const d = D(L);
+		for (const k in d.zt) {
+			const z = d.zt[k];
+			if (!z.taken) continue;
+			const how = conquestRipens(L, z, r);
+			if (!how) continue;
+			const old = z.title, to = z.holder, [x, y] = unkey(k);
+			setZone(L, k, { title: to }, how);
+			for (let n = 0; n < 16; n++) {
+				const pid = plotId(x, y, n), o = ownerOf(L, pid);
+				if (o.title === old && !d.vas[o.title]) transferTitle(L, pid, to, how);
+			}
+		}
 	}
 	function tributeSeason(L) {
 		for (const l of Object.values(D(L).lords)) {
@@ -6179,10 +6461,12 @@
 			settleSeason(L, r);
 			upkeepSeason(L);
 			tributeSeason(L);
+			conquestSeason(L, r);
 			lordsSeason(L, r);
 			refreshDomains(L);
 			refreshProvinces(L);
 			refreshRealms(L);
+			unitySeason(L);
 		},
 		onYear(L, cal, r) {
 			successionYear(L, r);
@@ -6359,6 +6643,18 @@
 				break;
 			case "dom.desert":
 				if (e.actor === P) s = `${e.n} men desert his host (unpaid or hungry)`;
+				break;
+			case "dom.zone":
+				if (e.how === "prescription" || e.how === "court") s = `${zn(e.zone)} becomes ${who(e.holder)}'s on paper (${e.how === "court" ? "a court confirms him: no witness of the taking is left" : "held three years with nobody left to claim it"})`;
+				break;
+			case "dom.united":
+				s = `<b>${e.title}.</b> ${who(e.actor)} holds all ${e.provinces} provinces${e.realm ? ` as ${e.realm}` : ""}. The world goes on`;
+				break;
+			case "dom.divided":
+				s = `The one land under ${who(e.actor)} breaks apart after ${e.years} years`;
+				break;
+			case "war.ready":
+				if (e.squads && e.squads.length) s = `Battle at ${zn(e.zone)}: his ${e.squads.length} squad${e.squads.length > 1 ? "s" : ""} wait for his orders`;
 				break;
 			case "dom.crewLeft": if (e.actor === P) s = "His hired hands walk off: he could not pay them";
 		}
@@ -6562,6 +6858,15 @@
 			zg.strokeStyle = "#0b0d0e";
 			zg.strokeRect(b.at[0] * TZ + .5, b.at[1] * TZ + .5, B.w * TZ - 1, B.h * TZ - 1);
 		}
+		if (usesLots(L, s, P)) {
+			const taken = lotsTaken(L, s);
+			lotsOf(L, H.x, H.y).forEach((l, i) => {
+				zg.strokeStyle = taken.has(i) ? "#0b0d0e88" : "#d9c9a0aa";
+				zg.setLineDash([2, 2]);
+				zg.strokeRect(l.x * TZ + .5, l.y * TZ + .5, l.w * TZ - 1, l.h * TZ - 1);
+				zg.setLineDash([]);
+			});
+		}
 		if (hover && BUILDINGS[pick].w !== "ring") {
 			const B = BUILDINGS[pick], ok = !canPlace(L, P, pick, H.x, H.y, hover[0], hover[1]);
 			zg.fillStyle = ok ? "#6ff3e455" : "#e0737a55";
@@ -6659,7 +6964,7 @@
       <div class="stat">Morale ${Math.round(a.morale * 100)}% · ${a.unpaid ? `<span class="bad">unpaid ${a.unpaid} days</span>` : "paid"} · ${a.sq.reduce((t, q) => t + q.n * UNITS[q.cls].wage, 0)} mon a day</div>
       ${a.sq.map((q, i) => `<div class="row stat">${q.n} ${q.cls} · trained ${Math.round(q.tr * 100)}% · kit ${Math.round(q.eq * 100)}%<select data-a="${a.id}" data-i="${i}" aria-label="Order" style="margin-left:auto">${ORDERS.map((o) => `<option ${q.order === o ? "selected" : ""}>${o}</option>`).join("")}</select></div>`).join("")}
       <div class="bar">${key(...a.at) !== hk ? `<button type="button" data-home="${a.id}">March home</button>` : ""}<button type="button" data-dis="${a.id}">Disband</button></div></div>`).join("") || "<p class=\"note\">No men yet.</p>"}
-    <p class="note">Squad orders (hold, charge, follow, fall back) are for battles he is at; in the ledger they fight on their own.</p>`;
+    <p class="note">Each squad its own order (hold, charge, follow, fall back), kept until changed. In a battle he is at he gives them in a slowed moment; in the ledger a charge hits harder and bleeds more (×1.25, losses ×1.5), a fall back is spared (×0.5, losses ×0.4), follow counts only where he stands (×1.15), hold is as before.</p>`;
 		$("r-ash").addEventListener("click", () => {
 			const r = recruit(L, P, "ashigaru", 5, hk);
 			if (r.error) alertNote(r.error);
@@ -6680,7 +6985,7 @@
 			disband(L, b.dataset.dis);
 			refresh();
 		});
-		for (const c of $("army").querySelectorAll("select[data-a]")) c.addEventListener("change", () => setOrder(L, c.dataset.a, +c.dataset.i, c.value));
+		for (const c of $("army").querySelectorAll("select[data-a]")) c.addEventListener("change", () => orderSquad(L, c.dataset.a, +c.dataset.i, c.value));
 	}
 	const a1Home = (r) => {
 		if (r && !r.error) r.home = hk;
@@ -6703,7 +7008,7 @@
 		$("date").textContent = `Year ${c.year}, ${c.season} ${c.dayOfSeason}`;
 		$("purse").innerHTML = `Purse <b>${m.ryo} ryō ${m.mon} mon</b>`;
 		$("rank").innerHTML = `Rank <b>${hd.rank}</b>`;
-		$("world").innerHTML = `<b>${rulers}</b> rulers · <b>${Object.keys(d().realms).length}</b> realms · <b>${activeWars(L).length}</b> wars`;
+		$("world").innerHTML = `<b>${rulers}</b> rulers · <b>${Object.keys(d().realms).length}</b> realms · <b>${activeWars(L).length}</b> wars${d().united ? ` · <b>one land</b> under ${who(d().united.ruler)}` : ""}`;
 	}
 	function refresh() {
 		status();

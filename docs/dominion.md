@@ -10,9 +10,9 @@ Each step is held by owning the steps below it; each is a **title** (on paper) w
 |---|---|---|---|
 | **Plot** | 16 × 16 tiles | claim, buy, inherit, be granted, take | build on it, work it, its yield |
 | **Estate** | adjoining plots you hold, merged into one | holding them side by side (it merges itself) | one place to manage, one name |
-| **Zone** (*mura* / *shō*) | a whole zone of 16 plots | hold every plot in it | the zone's title; collect tax from anyone else working land in it; build the zone's seat |
-| **Domain** (*han*) | adjoining zones you hold, joined under one seat | hold two or more adjoining zones and name a seat (a town or castle) | a named realm on the map, a lord's rank measured in koku, vassals |
-| **Province** (*kuni*) | one of the world's 100 regions | hold its seat town and most of its zones | governor's powers: set the province's taxes and laws, raise its levy |
+| **Zone** | a whole zone of 16 plots | hold every plot in it | the zone's title; collect tax from anyone else working land in it; build the zone's seat |
+| **Domain** | adjoining zones you hold, joined under one seat | hold two or more adjoining zones and name a seat (a town or castle) | a named realm on the map, a lord's rank measured in koku, vassals |
+| **Province** | one of the world's 100 regions | hold its seat town and most of its zones | governor's powers: set the province's taxes and laws, raise its levy |
 | **Realm** | several provinces under one ruler | hold provinces, or have their governors swear to you | a court, the right to declare war on realms, and a claim on the whole land |
 
 - **Merging** is automatic when you hold adjoining land; **joining zones into a domain** is a choice (you found it, name it, pick its seat).
@@ -38,6 +38,7 @@ A settlement is any zone with homes in it. It grows by tiers, from what is built
 ## 3. Building
 
 - **Buildings sit on tiles** inside plots you hold, each with a footprint (for example 3 × 2 tiles). A tile feature (a tree, rock, water) blocks it until cleared (`docs/world-and-land.md`).
+- **Free on his plots, lots in towns he takes** (owner, 2026-10-01, D3C): on plots he holds he builds anywhere by footprint, and so in a settlement he founded there. In a settlement he did not found (a town or village that stood when the world began, or one he took), buildings go on its set lots: he chooses what goes in a lot, never where. NPC lords build on lots in their towns too.
 - **Each building**: a footprint, what it costs (timber, stone, iron, tiles, labour-days, mon), what it needs first, workers to run it, upkeep, and what it does.
 - **Built by work**, through the land session's recipes: you or companions or hired workers, over days, and it keeps going while you are away (real time).
 - **Families of buildings:**
@@ -75,10 +76,11 @@ A settlement is any zone with homes in it. It grows by tiers, from what is built
 - **Declaring war** needs a reason (a claim on a title, a grudge, an insult, a culture's hatred) or it costs karma and standing. NPC lords declare war on each other and on you by the same rules and the culture relations (`L.cultures[].relations`).
 - **Campaigns** move on the world map: armies march along roads, eat as they go, besiege forts and towns, meet in battles.
 - **Two ways a battle happens:**
-  - **He is there:** the zone becomes the battlefield and he fights in it with his blade, his companions and his squads. How much he commands (simple orders to squads, or only his own sword) is the owner's call.
+  - **He is there:** the zone becomes the battlefield and he fights in it with his blade, his companions and his squads. **He gives each squad its own order** (owner, 2026-10-01, D2C): hold, charge, follow me, fall back. **For the game:** the owner's page warned that this "needs a slowed or paused moment to give them": the live fight must open with (and allow again) a slowed or paused moment in which he gives each squad its order; the sim's `war.ready` hands the game his squads and their standing orders, and `orderSquad` stores each one.
   - **He is not:** it is resolved in the ledger from numbers, training, equipment, terrain, walls, supply and the generals' personality and intelligence, while time runs even when you are away.
 - **What war changes:** possession of plots, zones and seats (raids and conquest take possession); plunder, prisoners, hostages, the dead (the people lane's deaths and heirs).
-- **Peace changes the title:** a treaty can cede titles (the lawful transfer the crime lane is designing), with tribute, a marriage, or hostages as its price. Without a treaty, conquered land is held but contested.
+- **Peace changes the title:** a treaty can cede titles (the lawful transfer the crime lane is designing), with tribute, a marriage, or hostages as its price. Without a treaty, conquered land is held but contested, until the crime lane's rule passes it (owner, 2026-10-01, land B): the title passes when the land has been held 3 years with nobody of the old title holder's line alive to claim it, or when a court confirms the holder after 3 years with no witness of the taking left alive. While the old lord's line and a witness live, it stays contested, so claim wars keep a reason.
+- **One land** (owner, 2026-10-01, D4B): when one ruler unites every province the game shows an epilogue ("Epilogue: the year of one land. Continue?"), then goes on: uprisings and heirs keep the world moving. The sim tells the game with `dom.united` (once per unification, with the epilogue's summary) and never stops; the pause is the game's.
 
 ## 7. How it fits the lanes
 - **Economy:** yield, taxes, upkeep, building costs, army wages, trade and plunder.
@@ -97,17 +99,12 @@ The world has three rings (`src/sim/wild.js`, docs/foundations.md → "The wild"
 - **Armies and settlers go round the voids.** Roads already do (worldgen makes a void 8× dearer to build a road through), and outlaw bands never step into one. Proposed: an army that marches through a void loses men to the creatures, and one camped at its edge loses a few at night.
 - **The voids can be pushed back** (owner, 2026-09-26). Proposed: once the creatures of a stretch are slain and he holds land beside it, its zones lose `void` a few at a time, and people will settle there.
 
-## Defaults until the owner says otherwise (Claude, 2026-09-26)
-The owner approved the design without answering these, so the lane starts from:
-1. English names with the Japanese in brackets: plot, estate, zone (*mura*), domain (*han*), province (*kuni*), realm.
-2. In a battle he is at, he gives his squads simple orders (hold, charge, follow me, fall back) and fights with his own blade.
-3. Buildings go anywhere on tiles he holds, by footprint.
-4. **Owner (2026-09-26):** he can unite the whole land, and the game goes on: "be a tyrant or rule peacefully, or even give everything back to the people: the choice is yours". Tyranny (crushing taxes, fear, purges), peaceful rule (low taxes, justice, prosperity) and giving it all back (freeing the land: titles returned to those who work it, the lords' seats dissolved into free villages) are all real paths with their own consequences, and **people remember** what he did.
-5. Vassals can rise and take back possession of their land, never its title.
-
-## Open, for the owner
-1. The ladder's names: Japanese (*mura*, *han*, *kuni*) or English (zone, domain, province, realm)?
-2. In a battle he is at: simple orders to his squads (hold, charge, follow me, fall back), or only his own sword while they fight on their own?
-3. How free is building: any tiles you choose, or set lots in a settlement?
-4. Is there an end: can he unite every province (the whole land), and does the game then go on?
-5. Should vassals be able to rise against him and take their land back, or only riot and pay less?
+## The owner's answers (2026-10-01, over the proposals page "Dominion Open Questions": "Dominion: D1C D2C D3C D4B D5A · pace B · land B · noreason A")
+1. **Names (D1C):** English only: plot, estate, zone, domain, province, realm, with no Japanese in brackets ("Hahizawa domain", "12 zones").
+2. **Orders (D2C):** in a battle he is at, he gives each squad its own order (hold, charge, follow me, fall back) and fights with his own blade. The game needs a slowed or paused moment to give them (section 6).
+3. **Building (D3C):** free by footprint on his plots; set lots in a settlement he took (section 3).
+4. **The end (D4B):** he can unite the whole land; an epilogue, then the game goes on (section 6). Unchanged from 2026-09-26: "be a tyrant or rule peacefully, or even give everything back to the people: the choice is yours". Tyranny (crushing taxes, fear, purges), peaceful rule (low taxes, justice, prosperity) and giving it all back (freeing the land: titles returned to those who work it, the lords' seats dissolved into free villages) are all real paths with their own consequences, and **people remember** what he did.
+5. **Vassals (D5A, unchanged):** vassals can rise and take back possession of their land, never its title.
+6. **Pace (B, unchanged):** wars as fast as today.
+7. **Conquered land (land B):** the crime lane's rule (section 6).
+8. **War without a reason (A, unchanged):** rare, bold lords only, at a karma cost.

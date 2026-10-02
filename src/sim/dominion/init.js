@@ -3,6 +3,7 @@ import { rngFor } from '../rng.js';
 import { BUILDINGS, N, TRAIT, traitSum } from './data.js';
 import { D, key, lordOf, setZone, refreshDomains, refreshProvinces, refreshRealms, fealtyChanged } from './land.js';
 import { newSettlement, recount, tradeYear } from './settle.js';
+import { freeLot } from './build.js';
 import { newArmy, addSquad } from './army.js';
 import { fillOffices, indexHomes } from './govern.js';
 import { zoneYield } from './seams.js';
@@ -86,9 +87,13 @@ export function setupWorld(L) {
   refreshDomains(L); refreshProvinces(L); refreshRealms(L);
   L.log = L.log.filter(e => !e.type.startsWith('dom.'));   // the world's first state is not news
 }
-// a building that already stands when the world begins (placed in the ledger layer: no tiles until he walks in)
+// a building that already stands when the world begins, on the town's lots (owner 2026-10-01, D3C: build.js lotsOf), the smallest it
+// fits, from the middle out; one that finds no lot is placed in the ledger layer (no tiles until he walks in)
+const TAKEN = new WeakMap();   // settlement → the lots taken while the world is set up (a fresh lotsTaken per building would be slow)
 function seedBuilding(L, s, t, owner) {
   const d = D(L), id = `b${(L.ids.b = (L.ids.b || 0) + 1)}`, b = BUILDINGS[t];
-  d.bld[id] = { id, t, k: s.k, at: null, owner, st: 'up', hp: 1, done: b.labour, labour: b.labour, got: true, crew: 0, since: 0 };
+  let taken = TAKEN.get(s); if (!taken) TAKEN.set(s, taken = new Set());
+  const lot = freeLot(L, s, t, taken); if (lot) taken.add(lot.i);
+  d.bld[id] = { id, t, k: s.k, at: lot ? [lot.l.x, lot.l.y] : null, owner, st: 'up', hp: 1, done: b.labour, labour: b.labour, got: true, crew: 0, since: 0 };
   s.b.push(id); s.cnt[t] = (s.cnt[t] || 0) + 1;
 }

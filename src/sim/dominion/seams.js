@@ -7,9 +7,9 @@ import { GOODS, GOOD } from '../economy/tune.js';
 import { worth as eWorth, pay, changeUp } from '../economy/money.js';
 import { plotKoku } from '../economy/setup.js';
 import { killActor as peopleKill, findHeir } from '../people/death.js';
-import { passTitle } from '../crime/land.js';
+import { passTitle, heirOf as crimeHeir } from '../crime/land.js';
 import { addKarma as crimeKarma, addStanding as crimeStanding } from '../crime/law.js';
-import { LAND } from '../crime/rules.js';
+import { LAND, K } from '../crime/rules.js';
 
 // ---- The seams: everything dominion needs from the other lanes, each behind ONE small function (docs/sim-dominion.md, "Seams") ----
 // Economy, people and crime have landed: each seam calls into its lane when that lane's system runs (L.sys.economy / people / crime),
@@ -110,6 +110,34 @@ export function transferTitle(L, pid, to, how, holderToo = false) {
 // CRIME: when possession ripens into title: a zone nobody holds on paper (a camp, a lordless village) becomes its holder's once held as long
 // as crime's prescription asks (LAND.PRESCRIPTION_YEARS: there is no title holder alive to claim it). Alone: two years
 export const ripens = (L, z) => !z.title && z.holder && L.hour - (z.since || 0) >= (L.sys.crime ? LAND.PRESCRIPTION_YEARS : 2) * HOURS_PER_YEAR;
+// CRIME: land taken in a war that no treaty ceded (owner 2026-10-01, "land B": the crime lane's rule). Who can claim the zone: its title
+// holder, or his heir if he is dead (crime's claimant: crime's heirOf when crime runs, the people seam's otherwise); never the holder
+export function zoneClaimant(L, z) {
+  const t = L.actors[z.title]; if (!t) return null;
+  const c = t.alive ? t.id : L.sys.crime ? crimeHeir(L, t, z.holder) : heirOf(L, t);
+  return c === z.holder ? null : c;
+}
+// CRIME: the witnesses of a taking: up to LAND.WITNESS_KEEP grown people (crime's K.ADULT) living in the zone, never the taker. Who lives
+// where is indexed once a game season (derived, never ledger state; each one is checked again: alive, still living there)
+const HOMES = new WeakMap(), SEASON = 24 * 28;
+export function witnessesOf(L, k, not, r) {
+  const sn = Math.floor(L.hour / SEASON); let c = HOMES.get(L);
+  if (!c || c.s !== sn) { c = { s: sn, m: new Map() }; HOMES.set(L, c);
+    for (const id in L.actors) { const a = L.actors[id]; if (a.alive && a.home) { const hk = a.home[0] + ',' + a.home[1]; (c.m.get(hk) || c.m.set(hk, []).get(hk)).push(a); } } }
+  const here = (c.m.get(k) || []).filter(a => a.alive && a.id !== not && a.home && a.home[0] + ',' + a.home[1] === k && ageOf(L, a) >= K.ADULT).map(a => a.id);
+  return r.shuffle(here).slice(0, LAND.WITNESS_KEEP);
+}
+// why a conquered zone's title passes to its holder now, or null. Time (prescription): held LAND.PRESCRIPTION_YEARS with nobody alive to
+// claim it. Court: the claimant sues (LAND.COURT a season), and with no witness of the taking left alive and the land held LAND.COURT_YEARS
+// the court confirms the holder. While the old lord's line lives and a witness does, it stays contested (a claim war's reason). The same
+// rule alone: crime's numbers (rules.js is plain data), dominion's heir
+export function conquestRipens(L, z, r) {
+  if (!z.taken || !z.title || !z.holder || z.title === z.holder) return null;
+  const held = L.hour - z.taken.h, claimant = zoneClaimant(L, z);
+  if (claimant == null) return held >= LAND.PRESCRIPTION_YEARS * HOURS_PER_YEAR ? 'prescription' : null;
+  if (held >= LAND.COURT_YEARS * HOURS_PER_YEAR && !z.taken.wit.some(id => L.actors[id]?.alive) && r.chance(LAND.COURT)) return 'court';
+  return null;
+}
 // CRIME: karma (−100..100) and standing (−1..1): crime's, which clamp and let standing drift back to karma. Alone: edit the fields
 export function addKarma(L, id, d) { const a = L.actors[id]; if (!a) return; if (L.sys.crime) crimeKarma(a, d); else a.karma = Math.round((a.karma || 0) + d); }
 export function addStanding(L, id, culture, d) {

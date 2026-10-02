@@ -1,6 +1,6 @@
 import { emit, zoneAt } from '../ledger.js';
 import { nameOf } from '../actors.js';
-import { UNITS, BUILDINGS, N, ORDERS, r3 } from './data.js';
+import { UNITS, BUILDINGS, N, ORDERS, ORDER, r3 } from './data.js';
 import { D, key, unkey, alive, lordOf, top, sameSide } from './land.js';
 import { lordOfSettlement } from './settle.js';
 import { spend } from './seams.js';
@@ -8,14 +8,18 @@ import { spend } from './seams.js';
 // ---- Armies: recruited by class from who lives on your land, paid every day in rice and wages, trained at a dojo, equipped by
 // your smiths, in squads under officers; unpaid or hungry troops desert or turn bandit (docs/dominion.md section 5) ----
 // An army (L.sys.dominion.armies[id]):
-//   { id, lord, name, at: [x, y], home ("x,y": where it is based), sq: [{ cls, n, off (officer actor id | null), tr 0..1, eq 0..1, order }],
+//   { id, lord, name, at: [x, y], home ("x,y": where it is based), sq: [{ cls, n, off (officer actor id | null), tr 0..1, eq 0..1, order (its own: ORDERS) }],
 //     morale 0..1, sup (days of food carried), unpaid (days), hungry (days), go: null | { to "x,y", path: [zone index], i, prog, why, war },
 //     siege: "x,y" | null, since }
 export const menOf = a => a.sq.reduce((s, q) => s + q.n, 0);
-export function strength(L, a) {
-  let p = 0; for (const q of a.sq) { const u = UNITS[q.cls]; p += q.n * u.pow * (.5 + q.tr) * (.6 + .4 * q.eq); }
-  return p * (.5 + a.morale) * (a.sup > 0 || a.hungry < 3 ? 1 : .7);
-}
+const squadPow = q => q.n * UNITS[q.cls].pow * (.5 + q.tr) * (.6 + .4 * q.eq);
+const fed = a => (.5 + a.morale) * (a.sup > 0 || a.hungry < 3 ? 1 : .7);
+export function strength(L, a) { let p = 0; for (const q of a.sq) p += squadPow(q); return p * fed(a); }
+// each squad's order in a battle (owner 2026-10-01, D2C): 'follow' counts only where he stands in the battle's zone, else it holds
+export const himAt = (L, a, k) => a.lord === L.player && !!L.actors[L.player]?.at && L.actors[L.player].at[0] + ',' + L.actors[L.player].at[1] === k;
+export const orderOf = (L, a, q, k) => { const o = ORDER[q.order] || ORDER.hold; return o.him && !himAt(L, a, k) ? ORDER.hold : o; };
+// strength in a battle at zone k: each squad weighted by its order (all hold: the same as strength)
+export function battlePower(L, a, k) { let p = 0; for (const q of a.sq) p += squadPow(q) * orderOf(L, a, q, k).pow; return p * fed(a); }
 // derived indexes, rebuilt at most once a game hour (a cache like zone.js's tiles: never ledger state, always recomputable)
 const CACHE = new WeakMap();
 function hourly(L) { let c = CACHE.get(L); if (!c || c.h !== L.hour) { c = { h: L.hour, by: null, side: null, at: null, paths: c ? c.paths : new Map() }; CACHE.set(L, c); } return c; }
@@ -76,7 +80,11 @@ export function addSquad(a, cls, n, off, home, s) {
   else a.sq.push({ cls, n, off, tr: cls === 'retainer' ? .5 : cls === 'monk' || cls === 'shinobi' ? .45 : cls === 'ronin' ? .4 : .1, eq: eq0, order: 'hold', from: home });
 }
 export function setOfficer(L, armyId, i, actorId) { const a = D(L).armies[armyId]; if (a && a.sq[i] && (!actorId || alive(L, actorId))) a.sq[i].off = actorId || null; return a; }
-export function setOrder(L, armyId, i, order) { const a = D(L).armies[armyId]; if (a && a.sq[i] && ORDERS.includes(order)) a.sq[i].order = order; return a; }
+// each squad its own order (owner 2026-10-01, D2C): squad i of the army; it keeps it until told otherwise. setOrder is the old name
+export function orderSquad(L, armyId, i, order) { const a = D(L).armies[armyId]; if (a && a.sq[i] && ORDERS.includes(order)) a.sq[i].order = order; return a; }
+export const setOrder = orderSquad;
+// his squads in one zone and their orders (the game's order screen at a battle he is at)
+export const squadsAt = (L, lord, k) => armiesAt(L, k).filter(a => a.lord === lord).flatMap(a => a.sq.map((q, i) => ({ army: a.id, i, cls: q.cls, n: q.n, off: q.off, order: q.order || 'hold' })));
 // disband: ashigaru and monks go home to their settlement; paid swords just leave
 export function disband(L, armyId, i = null) {
   const d = D(L), a = d.armies[armyId]; if (!a) return;

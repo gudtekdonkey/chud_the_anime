@@ -141,6 +141,7 @@ export function transferAll(L, from, to, how) {
   for (const v of Object.values(d.vas)) if (v.liege === from) v.liege = to;
   for (const s of Object.values(d.set)) if (s.founder === from) s.founder = to;
   for (const k of h.zones) { const s = d.set[k]; if (s) for (const id of s.b) if (d.bld[id].owner === from) d.bld[id].owner = to; }
+  if (d.united && d.united.ruler === from) d.united.ruler = to;   // the one land passes with its ruler (no second epilogue)
   delete d.vas[to]; fealtyChanged(L);
   emit(L, 'dom.succession', { from, to, how, zones: h.zones.length });
 }
