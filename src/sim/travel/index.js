@@ -43,7 +43,8 @@ on('travel.bountyPaid', (e, L) => { delete L.sys.travel.heat[e.culture]; });
 // he has just crossed into zone (x, y): returns a scene he is now in, or null. The scene stays in L.sys.travel.scene until chosen.
 // opts.level: his character level (the live game's; kept on his record as `level`), which decides what the creatures of the voids do
 export function enterZone(L, x, y, opts = {}) {
-  const st = L.sys.travel; if (st.scene) return st.scene;
+  const st = L.sys.travel; if (st.scene && !SCENES[st.scene.type]) st.scene = null;   // a scene from an old save whose kind is gone (the storms)
+  if (st.scene) return st.scene;
   st.beasts ||= { faced: 0, ko: 0, slain: {} }; if (opts.level) L.actors[L.player].level = opts.level;
   const r = rngFor(L.seed, 'travel', L.hour, x, y, st.steps++), c = context(L, x, y);
   let type = null;
@@ -71,7 +72,7 @@ function open(L, type, c, r) {
 // he chose: play it out. result: the live game's fight result { won, slain: [actor ids] } where the choice was a fight.
 // Returns the resolution (kit.js); its `hours` are for the caller to advance (advance(L, hours, true)), `next` a scene that follows at once
 export function choose(L, choiceId, result) {
-  const st = L.sys.travel, sc = st.scene; if (!sc || !sc.choices.some(ch => ch.id === choiceId)) return null;
+  const st = L.sys.travel, sc = st.scene; if (!sc || !SCENES[sc.type] || !sc.choices.some(ch => ch.id === choiceId)) return null;
   const r = rngFor(L.seed, 'travelc', sc.id, choiceId), out = SCENES[sc.type].resolve(L, sc, choiceId, r, result);
   apply(L, sc, out);
   if (out.again) { sc.choices = out.again; return out; }   // the scene goes on with new choices (the caught horse)

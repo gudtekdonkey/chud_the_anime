@@ -12,7 +12,7 @@ Decisions that everything else builds on. Owner answers are marked with the date
 - **Carried money has weight**: a fortune has to be moved, stored or banked.
 - **Story: 90% from the world.** Only the structure is written by hand; everything else comes out of the ledger (quests, rivals, events).
 - ~~**Glitch storms are in**~~ (owner 2026-10-02: removed from the world and the story; see design-notes). There is **no true story behind the glitch powers**: they are a fact of this world, not a mystery to solve.
-- **World events, and random events while travelling**: ambushes on the road, merchants and pilgrims met on the way, a wounded man asking for help, weather that turns, a glitch storm crossing the road.
+- **World events, and random events while travelling**: ambushes on the road, merchants and pilgrims met on the way, a wounded man asking for help, weather that turns. (A glitch storm crossing the road was one; removed 2026-10-02.)
 - **Karma is shown to the player** (owner, 2026-09-26).
 - **Raids can take land, but not the legal title** (owner, 2026-09-26): what is held (possession) and what is owned on paper (title) are separate. A raid can seize possession; the title stays with its holder until it passes by some other mechanic, still to be discussed with the owner.
 - **Platform: the browser.** Steam or phone would be cool later; for now, build the experience in the browser, with no multiplayer.
@@ -78,7 +78,7 @@ The measure of power in this world is land and what it grows, the way feudal Jap
 | **Silver** (by weight, *monme*) | merchants' money | trade in bulk, buying goods between regions |
 | **Gold ryō** | an oval gold coin, rare; 1 ryō = 1,000 mon to keep the sums simple | the big things: land, a master's blade, blood money, paying off a large bounty |
 | **Koku** | a measure of rice: what one person eats in a year | the worth of land and the rank of a lord (a lord "of 10,000 koku"). Plots yield it, taxes are paid in it, armies eat it |
-| **Glitch shards** | not money: the otherworldly currency already in the game | his skills and Qi, never traded with ordinary people |
+| **Glitch shards** | not money: the power currency already in the game (name and lore pending a home in the premise: docs/design-notes.md) | his skills and Qi, never traded with ordinary people |
 
 ### Where it comes from, and where it goes
 - **In:** loot from the dead, bounties he collects, harvests and crafts from his plots, trade, contracts (escort, hunt, kill), tolls and taxes once he holds land, gambling.
@@ -144,11 +144,11 @@ Events are the ledger's big moves, felt in every zone they reach:
 - **Nature:** typhoons, floods, drought, famine, plague, a comet, an earthquake.
 - **Politics:** a lord dies and his sons fight; a kingdom declares war; a peasant uprising; a new tax; a royal procession passes (colour on the road: rare loot, and death to anyone who touches it).
 - **Crime and order:** a famous bounty is posted; a bandit army gathers; a crackdown in a region he has made hostile.
-- **The otherworld:** glitch storms, where reality tears (the ronin's own glitch powers are part of this world's secret); a shrine goes dark; the dead walk for a night.
+- ~~**The otherworld:** glitch storms, where reality tears; a shrine goes dark~~ (owner 2026-10-02: no glitch in the world or the story). The dead do not rest where the great battles were, and lanterns are lit for them (the premise, "Lanterns for the war dead": docs/design-notes.md).
 - Events are announced in the world (a messenger, a notice board, smoke on the horizon, a bell) and on the world map, and they change prices, danger, standing and who owns what.
 
 ### Answered (owner, 2026-09-26)
-- 90% of the story comes from the world; only the structure is written. Glitch storms are in, with no story behind the powers. NPCs age, marry and pass land to heirs.
+- 90% of the story comes from the world; only the structure is written. Glitch storms were in, with no story behind the powers (storms removed 2026-10-02; the powers stay, still unexplained). NPCs age, marry and pass land to heirs.
 
 ## The wild: settled lands, the bandits' edge, the voids (owner, 2026-09-26)
 
