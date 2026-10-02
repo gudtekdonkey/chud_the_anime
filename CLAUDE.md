@@ -12,7 +12,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `npm run check` | Builds, then `scripts/check.mjs` plays a key sequence in Chromium and asserts the states and no page errors. Screenshots and the state log go to `test-output/` |
 | `npm run check:hd` | The same check at 2× (`?hd`), screenshots in `test-output/hd/` |
 | `node scripts/iso-reel.mjs chain 3` | After a build: one of the Animation Flow page's scenarios as the slice plays it, laid out as the page's contact sheets (`AF_DIR` at the page's source draws the page's sheet above it), into `test-output/iso/reel-<name>[-vs].png` |
-| `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle. Screenshots in `test-output/iso/` |
+| `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle; then each enemy type telegraphing, striking and killed, and a patrol taking turns (`scripts/check-iso-enemies.mjs`; `ISO_ONLY=enemies` runs only that). Screenshots in `test-output/iso/` |
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
@@ -166,9 +166,11 @@ Phase 0 of the new direction: Iron Ash V3 in a night courtyard, the Sea of Stars
 | `iso/fx/cine.js` | The finisher's close-up: J3 on a samurai in reach punches the camera in, letterboxed, ink and speed lines, then back (~0.8 s, any key skips); presentation only |
 | `iso/ui/overlay.js` | The ?iso page and its overlay: frame time, the model switch, the pipeline toggles, camera and hat, controls; every choice a key |
 | `iso/sheet.js` | `?iso&sheet`: a frozen contact sheet of the loop's moments in the 8 facings, either look |
+| `iso/enemies/` | The enemy types (`docs/enemies.md`): `types.js` (the archetypes and groups as data), `moves.js` (their clips in the Animation Flow style, `HOLD`, `HITS`), `model.js` (each type's 3D variant over the samurai's model, `enemyLook`), `enemy.js` (`Enemy`: the action interface `can` / `do` / `moves` / `info`, hit reactions, guard / parry / dodge / armour, death), `combat.js` (the hero's cut on a crowd, blows and shots on the hero, smoke, the slam), `ctx.js` (`CTX`, the attack `TOKENS`), `events.js` (`onEnemy`, sound-ready events), `brain.js` (the placeholder decision loop the squad-AI branch replaces), `squad.js` (`SQUAD`: spawning, slots, morale, separation), `draw.js` (telegraph stars, aim lines, shots, bars), `ui.js` (the overlay's Enemies picker) |
 | `iso/reel.js` | `?iso&reel=<name>`: the Animation Flow page's demo scenarios on its script and clock (`window.__reel.steps(n)`), for `scripts/iso-reel.mjs`'s side-by-side sheets against the page's own |
 
 - Everything in `src/iso/` keeps to the slice: never import it from today's game, and never import today's game modules (`screen.js` grabs `#game`) into it.
+- Enemy types are data (`enemies/types.js`); a decision layer drives them only through the action interface (`e.can` / `e.do`, `SQUAD.brain`), never their internals. `&group=<name>` starts on a group, `&ehp=` scales their health.
 - A character's look is swapped through `look/look.js` only. The controller hands it the flow's side pose; a new look (a modelled character, a baked sprite sheet) implements the same four calls.
 - The moves are the Animation Flow page's data: change them there first (or mark an addition in `moves-extra.js`), so the slice keeps matching what the owner approved.
 

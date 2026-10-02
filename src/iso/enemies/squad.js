@@ -34,7 +34,7 @@ export function makeSquad({ scene, hero, foe, chars, look, hpK = 1 }) {
   function remove(e) { e.look.dispose(); TOKENS.release(e); for (const L of [chars, CTX.enemies]) { const i = L.indexOf(e); if (i >= 0) L.splice(i, 1); }
     const j = W.actors.indexOf(e.a); if (j >= 0) W.actors.splice(j, 1); }
   function spawn(name = SQUAD.group) {
-    for (const e of CTX.enemies.slice()) remove(e); CTX.shots.length = 0; CTX.puffs.length = 0; TOKENS.clear(); SQUAD.peakAttacking = 0;
+    for (const e of CTX.enemies.slice()) remove(e); CTX.shots.length = 0; CTX.puffs.length = 0; TOKENS.clear(); SQUAD.peakAttacking = 0; for (const k in ESTATS) ESTATS[k] = 0;
     const G = GROUPS[name] || GROUPS.samurai; SQUAD.group = name; SQUAD.on = G.list.length > 0; clearedAt = null;
     if (SQUAD.on && !foe.parked) { foe.parked = true; foe.a.alpha = 0; foe.a.x = foe.spawn[0] / AF; foe.a.z = foe.spawn[1] / AF; }
     else if (!SQUAD.on && foe.parked) { foe.parked = false; foe.respawn(); }

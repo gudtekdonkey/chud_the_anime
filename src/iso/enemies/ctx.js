@@ -13,9 +13,10 @@ export const TOKENS = {
   cap: { melee: 2, ranged: 1 }, held: new Map(), gap: {}, peak: { melee: 0, ranged: 0 },
   cost: e => Math.min(e.T.cost ?? 1, 2),
   used(pool) { let n = 0; for (const v of this.held.values()) if (v.pool === pool) n += v.cost; return n; },
-  has: function (e) { return this.held.has(e); },
-  can(e, pool) { if (e.T.boss || this.held.has(e)) return true; return this.used(pool) + this.cost(e) <= this.cap[pool] && W.t >= (this.gap[pool] || 0); },
-  take(e, pool) { if (e.T.boss) return true; if (this.held.has(e)) return true; if (!this.can(e, pool)) return false;
+  has(e) { return this.held.has(e); },
+  // a token is per pool: one held for a melee approach does not let him shoot outside the ranged pool's turn
+  can(e, pool) { const v = this.held.get(e); if (e.T.boss || (v && v.pool === pool)) return true; return this.used(pool) + this.cost(e) <= this.cap[pool] && W.t >= (this.gap[pool] || 0); },
+  take(e, pool) { if (e.T.boss) return true; const v = this.held.get(e); if (v && v.pool === pool) return true; if (!this.can(e, pool)) return false;
     this.held.set(e, { pool, cost: this.cost(e), since: W.t, used: false }); this.peak[pool] = Math.max(this.peak[pool], this.used(pool)); return true; },
   release(e) { const v = this.held.get(e); if (!v) return; this.held.delete(e); this.gap[v.pool] = W.t + .3; },
   // a lease nobody used: back to the pool
