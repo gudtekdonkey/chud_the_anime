@@ -45,7 +45,9 @@ export function livePose(sheet, f, dt) {
     BL.from = BL.last && !SNAP.test(s) && !SNAP.test(BL.lastS || '') && BL.last.yaw == null && p.yaw == null ? BL.last : null;
     BL.d = (ATTACK.test(s) ? FEEL.blend.attack : SETTLE.test(s) ? FEEL.blend.settle : FEEL.blend.base) / 60; }
   else PB.n++;
-  if (BL.from) { BL.t += dt; const k = Math.min(1, BL.t / BL.d); p = mixPose(BL.from, p, ease(k)); if (k >= 1) BL.from = null; }
+  // the blend's clock starts with the move: on its first draw only the time the move has lived counts (its first step and
+  // after), never the draw's time before it began, so a late draw (a slow frame) still shows the blend
+  if (BL.from) { BL.t += PB.n === 0 ? Math.min(dt, P.t + 1 / 60) : dt; const k = Math.min(1, BL.t / BL.d); p = mixPose(BL.from, p, ease(k)); if (k >= 1) BL.from = null; }
   PB.d = poseDist(p, own); PB.blade = bladeOf(p);
   BL.last = p; BL.lastS = s;
   return dress2(p);

@@ -50,33 +50,58 @@ try {
   const cv = name => until(`charged skill ${name}`, n => window.__game.P.cv && window.__game.P.cv.name === n, name);
   const FREE = /^(idle|run|walk|idleGlitch|ready\d|runArmed|sheathe)$/;   // states that take a new command
   const shot = name => page.locator('#game').screenshot({ path: `${OUT}/${name}.png` });
-  // walk him somewhere with the arrow keys: the vertical leg first, then the horizontal, so the route is predictable round the pillars
+  // walk him somewhere with the arrow keys, one axis at a time: a route of straight legs round the pillars (world/room.js collides
+  // each pillar grown 5 px in x and 2 in y), planned on the lines just clear of each grown pillar, the fewest turns first
+  const PIL = await page.evaluate(() => window.__game.PILLARS.map(p => ({ ...p })));
+  const route = (sx, sy, gx, gy) => {
+    const M = 4, C = PIL.map(p => [p.x - 5, p.y - 2, p.x + p.w + 5, p.y + p.h + 2]);
+    const inside = (x, y) => C.some(([a, b, c, d]) => x > a && x < c && y > b && y < d);
+    const clear = (x0, y0, x1, y1) => !C.some(([a, b, c, d]) => y0 === y1 ? y0 > b && y0 < d && Math.max(x0, x1) > a && Math.min(x0, x1) < c
+      : x0 > a && x0 < c && Math.max(y0, y1) > b && Math.min(y0, y1) < d);
+    const uniq = v => [...new Set(v.map(q => Math.round(q * 10) / 10))].sort((a, b) => a - b);
+    const xs = uniq([sx, gx, ...C.flatMap(([a, , c]) => [a - M, c + M])].filter(x => x >= 20 && x <= 460 || x === sx || x === gx));
+    const ys = uniq([sy, gy, ...C.flatMap(([, b, , d]) => [b - M, d + M])].filter(y => y >= 58 && y <= 262 || y === sy || y === gy));
+    const id = (i, j) => i * ys.length + j, N = xs.length * ys.length, dist = new Array(N * 2).fill(1e9), prev = new Array(N * 2).fill(-1), done = new Set();
+    const si = xs.indexOf(Math.round(sx * 10) / 10), sj = ys.indexOf(Math.round(sy * 10) / 10), gi = xs.indexOf(Math.round(gx * 10) / 10), gj = ys.indexOf(Math.round(gy * 10) / 10);
+    // state: node and the axis of the leg that reached it (0 x, 1 y), so a turn costs a little and the route keeps few legs
+    for (const ax of [0, 1]) dist[id(si, sj) * 2 + ax] = 0;
+    for (;;) { let u = -1; for (let k = 0; k < N * 2; k++) if (!done.has(k) && dist[k] < 1e9 && (u < 0 || dist[k] < dist[u])) u = k;
+      if (u < 0) return null; done.add(u); const n = u >> 1, ax = u & 1, i = Math.floor(n / ys.length), j = n % ys.length;
+      if (i === gi && j === gj) { const pts = []; for (let k = u; k >= 0; k = prev[k]) pts.unshift([xs[Math.floor((k >> 1) / ys.length)], ys[(k >> 1) % ys.length]]);
+        return pts.filter((q, k) => k === 0 || k === pts.length - 1 || !((pts[k - 1][0] === q[0] && pts[k + 1][0] === q[0]) || (pts[k - 1][1] === q[1] && pts[k + 1][1] === q[1]))); }
+      for (const [di, dj] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const i2 = i + di, j2 = j + dj; if (i2 < 0 || j2 < 0 || i2 >= xs.length || j2 >= ys.length) continue;
+        const x2 = xs[i2], y2 = ys[j2]; if (inside(x2, y2) && !(i2 === gi && j2 === gj) || !clear(xs[i], ys[j], x2, y2)) continue;
+        const ax2 = dj ? 1 : 0, v = (ax2 << 0) + id(i2, j2) * 2, c = dist[u] + Math.abs(x2 - xs[i]) + Math.abs(y2 - ys[j]) + (ax2 !== ax && dist[u] > 0 ? 8 : 0);
+        if (c < dist[v]) { dist[v] = c; prev[v] = u; } } } };
   const walkTo = async (x, y, timeout = 10000, soft = false) => {
     // soft: a walk that may fall short (chasing a moving samurai) gives up quietly instead of failing the check
     const fail_ = soft ? m => { throw new Error(m); } : fail;
     await until('the combo chain to end', calm, undefined, 8000);
-    const t0 = Date.now(), Y = ['y', y, 'ArrowUp', 'ArrowDown'], X = ['x', x, 'ArrowLeft', 'ArrowRight'];
-    // he slows to a stop rather than stopping dead (player/locomotion.js): once he has, check both axes again,
-    // since the second leg starts while the first one's speed is still dying away
+    const t0 = Date.now(), pos = () => page.evaluate(() => [window.__game.P.x, window.__game.P.y]);
+    // he slows to a stop rather than stopping dead (player/locomotion.js): let him settle before reading where he is
     const settle = () => page.waitForFunction(() => Math.hypot(window.__game.P.vx, window.__game.P.vy) < 1, undefined, { timeout: 600 }).catch(() => {});
-    const at = async a => { await settle(); return page.evaluate(a => window.__game.P[a], a); };
-    for (let pass = 0; pass < 4; pass++) {
-    if (pass && Math.abs(await at('x') - x) <= 2 && Math.abs(await at('y') - y) <= 2) break;
-    // y first, then x; a pillar in the way (a step that gets him nowhere) and he tries the other axis first
-    for (let order = [Y, X], turns = 0; ; order = order.slice().reverse(), turns++) {
-      let blocked = false;
-      for (const [axis, goal, neg, pos] of order) {
-        for (let stuck = 0; ;) { const v = await page.evaluate(a => window.__game.P[a], axis), d = goal - v;
-          if (Math.abs(d) <= 2) break;
-          if (Date.now() - t0 > timeout) fail_(`could not walk to ${x},${y} (${axis} ${v.toFixed(1)})`);
-          const k = d < 0 ? neg : pos; await kb.down(k); await sleep(Math.min(400, Math.abs(d) / 78 * 1000)); await kb.up(k);
-          const v2 = await page.evaluate(a => window.__game.P[a], axis);
-          if (Math.abs(v2 - v) >= .5) stuck = 0; else if (++stuck > 3) { blocked = true; break; } }
-        if (blocked) break; }
-      if (!blocked) break; if (turns > 6) fail_(`could not walk to ${x},${y}: blocked both ways`); } }
+    // one straight leg; false when a step gets him nowhere (something in the way: plan again from where he stands)
+    const leg = async (axis, goal) => { const [neg, pos_] = axis === 'x' ? ['ArrowLeft', 'ArrowRight'] : ['ArrowUp', 'ArrowDown'];
+      for (let stuck = 0; ;) { const v = await page.evaluate(a => window.__game.P[a], axis), d = goal - v;
+        if (Math.abs(d) <= 1.5) return true;
+        if (Date.now() - t0 > timeout) fail_(`could not walk to ${x},${y} (${axis} ${v.toFixed(1)})`);
+        // (at least 40 ms: a shorter press can fall between two steps and never move him)
+        const k = d < 0 ? neg : pos_; await kb.down(k); await sleep(Math.max(40, Math.min(400, Math.abs(d) / 78 * 1000))); await kb.up(k);
+        if (Math.abs(d) < 8) await settle();   // a nudge: count where he comes to rest, not where he is mid-stride
+        const v2 = await page.evaluate(a => window.__game.P[a], axis);
+        if (Math.abs(v2 - v) >= .5) stuck = 0; else if (++stuck > 3) return false; } };
+    for (let plan = 0; ; plan++) {
+      await settle(); const [px, py] = await pos();
+      if (Math.abs(px - x) <= 2.5 && Math.abs(py - y) <= 2.5) break;   // he eases to a stop, so a hair past the 1.5 px a leg aims for
+      if (plan > 8) fail_(`could not walk to ${x},${y}: still at ${px.toFixed(1)},${py.toFixed(1)}`);
+      const pts = route(px, py, x, y);
+      if (!pts) fail_(`no route from ${px.toFixed(1)},${py.toFixed(1)} to ${x},${y}`);
+      for (let k = 1; k < pts.length; k++) { const [ax, ay] = pts[k - 1], [bx, by] = pts[k];
+        if (!await leg(ax !== bx ? 'x' : 'y', ax !== bx ? bx : by)) break;
+        await settle(); } }
     await reach(FREE); };
   const inv = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__game.INV)));
-  const run = async (name, fn) => { step = name; await fn(); console.log(`  ok  ${name}`); };
+  const run = async (name, fn) => { step = name; const t0 = Date.now(); await fn(); console.log(`  ok  ${name} (${((Date.now() - t0) / 1000).toFixed(1)} s)`); };
   // the nearest samurai with at least hp left (the healthiest first when none has)
   const fitSamurai = (hp, lone) => page.evaluate(([hp, lone]) => { const { P, E, K } = window.__game, L = E.map((e, i) => ({ e, i })).filter(q => q.e.alive && q.e.hp >= hp && !q.e.held && q.e.state === 'guard' && (!lone || K.alone.has(q.e)));   // standing his ground, not reeling from a cut
     L.sort((a, b) => Math.hypot(a.e.x - P.x, a.e.y - P.y) - Math.hypot(b.e.x - P.x, b.e.y - P.y)); return L[0] && { i: L[0].i, x: L[0].e.x, y: L[0].e.y }; }, [hp, lone]);
@@ -87,7 +112,8 @@ try {
       if (!e) { if (hp > .01 && k % 2 === 1 && await fitSamurai(.01)) { const m = await page.evaluate(() => window.__game.PT.assist);
           await page.selectOption('#combo', 'auto'); await besides(16, .01); await kb.press('j'); await reach(FREE, 8000); await page.selectOption('#combo', m); }
         else await sleep(500); continue; }
-      await walkTo(Math.max(30, Math.round(e.x - dx)), Math.round(e.y), 10000, true).catch(() => {});
+      const gx = Math.max(30, Math.round(e.x - dx)), gy = Math.round(e.y);
+      await walkTo(gx, gy, 10000, true).catch(() => {});
       // face him: a tap can fall between two steps and never turn him (only a held key does), so hold it a beat until he faces right
       for (let t = 0; t < 5 && await page.evaluate(() => window.__game.P.face < 0); t++) { await kb.down('d'); await sleep(40); await kb.up('d'); }
       await reach(FREE, 6000); const ok = await page.evaluate(([i, d, hp]) => { const { P, E } = window.__game, e = E[i];
@@ -399,10 +425,18 @@ try {
     const bodies = await page.evaluate(() => window.__game.FALLEN.filter(f => f.left > 0).map(f => [Math.round(f.x), Math.round(f.y)]));
     if (!bodies.length) fail('no fallen samurai to harvest');
     // (E beside a recruit or a downed companion is theirs: if one is beside this body, the next body)
-    for (let k = 0; ; k++) { const body = bodies[k % bodies.length], side = k % 2 ? -1 : 1;
-      await walkTo(Math.max(26, Math.min(454, body[0] + (body[0] > 240 ? -24 : 24) * side)), body[1], 10000, true).catch(() => {}); await kb.down('e');
+    // never beside a recruiting spot either: E there would take a recruit on (and bring the party back from camp before its time)
+    const spots = await page.evaluate(() => window.__game.RECRUITS.filter(s => s.x > 0).map(s => [s.x, s.y]));
+    const spotFree = (x, y) => !spots.some(([sx, sy]) => Math.hypot(sx - x, (sy - y) * 1.4) < 34);
+    const at = [];
+    for (const b of bodies) for (const side of [1, -1]) { const x = Math.max(26, Math.min(454, b[0] + (b[0] > 240 ? -24 : 24) * side)); if (spotFree(x, b[1])) at.push([x, b[1]]); }
+    if (!at.length) fail(`every fallen samurai lies beside a recruit (bodies ${JSON.stringify(bodies)}, spots ${JSON.stringify(spots)})`);
+    for (let k = 0; ; k++) { const [hx, hy] = at[k % at.length];
+      await walkTo(hx, hy, 10000, true).catch(() => {});
+      if (!await page.evaluate(([x, y]) => !window.__game.RECRUITS.some(s => s.x > 0 && Math.hypot(s.x - window.__game.P.x, (s.y - window.__game.P.y) * 1.4) < 24), [hx, hy])) { if (k >= 5) fail('he keeps ending up beside a recruit'); continue; }
+      await kb.down('e');
       if (await page.waitForFunction(() => window.__game.P.state === 'harvest', undefined, { timeout: 2000 }).then(() => true, () => false)) break;
-      await kb.up('e'); if (k >= 3) fail(`hold E never harvested (bodies ${JSON.stringify(bodies)}, he is at ${JSON.stringify(await page.evaluate(() => [window.__game.P.x, window.__game.P.y, window.__game.P.state]))})`); await reach(FREE, 4000); }
+      await kb.up('e'); if (k >= 5) fail(`hold E never harvested (bodies ${JSON.stringify(bodies)}, he is at ${JSON.stringify(await page.evaluate(() => [window.__game.P.x, window.__game.P.y, window.__game.P.state]))})`); await reach(FREE, 4000); }
     await until('EXP', () => window.__game.INV.exp > 10 || window.__game.INV.lv > 1);
     await shot('14-harvest'); await kb.up('e'); await reach(FREE); });
   await run('power III (the test picker): the Crescent Moon comes with its twin and the slam with its pillars', async () => {
@@ -466,16 +500,20 @@ try {
   const promptNow = () => page.evaluate(() => { const p = window.__game.CP.prompt; return p && { k: p.kind, f: p.face, age: p.age }; });
   const waitPrompt = (t = 1500) => page.waitForFunction(() => !!window.__game.CP.prompt, undefined, { timeout: t }).then(() => promptNow(), () => null);
   // the right answer on the keys: the direction (→ toward him) with J, J alone, K or I
-  const answerKeys = async p => { const dir = { F: p.f > 0 ? 'd' : 'a', FIN: p.f > 0 ? 'd' : 'a', B: p.f > 0 ? 'a' : 'd', U: 'w', D: 's' }[p.k];
-    if (p.k === 'K') await kb.press('k'); else if (p.k === 'S') await kb.press('i'); else if (dir) { await kb.down(dir); await kb.press('j'); await kb.up(dir); } else await kb.press('j'); };
+  // (the game reads the keys on its next step: wait for the answer to be taken, or the window to close, so the prompt still open
+  // is never mistaken for the next one)
   const answers = () => page.evaluate(() => window.__game.CP.answers);
+  const taken = n0 => page.waitForFunction(n => window.__game.CP.answers > n || !window.__game.CP.prompt, n0, { timeout: 1500 }).catch(() => {});
+  const answerKeys = async p => { const dir = { F: p.f > 0 ? 'd' : 'a', FIN: p.f > 0 ? 'd' : 'a', B: p.f > 0 ? 'a' : 'd', U: 'w', D: 's' }[p.k], n0 = await answers();
+    if (p.k === 'K') await kb.press('k'); else if (p.k === 'S') await kb.press('i'); else if (dir) { await kb.down(dir); await kb.press('j'); await kb.up(dir); } else await kb.press('j');
+    await taken(n0); };
   await run('combo prompt: a landed cut opens a prompt over the samurai; → + J (D + J) in its window plays the lunge cut, graded', async () => {
     await page.selectOption('#combo', 'prompts'); await page.selectOption('#basic', '450'); await until('a six-link chain', () => window.__game.INV.basic >= 450); await page.locator('#game').click();
-    let done = false, shown = false;
+    let done = false, shown = false; const seen = [];
     for (let k = 0; k < 14 && !done; k++) {
       const i = await besides(16, 3); await kb.press('j');
       let p = await waitPrompt();
-      if (!p) { await reach(FREE, 6000); continue; }   // the cut whiffed: no prompt
+      if (!p) { seen.push('whiff'); await reach(FREE, 6000); continue; }   // the cut whiffed: no prompt
       if (!shown) { shown = true; const o = await page.evaluate(i => { const { CP, E } = window.__game, p = CP.prompt; return p && { struck: p.e === E[i], hits: CP.chain.hits }; }, i);
         if (!o || !(o.hits > 0)) fail(`a prompt opened with no landed hit (${JSON.stringify(o)})`);
         await shot('20-combo-prompt'); }
@@ -490,8 +528,9 @@ try {
           console.log(`  (→ + J graded ${a.grade}, ${Math.round(a.age * 1000)} ms after the prompt showed)`);
           done = true; break; }
         await answerKeys(p); p = await waitPrompt(); }
+      seen.push(await page.evaluate(() => { const { CP } = window.__game; return `${CP.log.slice(-6).map(a => `${a.kind}:${a.grade}`).join(',')} (${CP.last && CP.last.why})`; }));
       await reach(FREE, 8000); }
-    if (!done) fail('no → prompt came up in 14 chains'); });
+    if (!done) fail(`no → prompt came up in 14 chains: ${seen.join(' | ')}`); });
   await run('combo prompt: a wrong answer ends the chain with a 0.45 s recovery, in which J does nothing', async () => {
     for (let k = 0; ; k++) {
       await besides(16, 2); await kb.press('j'); const p = await waitPrompt();
@@ -515,6 +554,8 @@ try {
     await page.selectOption('#basic', '0'); await until('a two-link chain', () => window.__game.INV.basic < 40); await page.locator('#game').click();
     for (let k = 0; ; k++) {
       if (k > 10) fail('no K offered after a finisher in 11 chains');
+      // landed cuts grow the basic skill: after a few tries back to a two-link chain
+      if ((await inv()).basic >= 40) { await page.selectOption('#basic', '0'); await until('a two-link chain', () => window.__game.INV.basic < 40); await page.locator('#game').click(); }
       await besides(16, 3, true); await kb.press('j');
       let p = await waitPrompt(); if (!p) { await reach(FREE, 6000); continue; }
       if (p.k !== 'FIN') fail(`a two-link chain asked for ${p.k}, not the finisher`);
@@ -578,8 +619,9 @@ try {
           if (a.grade === 'WRONG' && a.kinds.length === 0) break;
           if (a.kind !== p.k || a.grade === 'WRONG' || !/^swipe/.test(a.via)) fail(`a swipe ${sd} on a ${p.k} prompt was taken as ${JSON.stringify(a)}`);
           done = true; break; }
+        const n0 = await answers();
         if (p.k === 'T') await tap(); else if (p.k === 'K') await kb.press('k'); else break;   // a skill link: let it pass
-        p = await waitPrompt(); }
+        await taken(n0); p = await waitPrompt(); }
       await reach(FREE, 8000); }
     if (!done) fail('no direction prompt came up to swipe at');
     await page.selectOption('#combo', 'auto'); await page.locator('#game').click(); await reach(FREE, 6000); });
@@ -619,12 +661,19 @@ try {
     await kb.up('o'); await reach(/^moon$/); await reach(FREE);
     await kb.press('['); await kb.press('['); if (await el() !== 'storm') fail(`[ [ left ${await el()}, not storm`); });
   await run('H with nobody in the party: he takes the cut, a red number pops and his health bar chips', async () => {
-    if ((await party()).allies.length) fail('the party is not at camp');
+    { const p = await party(); if (p.allies.length) fail(`the party is not at camp: ${JSON.stringify(p)}, roster ${JSON.stringify(await page.evaluate(() => window.__game.ROSTER.map(c => [c.id, c.from])))}`); }
     const hp = (await inv()).hp; await kb.press('h');
     await until('a red number', () => window.__game.N.some(q => q.kind === 'take')); await shot('15-hurt-number');
     const h2 = (await inv()).hp; if (!(h2 < hp)) fail(`H left his health at ${h2} (was ${hp})`); });
   // ---- Breath of Qi on C: Qi earned by cutting the nearest samurai, as a player would ----
+  // (short of the storm, a two-link chain each J: a six-link chain's Qi overshoots a full meter and wakes the storm, 8 s to wait out
+  // and an empty meter after; the basic skill is put back after)
   const qiUp = async (goal, storm = false) => {
+    const basic0 = (await inv()).basic, short = async on => { if (storm) return; const want = on ? 0 : basic0;
+      if (on ? (await inv()).basic >= 40 : (await inv()).basic < 40 && basic0 >= 40) { await page.selectOption('#basic', String([0, 40, 120, 250, 450].filter(v => v <= want).pop()));
+        await until('the basic skill set', on => on ? window.__game.INV.basic < 40 : window.__game.INV.basic >= 40, on); await page.locator('#game').click(); } };
+    try { await short(true); await qiUp_(goal, storm); } finally { await short(false); } };
+  const qiUp_ = async (goal, storm) => {
     for (let i = 0; i < 60; i++) {
       if (await page.evaluate(([g, st]) => st ? window.__game.P.storm > 0 : window.__game.P.qi >= g && !(window.__game.P.storm > 0), [goal, storm])) return;
       const e = await page.evaluate(() => { const P = window.__game.P, L = window.__game.E.filter(e => e.alive);
@@ -657,8 +706,13 @@ try {
     await until('an out-breath', q => window.__game.P.qi < q - .2, q0, 6000); await kb.up('c'); await kb.up('s');
     await reach(FREE, 6000); if (await page.evaluate(() => window.__game.P.shield)) fail('the shield stayed up after Seiza'); });
   await run('hold C at the shrine: Lotus pours the meter into health', async () => {
-    // .6: the walk to the shrine can take long enough for the meter to ebb under a notch
-    await qiUp(.6); await walkTo(78, 98); const q0 = await page.evaluate(() => window.__game.P.qi);
+    // the walk to the shrine can take long enough for the meter to ebb under a notch (out of a fight it ebbs 0.05 a second):
+    // fill it to .85 (one more hit can't reach 1 and wake the storm), and if it still ebbed under a notch on the way, cut some more and walk back
+    for (let tries = 0; ; tries++) {
+      await qiUp(.85); await walkTo(78, 98);
+      if (await page.evaluate(() => window.__game.P.qi >= 1 / 3 + .05)) break;
+      if (tries >= 2) fail(`the meter ebbed under a notch on every walk to the shrine (${await page.evaluate(() => window.__game.P.qi)})`); }
+    const q0 = await page.evaluate(() => window.__game.P.qi);
     await kb.down('c');
     if (!await page.waitForFunction(() => window.__game.P.state === 'lotus', undefined, { timeout: 6000 }).then(() => true, () => false))
       fail(`no lotus: ${JSON.stringify(await page.evaluate(() => { const { P, CP } = window.__game; return { s: P.state, x: P.x, y: P.y, qi: P.qi, storm: P.storm, chain: !!CP.chain, prompt: !!CP.prompt, lock: CP.lock }; }))}`);
@@ -759,8 +813,15 @@ try {
     await shot('10-kit-kuro'); await kb.press('Tab');
     const p = await party(); if (p.allies.length !== 3) fail(`${p.allies.length} companions in the room, not 3`); });
   await run('the companions fight: someone in the party earns EXP from the samurai', async () => {
-    await walkTo(300, 180);
-    if (!await page.waitForFunction(() => window.__game.allies.some(a => a.c.exp > 0 || a.c.lv > 1), undefined, { timeout: 20000 }).then(() => true, () => false))
+    // they take on samurai within 130 px of him (party/companions.js pickTarget), and a new squad comes only once the room is
+    // empty: stand among the samurai, and walk on toward whoever is left standing out of their reach
+    await walkTo(300, 180); let got = false;
+    for (let t0 = Date.now(); !got && Date.now() - t0 < 30000; ) {
+      got = await page.waitForFunction(() => window.__game.allies.some(a => a.c.exp > 0 || a.c.lv > 1), undefined, { timeout: 4000 }).then(() => true, () => false);
+      const e = !got && await page.evaluate(() => { const { P, E } = window.__game, L = E.filter(e => e.alive && !e.held).sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y));
+        return L[0] && Math.hypot(L[0].x - P.x, (L[0].y - P.y) * 1.4) > 90 && [Math.round(L[0].x), Math.round(L[0].y)]; });
+      if (e) await walkTo(Math.max(30, Math.min(450, e[0] + (e[0] > 240 ? -40 : 40))), e[1], 8000, true).catch(() => {}); }
+    if (!got)
       fail(`no companion EXP: ${JSON.stringify(await page.evaluate(() => { const { P, E, allies, party } = window.__game; return { P: [P.x, P.y, P.state], order: party.order,
         A: allies.map(a => [a.c.id, a.state, Math.round(a.x), Math.round(a.y)]), E: E.map(e => [Math.round(e.x), Math.round(e.y), e.hp, e.state, e.held]) }; }))}`);
     await shot('11-party-fights'); });
