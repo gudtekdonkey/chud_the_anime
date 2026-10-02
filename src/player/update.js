@@ -32,6 +32,8 @@ import { wildGo } from './wild.js';
 import { tv, updateLine } from './mastery.js';
 import { ST } from './stats.js';
 
+const DIAG_GRACE = .1;   // s a diagonal survives one of its two keys lifting
+
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
   for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; q.life -= dt; }
@@ -57,7 +59,14 @@ export function update(dt, inp) {
   const canAttack = free || s === 'land' || s === 'sheathe' || s.startsWith('ready') || s === 'runArmed';
   if (inp.mx) P.face = Math.sign(inp.mx);
   // the way he faces as he moves: side on, three-quarters or straight toward or away from the camera (the west side mirrors the east)
-  if (inp.mx || inp.my) P.view = inp.my > 0 ? (inp.mx ? 'SE' : 'S') : inp.my < 0 ? (inp.mx ? 'NE' : 'N') : 'E';
+  // letting go of a diagonal, the two keys never lift on the same frame: hold the diagonal a beat (DIAG_GRACE) so he stops facing it,
+  // not the one key that lifted last; held on, the cardinal takes over after the beat
+  if (inp.mx || inp.my) {
+    const v = inp.my > 0 ? (inp.mx ? 'SE' : 'S') : inp.my < 0 ? (inp.mx ? 'NE' : 'N') : 'E';
+    const diag = P.view === 'SE' || P.view === 'NE', card = v.length === 1;   // only a key let go of a diagonal, never a turn to the other side
+    if (diag && card && P.view.includes(v) && P.face === P.diagFace && (P.diagHold = (P.diagHold || 0) + dt) < DIAG_GRACE) { /* keep the diagonal */ }
+    else { P.view = v; P.diagHold = 0; P.diagFace = P.face; }
+  } else P.diagHold = 0;
   const moving = inp.mx || inp.my;
 
   updateItems(dt, canAttack && s !== 'sit' && s !== 'sitDown');
