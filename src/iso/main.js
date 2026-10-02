@@ -26,13 +26,17 @@ import { RAMP } from './gfx/palette.js';
 import { initSkills, skillControl, skillsRender, drawSkills, drawSkillHud, skillState } from './skills/skills.js';
 import { makeSquad } from './enemies/squad.js';
 import { buildPicker } from './enemies/ui.js';
+import { addFolk, drawLabels } from './persona/npcs.js';     // personalities on the 3D body, the townsfolk, the idles (persona/, anim/idles.js)
+import { personaPanel } from './persona/panel.js';
+import { runGallery } from './persona/gallery.js';
+import * as PROBE from './persona/probe.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
 const pipe = makePipeline(canvas);
 SETTINGS.fpsFor = fpsFor; setStyle(Q.has('style') ? +Q.get('style') : 3);   // the owner's pick: Painterly (gfx/style.js)
 const scene = new THREE.Scene(), cam = new THREE.Camera(); cam.matrixAutoUpdate = false;
-if (Q.has('sheet')) runSheet(); else runGame(Q.has('reel') ? REELS[Q.get('reel')] || REELS.chain : null);
+if (Q.has('sheet')) runSheet(); else if (Q.has('idles')) runGallery({ scene, cam, pipe, Q }); else runGame(Q.has('reel') ? REELS[Q.get('reel')] || REELS.chain : null);
 
 // ?iso&sheet: the contact sheet (sheet.js), frozen
 function runSheet() {
@@ -51,7 +55,8 @@ function runGame(reel) {
   // a squad (&foes=N, 3 by default, up to 5) so the chain and Time Slice have someone to leap to; the first is the one the loop was built on
   const SPAWN = [[372, 176], [296, 206], [200, 212], [420, 84]], foes = [foe];
   for (let i = 1; i < (reel ? 1 : Math.max(1, Math.min(5, +(Q.get('foes') ?? 3)))); i++) foes.push(new Foe({ x: SPAWN[i - 1][0], z: SPAWN[i - 1][1], h: -Math.PI / 2, look: lookKind }, Q.has('calm')));
-  const chars = [hero, ...foes]; for (const c of chars) c.look.mount(scene);
+  const folk = reel || Q.get('folk') === '0' ? [] : addFolk(scene);   // the courtyard's people (&folk=0: none)
+  const chars = [hero, ...foes, ...folk]; for (const c of [hero, ...foes]) c.look.mount(scene);
   // the nearest samurai standing (the one a cut turns to)
   const nearFoe = () => { let b = foe, bd = 1e9; for (const f of foes) { if (f.dead || f.frozen || f.parked) continue; const d = Math.hypot(f.x - hero.x, f.z - hero.z); if (d < bd) { bd = d; b = f; } } return b; };
   const script = [];
@@ -70,6 +75,7 @@ function runGame(reel) {
   // the model switch: every character's look is swapped; nothing else is told
   const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } root.querySelector('#o-look').value = kind; };
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
+  personaPanel(root, { hero, foe });
 
   // the canvas fills the stage (16:9, under the window's height). With the low-res target on it shows the 960×540
   // pixels at a whole multiple when one fits (nearest-neighbour); off, the target is drawn at the canvas's own size
@@ -90,7 +96,8 @@ function runGame(reel) {
     hero.prevState = hero.state; cineStep(W.stop > 0 ? 0 : dt); }
   function tick() {
     if (W.stop <= 0 && !reel) { const inp = readInput(); if (!skillControl()) hero.control(inp, squad.on ? squad.aim(hero, inp.dir) : nearFoe(), W.t);   // a hit-stop holds the presses (they outlive it); a skill owns him first (skills/)
-      for (const f of foes) if (!f.frozen && !f.parked) f.control(hero, W.t, 1 / 60); squad.control(1 / 60); }
+      for (const f of foes) if (!f.frozen && !f.parked) f.control(hero, W.t, 1 / 60); squad.control(1 / 60);
+      for (const n of folk) n.control(hero, [...live(), ...folk], W.t); }
     presentation(1 / 60);
     for (let i = 0; i < 2; i++) if (W.step(reel ? runScript : null)) for (const c of chars) if (c.a.out !== c.sampled) { c.sampled = c.a.out; trailOf(c); }
   }
@@ -107,7 +114,7 @@ function runGame(reel) {
     for (const c of chars) { if (c.shown !== c.a.out || c.lookKind === '3d') { const f = c.frame(c === hero); if (f) c.look.show(f); c.shown = c.a.out; } }
     const g = pipe.fx; g.clearRect(0, 0, pipe.fxCanvas.width, pipe.fxCanvas.height);
     for (const c of chars) drawTrail(g, c.trail.map(s => s.gap ? s : { t: s.t, a: toPx(s.mid), b: toPx(s.tip) }), c.a.out ? c.a.out.t : W.t, STYLE.s.trail);
-    drawFx(g, W); squad.draw(g); skillsRender(); drawSkills(g);
+    drawFx(g, W); drawLabels(g, folk, toPx); squad.draw(g); skillsRender(); drawSkills(g);
     if (PIPE.clash) { drawFocus(g, W);   // focus lines on a hit; speed lines behind a roll, a lunge or a skid
       for (const c of chars) if (['roll', 'lunge', 'skid', 'knock'].includes(c.state)) { const [x, y] = toPx([c.x, 10, c.z]), v = [Math.sin(c.a.h), Math.cos(c.a.h) * OBL.a]; speedLines(g, x, y, v[0], v[1], W.t); } }
     for (const c of chars) c.look.stamp(g);
@@ -144,6 +151,8 @@ function runGame(reel) {
       // where each one's feet are on the canvas, 0..1 (for the check's close-up shots)
       get px() { const n = nearFoe(); return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)), near: toPx([n.x, 0, n.z]).map((v, i) => v / (i ? 540 : VW)) }; },
       get enemies() { return squad.debug(); },
+      get folk() { return folk.map(n => ({ ...who(n), kind: n.kind, culture: n.culture, list: n.list, idles: n.a.idler ? n.a.idler.n : 0, played: n.a.idler ? n.a.idler.played.slice() : [] })); },
+      get persona() { return { hero: hero.list || [], heroIdles: hero.a.idler ? hero.a.idler.played.slice() : [], heroCur: hero.a.idler ? hero.a.idler.cur : null, foe: foe.list || [], behave: foe.bh, ...PROBE }; },
       get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }

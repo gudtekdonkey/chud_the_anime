@@ -17,6 +17,8 @@ All of it lives in `src/iso/`. It is a test bed for the owner's picks, not the g
 | `/?iso&foes=1` | one samurai (3 by default, up to 5); `&calm` keeps them all from attacking |
 | `/?iso&power=3&pick=chain:b&trees&qi=0&assist` | the new skills' setup the Tab screen would hold: the power tier, a tree's fork, every tree full, the Qi meter at start, the counter's assist ring |
 | `/?iso&group=mixed` | enemy types instead of the lone samurai (`docs/enemies.md`): the overlay's Enemies picker, `,` steps through the groups, `.` brings one back (moved off G and R: the party's hold / follow and Blade Recall) |
+| `/?iso&idles` | the twenty idles looping side by side (`&who=p:Old%20master` one persona for all, `&folk` townsfolk, `&only=kneelRest,leanSword`, `&yaw=0..7`, `&body=39.5`, `&zoom=3`) |
+| `/?iso&folk=0` | the courtyard without its townsfolk |
 | `/?iso&style=1` | start on a style (0 Toon + dither, 1 Pixel-render, 2 Anime limited, 3 Painterly) |
 | `/?iso&sheet` | a frozen contact sheet: four moments of the loop × the eight facings (`&rows=4,5,6,7` the other four, `&look=pixel`, `&foe`, `&zoom=1.9`) |
 | `npm run check:iso` | builds, then `scripts/check-iso.mjs` plays the loop in Chromium and asserts it (below); screenshots in `test-output/iso/` |
@@ -34,7 +36,10 @@ it), `Q` casts Lightning Chain, `X` Time Slice on a full Qi meter (below). Press
 (Painterly, Pixel-render, Anime limited, Toon + dither); `C` clashes; `Z` the finisher's close-up (it was X: X is Time Slice now); the pipeline
 steps `1` low-res target, `2` toon bands, `3` dither, `4` palette, `5` outline, `6` pixel upscale, `7` rim light,
 `8` keep the glints, and the number of bands; `B` the bodies' camera (picked 39.5°, upright 20°, true 54°), the hat's
-tilt and brim; `T` the facings (it was F: F is the counter now) (8 stepped, as baked sprites would be, or free); `9` mist, `0` rain.
+tilt and brim; `T` the facings (it was F: F is the counter now) (8 stepped, as baked sprites would be, or free); `9` mist, `0` rain;
+Personality: `[` the ronin's, `]` the samurai's (a character, a person of a culture, or one trait), `\` a new person of
+the same culture, `;` the names over the townsfolk (at the merge these moved off P / O / R / T, which are Cross Rift,
+Crescent Moon, Blade Recall and the facings).
 
 The default style is **Painterly** (owner 2026-10-02 over the "Ronin 3D Styles" page: "Painterly with Anime Limited
 clashing and attack full screen animation"). The camera and hat defaults are the 3D faces page's picks: bodies from
@@ -181,6 +186,50 @@ hilt while the blade is thrown), `ui/overlay.js` (Z, T, the assist box), `main.j
   replace it; the light uniforms and the cut-away rule stay.
 - **The effects**: the trail, sparks and the black slash are the pages' pixel effects in world space; they stay.
 
+## Personalities and the twenty idles (`persona/`, `anim/idles.js`)
+
+The owner's ask: "20 different idle animations, and our personality system and how it affects someone's
+behaviour/animations". Today's trait system (`src/traits/`: 52 traits, BASE and ARMS, cultures and `personOf`) is
+shared, pure data; the slice reads it through `mix()` and turns each knob's difference from BASE into the flow rig's
+numbers (`persona/persona.js`). Nothing new goes into `src/traits/`.
+
+**The idles** (`anim/idles.js`): breathe, weightShift, checkBlade, adjustHat, shoulderRoll, scanHorizon, hiltRest,
+neckCrack, kneelRest, leanSword, shiver, flickRain, wipeBlade, stretch, footTap, armsFolded, meditate, glanceBack, slump,
+readyCrouch. Each is keys in the page's format (`{ t, e, ...fields }`, eased into the next key), but laid OVER the live
+base idle: offsets (`dp` the pelvis, `dl` lean, `dh` head, `dfN`/`dfF` the feet, `hat`) are scaled by an envelope that
+eases in and out, absolutes (`hN`/`hF`, `blade`, `elb`, `hy` head yaw, `hr` head roll, `tw` chest twist) are mixed in by
+it. So the breath goes on underneath, the character drifts in and back home without a snap, and the springs ride on top.
+`hold` marks the stretch a person may linger in; a blade idle draws the katana from the saya along its own line (a
+villager, unarmed, never picks one). The drift (`drift`): after `gap` seconds of breathing, a weighted pick (never the
+same twice running), played at the persona's `tempo`, held `linger` times as long. The plain ronin has no pool: he only
+breathes. `hy`, `hr`, `tw` are read by `look/three/rig.js` (the head and chest turn; the hat keeps level); the pixel
+engine is the pages' verbatim and has no lateral axis.
+
+**A persona on the moves** (`persona/gait.js`): the `idle`, `guard`, `run` and `runArmed` clips take an actor's
+`a.persona` when it has one; an actor without one, or with the plain persona, runs the page's own function. Each persona
+move is the page's with the knobs written in so the plain numbers give the page's move bit for bit (`probe.plainSame`,
+checked). A `walk` is added (three fifths of the stride on the ground, the hips highest over the planted foot; the sword
+hand on the hilt, or both arms swinging unarmed). The run's phase still runs on the ground covered, over the persona's
+stride, so the feet stay planted at any cadence.
+
+| Knob (today's) | On the 3D body |
+|---|---|
+| lean, chest, bow, hx, hy, hat | the lean (chest ×0.6), the head (bow ×0.2 rad), the pelvis (×1.6 rig px), the brim |
+| idle legs, knee, breath, period, bob, sway, swayLean, jitter | stance width, hips sunk into the knees, breath depth and pace, a dip, a drift, a tilt, small restless shifts |
+| f / b hand targets (ARMS) | the right / left hand toward a rest point by weight: hilt, scabbard, behind, cross, sleeves, folded, pray, chin, hip, clutch, fists, dangle, trail (`gait.js REST`) |
+| walk / run speed, fps, stride | top speed; stride = √(speed / cadence) × √stride, the cadence follows from the ground covered |
+| lift, swing, bounce, heavy, rock, limp, wobble, knee0 | the foot's lift, arm swing, the hips' bob, a thud on each footfall, a rocking lean, a short near step and a dip, a sideways bank, bent knees |
+| fidgets, every | which idles (`behave.js FIDGET_IDLE`, plus `IDLE_AFFINITY`) and the breaths between them |
+
+**Behaviour** (`persona/behave.js BEHAVE`): per trait, patience (×e^x on the 1.6 s the samurai waits in his guard),
+press (closes nearer, cuts from further, chases sooner), caution (gives ground after a hit, holds further off) and grit
+(a hit's recoil ×e^(−0.7x)). `play/foe.js` reads `foe.bh`, `PLAIN` (his old numbers) unless the overlay gives him a
+personality. The townsfolk (`persona/npcs.js`): rest as long as their persona lingers, wander their patch at their walk,
+turn to look when he comes near, and a cautious one steps out of his way. Villagers are a look of their own
+(`persona/folk.js`, registered as `LOOKS.folk`: kimono, obi, sleeves, a kasa, a head cloth or a topknot, on the same
+skeleton); samurai wear the red armour. In the pixel look villagers are the pages' drawing, tinted.
+
+
 ## What the check covers (`npm run check:iso`)
 
 No page errors; the run in all 8 directions (he moves where the keys point and is drawn facing that way); the stop;
@@ -193,6 +242,11 @@ on a calm squad of three: Q (at least two links, the yank, the draw-cut on the d
 it); R three times (the blade hangs and he is empty-handed, J refused; home, the catch, the anchor in turn, the blade
 back each time); X (time stops for the squad, at least two taken and all of them fall on the click, colour back, the
 close-up, the meter spent; refused on an empty meter); Q in the other three styles; growth counted. SwiftShader draws a few frames a second, so the page runs with
+one screenshot per pipeline step flipped; then the personalities: each of the twenty idles plays on an actor, moves him,
+never jumps more than 2 rig px a step and ends back in the breath; no traits gives the page's idle, guard, run and runArmed exactly and no idles;
+an old master and a young hothead differ in cadence, speed, breath, how often and which idles, and patience; P gives
+the ronin a personality (an idle of his own, a slower run); O gives the samurai one (more patient); the townsfolk
+drift into idles and wander; the idle gallery loops all twenty. SwiftShader draws a few frames a second, so the page runs with
 `&tick=8` (8 game steps a frame) and every wait is on the game's clock.
 
 ## Performance
