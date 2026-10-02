@@ -4,6 +4,7 @@
 // under the brim's edge whenever he faces the camera (LOOK3D.glint).
 import * as THREE from 'three';
 import { makeRonin } from './ronin.js';
+import { makeDressed } from '../../gear/dress.js';
 import { applyPose } from './rig.js';
 import { SH } from '../../gfx/shade.js';
 import { toScreen } from '../../gfx/view.js';
@@ -12,8 +13,9 @@ import { STYLE } from '../../gfx/style.js';
 export const LOOK3D = { hatTilt: 14, brim: 1, glint: 1 };   // the overlay's hat tunables (faces page: 14° tilt, the wide brim as drawn)
 const _v = new THREE.Vector3(), _q = new THREE.Quaternion();
 
-export function threeLook({ foe = false } = {}) {
-  const rig = makeRonin({ foe }); let scene = null, last = null, prevU = null, squash = 0, lastPose = null;
+// `outfit` (gear/outfits.js): dressed from the 200 gear pieces instead of Iron Ash as built (`body`: the under-suit's colour)
+export function threeLook({ foe = false, outfit = null, body = null } = {}) {
+  const rig = outfit ? makeDressed(outfit, { obj: foe ? 2 : 1, body }) : makeRonin({ foe }); let scene = null, last = null, prevU = null, squash = 0, lastPose = null;
   return {
     kind: '3d',
     mount(s) { scene = s; s.add(rig.root); },

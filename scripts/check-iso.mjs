@@ -1,10 +1,11 @@
 // npm run check:iso: serves the built dist/ with `vite preview`, opens the slice (?iso&test), and plays the core loop in
 // Chromium: no page errors; the run in all 8 directions (the stick maps straight to the screen, he faces where he
 // runs); the roll (its i-frames, its distance); J1 → J2 → J3 on the samurai with every hit landing and the samurai
-// reacting; a cut cancelled into the roll; a kill and the respawn; the same loop with the pixel look; one shot per
-// pipeline toggle. Screenshots land in test-output/iso/. Chromium comes from PLAYWRIGHT_BROWSERS_PATH (never downloaded),
-// with WebGL on SwiftShader, which draws a few frames a second: the page runs with &tick=N (N game steps a frame), and
-// every wait here is on the game's own clock or state, never the wall clock.
+// reacting; a cut cancelled into the roll; a kill and the respawn; the same loop with the pixel look; the outfit picker
+// (a preset, a random outfit, dressed in both looks); one shot per pipeline toggle. Screenshots land in test-output/iso/.
+// Chromium comes from PLAYWRIGHT_BROWSERS_PATH (never downloaded), with WebGL on SwiftShader, which draws a few frames
+// a second: the page runs with &tick=N (N game steps a frame), and every wait here is on the game's own clock or
+// state, never the wall clock.
 import { chromium } from 'playwright';
 import { preview } from 'vite';
 import fs from 'node:fs';
@@ -130,6 +131,25 @@ try {
     await page.keyboard.press('KeyJ'); await until('J1', () => window.__iso.hero.state === 'J1'); await until('a hit', n => window.__iso.STATS.log.length > n, n0); await shot('pixel-J1', ['hero', 'foe']);
     ok((await G()).log.slice(n0).join(' ')); }
   await page.keyboard.press('KeyM'); await until('the 3D look', () => window.__iso.look === '3d');
+
+  // ---- the outfit picker (src/iso/gear/, docs/gear.md): a preset, then a random outfit on him, a cut landing in each,
+  // the pixel look dressed, then back to Iron Ash as built. Picked through the overlay, as the owner would
+  const cutOnHim = async name => { await settle(); await until('the samurai standing', () => !window.__iso.foe.dead, undefined, 90000);
+    const f = (await G()).foe; await walkTo(f.x - 22, f.z, 6); await settle(); const n = (await G()).log.length;
+    await page.keyboard.press('KeyJ'); await until(`a cut in ${name}`, n => window.__iso.STATS.log.length > n, n); await shot(`outfit-${name}`, ['hero', 'foe']);
+    const last = (await G()).log.at(-1); if (!/hit|miss/.test(last)) fail(`the cut in ${name}: ${last}`); return last; };
+  const worn = () => page.evaluate(() => ({ outfit: window.__iso.outfit, dressed: window.__iso.dressed }));
+  step = 'outfit: a preset'; await page.selectOption('#g-preset', 'general'); await page.locator('canvas').click();
+  await until('the general', () => (window.__iso.outfit || '').includes('o-yoroi'));
+  { const w = await worn(), n = Object.keys(w.dressed).length, built = Object.values(w.dressed).reduce((a, r) => a + r.built, 0);
+    if (n !== 16) fail(`${n} pieces worn, wanted 16`); ok(`16 pieces, ${built} parts built; ${await cutOnHim('general')}`); }
+  step = 'outfit: randomise'; { const before = (await worn()).outfit; await page.keyboard.press('KeyG');
+    await until('a new outfit', b => window.__iso.outfit && window.__iso.outfit !== b, before);
+    const w = await worn(); if (w.outfit.split(',').some(id => !id)) fail(`a random outfit left a slot empty: ${w.outfit}`); ok(`${await cutOnHim('random')}`); }
+  step = 'outfit: the pixel look'; await page.keyboard.press('KeyM'); await until('the pixel look', () => window.__iso.look === 'pixel');
+  ok(await cutOnHim('random-pixel')); await page.keyboard.press('KeyM'); await until('the 3D look', () => window.__iso.look === '3d');
+  step = 'outfit: as built'; await page.selectOption('#g-preset', 'built'); await page.locator('canvas').click();
+  await until('Iron Ash as built', () => window.__iso.outfit === null); errorsCheck(); ok();
 
   // ---- one shot per pipeline step, toggled off and on again
   step = 'pipeline toggles';

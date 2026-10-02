@@ -12,18 +12,19 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `npm run check` | Builds, then `scripts/check.mjs` plays a key sequence in Chromium and asserts the states and no page errors. Screenshots and the state log go to `test-output/` |
 | `npm run check:hd` | The same check at 2× (`?hd`), screenshots in `test-output/hd/` |
 | `node scripts/iso-reel.mjs chain 3` | After a build: one of the Animation Flow page's scenarios as the slice plays it, laid out as the page's contact sheets (`AF_DIR` at the page's source draws the page's sheet above it), into `test-output/iso/reel-<name>[-vs].png` |
-| `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle. Screenshots in `test-output/iso/` |
+| `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, the outfit picker (a preset, a random outfit, both looks), each pipeline toggle. Screenshots in `test-output/iso/` |
+| `npm run check:gear` | Node, no browser (~10 s): all 200 gear pieces (`src/iso/gear/`, `docs/gear.md`) alone and in full outfits, the presets, 600 random outfits: built in 3D, posed in the core loop's moves in 8 facings, drawn by the pixel look; no errors, no slot worn showing nothing, bounded geometry |
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
-- `?iso` opens the new direction's vertical slice instead (`src/iso/`, `docs/iso-slice.md`): `src/main.js` only picks, today's game boots from `src/game.js` untouched. It needs `three` (pinned; `npm install`); where `node_modules` is shared and lacks it, `ISO_DEPS=<dir with node_modules/three>` makes `vite.config.js` alias it. Its read-only hook is `window.__iso` (dev or `?test`); `&tick=N` runs N game steps a frame for the check.
+- `?iso` opens the new direction's vertical slice instead (`src/iso/`, `docs/iso-slice.md`): `src/main.js` only picks, today's game boots from `src/game.js` untouched. It needs `three` (pinned; `npm install`); where `node_modules` is shared and lacks it, `ISO_DEPS=<dir with node_modules/three>` makes `vite.config.js` alias it. Its read-only hook is `window.__iso` (dev or `?test`; `.outfit`, `.dressed` for the gear); `&tick=N` runs N game steps a frame for the check.
 - The check reads the player, the facing he is drawn in, the enemies, what he wears, the inventory, `S` and the K markers and the black slashes through `window.__game = { P, PF, E, V, wear, INV, S, K }`, plus growth's read-only helpers `tv(skill, key)` (a tree's value now), `known(skill)`, `stat(k)` and `ST` (his stats' effects), and the animation flow's: `FEEL` (its tuning), `stops` (the last hit pauses, by weight and frames), `PB` (the drawn pose: its move, draws since it began, its distance from the move's own frame, where the blade is), `B` (the input buffer), `CAM` (the camera offset) and `stride(anim)` (a gait's measured stride). That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
 
 ## Module map (`src/`)
 
 | File | Owns |
 |---|---|
-| `main.js` | Boot: picks today's game (`game.js`) or, with `?iso`, the slice (`iso/main.js`) |
+| `main.js` | Boot: picks today's game (`game.js`) or, with `?iso`, the slice (`iso/main.js`; `?iso&gear` the gear catalogue, `iso/gear/catalogue.js`) |
 | `game.js` | Today's game: builds everything, the fixed 60 Hz update loop under `requestAnimationFrame`, the debug hook |
 | `config.js` | `W`/`H`, `PX` (screen pixels per world pixel: 2 with `?hd`, the owner's 2× ronin; else 1) and `snap`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY` (96×64 × `PX`; the rig draws in its old 48×48 box, `RX`/`RY`, scaled by `PX` and shifted by whole pixels), `SQ` (floor squash) |
 | `state.js` | ALL shared mutable state: the player `P`, what he wears (`wear`), `S` (`shake`, `hitstop`, `scr` screen flash, `roomClear`, `banner`, `smoke`: while the static bomb's smoke is up every enemy counts as isolated, `powerTest`: the page's power picker, `skillTest`: the skills picker), the inventory `INV` (`INV.sk`: each skill's wild casts, known, tree points and fork pick) (the HUD reads only this), `parts`, `pops` and every effect list |
@@ -165,10 +166,12 @@ Phase 0 of the new direction: Iron Ash V3 in a night courtyard, the Sea of Stars
 | `iso/fx/fx.js` | Effects on the effects layer: dust, sparks, rings, cracks, the black slash (fx/void.js's tear, ported), the blade's trail in each style's look, the clash's focus and speed lines |
 | `iso/fx/cine.js` | The finisher's close-up: J3 on a samurai in reach punches the camera in, letterboxed, ink and speed lines, then back (~0.8 s, any key skips); presentation only |
 | `iso/ui/overlay.js` | The ?iso page and its overlay: frame time, the model switch, the pipeline toggles, camera and hat, controls; every choice a key |
-| `iso/sheet.js` | `?iso&sheet`: a frozen contact sheet of the loop's moments in the 8 facings, either look |
+| `iso/sheet.js` | `?iso&sheet`: a frozen contact sheet of the loop's moments in the 8 facings, either look (`&outfit=` dresses it) |
+| `iso/gear/` | Gear (owner 2026-10-02, `docs/gear.md`): 200 pieces as data on a slot × layer grid (head, torso, arms and hands per side, pants, feet; base and armour), samurai / villager / ninja. `schema.js` (slots, layers, shells, zones, rarity, stats, `validate`), `palette.js` (`DYES`: cloth by rarity, dark armour dyes, iron, straw …), `kit.js` (part constructors, `G` / `G2` rows), `items-head.js` / `items-torso.js` / `items-arms.js` / `items-legs.js` (the rows), `items.js` (`GEAR`, `BY_ID`, `BY_CELL`), `parts.js` (each part kind built from the bones, padded by what the shells under it wear), `dress.js` (`resolve`: hides and shapes; `makeDressed`: the same rig as `ronin.js`), `pixel.js` (an outfit as the pixel engine's style), `outfits.js` (`PRESETS`, `randomOutfit`, `outfitStats`, `encode`/`decode`), `ui.js` (the overlay's outfit picker, `G` randomises), `catalogue.js` (`?iso&gear`, and prototype 47) |
 | `iso/reel.js` | `?iso&reel=<name>`: the Animation Flow page's demo scenarios on its script and clock (`window.__reel.steps(n)`), for `scripts/iso-reel.mjs`'s side-by-side sheets against the page's own |
 
 - Everything in `src/iso/` keeps to the slice: never import it from today's game, and never import today's game modules (`screen.js` grabs `#game`) into it.
+- Gear is data: a new piece is a row (`G`/`G2` in `gear/items-*.js`) of parts at shells, never a mesh, and must fit with every other piece (shells nest; settle a clash with `hides` / `shapes`, never by refusing a pairing). `npm run check:gear` after any change there.
 - A character's look is swapped through `look/look.js` only. The controller hands it the flow's side pose; a new look (a modelled character, a baked sprite sheet) implements the same four calls.
 - The moves are the Animation Flow page's data: change them there first (or mark an addition in `moves-extra.js`), so the slice keeps matching what the owner approved.
 
@@ -197,7 +200,7 @@ The living world as plain data (the ledger): the 100 × 100 zone grid, regions, 
 
 ## Working conventions
 
-- Iterate on design as standalone pages in `prototypes/`, numbered in order (`46-…html` next; 35 to 42 are reserved by the parallel lanes in `docs/sim-core.md`). A prototype built from the game's own modules keeps its source in `scripts/protoNN/` and is bundled into one page (`node scripts/proto36/build.mjs`). Never edit an old prototype; make a new one.
+- Iterate on design as standalone pages in `prototypes/`, numbered in order (`48-…html` next; 35 to 42 are reserved by the parallel lanes in `docs/sim-core.md`). A prototype built from the game's own modules keeps its source in `scripts/protoNN/` and is bundled into one page (`node scripts/proto36/build.mjs`). Never edit an old prototype; make a new one.
 - Record every decision the owner makes in `docs/design-notes.md`.
 - Every culture moves through the trait system: a character from a culture gets `setPersonality`/`bake(personOf(culture, seed))`, never hand-made idle or walk poses. A culture's mannerisms go in `CULTURES` (a new mannerism is a new trait or fidget).
 - Personality traits (`src/traits/`) never import player, enemy or clothing code, so any rig character can take them. A new trait is a new entry in `TRAITS`; a new knob goes in `BASE` with the plain ronin's value, so no-trait output never changes.

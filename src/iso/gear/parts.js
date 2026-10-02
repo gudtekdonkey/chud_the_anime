@@ -85,7 +85,7 @@ export const KINDS = {
     for (const [j, t] of q.at.entries()) { const base = ctx.padMax(key, t, t), r = lerp(Z.r[0], Z.r[1], t) + base + (q.th ?? .06), y = lerp(Z.y[0], Z.y[1], t);
       const tl = q.tilt ? q.tilt * (j % 2 ? 1 : -1) : 0;   // tilted (a wrap, a sash): wider in x so it never sinks into the sides
       newPart(); pc.cyl(r, r + (q.fl || 0), q.h ?? .22, q.seg || 8, ctx.col(q.c), { p: [0, y, 0], s: [1 / Math.cos(tl), 1, q.sq ?? Z.sq ?? 1], r: [0, 0, tl] }); }
-    if (!q.trim) { const [a, b] = [Math.min(...q.at), Math.max(...q.at)]; ctx.raise(key, a, b, () => ctx.padMax(key, a, b) + (q.th ?? .06) + .02); }
+    if (!q.trim) { const [a, b] = [Math.min(...q.at), Math.max(...q.at)], m = ctx.padMax(key, a, b); ctx.raise(key, a, b, () => m + (q.th ?? .06) + .02); }
   },
   // wraps: bands that overlap at a slant down a limb (leg wraps, arm wraps, hand wraps up the forearm)
   wrap(ctx, q, side) {
@@ -187,7 +187,7 @@ export const KINDS = {
     if (q.style === 'tengai') {   // the basket: down over the face to the chin
       pc.cyl(1.9 + base, 2.5 + base, 4.6, 12, c, { p: [0, -.6, 0] }); pc.cyl(2.0 + base, 2.0 + base, .3, 12, c2, { p: [0, 1.7, 0] });
       for (let i = 0; i < 4; i++) { newPart(); pc.cyl(2.0 + base + i * .15, 2.1 + base + i * .15, .14, 12, c2, { p: [0, 1.2 - i * 1.1, 0] }); }
-      ctx.raise('crown', 0, 1, () => base + .8); ctx.raise('face', 0, 1, () => ctx.padMax('face') + .7); return;
+      const fp = ctx.padMax('face'); ctx.raise('crown', 0, 1, () => base + .8); ctx.raise('face', 0, 1, () => fp + .7); return;
     }
     const h = q.h ?? 1.8, top = q.style === 'kasa' ? .08 : q.style === 'dome' ? R * .55 : 1.0;
     pc.cyl(top, R, h, seg, c, { p: [0, h / 2 - .05, 0] });
@@ -197,7 +197,7 @@ export const KINDS = {
       pc.box(.2, .12, len, ctx.col(q.rib || q.c2 || q.c), { p: [Math.sin(a) * mx, my, Math.cos(a) * mx], r: [tilt, a, 0] }); } }
     if (q.knob) { newPart(); pc.cyl(.55, .8, .55, 8, c2, { p: [0, h + .1, 0] }); }
     if (q.band) { newPart(); pc.cyl(R * .42 + .1, R * .42 + .18, .3, seg, ctx.col(q.band), { p: [0, h * .55, 0] }); }
-    if (q.veil) { newPart(); ctx.pc(hat, true).ring2(R * .55, R * .6, 3.4, 12, ctx.col(q.veil), { p: [0, -1.7, 0] }); ctx.raise('face', 0, 1, () => ctx.padMax('face') + .3); }
+    if (q.veil) { newPart(); ctx.pc(hat, true).ring2(R * .55, R * .6, 3.4, 12, ctx.col(q.veil), { p: [0, -1.7, 0] }); const fp = ctx.padMax('face'); ctx.raise('face', 0, 1, () => fp + .3); }
     if (q.cords !== false) for (const sx of [1, -1]) { const hn = ctx.node(B.head, [1.3 * sx, HC + .2, .3]); newPart();
       ctx.pc(hn).box(.16, 2.1, .16, ctx.col(q.cord || 'm3'), { p: [-.22 * sx, -1.0, .3], r: [-.25, 0, .25 * sx] }); rig.springs.push({ node: hn, kind: 'cord' }); }
     if (R > 4) { rig.hat = hat; rig.hatR = R; }

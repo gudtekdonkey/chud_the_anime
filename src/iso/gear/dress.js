@@ -38,8 +38,8 @@ export function resolve(outfit) {
   return { pieces: ps, entries };
 }
 
-// the dressed rig. `obj` is the outline's object id (1 the hero, 2 a samurai)
-export function makeDressed(outfit, { obj = 1 } = {}) {
+// the dressed rig. `obj` is the outline's object id (1 the hero, 2 a samurai); `body` recolours the under-suit
+export function makeDressed(outfit, { obj = 1, body: bodyCol = null } = {}) {
   const mat = shadeMat({ obj, stencil: true }), cloth = shadeMat({ obj, stencil: true, side: THREE.DoubleSide }), meshes = [];
   const root = new THREE.Object3D(), shear = node(root); shear.matrixAutoUpdate = false;
   const body = node(shear), B = makeSkeleton(body);
@@ -49,14 +49,14 @@ export function makeDressed(outfit, { obj = 1 } = {}) {
   const put = (bone, pc, m = mat) => { const me = pc.mesh(m); bone.add(me); meshes.push(me); return me; };
 
   // ---- the body under everything (shell 0): a near-black under-suit, so an empty slot reads as plain dark cloth ----
-  const sk = R.k[2], skD = R.k[1];
+  const sk = bodyCol || R.k[2], skD = bodyCol || R.k[1];   // the catalogue draws it lighter, so dark pieces read on it
   for (const z of ['neck', 'chest', 'belly', 'hips']) KINDS.tube({ ...ctx, padMax: () => 0, raise() {}, col: c => c }, { z, th: 0, c: z === 'neck' ? skD : sk, seg: 8 }, null);
   for (const sd of ['L', 'R']) { const bodyCtx = { ...ctx, padMax: () => 0, raise() {}, col: c => c };
     for (const z of ['upper', 'fore', 'thigh', 'shin']) KINDS.tube(bodyCtx, { z, th: 0, c: sk, seg: 7 }, sd);
     newPart(); ctx.pc(B['arm' + sd]).ball(.72, sk, { p: [0, .1, 0] });
     newPart(); ctx.pc(B['hand' + sd]).box(.72, .84, .66, skD, { p: [0, -.4, 0] });
     newPart(); ctx.pc(B['foot' + sd]).box(.8, .62, 1.62, skD, { p: [0, -.3, .4] }); }
-  newPart(); ctx.pc(B.head).ball(HEAD_R, R.k[3], { p: [0, HC, 0], s: [1, 1.04, 1] }, 1);
+  newPart(); ctx.pc(B.head).ball(HEAD_R, bodyCol || R.k[3], { p: [0, HC, 0], s: [1, 1.04, 1] }, 1);
 
   // ---- the gear, inside out ----
   for (const e of entries) {
