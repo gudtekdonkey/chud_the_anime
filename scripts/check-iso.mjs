@@ -241,7 +241,12 @@ try {
     for (let i = 0; i < W8.length; i++) { const w = W8[i];
       if (i) await page.keyboard.press('Equal');
       step = `weapon ${w.id}`; await until(`the ${w.id} in hand`, id => window.__iso.hero.weapon === id, w.id); await settle();
-      const k = i % 8, a = k * Math.PI / 4; { const f = (await G()).foe; await walkTo(f.x + Math.sin(a) * 22, f.z + Math.cos(a) * 22, 5); } await settle();
+      // the setup, waited for: he stands on that side of the samurai once the samurai has come back to his guard (a J3's
+      // knock slides him on), walking again until the bearing is within 12° of the side, so the cuts face the wanted way
+      const k = i % 8, a = k * Math.PI / 4;
+      for (let j = 0; j < 6; j++) { await until('the samurai in his guard', () => window.__iso.foe.state === 'guard', undefined, 90000); const f = (await G()).foe;
+        await walkTo(f.x + Math.sin(a) * 22, f.z + Math.cos(a) * 22, 3); await settle(); const g = await G();
+        if (g.foe.state === 'guard' && Math.abs(wrap(Math.atan2(g.hero.x - g.foe.x, g.hero.z - g.foe.z) - a)) < .21) break; }
       const n0 = (await G()).log.length, s0 = await page.evaluate(() => window.__iso.STATS.stops.length), y0 = await page.evaluate(() => window.__yaw.length);
       const landed = (cut, n) => until(`${cut} landing`, ([c, n]) => window.__iso.STATS.log.length > n && window.__iso.STATS.log.at(-1).startsWith(c), [cut, n]);
       await page.keyboard.press('KeyJ'); await landed('J1', n0); await page.keyboard.press('KeyJ'); await landed('J2', n0 + 1); await page.keyboard.press('KeyJ'); await landed('J3', n0 + 2);
