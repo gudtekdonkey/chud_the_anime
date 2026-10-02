@@ -11,7 +11,7 @@ Decisions that everything else builds on. Owner answers are marked with the date
 - **An economy, with the historical names:** mon, silver (monme), gold ryō, koku.
 - **Carried money has weight**: a fortune has to be moved, stored or banked.
 - **Story: 90% from the world.** Only the structure is written by hand; everything else comes out of the ledger (quests, rivals, events).
-- **Glitch storms are in**, and there is **no true story behind the glitch powers**: they are a fact of this world, not a mystery to solve.
+- ~~**Glitch storms are in**~~ (owner 2026-10-02: removed from the world and the story; see design-notes). There is **no true story behind the glitch powers**: they are a fact of this world, not a mystery to solve.
 - **World events, and random events while travelling**: ambushes on the road, merchants and pilgrims met on the way, a wounded man asking for help, weather that turns, a glitch storm crossing the road.
 - **Karma is shown to the player** (owner, 2026-09-26).
 - **Raids can take land, but not the legal title** (owner, 2026-09-26): what is held (possession) and what is owned on paper (title) are separate. A raid can seize possession; the title stays with its holder until it passes by some other mechanic, still to be discussed with the owner.
