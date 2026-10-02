@@ -36,6 +36,7 @@ hold Thousand Cuts · `O` hold Crescent Moon · `P` Cross Rift (hold to charge) 
 `C` tap sit, hold Breath of Qi (with `↓` Seiza, by the tōrō Lotus, in the storm Storm breath) · Storm Chain passive.
 The reserved keys: `F` counters (tap as the blow comes), `R` throws the blade (tap again to call it back, hold to go to
 it), `Q` casts Lightning Chain, `X` Time Slice on a full Qi meter (below). `=` the next weapon (`-` back).
+`K` executes the samurai when he is alone and in reach (the K keycap over him).
 
 **The overlay** (beside the game, every choice also a key): the frame time; `M` the model (3D / Pixel); `V` the style
 (Painterly, Pixel-render, Anime limited, Toon + dither); `=` / `-` the weapon (the 15, with its line; it was T and
@@ -75,7 +76,61 @@ lunge, a skid or a knock-back (`fx/fx.js`).
 **The finisher's close-up** (`fx/cine.js`): when J3 starts on a samurai within reach, the camera punches in on the two
 of them (×3.2), the screen letterboxes, the courtyard gives way to ink and speed lines, the strike lands with its
 impact frames, and the camera pulls back: 0.8 s; any key press skips to the pull-back. Presentation only: gameplay keeps
-its clock and hitboxes. Sky Drop and the executions take the same close-up when they come to the slice.
+its clock and hitboxes. The executions take the same close-up (below), and so does the killing blow of any cut; Sky Drop will when it comes.
+
+## Blood, severing and the executions (`gore.js`, `fx/blood.js`, `sever.js`, `exec/`)
+
+The owner's request (2026-10-02): blood on every hit, limbs cut on a killing blow, and today's executions re-staged
+in 3D. One hub, `gore.js`, wires it in: main.js calls `installGore` after `hitRules`, then `sync()` before the scene is
+drawn and `draw(g)` on the effects layer; the world steps it through `W.post` (sim.js), so a hit-stop holds the blood,
+the pieces and an execution like everything else. It listens to the hits (it wraps `W.on.hit` and `W.on.strike`, and
+the two controllers for K) rather than changing them: rules.js still decides what lands, and no timing, hitbox or move
+changes.
+
+**Blood** (`fx/blood.js`). A landed hit sprays along the way the cut travels (the blade tip's last move in its trail,
+leaning away from him), its amount by weight: light 12 drops, heavy 24, a kill 42 and a gush. What flies is pixels on
+the effects layer, drawn the style's way (keyed by its trail): Painterly soft round drops trailing a brushed streak,
+Pixel-render hard palette squares, Anime limited flat cel teardrops with an ink edge and a hot highlight, Toon + dither
+1–2 px drops in three bands. What lands is 3D through the scene material, so each style's light, bands, dither,
+palette (a blood ramp, `RAMP.r`) and outline take it as they take the courtyard: the drops of one spray land as one
+stain (blobs stretched along their travel), a body bleeds a pool that spreads under him, and stains stay on the floor
+(40 kept; the oldest dissolve). Each hit splashes the samurai's plates where it landed (on the nearest bone's surface,
+facing the blow), heavy hits and kills spatter the ronin's jinbaori and kote too; his blade takes a red coat from the
+tip down that drips while he holds it out, and the sheathe's chiburi throws it off in a line of drops on the floor
+(the execution's quick sheathe too). The samurai's strike bleeds the ronin.
+
+**Severing** (`sever.js`). A killing blow cuts the part whose joint is nearest the blade's line (its middle to past
+its tip): the head, an arm at the shoulder or the elbow, a leg at the hip or the knee, or the body at the waist. The
+procedural model's bone (and everything under it) is cloned into its own piece, a simple rigid body: gravity, a tumble,
+impulses at its box's corners against the floor (bounce, friction), the courtyard's walls; it sleeps when it stops.
+It has a raw cap (red round a pale bone) and bleeds a while. On the body the part's meshes are hidden and a stump is
+left at the joint, spurting in pulses, then dripping. His sword falls as a piece too and clatters (sparks and grit on
+each hard landing). A piece is drawn through the bodies' camera round a point that eases from his feet to the floor
+under it, so it leaves the body exactly where it was drawn and lies flat where it lands. With the close-up on, the cut
+happens on the impact frame (the piece is already a frame along its way). The killing blow of J1, J2 and the lunge now
+takes the full-screen close-up too (the owner: "the cut scenes on killing blows is an amazing touch"), started as the
+cut begins, like J3's. He stands up whole: the stumps go, the pieces dissolve; the floor keeps its stains.
+The pixel look's drawing cannot lose a limb: there the cut is remembered (shown if the 3D model comes back) and only the
+blood plays.
+
+**Executions** (`exec/`). The markers are today's (`exec/markers.js` from assassin/markers.js): every samurai has an
+isolation bubble on the floor (cyan and turning when he is alone, grey with a link line when another stands within 36),
+a kill line to the nearest one in reach (120) with a white pulse when K would take him, and the K keycap over him only
+when he is in reach and alone. K (buffered like J) from rest, a run, a guard, the sheathe or a cut past its strike:
+the ronin crouches, glitches out and lands where the execution starts; both bodies are then played by its timeline
+through the flow's own actors (clips `xR` and `xE`, so both looks, the springs, the hit-stops and the styles' frame
+stepping apply), with the full-screen close-up from the landing through the killing blow. Five of the approved batch 1
+are ported on their own beats (`exec/executions.js`, poses re-staged in the flow's side-pose format in `exec/poses.js`),
+each cutting him into real pieces with the severing above: **Behind the back** (back to back, the blade driven
+backward into the neck, the head flies forward), **Through and past** (through him in a frame, three afterimages; on
+the sheath's click the top half drops and pitches the way he turned, the legs fold), **Whirlwind** (six cuts from six
+sides, a glitch between each; the wide last one throws him and he comes apart in the air), **Far behind** (already
+through him; he feels it across his chest; on the click the top slides off the cut), **Peek-a-boo** (cuts made before
+we saw them; he looks down at his hands and comes apart). Each ends in the batch's quick sheathe (the flick, the tip
+into the saya, the click), and K plays them in turn, never the same twice running. The effects that are the stage's
+own (cut lines, glitch slivers, crescents, speed lines, the ronin's afterimages in either look) are in `exec/stage.js`.
+Not ported yet: Rising launch and Peek-a-boo from behind (the paired ones are the party's). With one samurai in the
+room he is always alone; the bubbles and the link line are there for when the slice has more.
 
 ## The pipeline, per frame
 
@@ -356,30 +411,42 @@ No page errors; the run in all 8 directions (he moves where the keys point and i
 the roll (its i-frames, ~25 units); walking up to the samurai and J1 → J2 → J3 with all three hits landing and three
 reactions, an impact frame in the hit-stops and the finisher's close-up; a cut cancelled into the roll; hitting him
 until he dies, and his respawn; the four styles switched live with a cut in each; the same chain with the pixel look;
-one screenshot per pipeline step flipped. Then the new skills: F timed in the page on the samurai's blow (a press
-0.33–0.46 s into it counters and the answer lands; 0.02–0.2 s only blocks; a counter that kills plays the close-up);
-on a calm squad of three: Q (at least two links, the yank, the draw-cut on the dragged man, the cooldown, refused on
-it); R three times (the blade hangs and he is empty-handed, J refused; home, the catch, the anchor in turn, the blade
-back each time); X (time stops for the squad, at least two taken and all of them fall on the click, colour back, the
-close-up, the meter spent; refused on an empty meter); Q in the other three styles; growth counted. SwiftShader draws a few frames a second, so the page runs with
-one screenshot per pipeline step flipped; then the personalities: each of the twenty idles plays on an actor, moves him,
-never jumps more than 2 rig px a step and ends back in the breath; no traits gives the page's idle, guard, run and runArmed exactly and no idles;
-an old master and a young hothead differ in cadence, speed, breath, how often and which idles, and patience; P gives
-the ronin a personality (an idle of his own, a slower run); O gives the samurai one (more patient); the townsfolk
-drift into idles and wander; the idle gallery loops all twenty. SwiftShader draws a few frames a second, so the page runs with
-one screenshot per pipeline step flipped. Then the skills (`scripts/check-iso-skills.mjs`): the double slash landing
+one screenshot per pipeline step flipped; the blood (three sprays from the chain, the drops landed as stains, a
+splash on him, blood on the blade, the sheathe's flick); the killing blow's sever (a part and the sword off him, both
+at rest on the floor, a pool); and the five executions on K in turn, each with the K prompt, its close-up, its cut
+and its pieces, the ronin handed back.
+
+Then the skills (`scripts/check-iso-skills.mjs`): the double slash landing
 both cuts and its cooldown refusing a second press; Thousand Cuts (the charge, the vanish, the hits, the click); Cross
 Rift (the arms and the detonation); Crescent Moon (the hit and the shatter); Mirror Meditation (three images out, their
 cuts landing); Sky Drop (aloft, the crater landing) and Sky Drop on a kill (the close-up); Storm Chain waking from landed
 hits and chaining; Storm breath (the heal, the storm spent, the samurai thrown); the sit (his back to the camera, up on a
 direction); the kata (a heal for a notch, let go); a double slash in each style; the images and Sky Drop in the pixel
 look; power III's twin moon and rift echo; the Seiza dome taking a real cut (the samurai off his leash); Lotus by the
-tōrō (the meter into health). SwiftShader draws a few frames a second, so the page runs with
-one screenshot per pipeline step flipped. Then the weapons: the sweep (`?iso&arsenal&sweep`: every weapon drawn from
+tōrō (the meter into health).
+
+Then the weapons: the sweep (`?iso&arsenal&sweep`: every weapon drawn from
 home, in hand at J1's hit and out at J3's impact, home after the stow, in all 8 facings, no errors, every event on
 the katana's beat and every move the katana's length), seven contact sheets (`arsenal-*.png`), and all 15 in play
 (`&foehp=999&foes=1`): picked with `=`, each walks up to the samurai from one of the eight sides, J1 → J2 → J3 all land with
-the weapon's hit-stops, the cut faces him (all 8 facings across the round), and he stows it after the calm. SwiftShader draws a few frames a second, so the page runs with
+the weapon's hit-stops, the cut faces him (all 8 facings across the round), and he stows it after the calm.
+
+Then the enemy types (`scripts/check-iso-enemies.mjs`, `docs/enemies.md`): each type telegraphing, striking and killed, and a patrol taking turns.
+
+Then the new skills: F timed in the page on the samurai's blow (a press
+0.33–0.46 s into it counters and the answer lands; 0.02–0.2 s only blocks; a counter that kills plays the close-up);
+on a calm squad of three: Q (at least two links, the yank, the draw-cut on the dragged man, the cooldown, refused on
+it); R three times (the blade hangs and he is empty-handed, J refused; home, the catch, the anchor in turn, the blade
+back each time); X (time stops for the squad, at least two taken and all of them fall on the click, colour back, the
+close-up, the meter spent; refused on an empty meter); Q in the other three styles; growth counted.
+
+Last, on a fresh page, the personalities: each of the twenty idles plays on an actor, moves him,
+never jumps more than 2 rig px a step and ends back in the breath; no traits gives the page's idle, guard, run and runArmed exactly and no idles;
+an old master and a young hothead differ in cadence, speed, breath, how often and which idles, and patience; [ gives
+the ronin a personality (an idle of his own, a slower run); ] gives the samurai one (more patient); the townsfolk
+drift into idles and wander; the idle gallery loops all twenty.
+
+SwiftShader draws a few frames a second, so the page runs with
 `&tick=8` (8 game steps a frame) and every wait is on the game's clock.
 
 ## Performance

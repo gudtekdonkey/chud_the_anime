@@ -35,6 +35,7 @@ import './weapons/poses.js';
 import { equip, ARSENAL } from './weapons/arsenal.js';
 import { wirePicker } from './weapons/picker.js';
 import { runArsenal } from './weapons/sheet.js';
+import { installGore } from './gore.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
@@ -73,6 +74,7 @@ function runGame(reel) {
   if (Q.has('foehp')) for (const f of foes) f.maxHp = f.hp = +Q.get('foehp');   // &foehp=N: tougher samurai (the check's weapon round; &hp is the hero's health, skills/)
   const live = () => foes.filter(f => !f.parked), game = { hero, foe, get foes() { return live(); } }; hitRules(game);
   const skills = reel ? null : makeSkills({ hero, foe, foes: live, scene, look: lookKind, Q, root }); hero.skills = skills;   // the skills (skills/): I O P N U C, Storm Chain, the skill bar
+  const gore = reel ? null : installGore({ hero, foe, all: foes, live, scene });   // blood, severing, the executions (gore.js); not in the reels
   initInput(canvas);
   initSkills({ hero, get foes() { return live(); }, scene, game });
   // the enemy types (enemies/, docs/enemies.md): &group=<name> or the overlay's picker; the samurai (the squad of &foes) is the default.
@@ -122,9 +124,12 @@ function runGame(reel) {
     SH.uHatOn.value = 0;
     for (const c of chars) { if (c.shown !== c.a.out || c.lookKind === '3d') { const f = c.frame(c === hero); if (f) c.look.show(f); c.shown = c.a.out; } }
     if (skills) skills.render();
+    if (gore) gore.sync();
     const g = pipe.fx; g.clearRect(0, 0, pipe.fxCanvas.width, pipe.fxCanvas.height);
     for (const c of chars) drawTrail(g, c.trail.map(s => s.gap ? s : { t: s.t, a: toPx(s.mid), b: toPx(s.tip) }), c.a.out ? c.a.out.t : W.t, STYLE.s.trail);
-    drawFx(g, W); drawLabels(g, folk, toPx); squad.draw(g); skillsRender(); drawSkills(g);
+    drawFx(g, W);
+    if (gore) gore.draw(g);
+    drawLabels(g, folk, toPx); squad.draw(g); skillsRender(); drawSkills(g);
     if (PIPE.clash) { drawFocus(g, W);   // focus lines on a hit; speed lines behind a roll, a lunge or a skid
       for (const c of chars) if (['roll', 'lunge', 'skid', 'knock'].includes(c.state)) { const [x, y] = toPx([c.x, 10, c.z]), v = [Math.sin(c.a.h), Math.cos(c.a.h) * OBL.a]; speedLines(g, x, y, v[0], v[1], W.t); } }
     for (const c of chars) c.look.stamp(g);
@@ -167,6 +172,6 @@ function runGame(reel) {
       get folk() { return folk.map(n => ({ ...who(n), kind: n.kind, culture: n.culture, list: n.list, idles: n.a.idler ? n.a.idler.n : 0, played: n.a.idler ? n.a.idler.played.slice() : [] })); },
       get persona() { return { hero: hero.list || [], heroIdles: hero.a.idler ? hero.a.idler.played.slice() : [], heroCur: hero.a.idler ? hero.a.idler.cur : null, foe: foe.list || [], behave: foe.bh, ...PROBE }; },
       get skills() { return skills && skills.state(); },   // the I O P N U C skills (skills/skills.js); `reserved` is F R Q X's (skills/reserved.js)
-      get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
+      get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get gore() { return gore && gore.view(); }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }

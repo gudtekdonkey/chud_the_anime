@@ -1,9 +1,9 @@
-// ---- Keys for the slice: WASD / arrows move (the stick maps straight to the screen), Shift or L rolls, J cuts; I O P N U C
+// ---- Keys for the slice: WASD / arrows move (the stick maps straight to the screen), Shift or L rolls, J cuts, K executes; I O P N U C
 // are the skills (skills/skills.js), and the reserved keys F R Q X (skills/reserved.js) are bound here too. A press is
 // remembered 0.2 s (the owner's Q3A input buffer) until a state can take it; held keys are read each step.
 const DOWN = new Set(), PRESS = [];
 const MAP = { KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
-  ShiftLeft: 'roll', ShiftRight: 'roll', KeyL: 'roll', KeyJ: 'cut',
+  ShiftLeft: 'roll', ShiftRight: 'roll', KeyL: 'roll', KeyJ: 'cut', KeyK: 'exec',
   KeyI: 'double', KeyO: 'moon', KeyP: 'rift', KeyN: 'mirror', KeyU: 'sweep', KeyC: 'breath' };   // the skills' keys (skills/skills.js)
 const MOVE = new Set(['up', 'down', 'left', 'right']);
 export const BUFFER = .2;
