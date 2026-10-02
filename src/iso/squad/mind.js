@@ -87,7 +87,7 @@ function protectorOpts(W, ag, charge, pool, opts, k) {
   const bp = pt(charge, headTo(charge, th), Math.min(14, dist(charge, th) * .5));
   if (dist(th, charge) > 30 && Math.hypot(bp.x - ag.x, bp.z - ag.z) > 6) opts.push({ s: 1.1, it: { k: 'move', x: bp.x, z: bp.z, speed: 64, face: th, why: 'body-block' } });
   // the archer shooting at him: stand in the line (the arrow hits the protector)
-  if (th.ranged && dist(th, charge) > 50) { opts.push({ s: 1.3, it: { k: 'move', x: bp.x, z: bp.z, speed: 64, face: th, why: 'body-block' } }); return; }
+  if (th.ranged && dist(th, charge) > 50) { logOnce(W, ag, 'b' + th.id, `bodyblock:${ag.name}>${th.name}`); opts.push({ s: 1.3, it: { k: 'move', x: bp.x, z: bp.z, speed: 64, face: th, why: 'body-block' } }); return; }
   logOnce(W, ag, 'i' + th.id, `intercept:${ag.name}>${th.name}`);
   opts.push(...meleeOptions(W, ag, th, { ...k, combo: 2, attack: (k.attack || 0) + .45, wait: -.2, why: 'intercept', maxOn: 4 }));
 }

@@ -94,7 +94,7 @@ export async function squadSteps({ page, base, until, gameWait, ok, fail, setSte
   await page.evaluate(() => { const R = window.__rec = { foeOnKuro: 0, foeOnHana: 0, hanaD: [], guardD: [], maxOn: 0, frames: 0 };
     const f = () => { const A = window.__iso.squad.agents, g = n => A.find(a => a.name === n), hana = g('Hana'), tetsu = g('Tetsu'), foes = A.filter(a => a.team === 1 && a.alive);
       if (window.__recOn) { R.frames++;
-        if (foes.some(a => a.target === 'Kuro')) R.foeOnKuro++; if (foes.some(a => a.target === 'Hana')) R.foeOnHana++;
+        if (foes.some(a => a.target === 'Kuro')) R.foeOnKuro++; if (foes.some(a => a.target === 'Hana' && a.kind === 'samurai' && Math.hypot(a.x - hana.x, a.z - hana.z) < 100)) R.foeOnHana++;   // a blade coming for her (an archer is body-blocked, not intercepted)
         const melee = foes.filter(a => a.kind === 'samurai'); if (hana.alive && !hana.downed && melee.length) R.hanaD.push(Math.min(...melee.map(a => Math.hypot(a.x - hana.x, a.z - hana.z))));
         if (tetsu.alive && !tetsu.downed && hana.alive) R.guardD.push(Math.hypot(tetsu.x - hana.x, tetsu.z - hana.z));
         const on = {}; for (const a of foes) if (a.state === 'fcut') on[a.target] = (on[a.target] || 0) + 1; R.maxOn = Math.max(R.maxOn, ...Object.values(on), 0); }
@@ -131,8 +131,8 @@ export async function squadSteps({ page, base, until, gameWait, ok, fail, setSte
   setStep('squad: the protector intercepts'); {
     const r = await page.evaluate(() => window.__rec), g = r.guardD.slice().sort((a, b) => a - b), med = g[g.length >> 1];
     if (!(med < 32)) fail(`Tetsu's median distance to Hana is ${med && med.toFixed(1)}`);
-    if (r.foeOnHana) await evWait('Tetsu intercepting the foe on Hana', 'intercept:Tetsu>', 60000);
-    ok(`stayed ${med.toFixed(0)} from her; ${r.foeOnHana ? 'intercepted: ' + (await ev()).filter(e => /intercept:Tetsu/.test(e)).join('; ') : 'no foe went for her'}`); }
+    if (r.foeOnHana) await evWait('Tetsu intercepting the blade on Hana', 'intercept:Tetsu>', 60000);
+    ok(`stayed ${med.toFixed(0)} from her; ${r.foeOnHana ? 'intercepted: ' + (await ev()).filter(e => /intercept:Tetsu/.test(e)).join('; ') : 'no blade went for her'}${(await ev()).some(e => /bodyblock:Tetsu/.test(e)) ? '; body-blocked an archer' : ''}`); }
 
   setStep('squad: fall back'); {
     const foeC = a => { const f = a.filter(x => x.team === 1 && x.alive); return f.length ? { x: f.reduce((s, x) => s + x.x, 0) / f.length, z: f.reduce((s, x) => s + x.z, 0) / f.length } : null; };
