@@ -8,8 +8,8 @@ Built on the 3D look of the iso slice (`?iso`); today's game and the pixel look 
 
 | | |
 |---|---|
-| `?iso` | the overlay's **Hair and hat** section: his hair (`H`, Shift+H back), his hat (`T`), the samurai's hair and hat, **Randomise both** (`Y`), the grid (`G`) |
-| `?iso&hairgrid` | every hairstyle (columns) under every hat (rows) in the active style; four close pages (`&page=0..3`: twelve hairs × five hats) or all 240 small (`&page=4`); `[` `]` step the facing; a pose picker (idle, run, J1, J3, roll, guard); `&foe` on the samurai's body |
+| `?iso` | the overlay's **Hair and hat** section: his hair (`H`, Shift+H back), his hat (`T`), the samurai's hair and hat, **Randomise both** (`Y`), the grid (`U`; `G` is the outfit's randomise). Dressed in a gear outfit, his hat is the outfit's head piece and the hat picker stands aside |
+| `?iso&hairgrid` | every hairstyle (columns) under every hat (rows) in the active style; four close pages (`&page=0..3`: twelve hairs × five hats) or all 240 small (`&page=4`), then the gear heads' pages (`&page=5…`: five gear heads × twelve hairs, over Iron Ash in gear); `[` `]` step the facing; a pose picker (idle, run, J1, J3, roll, guard); `&foe` on the samurai's body |
 | `?iso&hairgrid&facings&hairs=chonmage&hats=none,kabuto&zoom=4&cell=3.5,0` | review: one hair's eight facings across, chosen hats down, close |
 | `npm run check:hair` | renders all 240 pairs in all 8 facings (screenshots in `test-output/hair/`), runs the audit on both bodies, plays the pickers in the courtyard |
 
@@ -56,6 +56,36 @@ the pose's own springs (the Animation Flow page's, sampled with the pose, so the
 back with `speed` and the head's lag (`hatLag`), aside with `swing` and the turn's `roll`; then pushed clear of his
 body (`BODY` in contract.js: the dō and the jinbaori's shoulders, the spine, the neck, the head), each segment swung out
 where it would cut a corner.
+
+## Under the armour session's gear (`hair/gear-bridge.js`)
+
+The armour session's 200 gear pieces (`src/iso/gear/`, `docs/gear.md`) are merged in, and every gear head piece is a
+hat in this contract without a line written for it: its declaration is **derived from its own parts**, so a new gear
+head piece joins automatically.
+
+| Gear part | Becomes |
+|---|---|
+| `cap` (hood, helmet bowl, wrap, band) | a `dome` at the dresser's own radius (the crown pad the parts under it raised), binding its polar band (`from`, `theta`) and leaving its face opening (`open`) free |
+| `shikoro` | a `wall` per lame, round the back and sides |
+| `hat` (jingasa, kasa, dome) | a `cone` on the brim pivot, over the crown pad; the tengai a `wall` that hides everything but a tail |
+| `mask` `wrap` | a `dome` binding the lower face, so a lock never crosses it |
+
+What a crown item becomes follows from the parts: under a helmet (a shikoro) it is pressed into the bowl and a tail
+falls below the lames, the fringe and locks hidden by the visor; under a hood (an open cap reaching past the ears) the
+crown, back and sides are covered and a tail is tied low and falls out; under a cloth wrap over the crown a knot is
+tied low (`behind`); under an iron cap it is pressed in; under a brim it is pressed in and a high tail tied low; a tall
+crest (the eboshi) houses it; a band at the brow leaves everything showing. When two pieces meet (a wrap under a
+brim), each vertex settles inside all of them.
+
+**Hair is its own pick.** Gear's two hair pieces (pix `hair`: the chonmage and loose hair) stay in the catalogue, the
+outfits and the pixel look, but the 3D look leaves them out (`stripHair`) and an outfit that wears one sets the hair
+pick to its hairstyle (`hairOf`): chonmage → Chonmage, loose hair → Ronin tied back. The gear catalogue
+(`?iso&gear`) draws gear exactly as listed (`threeLook({ head: false })`). Chains hang clear of gear's armour too: the
+body's colliders grow by the dresser's pads (how far the chest, belly and neck stand off the body).
+
+**The check** audits every gear head piece alone and each preset's head pair (gear-bridge.js `gearHeads`) with all 24
+hairstyles, through the same moves, on Iron Ash in gear and on the general's ō-yoroi: no hair outside, no chain in the
+body. The grid renders them in all eight facings.
 
 ## The hats
 

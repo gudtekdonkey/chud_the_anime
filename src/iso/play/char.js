@@ -11,14 +11,16 @@ const hexRGB = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 
 const _v = new THREE.Vector3();
 
 export class Char {
-  constructor({ foe = false, x, z, h = 0, look = '3d' }) {
+  constructor({ foe = false, x, z, h = 0, look = '3d', outfit = null }) {
     this.foe = foe; this.a = new Actor(W, { x: x / AF, z: z / AF, h, foe: foe ? 1 : 0 }); this.a.char = this;
-    this.lookKind = look; this.look = makeLook(look, { foe }); this.gy = 0; this.trail = []; this.r = 4.5; this.a.after = dt => this.after(dt);
+    this.lookKind = look; this.outfit = outfit; this.look = makeLook(look, { foe, outfit }); this.gy = 0; this.trail = []; this.r = 4.5; this.a.after = dt => this.after(dt);
     W.actors.push(this.a);
   }
   get x() { return this.a.x * AF; } get z() { return this.a.z * AF; }
   get vx() { return this.a.v * hv(this.a.h)[0] * AF; } get vz() { return this.a.v * hv(this.a.h)[1] * AF; }
-  setLook(kind, scene) { this.look.dispose(); this.lookKind = kind; this.look = makeLook(kind, { foe: this.foe }); this.look.mount(scene); }
+  setLook(kind, scene) { this.look.dispose(); this.lookKind = kind; this.look = makeLook(kind, { foe: this.foe, outfit: this.outfit }); this.look.mount(scene); }
+  // what he wears (gear/outfits.js; null: Iron Ash as built): the look is rebuilt, the controller never notices
+  dress(outfit, scene) { this.outfit = outfit; this.setLook(this.lookKind, scene); this.shown = null; }
   // after the world steps: walls, posts and the room's edge push him out; the ground under him eases up the engawa's step
   after(dt) { const p = { x: this.x, z: this.z }; collide(p, this.r); this.a.x = p.x / AF; this.a.z = p.z / AF;
     this.gy += (groundAt(p.x, p.z) - this.gy) * Math.min(1, dt * 18); }

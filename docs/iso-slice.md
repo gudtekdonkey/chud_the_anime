@@ -15,7 +15,9 @@ All of it lives in `src/iso/`. It is a test bed for the owner's picks, not the g
 | `npm run build`, open `dist/index.html?iso` | the same single-file build as today's game; the flag picks |
 | `/?iso&reel=chain` | one of the Animation Flow page's scenarios (idle, start, turn, stop, roll, chain, lunge, sheathe) on its script and clock; `node scripts/iso-reel.mjs chain 3` lays it out as the page's contact sheets do (with `AF_DIR` at the page's source, the page's own sheet above it) into `test-output/iso/reel-chain-vs.png` |
 | `/?iso&style=1` | start on a style (0 Toon + dither, 1 Pixel-render, 2 Anime limited, 3 Painterly) |
-| `/?iso&sheet` | a frozen contact sheet: four moments of the loop × the eight facings (`&rows=4,5,6,7` the other four, `&look=pixel`, `&foe`, `&zoom=1.9`) |
+| `/?iso&sheet` | a frozen contact sheet: four moments of the loop × the eight facings (`&rows=4,5,6,7` the other four, `&look=pixel`, `&foe`, `&zoom=1.9`, `&outfit=general`) |
+| `/?iso&gear` | the gear catalogue: all 200 pieces on the model, filtered by slot, layer, family; a try-on figure (`docs/gear.md`) |
+| `/?iso&outfit=crow` | the slice in a gear preset (`random`, `random-ninja`, `built` …; the overlay's Outfit section picks too) |
 | `npm run check:iso` | builds, then `scripts/check-iso.mjs` plays the loop in Chromium and asserts it (below); screenshots in `test-output/iso/` |
 
 three.js is a new dependency (`three`, pinned in `package.json`): run `npm install` once. A checkout whose
@@ -111,6 +113,12 @@ look.dispose()
   the floor), so it takes the night's light, the lanterns, the mist, the flash and the silhouette like a model.
 
 A hand-made sprite sheet would be a third look: `show` picks its frame from the pose's clip and time, or from the pose.
+
+**Gear** (`gear/`, `docs/gear.md`): both looks take an outfit when made, `makeLook(kind, { foe, outfit })`, the four
+calls unchanged. With one, the 3D look is dressed from the 200 gear pieces on the same skeleton (`gear/dress.js`
+returns the rig `ronin.js` does) and the pixel look draws the engine's style switched to what is worn
+(`gear/pixel.js`). The overlay's Outfit section picks it (presets, `G` randomises, every slot by hand); `?iso&gear`
+is the catalogue. Without one, Iron Ash as built.
 
 ## The motion: the Animation Flow page, ported
 

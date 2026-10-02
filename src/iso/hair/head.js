@@ -13,17 +13,20 @@ import { HC, resolve, clampPt, inside, pushOut, BODY, MARGIN, validate } from '.
 import { shell, rod, spike, lump, loop, segment } from './parts.js';
 import { HAIR, HAIR_ID, COLS, DEFAULT_HAIR } from './styles.js';
 import { HATS, HAT } from './hats.js';
+import { gearHat } from './gear-bridge.js';
 
 validate(HAIR, HATS);
 // the live picks (the overlay's pickers write them; a look built with `head` keeps its own)
 export const HEADS = { hero: { hair: DEFAULT_HAIR.hero, hat: 'jingasa' }, foe: { hair: DEFAULT_HAIR.foe, hat: 'none' } };
 const SKIN = { hero: '#3a2f2a', foe: '#5a463a' };          // the bare head (a shaved pate): his dark, the samurai's skin
-const V = () => new THREE.Vector3(), _p = V(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _x = V(), _y = V(), _z = V();
+const V = () => new THREE.Vector3(), _p = V(), _q = V(), _m = new THREE.Matrix4(), _mi = new THREE.Matrix4(), _x = V(), _y = V(), _z = V();
 
-export function headSlot(rig, { foe = false, head = null } = {}) {
-  const who = foe ? 'foe' : 'hero', B = rig.B, made = [];
+// `outfit`: the rig is gear's (gear/dress.js); its head pieces are the hat (gear-bridge.js), the hair picker draws hair
+export function headSlot(rig, { foe = false, head = null, outfit = null } = {}) {
+  const who = foe ? 'foe' : 'hero', B = rig.B, made = [], gearH = outfit ? gearHat(outfit) : null;
+  const body = BODY.map(c => inflate(c, rig.pads));   // gear's armour stands off the body: the colliders grow with it
   const slot = { key: '', refused: false, res: null, hat: null, hair: null, chains: [], clampable: [], hatMeshes: [], node: null, hatNode: null, pivot: null };
-  const spec = () => head || HEADS[who];
+  const spec = () => head || HEADS[who], keyOf = s => s.hair + '|' + (gearH ? gearH.id : s.hat);
   const add = (parent, o) => { parent.add(o); made.push(o); return o; };
   const meshOf = (pc, cloth) => { const m = pc.mesh(cloth ? rig.mats[1] : rig.mats[0]); m.layers.enable(1); return m; };
 
@@ -32,21 +35,22 @@ export function headSlot(rig, { foe = false, head = null } = {}) {
     made.length = 0; slot.chains = []; slot.clampable = []; slot.hatMeshes = [];
   }
   function build() {
-    clear(); const s = spec(); let hair = HAIR_ID[s.hair] || HAIR_ID[DEFAULT_HAIR[who]], hat = HAT[s.hat] || HAT.none;
+    clear(); const s = spec(); let hair = HAIR_ID[s.hair] || HAIR_ID[DEFAULT_HAIR[who]], hat = gearH || HAT[s.hat] || HAT.none;
     const res = resolve(hair, hat); slot.refused = res.refused;
     if (res.refused) { hat = HAT.none; Object.assign(res, resolve(hair, hat)); }   // the pair cannot be worn: he goes bare-headed
-    Object.assign(slot, { key: s.hair + '|' + s.hat, res, hat, hair });
-    // ronin.js's own pieces: his jingasa and its cords, the samurai's topknot; the scalp takes the style's colour
-    if (rig.hatPivot) rig.hatPivot.visible = false;
-    for (const sp of rig.springs) if (sp.kind === 'cord') sp.node.visible = !!hat.cords && !foe;
-    if (rig.knot) rig.knot.visible = false;
-    const col = { ...COLS[hair.col], skin: SKIN[who] }; paint(rig.scalp, hair.scalp === 'skin' ? col.skin : col.h);
-    // the hat
-    const centre = slot.node = add(B.head, new THREE.Object3D()); centre.position.set(0, HC, 0);
-    if (hat.mount === 'pivot') { slot.pivot = add(B.head, new THREE.Object3D()); slot.hatNode = new THREE.Object3D(); slot.pivot.add(slot.hatNode); }
-    else { slot.pivot = null; slot.hatNode = new THREE.Object3D(); centre.add(slot.hatNode); }
-    for (const pc of hat.build()) { const m = meshOf(pc, hat.cloth); slot.hatNode.add(m); slot.hatMeshes.push(m); }
-    rig.hat = hat.brim ? slot.hatNode : null; rig.hatR = hat.brim || 0; rig.glint = foe ? R.l[4] : null;
+    Object.assign(slot, { key: keyOf(s), res, hat, hair });
+    const col = { ...COLS[hair.col], skin: SKIN[who] }, centre = slot.node = add(B.head, new THREE.Object3D()); centre.position.set(0, HC, 0);
+    if (gearH) { slot.pivot = null; slot.hatNode = centre; } else {
+      // ronin.js's own pieces: his jingasa and its cords, the samurai's topknot; the scalp takes the style's colour
+      if (rig.hatPivot) rig.hatPivot.visible = false;
+      for (const sp of rig.springs) if (sp.kind === 'cord') sp.node.visible = !!hat.cords && !foe;
+      if (rig.knot) rig.knot.visible = false;
+      paint(rig.scalp, hair.scalp === 'skin' ? col.skin : col.h);
+      // the hat
+      if (hat.mount === 'pivot') { slot.pivot = add(B.head, new THREE.Object3D()); slot.hatNode = new THREE.Object3D(); slot.pivot.add(slot.hatNode); }
+      else { slot.pivot = null; slot.hatNode = new THREE.Object3D(); centre.add(slot.hatNode); }
+      for (const pc of hat.build()) { const m = meshOf(pc, hat.cloth); slot.hatNode.add(m); slot.hatMeshes.push(m); }
+      rig.hat = hat.brim ? slot.hatNode : null; rig.hatR = hat.brim || 0; rig.glint = foe ? R.l[4] : null; }
     // the hair: one mesh per region, each kept inside the hat
     const by = {};
     for (const p of hair.parts) { const reg = res.regions[p.r]; if (reg === 'hide') continue;
@@ -75,24 +79,31 @@ export function headSlot(rig, { foe = false, head = null } = {}) {
 
   // ---- each frame: the brim pivot, the chains, the clamp
   slot.update = P => {
-    const s = spec(); if (s.hair + '|' + s.hat !== slot.key) build();
+    const s = spec(); if (keyOf(s) !== slot.key) build();
     if (slot.pivot) { const lag = P.hatLag || [0, 0];   // ronin.js's jingasa, joint for joint (rig.js applyPose)
       slot.pivot.position.set(0, SK.headR + 1.1 * AF + lag[1] * AF * .5, lag[0] * AF * .5);
       slot.pivot.rotation.set((P.hatTilt || 0) - (P.lean || 0) - (P.head || 0) - rig.hatTilt, 0, 0); }
     rig.root.updateMatrixWorld(true);
     const bodyInv = _mi.copy(rig.body.matrixWorld).invert().clone();
-    const cols = BODY.map(c => { const m = bodyInv.clone().multiply(B[c.b].matrixWorld); return { c, m, inv: m.clone().invert() }; });
+    const cols = body.map(c => { const m = bodyInv.clone().multiply(B[c.b].matrixWorld); return { c, m, inv: m.clone().invert() }; });
     for (const ch of slot.chains) hang(ch, P, bodyInv, cols);
     clampAll();
   };
+  // the shells by the node whose space they are in: the hat's own (hats.js), or gear's centre and brim pivot
+  const spaces = () => { const by = new Map();
+    for (const sh of slot.hat.shells) { const n = sh.space === 'pivot' ? rig.hatPivot : sh.space === 'centre' ? slot.node : slot.hatNode; if (!n) continue;
+      if (!by.has(n)) by.set(n, []); by.get(n).push(sh); }
+    return [...by].map(([n, shells]) => ({ inv: new THREE.Matrix4().copy(n.matrixWorld).invert(), shells })); };
   function clampAll() {
-    const shells = slot.hat.shells; if (!shells.length) { for (const c of slot.clampable) if (c.dirty) restore(c); return; }
-    const hatInv = new THREE.Matrix4().copy(slot.hatNode.matrixWorld).invert();
+    const sp = spaces(); if (!sp.length) { for (const c of slot.clampable) if (c.dirty) restore(c); return; }
     for (const c of slot.clampable) {
-      const M = hatInv.clone().multiply(c.mesh.matrixWorld), Mi = M.clone().invert(), pos = c.mesh.geometry.attributes.position, a = pos.array, r = c.rest; let moved = false;
-      for (let i = 0; i < r.length; i += 3) { _p.set(r[i], r[i + 1], r[i + 2]).applyMatrix4(M); let mv = false;
-        for (let k = 0; k < 3; k++) { let any = false; for (const s of shells) if (clampPt(s, _p)) any = true; mv ||= any; if (!any) break; }   // overlapping shells: settle in a few passes
-        if (mv) { moved = true; _p.applyMatrix4(Mi); a[i] = _p.x; a[i + 1] = _p.y; a[i + 2] = _p.z; } else { a[i] = r[i]; a[i + 1] = r[i + 1]; a[i + 2] = r[i + 2]; } }
+      const pos = c.mesh.geometry.attributes.position, a = pos.array, r = c.rest; let moved = false; a.set(r);
+      const Ms = sp.map(({ inv }) => { const M = inv.clone().multiply(c.mesh.matrixWorld); return [M, M.clone().invert()]; });
+      for (let i = 0; i < r.length; i += 3) { _q.set(a[i], a[i + 1], a[i + 2]); let mv = false;
+        for (let k = 0; k < 4; k++) { let any = false;   // overlapping shells (a wrap under a brim): settle in a few passes over them all
+          sp.forEach(({ shells }, j) => { _p.copy(_q).applyMatrix4(Ms[j][0]); let hit = false; for (const s of shells) if (clampPt(s, _p)) hit = true; if (hit) { any = true; _q.copy(_p.applyMatrix4(Ms[j][1])); } });
+          mv ||= any; if (!any) break; }
+        if (mv) { moved = true; a[i] = _q.x; a[i + 1] = _q.y; a[i + 2] = _q.z; } }
       if (moved || c.dirty) { pos.needsUpdate = true; c.mesh.geometry.computeVertexNormals(); c.dirty = moved; }
     }
   }
@@ -103,10 +114,11 @@ export function headSlot(rig, { foe = false, head = null } = {}) {
     const out = { shell: 0, body: 0, hatBody: 0, verts: 0 };
     rig.root.updateMatrixWorld(true);
     const bodyInv = new THREE.Matrix4().copy(rig.body.matrixWorld).invert();
-    const cols = BODY.map(c => { const m = bodyInv.clone().multiply(B[c.b].matrixWorld); return { c, inv: m.clone().invert() }; });
-    if (slot.hat.shells.length) { const hatInv = new THREE.Matrix4().copy(slot.hatNode.matrixWorld).invert();
-      for (const c of slot.clampable) { const M = hatInv.clone().multiply(c.mesh.matrixWorld), a = c.mesh.geometry.attributes.position.array;
-        for (let i = 0; i < a.length; i += 3) { out.verts++; _p.set(a[i], a[i + 1], a[i + 2]).applyMatrix4(M); if (slot.hat.shells.some(s => !inside(s, _p, MARGIN - .03))) out.shell++; } } }
+    const cols = body.map(c => { const m = bodyInv.clone().multiply(B[c.b].matrixWorld); return { c, inv: m.clone().invert() }; });
+    const sp = spaces();
+    for (const c of slot.clampable) { const a = c.mesh.geometry.attributes.position.array; out.verts += a.length / 3;
+      for (const { inv, shells } of sp) { const M = inv.clone().multiply(c.mesh.matrixWorld);
+        for (let i = 0; i < a.length; i += 3) { _p.set(a[i], a[i + 1], a[i + 2]).applyMatrix4(M); if (shells.some(s => !inside(s, _p, MARGIN - .03))) out.shell++; } } }
     for (const ch of slot.chains) { const m = ch.spec.d / 2 - .06;
       for (let i = 0; i + 1 < ch.pts.length; i++) for (const u of [0, .25, .5, .75, 1]) { if (i === 0 && u < .5) continue;
         const q = ch.pts[i].clone().lerp(ch.pts[i + 1], u);
@@ -130,6 +142,10 @@ function part(pc, p, col) {
   else if (p.g === 'loop') loop(pc, c, p.at, p.R, p.tube, p.rot);
   else if (p.g === 'box') pc.box(p.s[0], p.s[1], p.s[2], c, { p: p.at, r: p.rot || [0, 0, 0] });
 }
+// a collider grown by what gear wears in its zone (rig.pads: the dresser's stand-off down each zone)
+const ZONE = { chest: ['chest'], spine: ['belly', 'chest'], neck: ['neck'] };
+function inflate(c, pads) { const z = pads && ZONE[c.b]; if (!z) return c; const g = Math.max(0, ...z.map(k => Math.max(0, ...(pads[k] || [0]))));
+  return c.t === 'box' ? { ...c, h: c.h.map(v => v + g) } : { ...c, r: c.r.map(v => v + g) }; }
 const clampOf = mesh => ({ mesh, rest: Float32Array.from(mesh.geometry.attributes.position.array), dirty: false });
 function paint(mesh, hex) { if (!mesh) return; const c = new THREE.Color(hex), a = mesh.geometry.attributes.color;
   for (let i = 0; i < a.count; i++) a.setXYZ(i, c.r, c.g, c.b); a.needsUpdate = true; }
@@ -160,10 +176,10 @@ function hang(ch, P, bodyInv, cols) {
   // last, the body wins over the head: tucked (the roll), the nape meets the collar and the root's hair may brush the scalp
   for (let i = 1; i <= n; i++) { if (i === 1) { out(ch.pts[1]); swing(1); } out(ch.pts[i], i > 1); swing(i, i > 1); }
   // squeezed between two (the roll's tuck: the nape against the collar): step back, behind him, until clear
-  const hit = q => cols.some(({ c, inv }) => c.b !== 'head' && pushOut(c, q.clone().applyMatrix4(inv), m - .1));
+  const hit = (q, head) => cols.some(({ c, inv }) => (head || c.b !== 'head') && pushOut(c, q.clone().applyMatrix4(inv), m - .1));
   const away = V().set(0, 0, -1).transformDirection(cols[0].m);   // behind his chest, however he is turned
-  for (let i = 1; i <= n; i++) for (let k = 0; k < 24; k++) { const a = ch.pts[i - 1], b = ch.pts[i];
-    if (![.25, .5, .75, 1].some(u => hit(a.clone().lerp(b, u)))) break; b.addScaledVector(away, .08); }
+  for (let i = 1; i <= n; i++) for (let k = 0; k < 32; k++) { const a = ch.pts[i - 1], b = ch.pts[i];
+    if (![.25, .5, .75, 1].some(u => hit(a.clone().lerp(b, u), (i - 1 + u) * L >= 2.5))) break; b.addScaledVector(away, .08); }
   // the segments: each on its point, its −y toward the next, its +x kept to his left
   for (let i = 0; i < n; i++) { const a = ch.pts[i], b = ch.pts[i + 1], sg = ch.segs[i], dist = a.distanceTo(b);
     _y.copy(a).sub(b).normalize(); _x.set(1, 0, 0).addScaledVector(_y, -_y.x); if (_x.lengthSq() < 1e-6) _x.set(0, 0, 1); _x.normalize(); _z.crossVectors(_x, _y);

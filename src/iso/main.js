@@ -26,7 +26,10 @@ import { RAMP } from './gfx/palette.js';
 import { runHairGrid } from './hair/grid.js';
 import { mountHairPanel } from './hair/panel.js';
 import { HEADS } from './hair/head.js';
+import { hairOf } from './hair/gear-bridge.js';
 import { params } from './hair/nav.js';
+import { startOutfit, wireGear } from './gear/ui.js';
+import { encode } from './gear/outfits.js';
 
 const Q = params(), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
@@ -37,7 +40,7 @@ if (Q.has('sheet')) runSheet(); else if (Q.has('hairgrid')) runHairGrid({ scene,
 
 // ?iso&sheet: the contact sheet (sheet.js), frozen
 function runSheet() {
-  scene.add(piece().box(900, 2, 600, RAMP.n[5], { p: [240, -1, 150] }).mesh(shadeMat({ obj: 0 }))); const rows = (Q.get('rows') || '0,1,2,3').split(',').map(i => SHEET_ROWS[+i]); const sh = buildSheet(scene, Q.has('foe'), rows); sh.show();
+  scene.add(piece().box(900, 2, 600, RAMP.n[5], { p: [240, -1, 150] }).mesh(shadeMat({ obj: 0 }))); const rows = (Q.get('rows') || '0,1,2,3').split(',').map(i => SHEET_ROWS[+i]); const sh = buildSheet(scene, Q.has('foe'), rows, Q.has('outfit') ? startOutfit(Q) : null); sh.show();
   PIPE.rain = 0; PIPE.fog = 0; PIPE.k = Q.has('k') ? +Q.get('k') : 2;
   const loop = () => { CAM.px = CAM.x = sh.center[0]; CAM.py = CAM.z = sh.center[1]; projMatrix(cam.projectionMatrix, CAM.px, CAM.py, +(Q.get('zoom') || 1.9)); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
     pipe.fx.clearRect(0, 0, 960, 540); sh.stamp(pipe.fx); pipe.render(scene, cam); requestAnimationFrame(loop); };
@@ -48,7 +51,12 @@ function runSheet() {
 function runGame(reel) {
   const room = buildRoom(scene);
   let lookKind = Q.get('look') === 'pixel' ? 'pixel' : '3d';
-  const hero = new Hero({ x: 250, z: 120, h: 0, look: lookKind }), foe = new Foe({ x: 330, z: 110, h: -Math.PI / 2, look: lookKind }, Q.has('calm') || !!reel);
+  // what he wears (gear/, the outfit picker): Iron Ash as built unless the URL or the last visit picked an outfit;
+  // a reel keeps the Animation Flow page's look unless the URL asks
+  const outfit = reel && !Q.has('outfit') ? null : startOutfit(Q);
+  let hairPanel = null; const suggestHair = o => { const h = hairOf(o); if (h) HEADS.hero.hair = h; if (hairPanel) hairPanel.sync(); };   // an outfit's gear hair picks his hair
+  suggestHair(outfit);
+  const hero = new Hero({ x: 250, z: 120, h: 0, look: lookKind, outfit }), foe = new Foe({ x: 330, z: 110, h: -Math.PI / 2, look: lookKind }, Q.has('calm') || !!reel);
   const chars = [hero, foe]; for (const c of chars) c.look.mount(scene);
   const script = [];
   if (reel) {   // place them as the page does, hide the samurai unless the scenario has one, and queue its commands
@@ -61,7 +69,8 @@ function runGame(reel) {
   // the model switch: every character's look is swapped; nothing else is told
   const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } root.querySelector('#o-look').value = kind; };
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
-  mountHairPanel(root);   // hair and hat pickers (hair/panel.js)
+  wireGear(root, outfit, o => { hero.dress(o, scene); suggestHair(o); });
+  hairPanel = mountHairPanel(root, { outfit: () => hero.outfit });   // hair and hat pickers (hair/panel.js); a dressed outfit's head piece is his hat
 
   // the canvas fills the stage (16:9, under the window's height). With the low-res target on it shows the 960×540
   // pixels at a whole multiple when one fits (nearest-neighbour); off, the target is drawn at the canvas's own size
@@ -130,6 +139,6 @@ function runGame(reel) {
       get foe() { return { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) }; },
       // where each one's feet are on the canvas, 0..1 (for the check's close-up shots)
       get px() { return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)) }; },
-      get look() { return lookKind; }, get heads() { return { hero: { ...HEADS.hero, drawn: hero.look.rig?.headSlot?.key }, foe: { ...HEADS.foe, drawn: foe.look.rig?.headSlot?.key } }; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
+      get look() { return lookKind; }, get heads() { return { hero: { ...HEADS.hero, drawn: hero.look.rig?.headSlot?.key }, foe: { ...HEADS.foe, drawn: foe.look.rig?.headSlot?.key } }; }, get outfit() { return hero.outfit ? encode(hero.outfit) : null; }, get dressed() { return hero.look.rig ? hero.look.rig.report || null : null; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }

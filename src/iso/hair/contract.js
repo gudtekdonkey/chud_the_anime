@@ -39,7 +39,9 @@ export function resolve(hair, hat) {
 //                                    under it within r < R
 //   dome  { c, r, cut, open }       a bowl, hood or wrap: the ellipsoid c ± r; binds points on every cut plane's side
 //                                    (n·p ≥ d, cut = [[nx, ny, nz, d], …]); `open` = [[x0, x1], [y0, y1], z0] a window
-//                                    that does not bind (the hood's face)
+//                                    that does not bind (the hood's face); or, for a cap cut from a sphere (gear's),
+//                                    `polar` [θ0, θ1] from its top, `gap` (a window round his face, ± radians) and
+//                                    `only` (binds only within ± radians of his face)
 //   wall  { y, r, sz, arc }          a skirt or band: radius r[0] at y[0] to r[1] at y[1] (z scaled by sz), binding
 //                                    within `arc` of the back (π: all round)
 export function inside(s, p, m = MARGIN) {
@@ -59,6 +61,9 @@ const coneY = (s, r) => r <= s.r1 ? s.top : s.top - (r - s.r1) * (s.top - s.y0) 
 const ell = (s, p) => Math.hypot((p.x - s.c[0]) / s.r[0], (p.y - s.c[1]) / s.r[1], (p.z - s.c[2]) / s.r[2]);
 function binds(s, p) {
   if (s.cut) for (const c of s.cut) if (c[0] * p.x + c[1] * p.y + c[2] * p.z < c[3]) return false;
+  if (s.polar || s.gap || s.only) { const x = (p.x - s.c[0]) / s.r[0], y = (p.y - s.c[1]) / s.r[1], z = (p.z - s.c[2]) / s.r[2], az = Math.abs(Math.atan2(x, z));
+    if (s.polar) { const th = Math.atan2(Math.hypot(x, z), y); if (th < s.polar[0] || th > s.polar[1]) return false; }
+    if (s.gap && az < s.gap) return false; if (s.only && az > s.only) return false; }
   const o = s.open; if (o && p.x > o[0][0] && p.x < o[0][1] && p.y > o[1][0] && p.y < o[1][1] && p.z > o[2]) return false;
   return true;
 }
@@ -98,6 +103,6 @@ export function validate(HAIR, HATS) {
     for (const p of [...h.parts, ...(h.chains || [])]) if (!REGIONS.includes(p.r)) errs.push(`${h.id}: region ${p.r}`); }
   for (const t of HATS) { for (const [k, v] of Object.entries(t.regions || {})) if (!REGIONS.includes(k) || !['show', 'hide'].includes(v)) errs.push(`${t.id}: ${k} ${v}`);
     for (const [k, v] of Object.entries(t.crown || {})) if (!['knot', 'tail'].includes(k) || !KNOT_MODES.includes(v)) errs.push(`${t.id}: crown ${k} ${v}`);
-    for (const s of t.shells || []) if (!['cone', 'dome', 'wall'].includes(s.t)) errs.push(`${t.id}: shell ${s.t}`); }
+    for (const s of t.shells || []) if (!['cone', 'dome', 'wall'].includes(s.t) || (s.space && !['hat', 'centre', 'pivot'].includes(s.space))) errs.push(`${t.id}: shell ${s.t} ${s.space || ''}`); }
   if (errs.length) throw new Error('head-slot contract: ' + errs.join('; '));
 }

@@ -11,6 +11,7 @@ import { piece } from '../../gfx/build.js';
 import { shadeMat } from '../../gfx/shade.js';
 import { RAMP } from '../../gfx/palette.js';
 import { BODY, OBL, U } from '../../gfx/view.js';
+import { pixStyle } from '../../gear/pixel.js';
 
 const BW = 96, BH = 100, BX0 = 48, BY0 = 72, CLOTH0 = { chains: [] };
 const VERT = `precision highp float; uniform mat4 modelMatrix, viewMatrix, projectionMatrix; in vec3 position; in vec2 uv; out vec2 vUv; out vec3 vW;
@@ -26,8 +27,9 @@ void main() { vec4 t = texture(tFig, vUv); if (t.a < .5) discard;
   c = mix(c, uTintCol, uTint); if (uFlash > .5) c = vec3(1.);
   oC = vec4(c, 1.); oD = vec4(dot(uVD, vW), uObj, 1., 1.); oN = vec4(.5, 1., .5, 1.); }`;
 
-export function pixelLook({ foe = false } = {}) {
-  const S = FC.RF1, data = new Uint8Array(BW * BH * 4), tex = new THREE.DataTexture(data, BW, BH, THREE.RGBAFormat);
+// `outfit` (gear/outfits.js): the engine's style switched to what the outfit wears (gear/pixel.js)
+export function pixelLook({ foe = false, outfit = null } = {}) {
+  const S = outfit ? pixStyle(outfit) : FC.RF1, data = new Uint8Array(BW * BH * 4), tex = new THREE.DataTexture(data, BW, BH, THREE.RGBAFormat);
   tex.magFilter = tex.minFilter = THREE.NearestFilter; tex.generateMipmaps = false; tex.flipY = false; tex.needsUpdate = true;
   const mat = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VERT, fragmentShader: FRAG, side: THREE.DoubleSide,
     stencilWrite: true, stencilRef: 1, stencilFunc: THREE.AlwaysStencilFunc, stencilZPass: THREE.ReplaceStencilOp,

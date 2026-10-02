@@ -8,6 +8,8 @@ import { Actor } from '../anim/flow.js';
 import { threeLook } from '../look/three/look3d.js';
 import { HAIR, HATS } from './head.js';
 import { resolve } from './contract.js';
+import { PRESET } from '../gear/outfits.js';
+import { gearHeads } from './gear-bridge.js';
 
 export function auditPoses(every = 6) {
   const W = { t: 0, dt: 1 / 120, fx: [], event() {} }, a = new Actor(W, { x: 0, z: 0, h: 0 }), out = [];
@@ -37,4 +39,20 @@ export function audit({ foe = false, every = 6 } = {}) {
   }
   look.dispose(); look.rig.headSlot.dispose();
   return { foe, poses: poses.length, ...total, bad: rows };
+}
+
+// ---- the same under gear (gear-bridge.js): every gear head piece alone, and each preset's head pair, on Iron Ash in
+// gear (or another preset's body), with every hairstyle through the same moves
+export function auditGear({ every = 12, body = 'iron-ash' } = {}) {
+  const poses = auditPoses(every), base = PRESET[body].o, heads = gearHeads().map(({ base, armour }) => ({ base, armour }));
+  let total = { shell: 0, body: 0, verts: 0, frames: 0, pairs: 0, heads: heads.length }; const rows = [];
+  for (const h of heads) {
+    const outfit = { ...base, head: h }, head = { hair: '', hat: 'none' }, look = threeLook({ outfit, head }), hat = look.rig.headSlot;
+    for (const hair of HAIR) { head.hair = hair.id; total.pairs++; const r = { hair: hair.id, hat: [h.base, h.armour].filter(Boolean).join('+'), shell: 0, body: 0, worst: '' };
+      for (const { name, pose } of poses) { look.show({ pose, x: 0, y: 0, z: 0, yaw: 0, flash: false, tint: null, tintA: 0, alpha: 1, hero: true });
+        const a = hat.audit(); total.frames++; total.verts += a.verts; if (a.shell + a.body > 0 && !r.worst) r.worst = name; r.shell += a.shell; r.body += a.body; }
+      total.shell += r.shell; total.body += r.body; if (r.shell + r.body) rows.push(r); }
+    look.dispose(); hat.dispose();
+  }
+  return { on: body, poses: poses.length, ...total, bad: rows };
 }

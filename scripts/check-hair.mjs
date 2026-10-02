@@ -4,7 +4,8 @@
 // 2. runs the audit (src/iso/hair/audit.js) on his body and the samurai's through the flow's moves: no hair outside a
 //    hat's shells and no chain through a body, in any pair; the hats' own contact with the body is reported;
 // 3. plays the courtyard: H, T and Y change what he wears and the look draws it, a hat that refuses his hair is
-//    refused, and he still runs and cuts in it.
+//    refused, dressed in a gear outfit its head piece is his hat and H still changes his hair, and he runs and cuts.
+// 2b. audits every gear head piece (gear-bridge.js) with every hairstyle on two gear bodies.
 // Screenshots go to test-output/hair/.
 import { chromium } from 'playwright';
 import { preview } from 'vite';
@@ -43,6 +44,16 @@ try {
     ok(`${g0.hairs.length} hairs × ${g0.hats.length} hats (${g0.refused} refused) in 8 facings`);
   }
   if (seen !== 240) fail(`the pages showed ${seen} pairs, not 240`);
+  // the gear heads (gear-bridge.js), over Iron Ash in gear: every page in every facing, a screenshot facing S and N
+  { const n = await page.evaluate(() => [...document.querySelectorAll('#g-page option')].length); let pairs = 0;
+    for (let pg = 5; pg < n; pg++) { step = `grid page ${pg} (gear)`;
+      await page.goto(new URL(`?iso&test&hairgrid&page=${pg}`, base).href);
+      await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.hairgrid.framesSince >= 1, undefined, { timeout: 240000 });
+      for (let k = 0; k < 8; k++) { if (k) await page.keyboard.press('BracketRight');
+        await page.waitForFunction(k => window.__iso.hairgrid.facing === k && window.__iso.hairgrid.framesSince >= 1, k, { timeout: 120000 });
+        if (k === 0 || k === 4) await page.screenshot({ path: `${OUT}/grid-gear-p${pg}-${FACINGS[k]}.png` }); }
+      errorsCheck(); pairs += (await page.evaluate(() => window.__iso.hairgrid)).cells; }
+    step = 'gear pages'; ok(`${n - 5} pages, ${pairs} hair × gear-head pairs in 8 facings`); }
   step = 'grid, all 240'; await page.goto(new URL('?iso&test&hairgrid&page=4', base).href);
   await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.hairgrid.framesSince >= 1, undefined, { timeout: 240000 });
   await page.screenshot({ path: `${OUT}/grid-all.png` }); errorsCheck(); ok(`${(await page.evaluate(() => window.__iso.hairgrid)).cells} figures`);
@@ -55,6 +66,14 @@ try {
     const hb = {}; for (const b of r.bad) if (b.hatBody) hb[b.hat] = b.worst;
     ok(`${r.pairs - r.refused} pairs × ${r.poses} poses, ${(r.verts / 1e6).toFixed(1)}M hair vertices checked: none outside a hat, no chain in the body` +
       (Object.keys(hb).length ? `; hats touching the body (reported, not hair): ${Object.entries(hb).map(([h, w]) => `${h} in ${w}`).join(', ')}` : ''));
+  }
+
+  // ---- 2b. under the armour session's gear: every gear head piece (and each preset's pair) is a hat by the contract
+  for (const on of ['iron-ash', 'general']) {
+    step = `audit under gear (${on})`;
+    const r = await page.evaluate(on => window.__iso.hairAuditGear({ body: on, every: 12 }), on);
+    if (r.shell || r.body) fail(`${r.shell} hair vertices outside a gear hat, ${r.body} chain samples in the body: ${JSON.stringify(r.bad.slice(0, 6))}`);
+    ok(`${r.heads} gear heads × 24 hairs × ${r.poses} poses, ${(r.verts / 1e6).toFixed(1)}M hair vertices: none outside, no chain in the body`);
   }
 
   // ---- 3. the courtyard: the pickers and keys, a refusal, and he still plays
@@ -77,6 +96,15 @@ try {
   h = await heads(); const note = await page.locator('#o-hairnote').textContent();
   if (h.hero.hat === 'bandana' || !/crown/.test(note)) fail(`the bandana went over a topknot (${h.hero.hair}|${h.hero.hat}; "${note}")`);
   ok(note);
+  step = 'dressed in gear';
+  await page.selectOption('#g-preset', 'general');
+  await page.waitForFunction(() => { const h = window.__iso.heads.hero; return window.__iso.outfit && /^[^|]+\|gear:/.test(h.drawn || ''); }, undefined, { timeout: 60000 });
+  if (!(await page.locator('#o-hat-hero').isDisabled())) fail('the hat picker should stand aside for the outfit');
+  await page.locator('canvas').focus(); await page.keyboard.press('KeyH');
+  await page.waitForFunction(() => { const h = window.__iso.heads.hero; return h.drawn === h.hair + '|' + h.drawn.split('|')[1] && h.drawn.includes('gear:'); }, undefined, { timeout: 30000 });
+  ok(`${(await heads()).hero.drawn}`);
+  await page.selectOption('#g-preset', 'built');
+  await page.waitForFunction(() => !window.__iso.outfit && !(window.__iso.heads.hero.drawn || '').includes('gear:'), undefined, { timeout: 60000 });
   step = 'he plays in it';
   await page.selectOption('#o-hair-hero', 'long-loose'); await page.selectOption('#o-hat-hero', 'kasa'); await page.locator('canvas').focus();
   const x0 = await page.evaluate(() => window.__iso.hero.x);
