@@ -102,9 +102,14 @@ export async function skillSteps({ page, G, until, gameWait, settle, walkTo, sho
   // ---- the Seiza shield against a real cut: the samurai off his leash (no &calm), a full meter
   setStep('skills: Seiza, the shield'); await page.goto(new URL('?iso&test&solo&combo=free&tick=8&qi=1&foes=1', base).href);
   await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 }); await page.evaluate(() => document.querySelector('canvas').focus());   // a click would be a click to move (port.js)
-  { const f = (await G()).foe; await walkTo(f.x - 16, f.z, 4); let absorbed = 0;
-    for (let i = 0; i < 4 && !absorbed; i++) { await until('ready to kneel', () => ['idle', 'guard'].includes(window.__iso.hero.state)); const n0 = (await SK()).n;
-      await page.keyboard.down('KeyC'); await gameWait(.1); await page.keyboard.down('ArrowDown'); await logged('breath:seiza', n0).catch(() => {});
+  { let absorbed = 0;
+    // a press made while his blow lands (the recoil) is never taken, and the held ↓ then runs him off: so each try starts
+    // beside him, gives the kneel 1.5 s of game time, and on a miss lets go and walks back for another
+    for (let i = 0; i < 8 && !absorbed; i++) { { const f = (await G()).foe; await walkTo(f.x - 16, f.z, 4); }
+      await until('ready to kneel', () => ['idle', 'guard'].includes(window.__iso.hero.state)); const n0 = (await SK()).n, t0 = (await G()).t;
+      await page.keyboard.down('KeyC'); await gameWait(.1); await page.keyboard.down('ArrowDown');
+      await until('the kneel or 1.5 s', ([n0, t0]) => { const s = window.__iso.skills, k = Math.min(s.log.length, s.n - n0); return (k > 0 && s.log.slice(-k).includes('breath:seiza')) || window.__iso.t - t0 > 1.5; }, [n0, t0]);
+      if (!(await since(n0)).includes('breath:seiza')) { await page.keyboard.up('ArrowDown'); await page.keyboard.up('KeyC'); await gameWait(.3); continue; }
       await until('the seiza ending or a blow', n0 => { const s = window.__iso.skills, k = Math.min(s.log.length, s.n - n0); return window.__iso.hero.state !== 'skSeiza' || s.log.slice(-k).includes('foe:blocked'); }, n0, 60000);
       if ((await since(n0)).includes('foe:blocked')) { absorbed = 1; await shot('skill-seiza', ['hero', 'foe']); }
       await page.keyboard.up('ArrowDown'); await page.keyboard.up('KeyC'); await gameWait(.3); }
