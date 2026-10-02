@@ -5,6 +5,7 @@ import { PIPE } from '../gfx/post.js';
 import { LOOK3D } from '../look/three/look3d.js';
 import { SETTINGS } from '../anim/flow.js';
 import { setBody, BODY } from '../gfx/view.js';
+import { STYLE, setStyle } from '../gfx/style.js';
 
 const CSS = `
 :root { color-scheme: dark; --bg: #0b0d10; --panel: #13161a; --rule: #262b31; --fg: #d9dfdd; --dim: #8b9592; --cyan: #6ff3e4; }
@@ -36,6 +37,9 @@ export function buildPage() {
     <div class="ms" id="ms" aria-live="off">—</div>
     <h2>Model</h2>
     <label>Look <select id="o-look"><option value="3d">3D model</option><option value="pixel">Pixel (2D drawing)</option></select><kbd>M</kbd></label>
+    <label>Style <select id="o-style"><option value="3">Painterly</option><option value="1">Pixel-render</option><option value="2">Anime limited</option><option value="0">Toon + dither</option></select><kbd>V</kbd></label>
+    <label><input type="checkbox" id="o-clash">Clashes (impact frames, lines)<kbd>C</kbd></label>
+    <label><input type="checkbox" id="o-cine">Finisher close-up<kbd>X</kbd></label>
     <h2>Pipeline</h2>
     <label><input type="checkbox" id="o-lowres">Low-res target<kbd>1</kbd></label>
     <label><input type="checkbox" id="o-toon">Toon bands<kbd>2</kbd></label>
@@ -55,7 +59,7 @@ export function buildPage() {
     <label><input type="checkbox" id="o-fog">Ground mist<kbd>9</kbd></label>
     <label><input type="checkbox" id="o-rain">Rain<kbd>0</kbd></label>
     <h2>Controls</h2>
-    <div class="keys"><div><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> run</div><div><kbd>J</kbd> cut, again for J2, J3</div><div><kbd>Shift</kbd>/<kbd>L</kbd> roll (cancels a cut)</div><div>J out of a run: the lunge</div></div>
+    <div class="keys"><div><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> run</div><div>J3 on him: the close-up (any key skips)</div><div><kbd>J</kbd> cut, again for J2, J3</div><div><kbd>Shift</kbd>/<kbd>L</kbd> roll (cancels a cut)</div><div>J out of a run: the lunge</div></div>
     <p class="note">The samurai answers if you stand close (open with <code>&amp;calm</code> to stop him).</p>
   </aside>`;
   document.body.appendChild(root);
@@ -65,7 +69,7 @@ export function buildPage() {
 
 // wire the controls to the settings; `onLook(kind)` swaps the model
 export function wireOverlay(root, onLook) {
-  const $ = id => root.querySelector('#' + id), boxes = { lowres: '1', toon: '2', dither: '3', palette: '4', outline: '5', nearest: '6', rim: '7', glint: '8', fog: '9', rain: '0' };
+  const $ = id => root.querySelector('#' + id), boxes = { lowres: '1', toon: '2', dither: '3', palette: '4', outline: '5', nearest: '6', rim: '7', glint: '8', fog: '9', rain: '0', clash: 'C', cine: 'X' };
   const set = (k, v) => { if (k === 'glint') LOOK3D.glint = v; else PIPE[k] = v; if (PIPE.onChange) PIPE.onChange(); };
   const get = k => k === 'glint' ? LOOK3D.glint : PIPE[k];
   for (const k of Object.keys(boxes)) { const el = $('o-' + k); el.checked = !!get(k); el.onchange = () => set(k, el.checked ? 1 : 0); }
@@ -75,13 +79,17 @@ export function wireOverlay(root, onLook) {
   $('o-brim').value = String(LOOK3D.brim); $('o-brim').onchange = e => { LOOK3D.brim = +e.target.value; };
   $('o-free').value = String(SETTINGS.free); $('o-free').onchange = e => { SETTINGS.free = +e.target.value; };
   $('o-look').onchange = e => onLook(e.target.value);
+  // a style presets the pipeline's steps (they stay toggles), so the boxes are read back after it
+  const syncBoxes = () => { for (const k of Object.keys(boxes)) $('o-' + k).checked = !!get(k); $('o-bands').value = String(PIPE.bands); };
+  $('o-style').value = String(STYLE.i); $('o-style').onchange = e => { setStyle(+e.target.value); syncBoxes(); };
   const cycle = (el, fire) => { el.selectedIndex = (el.selectedIndex + 1) % el.options.length; fire(el); };
   addEventListener('keydown', e => {
     if (e.target.tagName === 'SELECT' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-    const k = Object.keys(boxes).find(b => 'Digit' + boxes[b] === e.code);
+    const k = Object.keys(boxes).find(b => 'Digit' + boxes[b] === e.code || 'Key' + boxes[b] === e.code);
     if (k) { const el = $('o-' + k); el.checked = !el.checked; el.onchange(); return; }
     if (e.code === 'KeyM') cycle($('o-look'), el => onLook(el.value));
     if (e.code === 'KeyB') cycle($('o-body'), el => setBody(el.value));
     if (e.code === 'KeyF') cycle($('o-free'), el => { SETTINGS.free = +el.value; });
+    if (e.code === 'KeyV') cycle($('o-style'), el => { setStyle(+el.value); syncBoxes(); });
   });
 }

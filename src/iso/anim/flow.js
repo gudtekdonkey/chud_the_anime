@@ -11,6 +11,7 @@ export const wrapA = a => { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a
 export const faceK = h => ((Math.round(h / (Math.PI / 4)) % 8) + 8) % 8;
 export const FA = [0, 1, 2, 3, 4, 5, 6, 7].map(k => { const a = k * Math.PI / 4; return a > Math.PI + 1e-6 ? a - TAU : a; }); // S SE E NE N NW W SW
 export const hOf = (dx, dz) => Math.atan2(dx, dz);
+export const DIR = { S: 0, SE: Math.PI / 4, E: Math.PI / 2, NE: 3 * Math.PI / 4, N: Math.PI, NW: -3 * Math.PI / 4, W: -Math.PI / 2, SW: -Math.PI / 4 };
 export const rnd = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(7);
 
 export const EZ = { l: t => t, i: t => t * t * t, i2: t => t * t, o: t => 1 - (1 - t) ** 3, o2: t => 1 - (1 - t) ** 2, io: t => t < .5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2, s: t => t * t * (3 - 2 * t),
@@ -48,7 +49,7 @@ const spr = (w, z) => ({ x: 0, v: 0, w, z });
 function sstep(s, target, dt, lim) { const a = s.w * s.w * (target - s.x) - 2 * s.z * s.w * s.v; s.v += a * dt; s.x += s.v * dt;
   if (lim != null) { if (s.x > lim) { s.x = lim; s.v = Math.min(s.v, 0); } if (s.x < -lim) { s.x = -lim; s.v = Math.max(s.v, 0); } } }
 
-export const SETTINGS = { fps: 30, sec: 1, blend: 1, free: 0 };   // the frame rate, how strong the springs are, engine blending, free yaw (not the 8 facings)
+export const SETTINGS = { fps: 30, sec: 1, blend: 1, free: 0, fpsFor: null };   // the frame rate (or the style's fpsFor), how strong the springs are, engine blending, free yaw (not the 8 facings)
 // the body's points the springs watch (the page's 2D skeleton, reduced to what they need)
 const TORSO = 13.5, NECK = 1.6, HEADR = 4.3;
 function points(p) { const sp = [Math.sin(p.lean), Math.cos(p.lean)], hd = p.lean + (p.head || 0), hs = [Math.sin(hd), Math.cos(hd)];
@@ -120,7 +121,8 @@ export class Actor {
   // the frame: sampled at SETTINGS.fps, pose and position together; the drawn facing steps one of the 8 per frame toward
   // his heading (attacks and rolls snap), unless SETTINGS.free draws the heading itself
   sample(force) {
-    this.tick += this.W.dt; if (!force && this.out && this.tick < 1 / SETTINGS.fps - 1e-6) return false; this.tick = 0;
+    const fps = SETTINGS.fpsFor ? SETTINGS.fpsFor(this) : SETTINGS.fps;   // the style's frame stepping (gfx/style.js); the motion itself steps at 1/120 s
+    this.tick += this.W.dt; if (!force && this.out && this.tick < 1 / fps - 1e-6) return false; this.tick = 0;
     const tk = faceK(this.h); if (tk !== this.fk) { const d = ((tk - this.fk + 12) % 8) - 4; this.fk = (this.fk + (this.turnSnap ? (tk - this.fk) : Math.sign(d || 1)) + 8) % 8; }
     this.turnSnap = false;
     this.out = { pose: this.pose, x: this.x, y: this.y, z: this.z, yaw: SETTINGS.free ? this.h : FA[this.fk], flash: this.flash > 0, tint: this.tint, tintA: this.tintA, alpha: this.alpha, t: this.W.t };

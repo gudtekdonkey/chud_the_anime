@@ -48,7 +48,7 @@ try {
   await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 });
   await page.locator('canvas').click();
   // what he has been through, recorded every frame in the page (a poll from here can miss a state that lasts 2 frames)
-  await page.evaluate(() => { window.__seen = new Set(); window.__seq = []; const f = () => { const h = window.__iso.hero; window.__seen.add(h.state); if (h.iframes) window.__seen.add('iframes');
+  await page.evaluate(() => { window.__seen = new Set(); window.__seq = []; const f = () => { const h = window.__iso.hero; window.__seen.add(h.state); if (h.iframes) window.__seen.add('iframes'); if (window.__iso.cine) window.__seen.add('cine'); if (window.__iso.impact) window.__seen.add('impact');
     if (window.__seq.at(-1) !== h.state) window.__seq.push(h.state); requestAnimationFrame(f); }; f(); });
   const seen = (what, timeout) => until(what, w => window.__seen.has(w), what, timeout), forget = () => page.evaluate(() => { window.__seen.clear(); window.__seq = []; });
   errorsCheck(); ok(`look ${(await G()).look}`); await shot('00-start', ['hero', 'foe']);
@@ -88,7 +88,7 @@ try {
   // the presses come as a player's would, each as the last cut lands (a screenshot here outlasts the chain's window)
   step = 'J1 → J2 → J3'; { const f0 = (await G()).foe, n0 = (await G()).log.length;
     const landed = (cut, n) => until(`${cut} landing`, ([c, n]) => window.__iso.STATS.log.length > n && window.__iso.STATS.log.at(-1).startsWith(c), [cut, n]);
-    await page.keyboard.press('KeyJ'); await landed('J1', n0);
+    await forget(); await page.keyboard.press('KeyJ'); await landed('J1', n0);
     await page.keyboard.press('KeyJ'); await landed('J2', n0 + 1);
     await page.keyboard.press('KeyJ'); await landed('J3', n0 + 2);
     await shot('cut-J3', ['hero', 'foe']);
@@ -96,7 +96,9 @@ try {
     if (log.join() !== 'J1:hit,J2:hit,J3:hit') fail(`the chain landed ${log.join(' ') || 'nothing'}`);
     if (g.foe.hits - f0.hits !== 3) fail(`the samurai took ${g.foe.hits - f0.hits} hits`);
     if (!g.foe.reacts.slice(-3).every(r => /recoil|knock|die/.test(r))) fail(`the samurai's reactions: ${g.foe.reacts.slice(-3).join(' ')}`);
-    ok(`${log.join(' ')}; he reacted ${g.foe.reacts.slice(-3).join(', ')}`); }
+    if (!(await page.evaluate(() => window.__seen.has('impact')))) fail('no impact frame during the hit-stops');
+    await seen('cine');   // J3 on him: the finisher's close-up
+    ok(`${log.join(' ')}; he reacted ${g.foe.reacts.slice(-3).join(', ')}; impact frames and the close-up played`); }
 
   // ---- a cut cancelled into the roll: J, then Shift as soon as it has struck
   step = 'cancel into the roll'; await settle(); await forget(); { await page.keyboard.press('KeyJ'); await seen('J1');
@@ -113,6 +115,14 @@ try {
     let n = (await G()).log.length; await page.keyboard.press('KeyJ'); await until('J1 landing', n => window.__iso.STATS.log.length > n, n); await shot('cut-J1', ['hero', 'foe']);
     await settle(); n = (await G()).log.length; await page.keyboard.press('KeyJ'); await until('J1 landing', n => window.__iso.STATS.log.length > n, n);
     await page.keyboard.press('KeyJ'); await until('J2 landing', n => window.__iso.STATS.log.length > n + 1, n); await shot('cut-J2', ['hero', 'foe']); ok(); }
+
+  // ---- the style switch, live: Pixel-render, Anime limited, Toon + dither, Painterly; a cut still plays and is judged in each
+  step = 'style switch';
+  for (let i = 0; i < 4; i++) { await settle(); const f = (await G()).foe; if (!f.dead) { await walkTo(f.x - 22, f.z, 6); await settle(); }
+    await page.keyboard.press('KeyV'); const st = await page.evaluate(() => window.__iso.style); const n = (await G()).log.length;
+    await page.keyboard.press('KeyJ'); await until(`a cut in ${st}`, n => window.__iso.STATS.log.length > n, n); await shot(`style-${st.replace(/\W+/g, '-').toLowerCase()}`, ['hero', 'foe']);
+    const last = (await G()).log.at(-1); if (!/hit|miss/.test(last)) fail(`the cut in ${st}: ${last}`); }
+  ok(`back to ${await page.evaluate(() => window.__iso.style)}`);
 
   // ---- the pixel look: the same controller, the same loop
   step = 'pixel look'; await page.keyboard.press('KeyM'); await until('the pixel look', () => window.__iso.look === 'pixel'); await settle();

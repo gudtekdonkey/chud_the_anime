@@ -4,7 +4,7 @@
 // unless he is rolling through it.
 import { W, STOP } from './sim.js';
 import { hOf, hv, wrapA, AF } from '../anim/flow.js';
-import { sparks, dust, crack, tear } from '../fx/fx.js';
+import { sparks, dust, crack, tear, focus } from '../fx/fx.js';
 import { shake } from '../gfx/view.js';
 import { CUT } from './hero.js';
 
@@ -21,7 +21,7 @@ export function hitRules(game) {
     W.hitstop(kill ? STOP.kill : heavy ? STOP.heavy : STOP.light);
     if (kill) shake(1.5, 4 / 60); else if (heavy) shake(1, 2 / 60);
     const fx = foe.a.x - Math.sin(hd) * 4, fz = foe.a.z - Math.cos(hd) * 4;
-    sparks(W, fx, 22, fz, 5 + c.w * 2, { dir: hd, spd: 120 });
+    sparks(W, fx, 22, fz, 5 + c.w * 2, { dir: hd, spd: 120 }); focus(W, fx, 22, fz); foe.a.hitAt = W.t;
     if (c.w >= 2 || kill) dust(W, foe.a.x, foe.a.z, 6 + c.w * 2, { spd: 30, dir: hd, spread: 2, life: .5 });
     if (name === 'J3' || kill) tear(W, foe.a.x, 20, foe.a.z, name === 'J3' ? Math.PI / 2 + .35 : .5, 26, 5);
   };
@@ -32,6 +32,6 @@ export function hitRules(game) {
     dust(W, px, pz, 5, { spd: 24, life: .35 });
     if (hero.iframes) { STATS.log.push('foe:dodged'); return; }
     if (Math.hypot(hero.a.x - px, hero.a.z - pz) < 16) { hero.taken++; STATS.log.push('foe:hit'); hero.a.flash = .034; hero.a.h = hero.a.ht = hOf(a.x - hero.a.x, a.z - hero.a.z);
-      hero.a.play('recoil', { rs: .55 }); W.hitstop(STOP.light); sparks(W, hero.a.x, 22, hero.a.z, 8, { dir: a.h }); } };
+      hero.a.play('recoil', { rs: .55 }); W.hitstop(STOP.light); sparks(W, hero.a.x, 22, hero.a.z, 8, { dir: a.h }); focus(W, hero.a.x, 22, hero.a.z); hero.a.hitAt = W.t; } };
 }
 export { AF };

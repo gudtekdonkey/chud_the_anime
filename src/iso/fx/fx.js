@@ -62,14 +62,40 @@ function drawTear(g, e, k) {
   if (open > .4) { g.fillStyle = '#b8fff6'; for (let i = 0; i < 4; i++) { const t = .2 + i * .18, s = (e.jag[i * 5][0]) * e.wide * open * .5; g.fillRect((x0 + ux * L * t - uy * s) | 0, (y0 + uy * L * t + ux * s) | 0, 1, 1); } }
 }
 
-// the blade's path as a ribbon, from where the blade was over the last 0.06 s: inner edge mid-blade, outer edge the tip,
-// white at the tip fading to cyan, dithered away with age (af/core.js trailDraw). `trail`: [{ t, a: [x,y], b: [x,y] } | { gap }] in render px
-export function drawTrail(g, trail, t1) {
-  const pts = trail.filter(s => s.t <= t1 + 1e-6 && t1 - s.t < .06);
+// the blade's path as a ribbon, from where the blade was over the last moments: inner edge mid-blade, outer edge the
+// tip (af/core.js trailDraw). `trail`: [{ t, a: [x,y], b: [x,y] } | { gap }] in render px. The style picks its look:
+// 'dither' cyan to white, dithered away with age (the page's); 'crisp' a held smear, white with a cyan edge, gone after a
+// frame (pixel-render); 'white' a flat white smear (anime); 'soft' a soft gradient, cyan into warm white (painterly)
+const TRAIL = { dither: .06, crisp: .085, white: .07, soft: .1 };
+export function drawTrail(g, trail, t1, mode = 'dither') {
+  const win = TRAIL[mode] || .06, pts = trail.filter(s => s.t <= t1 + 1e-6 && t1 - s.t < win);
   for (let i = 1; i < pts.length; i++) { const A = pts[i - 1], B = pts[i]; if (A.gap || B.gap) continue;
     if (Math.hypot(B.b[0] - A.b[0], B.b[1] - A.b[1]) < 2.4) continue;
-    const age = (t1 - B.t) / .06, L = Math.hypot(B.b[0] - B.a[0], B.b[1] - B.a[1]) || 1;
-    poly([A.a, A.b, B.b, B.a], (x, y) => { if (x < 0 || y < 0 || x >= VW || y >= VH || bay(x, y) < age * .9) return;
-      const q = 1 - Math.min(1, Math.hypot(x + .5 - B.b[0], y + .5 - B.b[1]) / L); g.fillStyle = FXC.cy[q > .8 ? 3 : q > .55 ? 2 : q > .3 ? 1 : 0]; g.fillRect(x, y, 1, 1); });
+    const age = (t1 - B.t) / win, L = Math.hypot(B.b[0] - B.a[0], B.b[1] - B.a[1]) || 1;
+    poly([A.a, A.b, B.b, B.a], (x, y) => { if (x < 0 || y < 0 || x >= VW || y >= VH) return;
+      const q = 1 - Math.min(1, Math.hypot(x + .5 - B.b[0], y + .5 - B.b[1]) / L);
+      if (mode === 'soft') { const al = Math.pow(1 - age, 1.2) * (.3 + .7 * q) * .95; if (al < .04) return; g.globalAlpha = al; g.fillStyle = q > .7 ? '#fff2d0' : q > .4 ? '#b8fff6' : '#6ff3e4'; }
+      else if (mode === 'white') g.fillStyle = '#ffffff';
+      else if (mode === 'crisp') g.fillStyle = q > .78 ? '#6ff3e4' : '#f0fffc';
+      else { if (bay(x, y) < age * .9) return; g.fillStyle = FXC.cy[q > .8 ? 3 : q > .55 ? 2 : q > .3 ? 1 : 0]; }
+      g.fillRect(x, y, 1, 1); });
   }
+  g.globalAlpha = 1;
 }
+
+// ---- the clash (Anime limited's, on every hit in every style): focus lines rushing in on the hit, speed lines behind
+// a dash or a roll. Screen space, on the effects layer
+export function focus(W, x, y, z) { W.fx.push({ k: 'focus', x, y, z, age: 0, life: .12, seed: Math.random() * 1e4 }); }
+export function drawFocus(g, W) {
+  for (const e of W.fx) { if (e.k !== 'focus') continue; const [cx, cy] = P(e.x, e.y, e.z), r = mulberry(e.seed | 0);
+    g.strokeStyle = 'rgba(255,255,255,.8)';
+    for (let i = 0; i < 34; i++) { const a = r() * Math.PI * 2, r0 = 46 + r() * 34, r1 = 700; g.lineWidth = 1 + (r() * 2.4 | 0);
+      g.beginPath(); g.moveTo(cx + Math.cos(a) * r0, cy + Math.sin(a) * r0); g.lineTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); g.stroke(); } }
+}
+// streaks behind someone moving fast: (x, y) on screen, (dx, dy) his direction on screen
+export function speedLines(g, x, y, dx, dy, t) {
+  const r = mulberry(Math.floor(t * 12) + 1), l = Math.hypot(dx, dy) || 1, ux = dx / l, uy = dy / l; g.strokeStyle = 'rgba(232,242,255,.55)'; g.lineWidth = 1;
+  for (let i = 0; i < 12; i++) { const side = (r() - .5) * 56, back = 18 + r() * 30, len = 30 + r() * 70, bx = x - ux * back - uy * side, by = y - uy * back + ux * side;
+    g.beginPath(); g.moveTo(bx | 0, by | 0); g.lineTo((bx - ux * len) | 0, (by - uy * len) | 0); g.stroke(); }
+}
+const mulberry = a => () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };

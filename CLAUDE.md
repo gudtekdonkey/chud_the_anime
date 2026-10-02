@@ -11,6 +11,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `npm run preview` | Serves `dist/` |
 | `npm run check` | Builds, then `scripts/check.mjs` plays a key sequence in Chromium and asserts the states and no page errors. Screenshots and the state log go to `test-output/` |
 | `npm run check:hd` | The same check at 2× (`?hd`), screenshots in `test-output/hd/` |
+| `node scripts/iso-reel.mjs chain 3` | After a build: one of the Animation Flow page's scenarios as the slice plays it, laid out as the page's contact sheets (`AF_DIR` at the page's source draws the page's sheet above it), into `test-output/iso/reel-<name>[-vs].png` |
 | `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle. Screenshots in `test-output/iso/` |
 
 - Dependencies are pinned to exact versions. Keep them exact.
@@ -152,6 +153,7 @@ Phase 0 of the new direction: Iron Ash V3 in a night courtyard, the Sea of Stars
 | `iso/gfx/view.js` | The camera: `VW`/`VH` (960×540) and `U` (2 render px a world unit), the oblique projection (`OBL`, `projMatrix`, `toScreen`), the bodies' camera (`BODY`, `setBody`, `BODY_SHEAR`: picked 39.5°, upright 20°, true 54°), the follow with lag, look-ahead and shake |
 | `iso/gfx/shade.js` | The scene material (toon bands, the world-anchored dither, key / bounce / rim, the brim's shadow, the lanterns, the ground and its mist) writing colour, data and normal; `SH` (shared light and toggle uniforms); the silhouette material |
 | `iso/gfx/post.js` | The pipeline: the 3-attachment target at k× (`PIPE` holds every toggle, the owner's faces-page defaults), the silhouette pass, the post pass (outline, palette, effects layer, rain), the effects canvas |
+| `iso/gfx/style.js` | THE STYLE seam (owner: Painterly by default, Anime limited's clashes, live switching): `STYLES` (Painterly, Pixel-render, Anime limited, Toon + dither: the light, the pipeline preset, the outline, the trail, the frame stepping), `setStyle`, `fpsFor`. Never gameplay |
 | `iso/gfx/palette.js`, `iso/gfx/build.js` | The slice's palette ramps; low-poly pieces (flat-shaded, colour and part per vertex, merged per bone) |
 | `iso/anim/flow.js` | The Animation Flow page's engine, ported: `AF` (rig px → world units), easing, pose mixing, keyed and procedural clips (`CLIPS`), the springs, planted feet, the 30 fps sample, the 8 stepped facings (`SETTINGS`) |
 | `iso/anim/moves.js` | The page's moves verbatim (idle, guard, start, run, stop, skid, roll, J1–J3, lunge, recoil, knock, die, fcut, sheathe); `moves-extra.js` the additions (`runArmed`) |
@@ -160,9 +162,11 @@ Phase 0 of the new direction: Iron Ash V3 in a night courtyard, the Sea of Stars
 | `iso/look/three/` | The 3D look: `ronin.js` (procedural Iron Ash V3 and the samurai), `rig.js` (the skeleton in the pages' proportions, the side pose stood up in 3D by two-bone IK, the springs' pieces), `look3d.js` (the look, `LOOK3D` hat tunables, the glint rule) |
 | `iso/look/pixel/` | The pixel look: `engine.js` and `styles.js` (the pages' 2D Iron Ash engine and FC.RF1, vendored verbatim), `lookpix.js` (the sprite as a card in the scene) |
 | `iso/world/room.js` | The courtyard: geometry, the four lanterns, colliders (`SOLID`, `collide`), the raised engawa (`groundAt`), the eave that dissolves over him |
-| `iso/fx/fx.js` | Effects on the effects layer: dust, sparks, rings, cracks, the black slash (fx/void.js's tear, ported), the blade's trail |
+| `iso/fx/fx.js` | Effects on the effects layer: dust, sparks, rings, cracks, the black slash (fx/void.js's tear, ported), the blade's trail in each style's look, the clash's focus and speed lines |
+| `iso/fx/cine.js` | The finisher's close-up: J3 on a samurai in reach punches the camera in, letterboxed, ink and speed lines, then back (~0.8 s, any key skips); presentation only |
 | `iso/ui/overlay.js` | The ?iso page and its overlay: frame time, the model switch, the pipeline toggles, camera and hat, controls; every choice a key |
 | `iso/sheet.js` | `?iso&sheet`: a frozen contact sheet of the loop's moments in the 8 facings, either look |
+| `iso/reel.js` | `?iso&reel=<name>`: the Animation Flow page's demo scenarios on its script and clock (`window.__reel.steps(n)`), for `scripts/iso-reel.mjs`'s side-by-side sheets against the page's own |
 
 - Everything in `src/iso/` keeps to the slice: never import it from today's game, and never import today's game modules (`screen.js` grabs `#game`) into it.
 - A character's look is swapped through `look/look.js` only. The controller hands it the flow's side pose; a new look (a modelled character, a baked sprite sheet) implements the same four calls.

@@ -36,11 +36,14 @@ export function pixelLook({ foe = false } = {}) {
   // the card: rows above the foot line stand up (a row is one render pixel of height), the rows below lie on the floor
   const geo = new THREE.BufferGeometry(), root = new THREE.Object3D();
   const rowUp = 1 / (U * OBL.b), rowFlat = 1 / (U * OBL.a), col = 1 / U, x0 = -BX0 * col, x1 = (BW - BX0) * col, vf = BY0 / BH;
-  const P = [x0, BY0 * rowUp, 0, x1, BY0 * rowUp, 0, x1, 0, 0, x0, 0, 0, x0, 0, 0, x1, 0, 0, x1, .02, (BH - BY0) * rowFlat, x0, .02, (BH - BY0) * rowFlat];
+  const P = [x0, BY0 * rowUp, 0, x1, BY0 * rowUp, 0, x1, 0, 0, x0, 0, 0, x0, .1, 0, x1, .1, 0, x1, .1, (BH - BY0) * rowFlat, x0, .1, (BH - BY0) * rowFlat];
   const UV = [0, 0, 1, 0, 1, vf, 0, vf, 0, vf, 1, vf, 1, 1, 0, 1];
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(P), 3)); geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(UV), 2));
   geo.setIndex([0, 3, 1, 1, 3, 2, 4, 7, 5, 5, 7, 6]);
   const card = new THREE.Mesh(geo, mat); card.frustumCulled = false; card.position.z = 1.2; card.layers.enable(1); root.add(card);
+  // in the silhouette pass the card hands the shared material its picture, so the silhouette is his shape, not the card's
+  card.onBeforeRender = (r, sc, c, g, m) => { if (m.uniforms && m.uniforms.uSilTex) { m.uniforms.tSil.value = tex; m.uniforms.uSilTex.value = 1; m.uniformsNeedUpdate = true; } };
+  card.onAfterRender = (r, sc, c, g, m) => { if (m.uniforms && m.uniforms.uSilTex) { m.uniforms.uSilTex.value = 0; m.uniformsNeedUpdate = true; } };
   const shm = shadeMat({ obj: 3 }); shm.uniforms.uFade.value = .45;
   const shadow = piece().cyl(5.4, 5.4, .05, 14, RAMP.k[0], { p: [0, .06, 0], s: [1, 1, .62], glow: true }).mesh(shm); root.add(shadow);
   let scene = null;

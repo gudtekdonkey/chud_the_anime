@@ -3,9 +3,9 @@
 import { fxStep } from '../fx/fx.js';
 
 export const W = {
-  t: 0, dt: 1 / 120, actors: [], fx: [], stop: 0, on: {},
+  t: 0, dt: 1 / 120, actors: [], fx: [], stop: 0, stopDur: 1, on: {},
   event(a, name) { const f = this.on[name]; if (f) f(a, this); },
-  hitstop(sec) { this.stop = Math.max(this.stop, sec); },
+  hitstop(sec) { if (sec > this.stop) this.stopDur = sec; this.stop = Math.max(this.stop, sec); },
   // one step: returns false while a hit-stop holds the world
   step(before) {
     if (this.stop > 0) { this.stop -= this.dt; return false; }

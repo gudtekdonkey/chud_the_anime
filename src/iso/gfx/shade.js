@@ -19,6 +19,7 @@ export const SH = {
   uLampCol: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, 0, 0, 0)) },
   uToon: { value: 1 }, uDither: { value: 1 }, uBands: { value: 4 }, uRimOn: { value: 1 }, uFog: { value: 1 }, uTime: { value: 0 }, uDOff: { value: new THREE.Vector2() }, uPx: { value: 1 },
   uFogCol: { value: v3('#4a5670') },
+  uStyle: { value: 3 },
   uHatOn: { value: 0 }, uHatInv: { value: new THREE.Matrix4() }, uHatR: { value: 9.5 }, uKeyHat: { value: new THREE.Vector3(0, 1, 0) },
 };
 
@@ -34,7 +35,7 @@ const FRAG = /* glsl */`
 precision highp float;
 uniform vec3 uKey, uFill, uRimDir, uRimCol, uMoon, uView, uVD, uFogCol, uKeyHat;
 uniform vec4 uLampPos[4]; uniform vec4 uLampCol[4]; uniform mat4 uHatInv;
-uniform float uToon, uDither, uBands, uRimOn, uFog, uTime, uPx, uHatOn, uHatR; uniform vec2 uDOff;
+uniform float uToon, uDither, uBands, uRimOn, uFog, uTime, uPx, uHatOn, uHatR, uStyle; uniform vec2 uDOff;
 uniform float uFlash, uObj, uFade, uFloor, uRim, uTint, uSelf; uniform vec3 uTintCol;
 in vec3 vW; in vec3 vN; in vec4 vC; flat in float vPart;
 layout(location = 0) out vec4 oC; layout(location = 1) out vec4 oD; layout(location = 2) out vec4 oN;
@@ -74,15 +75,21 @@ void main() {
     float sh = 1.;                                     // the brim's shadow: the key ray from here meets the hat's disc
     if (uHatOn > .5 && uSelf < .5) { vec3 p = (uHatInv * vec4(vW, 1.)).xyz;
       if (p.y < -.1 && uKeyHat.y > .01) { float t = -p.y / uKeyHat.y; vec2 q = p.xz + uKeyHat.xz * t; if (dot(q, q) < uHatR * uHatR) sh = .3; } }
-    float d = max(dot(n, uKey), 0.) * sh, f = max(dot(n, uFill), 0.);
-    float s = band(clamp(.08 + .64 * d + .3 * f, 0., 1.), bz);
+    float d = max(dot(n, uKey), 0.) * sh, f = max(dot(n, uFill), 0.), s0 = clamp(.08 + .64 * d + .3 * f, 0., 1.);
     vec3 warm = vec3(0.); float wi = 0.;
     for (int i = 0; i < 4; i++) { vec3 dl = uLampPos[i].xyz - vW; float dist = length(dl), att = clamp(1. - dist / uLampPos[i].w, 0., 1.);
       float lam = max(dot(n, dl / max(dist, .001)), 0.) * .7 + .3; float e = att * att * lam * uLampCol[i].w;
       warm += uLampCol[i].rgb * e; wi += e; }
-    float wq = band(min(wi, 1.), fract(bz + .37)); vec3 wc = wi > 0. ? warm / wi : vec3(0.);
+    vec3 wc = wi > 0. ? warm / wi : vec3(0.);
     float rim = pow(1. - max(dot(n, uView), 0.), 1.5) * max(dot(n, uRimDir), 0.) * uRimOn * uRim * 1.6;
-    rim = uToon > .5 ? (rim > .45 ? 1. : (uDither > .5 && rim > .3 && bz < .5 ? 1. : 0.)) : clamp(rim, 0., 1.);
+    float s, wq;
+    if (uStyle > 2.5) {                                // painterly: smooth light broken by brush strokes, a soft wide rim
+      vec2 q = vec2(vW.x + vW.z * .6, vW.y + vW.z * .3); float br = noise(q * vec2(.55, 2.)) * .55 + noise(q * vec2(1.8, 5.5) + 5.) * .45;
+      s = s0 * (.5 + 1.15 * br) * 1.05; wq = min(wi, 1.) * (.75 + .5 * br); rim = smoothstep(.15, .7, rim) * 1.1; }
+    else if (uStyle > 1.5) {                           // anime: two tones and a hot spot; the lamps cut the same way
+      s = s0 > .52 ? (s0 > .9 ? 1.25 : 1.) : .42; wq = wi > .45 ? 1. : wi > .12 ? .45 : 0.; rim = rim > .45 ? .75 : 0.; }
+    else { s = band(s0, bz); wq = band(min(wi, 1.), fract(bz + .37));
+      rim = uToon > .5 ? (rim > .45 ? 1. : (uDither > .5 && rim > .3 && bz < .5 ? 1. : 0.)) : clamp(rim, 0., 1.); }
     col = base * uMoon * (.35 + 1.05 * s) + base * wc * wq * 2.1 + uRimCol * rim * .45;
     if (wet > .5) col += wc * wq * .35 + uRimCol * .04;   // a puddle catches the lanterns and the sky
   }
@@ -91,6 +98,8 @@ void main() {
     float a = h * h * smoothstep(.45, .95, m) * .26; vec3 fc = uFogCol;
     for (int i = 0; i < 4; i++) { float dd = length(uLampPos[i].xz - vW.xz); fc += uLampCol[i].rgb * clamp(1. - dd / (uLampPos[i].w * .8), 0., 1.) * uLampCol[i].w * .4; }
     a = uDither > .5 && uPx < 1.5 ? floor(a * 4. + bz) / 4. : a; col = mix(col, fc, a); }   // dithered on the low-res target, smooth over a hi-res one
+  if (uStyle > 2.5) { float l = dot(col, vec3(.3, .59, .11)); col = mix(vec3(l), col, 1.18);   // painterly: warm lights, cool shadows
+    col = max(mix(col * vec3(.86, .86, 1.04), col * vec3(1.16, 1.03, .84), smoothstep(.06, .32, l)), 0.); }
   col = mix(col, uTintCol, uTint);
   if (uFlash > .5) col = vec3(1.);
   oC = vec4(col, 1.);
@@ -110,11 +119,13 @@ export function shadeMat({ obj = 0, floor = 0, rim = obj ? 1 : .5, side = THREE.
 // the silhouette: a character hidden behind the roof, a pillar or a wall shows as a dithered shape (drawn only where
 // something nearer covers him, and never over his own visible pixels: the stencil his own pass wrote)
 export function silhouetteMat() {
-  return new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, vertexShader: VERT, depthWrite: false, depthFunc: THREE.GreaterDepth,
+  return new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, depthWrite: false, depthFunc: THREE.GreaterDepth,
     stencilWrite: true, stencilRef: 1, stencilFunc: THREE.NotEqualStencilFunc, stencilFail: THREE.KeepStencilOp, stencilZFail: THREE.KeepStencilOp, stencilZPass: THREE.KeepStencilOp,
-    uniforms: { uDOff: SH.uDOff },
-    fragmentShader: /* glsl */`precision highp float; uniform vec2 uDOff; in vec3 vW; in vec3 vN; in vec4 vC; flat in float vPart;
+    uniforms: { uDOff: SH.uDOff, uPx: SH.uPx, tSil: { value: null }, uSilTex: { value: 0 } },   // a sprite card hands it its picture (look/pixel), so only his pixels show
+    vertexShader: `precision highp float; uniform mat4 modelMatrix, viewMatrix, projectionMatrix; in vec3 position; in vec2 uv; out vec2 vUv;
+      void main() { vUv = uv; gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.); }`,
+    fragmentShader: /* glsl */`precision highp float; uniform vec2 uDOff; uniform float uPx, uSilTex; uniform sampler2D tSil; in vec2 vUv;
       layout(location = 0) out vec4 oC; layout(location = 1) out vec4 oD; layout(location = 2) out vec4 oN;
-      void main() { vec2 p = floor(gl_FragCoord.xy + uDOff); if (mod(p.x + p.y, 2.) > .5) discard;
+      void main() { if (uSilTex > .5 && texture(tSil, vUv).a < .5) discard; vec2 p = floor((gl_FragCoord.xy + uDOff) / uPx); if (mod(p.x + p.y, 2.) > .5) discard;
         oC = vec4(.16, .44, .45, 1.); oD = vec4(-1e4, 4., 0., 1.); oN = vec4(.5, 1., .5, 1.); }` });
 }

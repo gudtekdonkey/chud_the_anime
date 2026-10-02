@@ -13,6 +13,8 @@ All of it lives in `src/iso/`. It is a test bed for the owner's picks, not the g
 |---|---|
 | `npm run dev`, then `/?iso` | the slice with hot reload (`/?iso&look=pixel` starts on the pixel look, `&calm` keeps the samurai from attacking) |
 | `npm run build`, open `dist/index.html?iso` | the same single-file build as today's game; the flag picks |
+| `/?iso&reel=chain` | one of the Animation Flow page's scenarios (idle, start, turn, stop, roll, chain, lunge, sheathe) on its script and clock; `node scripts/iso-reel.mjs chain 3` lays it out as the page's contact sheets do (with `AF_DIR` at the page's source, the page's own sheet above it) into `test-output/iso/reel-chain-vs.png` |
+| `/?iso&style=1` | start on a style (0 Toon + dither, 1 Pixel-render, 2 Anime limited, 3 Painterly) |
 | `/?iso&sheet` | a frozen contact sheet: four moments of the loop × the eight facings (`&rows=4,5,6,7` the other four, `&look=pixel`, `&foe`, `&zoom=1.9`) |
 | `npm run check:iso` | builds, then `scripts/check-iso.mjs` plays the loop in Chromium and asserts it (below); screenshots in `test-output/iso/` |
 
@@ -24,14 +26,40 @@ three.js is a new dependency (`three`, pinned in `package.json`): run `npm insta
 the follow-through for J2, then J3. `J` out of a fast run is the lunge. `Shift` or `L` rolls, and cancels a cut once
 it has struck. Presses are remembered 0.2 s.
 
-**The overlay** (beside the game, every choice also a key): the frame time; `M` the model (3D / Pixel); the pipeline
+**The overlay** (beside the game, every choice also a key): the frame time; `M` the model (3D / Pixel); `V` the style
+(Painterly, Pixel-render, Anime limited, Toon + dither); `C` clashes; `X` the finisher's close-up; the pipeline
 steps `1` low-res target, `2` toon bands, `3` dither, `4` palette, `5` outline, `6` pixel upscale, `7` rim light,
 `8` keep the glints, and the number of bands; `B` the bodies' camera (picked 39.5°, upright 20°, true 54°), the hat's
 tilt and brim; `F` the facings (8 stepped, as baked sprites would be, or free); `9` mist, `0` rain.
 
-The defaults are the owner's picks on the 3D faces page (2026-10-02, "like this actually"): low-res target off, toon
-bands on (4), dither on, palette off, outline off, pixel upscale on, rim light on, glints kept, bodies from 39.5°, the
-wide brim as drawn, hat tilted back 14°.
+The default style is **Painterly** (owner 2026-10-02 over the "Ronin 3D Styles" page: "Painterly with Anime Limited
+clashing and attack full screen animation"). The camera and hat defaults are the 3D faces page's picks: bodies from
+39.5°, the wide brim as drawn, hat tilted back 14°, the glints kept. The faces page's pipeline picks ("like this
+actually": low-res target off, toon bands on (4), dither on, palette off, outline off) are the **Toon + dither** style.
+
+## The style seam
+
+A style (`gfx/style.js`) is how the 3D look is drawn and how often its frames are shown; it never touches gameplay
+(the game steps at a fixed 60 Hz, the moves at 1/120 s, whatever the style). Switching is live, mid-fight.
+
+| Style | Light (`gfx/shade.js`, `SH.uStyle`) | Pipeline it presets (each still a toggle) | Frames shown | Trail |
+|---|---|---|---|---|
+| Painterly (default) | smooth light broken by brush strokes, warm lights and cool shadows, a soft wide rim | hi-res, outline as a dark silhouette line round the characters only | 60 fps; the upper body's poses pushed 22% further, squash and stretch from the hips | a soft gradient |
+| Pixel-render | 3 hard bands | the low-res target, the palette, a 1 px outline | 12 fps, held | a crisp smear, gone after a frame |
+| Anime limited | two tones and a hot spot, a hard rim | ink outlines | on threes (8 fps), on ones (24 fps) round a hit | flat white |
+| Toon + dither | 4 bands, dithered | the faces page's picks | 30 fps (the Animation Flow page's) | the page's dithered cyan |
+
+The frame stepping is `SETTINGS.fpsFor` (anim/flow.js samples the pose and the position together at that rate).
+The pixel look keeps its own drawing in every style; the stepping, the clashes and the close-up apply to it too.
+
+**Clashes, every style** (Anime limited's, the owner's pick): during each hit-stop the frame goes black and white,
+then inverted (`gfx/post.js`, `MOMENT.impact`); focus lines rush in on the hit; speed lines streak behind a roll, a
+lunge, a skid or a knock-back (`fx/fx.js`).
+
+**The finisher's close-up** (`fx/cine.js`): when J3 starts on a samurai within reach, the camera punches in on the two
+of them (×3.2), the screen letterboxes, the courtyard gives way to ink and speed lines, the strike lands with its
+impact frames, and the camera pulls back: 0.8 s; any key press skips to the pull-back. Presentation only: gameplay keeps
+its clock and hitboxes. Sky Drop and the executions take the same close-up when they come to the slice.
 
 ## The pipeline, per frame
 
@@ -96,6 +124,23 @@ controller's rules (`play/hero.js`): which press a state takes, the chain beats,
 roll from its hit + 2 frames), the cut turning to the samurai in front and stepping in to reach him. Hit-stop by
 weight is the owner's 3 / 5 / 8 frames; the white flash 2 frames; heavy hits shake, light ones do not.
 
+**The page's pose on the 3D skeleton** (`look/three/rig.js applyPose`), joint for joint:
+
+| The page's pose | The 3D skeleton |
+|---|---|
+| `pel` [forward, up] | the pelvis (hips bone) |
+| `lean` | the spine and chest (a quarter on the pelvis, the rest on the spine) |
+| `head` | neck and head |
+| `fN`, `fF` (near = his right, far = his left), `kneeDir` | right and left ankles by two-bone IK through the knees (hip joints, thighs, shins), the knee toward `kneeDir` or forward |
+| `hN`, `hF`, `elb` | right and left wrists by two-bone IK through the elbows (shoulders, upper arms, forearms), the elbow back or down |
+| `blade` { `g`, `ang`, `two`, `vis` } | the katana in the right hand at the grip, pointing along `ang` in his forward/up plane, the left hand on the hilt when two-handed, only `vis` of it out of the saya; `out: 0` puts it in the saya at his left hip (`sayaTilt` tips the saya) |
+| `hatTilt`, `hatLag` (springs) | the jingasa's own angle and lag on its pivot |
+| `kzLag`, `kzLift`, `sodeLag`, `speed`, `swing` (springs) | the six kusazuri hinges, the two sode hinges, the four jinbaori panels, the hat cords |
+| `roll` (spring) | his lean into a turn |
+
+The near limbs are drawn at his right side and the far at his left, a few units apart; the page's rig has no
+lateral axis, so a 3D artist's clips are what will add twists and sideways reach.
+
 ## Placeholder, and what a 3D artist replaces
 
 - **The model** (`look/three/ronin.js`): boxes, cones and rings placed in code. A modelled Iron Ash (a real head and
@@ -112,8 +157,9 @@ weight is the owner's 3 / 5 / 8 frames; the white flash 2 frames; heavy hits sha
 
 No page errors; the run in all 8 directions (he moves where the keys point and is drawn facing that way); the stop;
 the roll (its i-frames, ~25 units); walking up to the samurai and J1 → J2 → J3 with all three hits landing and three
-reactions; a cut cancelled into the roll; hitting him until he dies, and his respawn; the same chain with the pixel
-look; one screenshot per pipeline step flipped. SwiftShader draws a few frames a second, so the page runs with
+reactions, an impact frame in the hit-stops and the finisher's close-up; a cut cancelled into the roll; hitting him
+until he dies, and his respawn; the four styles switched live with a cut in each; the same chain with the pixel look;
+one screenshot per pipeline step flipped. SwiftShader draws a few frames a second, so the page runs with
 `&tick=8` (8 game steps a frame) and every wait is on the game's clock.
 
 ## Performance
