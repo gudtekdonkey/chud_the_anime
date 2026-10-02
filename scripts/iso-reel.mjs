@@ -40,15 +40,15 @@ if (process.env.AF_DIR && fs.existsSync(path.join(process.env.AF_DIR, 'sheet.htm
 const W = opt.cols * opt.cw * opt.scale, rows = Math.ceil(opt.n / opt.cols), H = rows * (opt.ch + 10) * opt.scale;
 const comp = await browser.newPage({ viewport: { width: W, height: 200 } });
 await comp.setContent(`<body style="margin:0;background:#111;color:#9aa;font:16px monospace"><div id=w></div></body>`);
-await comp.evaluate(async ({ frames, opt, W, H, afPng, name, style }) => {
+await comp.evaluate(async ({ frames, opt, W, H, afPng, name, style, look }) => {
   const w = document.getElementById('w'), load = src => new Promise(r => { const im = new Image(); im.onload = () => r(im); im.src = 'data:image/png;base64,' + src; });
   const head = t => { const d = document.createElement('div'); d.textContent = t; d.style.padding = '6px 4px'; w.appendChild(d); };
   if (afPng) { head(`The Animation Flow page: ${name}`); const im = await load(afPng); im.style.display = 'block'; im.style.width = W + 'px'; w.appendChild(im); }
-  head(`The iso slice, 3D look, style ${style}: ${name} (the same script, the same clock)`);
+  head(`The iso slice, ${look === "pixel" ? "pixel" : "3D"} look, style ${style}: ${name} (the same script, the same clock)`);
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H; w.appendChild(cv); const g = cv.getContext('2d'); g.imageSmoothingEnabled = false;
   for (let f = 0; f < frames.length; f++) { const im = await load(frames[f].png), x = (f % opt.cols) * opt.cw * opt.scale, y = Math.floor(f / opt.cols) * (opt.ch + 10) * opt.scale;
     g.drawImage(im, x, y, opt.cw * opt.scale, opt.ch * opt.scale); g.fillStyle = '#9aa'; g.font = '16px monospace'; g.fillText(frames[f].label, x + 3, y + opt.ch * opt.scale + 16); }
-}, { frames, opt, W, H, afPng, name, style });
+}, { frames, opt, W, H, afPng, name, style, look });
 const file = `${OUT}/reel-${name}${afPng ? '-vs' : ''}${look === 'pixel' ? '-pixel' : ''}.png`;
 await comp.locator('#w').screenshot({ path: file }); console.log('wrote', file);
 await browser.close(); await server.close();
