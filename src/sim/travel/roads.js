@@ -33,7 +33,7 @@ export function countCamps(L, st) {
 }
 
 export function roadsDay(L, st, cal, r) {
-  // danger: drifts back toward the region's base, pushed up by camps, bands out, famine and a storm overhead
+  // danger: drifts back toward the region's base, pushed up by camps, bands out and famine
   const out = new Array(st.regions.length).fill(0);
   for (const b of st.bands) out[b.region] = (out[b.region] || 0) + 1;
   st.regions.forEach((s, id) => {

@@ -1,17 +1,15 @@
 // node scripts/travel-year.mjs [seed] [years]: the travel lane's test (docs/sim-travel.md). Lives a world for a year with a ronin who
-// walks the roads town to town by day, and prints where the glitch storms went and how often each encounter came up, by region.
+// walks the roads town to town by day, and prints how often each encounter came up, by region.
 import '../src/sim/travel/index.js';
 import { generateWorld, advance, calendar, zoneAt, on, rngFor, hoursFromYears } from '../src/sim/index.js';
 import { enterZone, choose, context, chanceAt, ENCOUNTERS } from '../src/sim/travel/index.js';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 1);
 const L = generateWorld(seed, 0), st = L.sys.travel, p = L.actors[L.player], r = rngFor(seed, 'traveller');
 const tally = {}, count = (k, n = 1) => tally[k] = (tally[k] || 0) + n;
-const byRegion = {}, byType = {}, storms = {}, stormList = [];
-on('storm.faded', e => stormList.push(L.sys.travel.past[L.sys.travel.past.length - 1]));
+const byRegion = {}, byType = {};
 on('*', e => {
   count(e.type);
   if (e.type === 'travel.encounter') { const g = byRegion[e.region] ||= { n: 0 }; g.n++; g[e.encounter] = (g[e.encounter] || 0) + 1; byType[e.encounter] = (byType[e.encounter] || 0) + 1; }
-  if (e.type.startsWith('storm.') && e.storm) (storms[e.storm] ||= []).push(e);
 });
 // the traveller: a road path to a random town, walking from 7 to 19 and sleeping at night. A zone is 1024 px: at his walk and run
 // (40 and 78 px/s) about 25 real seconds, so about four zones a game hour (a game hour is 100 real seconds)
@@ -41,14 +39,7 @@ while (L.hour < end) {
   if (p.money.mon < 30) p.money.mon += 100;   // the traveller finds work now and then, so he always has something to be robbed of
 }
 const liveMs = Date.now() - t0;
-// ---- storms ----
 console.log(`world ${seed}: ${years} year(s) lived with a traveller in ${liveMs} ms (enterZone ${live.toFixed(0)} ms for ${zonesWalked} zones, ${ZONES_PER_HOUR} an hour by day)`);
-const all = [...stormList.filter(s => s && storms[s.id]?.[0]?.h < end + 1), ...st.storms];
-console.log(`\nGLITCH STORMS: ${all.length} (the ledger keeps the last ${st.past.length} faded and ${st.storms.length} alive)`);
-for (const s of all) { const ev = storms[s.id] || [], ev2 = t => ev.filter(e => e.type === t).length, a = s.path[0] || [], b = s.path[s.path.length - 1] || [];
-  const reg = [...new Set(ev.filter(e => e.type === 'storm.reached').map(e => L.regions[e.region].name))];
-  console.log(`  ${s.id.padEnd(8)} day ${String(s.born).padStart(3)}  ${String(s.path.length).padStart(2)} days  peak ${s.peak.toFixed(2)}  (${a}) → (${b})  regions ${reg.length}: ${reg.slice(0, 5).join(', ')}${reg.length > 5 ? '…' : ''}`);
-  console.log(`           settlements felt ${ev2('storm.touched')}, shrines gone dark ${ev2('storm.shrineDark')}, places that lost time ${ev2('storm.lostTime')}`); }
 // ---- encounters ----
 const n = Object.values(byType).reduce((a, b) => a + b, 0);
 console.log(`\nENCOUNTERS: ${n} in ${zonesWalked} zones walked (${(onRoad / zonesWalked * 100).toFixed(0)}% on roads): one per ${(zonesWalked / n).toFixed(1)} zones`);
@@ -68,9 +59,11 @@ for (const z of L.zones) { if (!z.road || z.region < 0) continue; const k = L.cu
 console.log(`\n  expected per 100 road zones walked (day and night, ${calendar(L.hour).season}), by culture kind:`);
 for (const [k, e] of Object.entries(exp).sort((a, b) => b[1].p / b[1].n - a[1].p / a[1].n))
   console.log(`    ${k.padEnd(10)} ${(e.p / e.n * 100).toFixed(1).padStart(5)}  ` + Object.entries(e.w).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([id, w]) => `${id} ${(w / e.n * 100).toFixed(0)}%`).join(', '));
-console.log(`\n  glitch storms he walked into: ${byType.storm || 0}, time lost inside one: ${byType.slip || 0}`);
-console.log('\nEVENTS', Object.entries(tally).filter(([k]) => /^(travel|storm)\./.test(k)).sort().map(([k, v]) => `${k} ${v}`).join(' · '));
+console.log('\nEVENTS', Object.entries(tally).filter(([k]) => /^travel\./.test(k)).sort().map(([k, v]) => `${k} ${v}`).join(' · '));
 // ---- cost while away: a year lived day by day ----
 const L2 = generateWorld(seed + 1, 0); t0 = performance.now(); advance(L2, hoursFromYears(1)); const ms = performance.now() - t0;
-console.log(`\na year away (onDay only, all systems): ${ms.toFixed(0)} ms, ${(ms / 112).toFixed(2)} ms a day; storms ${L2.sys.travel.past.length + L2.sys.travel.storms.length}, bands out now ${L2.sys.travel.bands.length}`);
+console.log(`\na year away (onDay only, all systems): ${ms.toFixed(0)} ms, ${(ms / 112).toFixed(2)} ms a day; bands out now ${L2.sys.travel.bands.length}`);
+// nothing tears the world any more (owner 2026-10-02: no glitch in the world or the story)
+const gone = Object.keys(tally).filter(k => k.startsWith('storm.'));
+if (gone.length) { console.log('FAIL the world still has', gone.join(', ')); process.exitCode = 1; }
 console.log('ledger travel state', (JSON.stringify(L.sys.travel).length / 1024).toFixed(1), 'KB');

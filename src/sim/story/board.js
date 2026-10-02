@@ -20,9 +20,5 @@ export function boardOf(L, region, { days = 28, max = 12 } = {}) {
 }
 // news lines anywhere (the world map's feed); filter by type prefix
 export const newsSince = (L, day, prefix = '') => ST(L).news.filter(n => n.d >= day && n.type.startsWith(prefix));
-// a line for someone else's event (a glitch storm, from the travel lane) without emitting it again
-export function hear(L, type, text, heralds, regions) {
-  const S = ST(L); S.news.push({ d: today(L), type, text, heralds, regions, zone: null }); if (S.news.length > 1500) S.news.shift();
-}
 export const regionLabel = (L, r) => regName(L, r);
 export const lordOf = (L, r) => actor(L, L.regions[r].lord);

@@ -1,20 +1,18 @@
 import { system, on, emit, newId } from '../ledger.js';
 import { rngFor } from '../rng.js';
 import { initRoads, countCamps, roadsDay } from './roads.js';
-import { stormsDay, stormEffects } from './storms.js';
 import { TRAVEL, context, chanceAt, pickType } from './encounters.js';
 import { ROAD_SCENES } from './scenes-road.js';
 import { MEET_SCENES } from './scenes-meet.js';
 import { BEAST_SCENES, beastChance, beastType } from './beasts.js';
 import { cultName } from './kit.js';
 
-// ---- Travel: the roads, the weather, the glitch storms, and what he meets on the way (docs/sim-travel.md) ----
-// While he is away (onDay): each region's danger and weather move, outlaw bands roam out of their camps and home again, storms are born,
-// cross the map and fade. While he travels (live): the game calls enterZone(L, x, y) each time he crosses into a zone; now and then it
+// ---- Travel: the roads, the weather, and what he meets on the way (docs/sim-travel.md) ----
+// While he is away (onDay): each region's danger and weather move, outlaw bands roam out of their camps and home again.
+// While he travels (live): the game calls enterZone(L, x, y) each time he crosses into a zone; now and then it
 // returns a scene (a small encounter with choices), and choose(L, choiceId, result) plays the choice out through emit().
 // Import this file before generateWorld() or loadWorld(), so the system is registered when the ledger is made.
 export * from './roads.js';
-export * from './storms.js';
 export * from './encounters.js';
 export * from './beasts.js';
 
@@ -27,10 +25,10 @@ export const SCENES = { ...ROAD_SCENES, ...MEET_SCENES, ...BEAST_SCENES,
 
 system({ id: 'travel', order: 60,
   init(L) { const st = L.sys.travel;
-    Object.assign(st, { v: 1, beasts: { faced: 0, ko: 0, slain: {} }, storms: [], past: [], dark: {}, residue: {}, heat: {}, scene: null, escort: null, safeUntil: 0, quiet: 0, lastK: 0, steps: 0, met: {} });
+    Object.assign(st, { v: 1, beasts: { faced: 0, ko: 0, slain: {} }, heat: {}, scene: null, escort: null, safeUntil: 0, quiet: 0, steps: 0, met: {} });
     initRoads(L, st); },
   onDay(L, cal, r) { const st = L.sys.travel;
-    roadsDay(L, st, cal, r); stormsDay(L, st, cal, r);
+    roadsDay(L, st, cal, r);
     if (st.escort && L.hour > st.escort.until) { emit(L, 'travel.escortFailed', { merchant: st.escort.who }); st.escort = null; } },
   onSeason(L) { countCamps(L, L.sys.travel); },
 });
@@ -47,12 +45,9 @@ on('travel.bountyPaid', (e, L) => { delete L.sys.travel.heat[e.culture]; });
 export function enterZone(L, x, y, opts = {}) {
   const st = L.sys.travel; if (st.scene) return st.scene;
   st.beasts ||= { faced: 0, ko: 0, slain: {} }; if (opts.level) L.actors[L.player].level = opts.level;
-  const r = rngFor(L.seed, 'travel', L.hour, x, y, st.steps++), c = context(L, x, y), k = c.storm.k;
+  const r = rngFor(L.seed, 'travel', L.hour, x, y, st.steps++), c = context(L, x, y);
   let type = null;
   if (st.escort && st.escort.to[0] === x && st.escort.to[1] === y) type = 'arrived';
-  // a storm: stepping into it is always felt; each further zone inside it can take time from him
-  else if (k > TRAVEL.stormFelt) type = st.lastK <= TRAVEL.stormFelt ? 'storm' : r.chance(stormEffects(k).lostTime) ? 'slip' : null;
-  st.lastK = k;
   if (!type) { if (st.quiet > 0) { st.quiet--; return null; }
     if (r.chance(beastChance(c))) type = beastType(L, c, r);          // the voids: a creature, or its sign
     else if (!r.chance(chanceAt(c))) return null; else type = pickType(c, r); }
@@ -61,7 +56,7 @@ export function enterZone(L, x, y, opts = {}) {
 // put a scene on his road now, whatever the odds (a quest, a world event, a test): returns it, or the scene he is already in
 export function openScene(L, type, x, y) {
   const st = L.sys.travel; if (st.scene) return st.scene; if (!SCENES[type]) throw new Error(`no travel scene "${type}"`);
-  const c = context(L, x, y); if (type === 'storm' && !c.storm.storm) return null;
+  const c = context(L, x, y);
   if (type === 'raiders' && c.enemy == null) return null; if (type === 'hunters' && !c.hunted.length) return null;
   return open(L, type, c, rngFor(L.seed, 'travelo', L.hour, x, y, st.steps++));
 }
@@ -105,7 +100,7 @@ function dead(L, id, by, zone) {
   emit(L, 'travel.slain', { actor: id, by, zone, culture: a.culture });
 }
 
-// what the road knows: the nearest band and the nearest storm, as a traveller would say it
+// what the road knows: the nearest band and the unsafe roads, as a traveller would say it
 const DIR = ['east', 'south-east', 'south', 'south-west', 'west', 'north-west', 'north', 'north-east'];
 const dirTo = (dx, dy) => DIR[(Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) + 8) % 8];
 export function news(L, [x, y]) {
@@ -113,8 +108,6 @@ export function news(L, [x, y]) {
   const b = st.bands.slice().sort((a, c) => Math.hypot(a.at[0] - x, a.at[1] - y) - Math.hypot(c.at[0] - x, c.at[1] - y))[0];
   if (b && Math.hypot(b.at[0] - x, b.at[1] - y) < 12) { const d = Math.round(Math.hypot(b.at[0] - x, b.at[1] - y));
     out.push(d < 1 ? `Men of ${cultName(L, b.culture)} are on this very road.` : `Men of ${cultName(L, b.culture)} are on the road ${d} zones to the ${dirTo(b.at[0] - x, b.at[1] - y)}.`); }
-  const s = st.storms.slice().sort((a, c) => Math.hypot(a.x - x, a.y - y) - Math.hypot(c.x - x, c.y - y))[0];
-  if (s) out.push(`The world is tearing ${Math.round(Math.hypot(s.x - x, s.y - y))} zones to the ${dirTo(s.x - x, s.y - y)}, and moving ${dirTo(Math.cos(s.hdg), Math.sin(s.hdg))}.`);
   const unsafe = st.regions.map((s2, i) => [i, s2.danger]).filter(([, d]) => d >= .6).map(([i]) => L.regions[i])
     .sort((a, c) => Math.hypot(a.center[0] - x, a.center[1] - y) - Math.hypot(c.center[0] - x, c.center[1] - y))[0];
   if (unsafe) out.push(`Nobody sane walks the roads of ${unsafe.name} just now.`);
