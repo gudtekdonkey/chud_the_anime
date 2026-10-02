@@ -139,7 +139,7 @@ export async function squadSteps({ page, base, until, gameWait, ok, fail, setSte
     const a0 = await S(), c0 = foeC(a0), sel = ['Kuro', 'Ren', 'Hana'];
     await click('#sq-none'); for (const n of sel) { const a = a0.find(x => x.name === n); if (a.alive && !a.downed) await page.locator(`.sq-por[data-id="${n}"]`).click({ modifiers: ['Shift'] }); }   // the portraits: Shift adds
     const chosen = await page.evaluate(() => window.__iso.squad.sel); if (!chosen.length) fail('nobody selected to fall back');
-    await page.locator('.sq-row button', { hasText: /^Fall back$/ }).click(); await gameWait(3);
+    await page.locator('.sq-row button', { hasText: /^Fall back$/ }).click(); { const b = await box(); await page.mouse.move(b.x + 4, b.y + 4); } await gameWait(3);   // off the bar: hovering it slows the game
     const a1 = await S(), c1 = foeC(a1) || c0, h = a1.find(x => x.name === 'you'), d = n => { const a = a1.find(x => x.name === n), b = a0.find(x => x.name === n); return [Math.hypot(b.x - c0.x, b.z - c0.z), Math.hypot(a.x - c1.x, a.z - c1.z)]; };
     const moved = chosen.map(n => [n, ...d(n), a1.find(x => x.name === n)]);
     if (!moved.every(([, , , a]) => a.order.k === 'fallback')) fail('the order did not take');

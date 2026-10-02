@@ -48,7 +48,7 @@ go under Ctrl / a modifier there or the quick slots move, the owner's call. Ctrl
 some browsers that do not let a page take it: the order bar's portraits and Shift-click do the same.
 
 **Slow motion while ordering** (the dominion note, D2C: "the game must give a slowed or paused moment for it"): while a
-selection box is being dragged, the radial is open, the pointer is on the order bar with a selection, and for 0.45 s
+selection box is being dragged, the radial is open, the pointer moves on the order bar with a selection (up to 1.5 s after it stops), and for 0.45 s
 after an order, the game runs at 25% (or stops, or nothing: the bar's "While ordering"); a thin cyan frame and
 "ORDERS · SLOW" show it. The settings panel (Tab) always pauses, as the kit screen does.
 

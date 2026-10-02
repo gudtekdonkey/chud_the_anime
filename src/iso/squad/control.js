@@ -17,7 +17,7 @@ import { SQ, select, toggle, clearSel, saveGroup, recallGroup, selectRole, order
 export const RADIAL = [['charge', 'Charge'], ['hold', 'Hold'], ['fallback', 'Fall back'], ['follow', 'Follow me'], ['regroup', 'Regroup'], ['t:focus', 'Focus'], ['t:spread', 'Spread out'], ['t:ambush', 'Ambush']];
 
 export function initControl({ canvas, root, A, H, hero, allies, foes }) {
-  const keys = new Set(), st = { drag: null, down: null, move: null, radial: null, hover: null, overBar: false, slowTill: 0, marks: [], last: null, touch: null };
+  const keys = new Set(), st = { drag: null, down: null, move: null, radial: null, hover: null, overBar: 0, slowTill: 0, marks: [], last: null, touch: null };
   const ctl = { keys, st };
   const rel = e => { const r = canvas.getBoundingClientRect(); return [(e.clientX - r.left) / r.width * VW, (e.clientY - r.top) / r.height * VH]; };
   const floor = ([sx, sy]) => ({ x: CAM.px + (sx - VW / 2) / (U * CAM.zoom), z: CAM.py + (sy - VH / 2) / (U * CAM.zoom * OBL.a) });
@@ -98,7 +98,7 @@ export function initControl({ canvas, root, A, H, hero, allies, foes }) {
     inp.dir = Math.atan2(tx - hero.x, tz - hero.z);
   };
   // orders are being given: a drag, the radial, the order bar under the pointer, or a moment after an order
-  ctl.giving = () => !!(st.drag || st.radial || (st.overBar && SQ.sel.size) || performance.now() < st.slowTill);
+  ctl.giving = () => !!(st.drag || st.radial || (SQ.sel.size && performance.now() - st.overBar < 1500) || performance.now() < st.slowTill);
   ctl.gave = gave; ctl.floor = floor; ctl.pick = pick;
   return ctl;
 }

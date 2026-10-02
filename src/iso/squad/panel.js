@@ -43,7 +43,7 @@ export function buildPanel({ root, A, H, allies, ctl }) {
     <div class="sq-hint">Left drag: select · left click: the hero goes there (a companion: select; Shift adds; double-click: his role) · right click: go there / attack / protect · hold right: the radial · Ctrl+1–9 save a group, 1–9 recall · G hold / follow · E (held) lift a downed companion · Esc clear. Touch: long-press and drag selects; with a selection a tap orders.</div>`;
   stage.appendChild(bar);
   const back = root.querySelector('#o-squad'); if (back) { back.href = '?iso'; back.textContent = 'Back to the duel'; }
-  bar.addEventListener('pointerenter', () => { ctl.st.overBar = true; }); bar.addEventListener('pointerleave', () => { ctl.st.overBar = false; });
+  bar.addEventListener('pointermove', () => { ctl.st.overBar = performance.now(); }); bar.addEventListener('pointerleave', () => { ctl.st.overBar = 0; });   // a resting pointer stops slowing it after 1.5 s
   const party = bar.querySelector('.sq-party'), $ = s => bar.querySelector(s);
   party.innerHTML = allies.map(a => `<button class="sq-por" data-id="${a.id}" aria-pressed="false"><b>${a.name}</b><small class="r"></small><i><span></span></i></button>`).join('');
   let lastTap = null;
