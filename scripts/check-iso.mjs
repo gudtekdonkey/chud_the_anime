@@ -2,7 +2,8 @@
 // Chromium: no page errors; the run in all 8 directions (the stick maps straight to the screen, he faces where he
 // runs); the roll (its i-frames, its distance); J1 → J2 → J3 on the samurai with every hit landing and the samurai
 // reacting; a cut cancelled into the roll; a kill and the respawn; the same loop with the pixel look; one shot per
-// pipeline toggle. Screenshots land in test-output/iso/. Chromium comes from PLAYWRIGHT_BROWSERS_PATH (never downloaded),
+// pipeline toggle; the personalities (each idle plays, no traits = the plain ronin, two personalities differ, P / O
+// give the ronin and the samurai one, the townsfolk idle and wander) and the idle gallery (?iso&idles). Screenshots land in test-output/iso/. Chromium comes from PLAYWRIGHT_BROWSERS_PATH (never downloaded),
 // with WebGL on SwiftShader, which draws a few frames a second: the page runs with &tick=N (N game steps a frame), and
 // every wait here is on the game's own clock or state, never the wall clock.
 import { chromium } from 'playwright';
