@@ -106,7 +106,7 @@ export async function portSteps({ page, base, fail, ok, setStep, shot, OUT }) {
 
   // ---- down, lifted, dead: H cuts the nearest companion down; a click on them takes him there and holds E; H twice kills
   setStep('port: down and lifted'); { await settle(); await page.keyboard.press('KeyH'); await until('a companion down', () => window.__iso.port.party.some(a => a.downed));
-    const a = (await D()).party.find(a => a.downed); await gameWait(.5); await shot('port-downed', ['hero']);
+    await gameWait(.5); const a = (await D()).party.find(a => a.downed); await shot('port-downed', ['hero']);   // read where he lies after he has fallen (he slides as he goes down)
     await clickWorld(a.x, a.z, 6); await page.waitForFunction(() => window.__iso.port.click.log.at(-1) === 'lift' || window.__iso.port.items.lifting, undefined, { timeout: 5000, polling: 50 }).catch(() => {});
     { const d = await D(); if (d.click.log.at(-1) !== 'lift' && !d.items.lifting) fail(`the click on ${a.name} (${a.x.toFixed(0)},${a.z.toFixed(0)}) read ${d.click.log.at(-1)}; screen ${JSON.stringify(await page.evaluate(([x, z]) => window.__iso.screenOf(x, z, 6), [a.x, a.z]))}; ${JSON.stringify(d.click.dbg)}; ${JSON.stringify(d.party.map(p => [p.name, p.state, p.downed]))}`); }
     await until('him lifting', () => window.__iso.port.items.lifting, undefined, 60000); await until('them back up', id => !window.__iso.port.party.find(a => a.id === id).downed, a.id);
