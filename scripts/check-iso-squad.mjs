@@ -131,8 +131,11 @@ export async function squadSteps({ page, base, until, gameWait, ok, fail, setSte
   setStep('squad: the protector intercepts'); {
     const r = await page.evaluate(() => window.__rec), g = r.guardD.slice().sort((a, b) => a - b), med = g[g.length >> 1];
     if (!(med < 32)) fail(`Tetsu's median distance to Hana is ${med && med.toFixed(1)}`);
-    if (r.foeOnHana) await evWait('Tetsu intercepting the blade on Hana', 'intercept:Tetsu>', 60000);
-    ok(`stayed ${med.toFixed(0)} from her; ${r.foeOnHana ? 'intercepted: ' + (await ev()).filter(e => /intercept:Tetsu/.test(e)).join('; ') : 'no blade went for her'}${(await ev()).some(e => /bodyblock:Tetsu/.test(e)) ? '; body-blocked an archer' : ''}`); }
+    if (!r.foeOnHana) {   // no blade came for her by itself: send her (a right click) beside a living samurai, and he must step in
+      const a = await S(), f = a.filter(x => x.team === 1 && x.alive && x.kind === 'samurai').sort((p, q) => Math.hypot(p.x - 96, p.z - 150) - Math.hypot(q.x - 96, q.z - 150))[0];
+      if (f) { await page.locator('.sq-por[data-id="Hana"]').click(); const p = await at(await screen(f.x - 18, f.z)); await page.mouse.click(p[0], p[1], { button: 'right' }); { const b = await box(); await page.mouse.move(b.x + 4, b.y + 4); } } }
+    await evWait('Tetsu intercepting the blade on Hana', 'intercept:Tetsu>', 60000);
+    ok(`stayed ${med.toFixed(0)} from her; ${r.foeOnHana ? '' : 'sent her among the blades; '}intercepted: ${(await ev()).filter(e => /intercept:Tetsu/.test(e)).join('; ')}${(await ev()).some(e => /bodyblock:Tetsu/.test(e)) ? '; body-blocked an archer' : ''}`); }
 
   setStep('squad: fall back'); {
     const foeC = a => { const f = a.filter(x => x.team === 1 && x.alive); return f.length ? { x: f.reduce((s, x) => s + x.x, 0) / f.length, z: f.reduce((s, x) => s + x.z, 0) / f.length } : null; };
