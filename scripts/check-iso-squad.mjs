@@ -15,7 +15,11 @@ export async function squadSteps({ page, base, until, gameWait, ok, fail, setSte
   const screen = (x, z) => page.evaluate(([x, z]) => window.__iso.squad.screen(x, z), [x, z]);
   const click = async (sel) => { await page.locator(sel).click(); };
   const near = (a, b, r) => Math.hypot(a.x - b.x, a.z - b.z) < r;
-  const evWait = (what, re, timeout = 90000) => until(what, re => window.__iso.squad.events.some(e => new RegExp(re).test(e)), re, timeout);
+  // an event, waited for on the game's clock: `timeout` ms of game time (the battle's frames are slow late in a long run,
+  // so a wall-clock limit cut the waits short); the wall limit only guards against a stalled page
+  const evWait = async (what, re, timeout = 90000) => { const t0 = await page.evaluate(() => window.__iso.t);
+    await until(what, ([re, end]) => window.__iso.squad.events.some(e => new RegExp(re).test(e)) || window.__iso.t > end, [re, t0 + timeout / 1000], 1200000);
+    if (!(await ev()).some(e => new RegExp(re).test(e))) { const g = await page.evaluate(() => window.__iso.t); fail(`never reached ${what} in ${(g - t0).toFixed(0)} s of game time`); } };
   const boot = async q => { await page.goto(new URL(q, base).href); await page.waitForFunction(() => window.__iso && window.__iso.squad && window.__iso.t > .4, undefined, { timeout: 60000 }); await page.locator('canvas').focus(); };
 
   // ---------------- part 1: the controls, the foes calm ----------------
