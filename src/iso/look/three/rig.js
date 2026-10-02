@@ -93,7 +93,7 @@ export function applyPose(rig, P) {
     K.quaternion.setFromRotationMatrix(_m.makeBasis(x, y, z)); rig.blade.scale.z = Math.max(.05, Math.min(1, (bl.vis ?? 99) / 23)); }
   else { rig.saya.updateMatrix(); const m = hipsM.clone().multiply(rig.saya.matrix); K.position.setFromMatrixPosition(m);
     K.quaternion.setFromRotationMatrix(_m.extractRotation(m)).multiply(new THREE.Quaternion().setFromEuler(_e.set(0, Math.PI, 0))); rig.blade.scale.z = 1; }
-  rig.saya.visible = true;
+  rig.saya.visible = true; K.visible = !(bl && bl.away);   // away: thrown, hanging in the air (skills/recall.js draws it there)
   // the hat keeps its own angle (the page's hatTilt, absolute), lags on its spring (hatLag), tipped back by the overlay's tilt
   if (rig.hatPivot) { const lag = P.hatLag || [0, 0];
     rig.hatPivot.position.set(0, SK.headR + 1.1 * s + lag[1] * s * .5, lag[0] * s * .5);

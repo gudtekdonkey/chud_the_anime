@@ -44,7 +44,7 @@ async function shot(name, who = ['hero'], then) {
 
 try {
   step = 'boot';
-  await page.goto(new URL('?iso&test&calm&tick=8', base).href);
+  await page.goto(new URL('?iso&test&calm&tick=8&foes=1', base).href);
   await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 });
   await page.locator('canvas').click();
   // what he has been through, recorded every frame in the page (a poll from here can miss a state that lasts 2 frames)
@@ -136,6 +136,72 @@ try {
   for (const [key, name] of [['Digit1', 'lowres'], ['Digit2', 'toon'], ['Digit3', 'dither'], ['Digit4', 'palette'], ['Digit5', 'outline'], ['Digit7', 'rim'], ['Digit8', 'glint']]) {
     await page.keyboard.press(key); await gameWait(.1); await shot(`pipe-${name}-flipped`); await page.keyboard.press(key); }
   ok();
+  errorsCheck();
+
+  // ==== the new skills (src/iso/skills/): F counter, R Blade Recall, Q Lightning Chain, X Time Slice ====
+  const boot = async q => { await page.goto(new URL(q, base).href); await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 });
+    await page.locator('canvas').click();
+    await page.evaluate(() => { window.__seen = new Set(); window.__seq = []; const f = () => { const h = window.__iso.hero; window.__seen.add(h.state); if (window.__iso.cine) window.__seen.add('cine'); if (window.__iso.gray > .9) window.__seen.add('gray');
+      if (window.__seq.at(-1) !== h.state) window.__seq.push(h.state); requestAnimationFrame(f); }; f(); }); };
+  const logHas = (what, from, timeout = 60000) => until(what, ([w, n]) => window.__iso.STATS.log.slice(n).some(l => l.startsWith(w)), [what, from], timeout);
+  const logLen = async () => (await G()).log.length;
+  // a press timed in the page, on the frame the samurai's blow reaches [lo, hi) of its clip (a round trip from here outlasts the window)
+  const pressAt = (lo, hi) => page.evaluate(([lo, hi]) => new Promise(r => { const f = () => { const s = window.__iso.foe;
+    if (['fcut', 'thrust'].includes(s.state) && s.ct >= lo && s.ct < hi) { dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyF', key: 'f' })); dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyF', key: 'f' })); r(s.state); } else requestAnimationFrame(f); }; f(); }), [lo, hi]);
+
+  // ---- F: the samurai attacks (no &calm); a press within 0.2 s of the blow counters, an earlier one only blocks
+  step = 'F counter'; await boot('?iso&test&tick=8&foes=1'); await settle();
+  { const f = (await G()).foe; await walkTo(f.x - 20, f.z, 5); }
+  { const n = await logLen(), atk = await pressAt(.33, .46); await logHas('F:counter', n); await shot('counter-clash', ['hero', 'foe']);
+    await logHas('F:cut', n); const g = await G(); if (!g.foe.reacts.slice(-1)[0].match(/knock|die/)) fail(`the answer's cut: ${g.foe.reacts.slice(-2).join(' ')}`);
+    ok(`${atk} countered: ${g.log.slice(n).join(' ')}`); }
+  step = 'F too early: a block'; await settle(); { const f = (await G()).foe; await walkTo(f.x - 20, f.z, 5); }
+  { const n = await logLen(), atk = await pressAt(.02, .2); await logHas('F:block', n); await shot('counter-block', ['hero', 'foe']);
+    const log = (await G()).log.slice(n); if (log.some(l => l.startsWith('F:counter'))) fail(`an early press countered: ${log.join(' ')}`); ok(`${atk} blocked: ${log.join(' ')}`); }
+  step = 'F counter that kills: the close-up'; { await page.evaluate(() => window.__seen.clear());
+    for (let i = 0; i < 40 && !(await G()).log.some(l => l === 'F:cut:kill'); i++) { await settle(); const f = (await G()).foe; if (f.dead) { await until('the respawn', () => !window.__iso.foe.dead, undefined, 90000); continue; }
+      await walkTo(f.x - 20, f.z, 5); const n = await logLen(); await pressAt(.33, .46); await logHas('F:cut', n); }
+    await seen('cine'); ok('a killing counter, the close-up played'); }
+
+  // ---- the rest on a calm squad of three
+  step = 'Q Lightning Chain'; await boot('?iso&test&calm&tick=8&foes=3'); await settle();
+  await until('the squad gathering', () => window.__iso.foes.filter(f => Math.hypot(f.x - window.__iso.hero.x, f.z - window.__iso.hero.z) < 60).length === 3, undefined, 60000);
+  { const n = await logLen(); await page.keyboard.press('KeyQ'); await logHas('Q:link', n); await shot('chain-links', ['hero', 'near']);
+    await logHas('Q:yank', n); await logHas('Q:cut', n); await shot('chain-cut', ['hero', 'near']); const log = (await G()).log.slice(n), links = log.filter(l => l.startsWith('Q:link')).length;
+    if (links < 2) fail(`the chain leapt to ${links}: ${log.join(' ')}`); if (log.includes('Q:cut:miss')) fail(`the draw-cut missed the dragged man: ${log.join(' ')}`);
+    const cd = (await page.evaluate(() => window.__iso.skills.cd.chain)); if (!(cd > 5)) fail(`Q cooldown ${cd}`);
+    ok(`${links} links; ${log.join(' ')}; cooldown ${cd.toFixed(1)} s`); }
+  step = 'Q on cooldown: refused'; { const n = await logLen(); await page.keyboard.press('KeyQ'); await gameWait(.3); if ((await G()).log.slice(n).some(l => l.startsWith('Q:'))) fail('Q cast on cooldown'); ok(); }
+
+  step = 'R Blade Recall'; await settle();
+  const recallOnce = async (how, name) => { await until('R ready', () => window.__iso.skills.cd.recall <= 0, undefined, 90000); await settle(); const n = await logLen();
+    await page.keyboard.press('KeyR'); await logHas('R:throw', n); await until('the blade hanging', () => window.__iso.skills.recall && window.__iso.skills.recall.phase === 'hang');
+    if (!(await page.evaluate(() => window.__iso.away))) fail('the blade hangs but he still holds it');
+    if (name === 'home') { await shot('recall-hang', ['hero', 'near']); await page.keyboard.press('KeyJ'); await gameWait(.25); if (/J1/.test((await G()).hero.state)) fail('J cut with the blade away'); }
+    if (how === 'hold') { await page.keyboard.down('KeyR'); await logHas('R:anchor', n); await page.keyboard.up('KeyR'); } else await page.keyboard.press('KeyR');
+    await logHas('R:' + name, n); await until('the blade back', () => !window.__iso.away && !window.__iso.skills.recall); await shot(`recall-${name}`, ['hero', 'near']);
+    await until('the click', () => !['rCall', 'rReach', 'rCaught', 'rAnchor', 'rHome'].includes(window.__iso.hero.state) && window.__iso.hero.state !== 'sheathe');
+    return (await G()).log.slice(n).join(' '); };
+  { const a = await recallOnce('tap', 'home'), b = await recallOnce('tap', 'catch'), c = await recallOnce('hold', 'anchor'); ok(`home: ${a} | catch: ${b} | anchor: ${c}`); }
+
+  step = 'X Time Slice'; await settle();
+  await until('the squad standing near', () => window.__iso.foes.filter(f => !f.dead && Math.hypot(f.x - window.__iso.hero.x, f.z - window.__iso.hero.z) < 70).length >= 2, undefined, 90000);
+  { await until('a full meter', () => window.__iso.skills.qi >= .999); const n = await logLen(); await page.evaluate(() => window.__seen.clear());
+    await page.keyboard.press('KeyX'); await logHas('X:stop', n); await seen('gray');
+    if (!(await page.evaluate(() => window.__iso.foes.every(f => f.dead || f.frozen)))) fail('time did not stop for the squad');
+    await shot('timeslice-stopped', ['hero', 'near']);
+    await logHas('X:click', n); const log = (await G()).log.slice(n), took = +log.find(l => l.startsWith('X:stop')).split(':')[2], fell = +log.find(l => l.startsWith('X:click')).split(':')[2];
+    await shot('timeslice-click', ['hero', 'near']); if (took < 2 || fell !== took) fail(`Time Slice took ${took}, ${fell} fell: ${log.join(' ')}`);
+    if ((await page.evaluate(() => window.__iso.gray)) > 0) fail('the colour never came back'); await seen('cine');
+    const q = await page.evaluate(() => window.__iso.skills.qi); if (q > .01) fail(`the meter after Time Slice: ${q}`);
+    ok(`${took} taken, ${fell} fell, the close-up played; ${log.join(' ')}`); }
+  step = 'X on an empty meter: refused'; await settle(); { const n = await logLen(); await page.keyboard.press('KeyX'); await gameWait(.3); if ((await G()).log.slice(n).some(l => l.startsWith('X:'))) fail('X cast with no Qi'); ok(); }
+
+  step = 'the skills in each style'; for (let i = 0; i < 3; i++) { await page.keyboard.press('KeyV'); const st = await page.evaluate(() => window.__iso.style); await settle();
+    await until('Q ready', () => window.__iso.skills.cd.chain <= 0 && window.__iso.foes.some(f => !f.dead), undefined, 90000); const n = await logLen(); await page.keyboard.press('KeyQ'); await logHas('Q:link', n);
+    await shot(`style-chain-${st.replace(/\W+/g, '-').toLowerCase()}`, ['hero', 'near']); }
+  ok();
+  step = 'growth'; { const s = await page.evaluate(() => window.__iso.skills); if (!(s.pts.chain >= 1 && s.pts.slice >= 1)) fail(`landed casts not counted: ${JSON.stringify(s.pts)}`); ok(JSON.stringify(s.pts)); }
   errorsCheck();
   console.log('\ncheck:iso passed');
 } catch (e) { if (!process.exitCode) { console.error(e); process.exitCode = 1; } }

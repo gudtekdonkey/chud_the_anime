@@ -24,7 +24,9 @@ export class Char {
     this.gy += (groundAt(p.x, p.z) - this.gy) * Math.min(1, dt * 18); }
   // the frame a look draws (look.js): the sampled pose and position, his facing, the flash, a tint, the dissolve
   frame(hero = false) { const o = this.a.out; if (!o) return null;
-    return { pose: o.pose, x: o.x * AF, y: this.gy, z: o.z * AF, yaw: o.yaw, flash: o.flash, tint: o.tint ? hexRGB(o.tint) : null, tintA: o.tintA, alpha: o.alpha ?? 1, hero }; }
+    // the blade thrown (skills/recall.js): whatever the move, his hands are empty and the saya too
+    const pose = this.bladeAway && !(o.pose.blade && o.pose.blade.away) ? { ...o.pose, blade: { ...o.pose.blade, out: 0, away: 1 } } : o.pose;
+    return { pose, x: o.x * AF, y: this.gy, z: o.z * AF, yaw: o.yaw, flash: o.flash, tint: o.tint ? hexRGB(o.tint) : null, tintA: o.tintA, alpha: o.alpha ?? 1, hero }; }
   // the blade's mid and tip in the world, from the side pose (the trail is the controller's, never a look's)
   bladeWorld() { const o = this.a.out, b = o && o.pose.blade; if (!b || !b.out) return null;
     const L = Math.min(23, b.vis ?? 99), d = [Math.cos(b.ang), Math.sin(b.ang)], cy = Math.cos(o.yaw), sy = Math.sin(o.yaw), rx = o.x * AF, rz = o.z * AF;

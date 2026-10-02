@@ -12,12 +12,12 @@ import { SH, silhouetteMat } from './shade.js';
 export const PIPE = { lowres: 0, toon: 1, dither: 1, palette: 0, outline: 0, nearest: 1, rim: 1, glint: 1, bands: 4, fog: 1, rain: 1, k: 2,
   line: [1, '#060709', 0], clash: 1, cine: 1 };
 // what the frame's moment asks of the post pass (main.js sets it each frame): the clash, the close-up, its focus
-export const MOMENT = { impact: 0, cine: 0, bars: 0, focus: [480, 270] };
+export const MOMENT = { impact: 0, cine: 0, bars: 0, focus: [480, 270], gray: 0 };   // gray: Time Slice's stopped time (skills/timeslice.js)
 
 const POST = /* glsl */`
 precision highp float;
 uniform sampler2D tC, tD, tN, tFx; uniform vec3 uPal[${PALETTE.length}];
-uniform float uPalOn, uOutline, uRain, uTime, uK, uOW, uOLChar, uImpact, uCine, uBars; uniform vec2 uDOff, uFocus; uniform vec3 uInk; uniform ivec2 uSize;
+uniform float uPalOn, uOutline, uRain, uTime, uK, uOW, uOLChar, uImpact, uCine, uBars, uGray; uniform vec2 uDOff, uFocus; uniform vec3 uInk; uniform ivec2 uSize;
 in vec2 vUv; layout(location = 0) out vec4 oC;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 vec4 D(ivec2 p) { return texelFetch(tD, clamp(p, ivec2(0), uSize - 1), 0); }
@@ -50,6 +50,8 @@ void main() {
   if (uRain > .5 && uCine < .5) { vec2 s = floor(gl_FragCoord.xy / uK) + uDOff / uK; float col = floor((s.x + s.y * .22) / 3.); float sp = 420. + hash(vec2(col, 1.)) * 160.;
     float y = mod(s.y + uTime * sp + hash(vec2(col, 2.)) * 900., 140. + hash(vec2(col, 3.)) * 220.);
     if (mod(s.x + s.y * .22, 3.) < 1. && y < 7. && hash(vec2(col, floor((s.y + uTime * sp) / 400.))) > .45) c = mix(c, vec3(.44, .51, .6), .55); }
+  // stopped time (Time Slice): the world drains of colour, all but him (object 1); the effects layer keeps its own
+  if (uGray > 0. && !(obj > .5 && obj < 1.5)) { float l = dot(c, vec3(.3, .59, .11)); c = mix(c, vec3(l) * vec3(.86, .93, 1.08), uGray); }
   ivec2 fp = ivec2(vec2(p) / uK); vec4 fx = texelFetch(tFx, ivec2(fp.x, ${VH - 1} - fp.y), 0); c = mix(c, fx.rgb, fx.a);
   // the clash (Anime limited's impact frames, every style): black and white, then inverted, while the hit-stop holds
   if (uImpact > .5) { float l = dot(c, vec3(.3, .59, .11)); bool hi = l > .16; if (uImpact > 1.5) hi = !hi; c = hi ? vec3(.98) : vec3(.03); }
@@ -72,7 +74,7 @@ export function makePipeline(canvas) {
     fragmentShader: POST,
     uniforms: { tC: { value: rt.textures[0] }, tD: { value: rt.textures[1] }, tN: { value: rt.textures[2] }, tFx: { value: fxTex },
       uPal: { value: PALETTE.map(c => new THREE.Vector3(...c)) }, uPalOn: { value: 1 }, uOutline: { value: 1 }, uRain: { value: 1 },
-      uTime: SH.uTime, uDOff: SH.uDOff, uK: { value: 1 }, uOW: { value: 1 }, uOLChar: { value: 0 }, uImpact: { value: 0 }, uCine: { value: 0 }, uBars: { value: 0 }, uFocus: { value: new THREE.Vector2(480, 270) }, uSize: { value: new THREE.Vector2(VW, VH) }, uInk: { value: new THREE.Vector3(...hex('#060709')) } } });
+      uTime: SH.uTime, uDOff: SH.uDOff, uK: { value: 1 }, uOW: { value: 1 }, uOLChar: { value: 0 }, uImpact: { value: 0 }, uCine: { value: 0 }, uBars: { value: 0 }, uGray: { value: 0 }, uFocus: { value: new THREE.Vector2(480, 270) }, uSize: { value: new THREE.Vector2(VW, VH) }, uInk: { value: new THREE.Vector3(...hex('#060709')) } } });
   const quad = new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3)), post);
   quad.frustumCulled = false; const postScene = new THREE.Scene(); postScene.add(quad); const postCam = new THREE.Camera();
   const sil = silhouetteMat();
@@ -87,7 +89,7 @@ export function makePipeline(canvas) {
     SH.uToon.value = PIPE.toon; SH.uDither.value = PIPE.dither; SH.uFog.value = PIPE.fog; SH.uBands.value = PIPE.bands; SH.uRimOn.value = PIPE.rim;
     post.uniforms.uPalOn.value = PIPE.palette; post.uniforms.uOutline.value = PIPE.outline; post.uniforms.uRain.value = PIPE.rain;
     const u = post.uniforms; u.uOW.value = PIPE.line[0]; u.uInk.value.set(...hex(PIPE.line[1])); u.uOLChar.value = PIPE.line[2];
-    u.uImpact.value = PIPE.clash ? MOMENT.impact : 0; u.uCine.value = MOMENT.cine; u.uBars.value = MOMENT.bars; u.uFocus.value.set(MOMENT.focus[0], VH - MOMENT.focus[1]);
+    u.uImpact.value = PIPE.clash ? MOMENT.impact : 0; u.uCine.value = MOMENT.cine; u.uBars.value = MOMENT.bars; u.uGray.value = MOMENT.gray; u.uFocus.value.set(MOMENT.focus[0], VH - MOMENT.focus[1]);
     renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(true, true, true);
     cam.layers.set(0); renderer.render(scene, cam);
     scene.overrideMaterial = sil; cam.layers.set(1); renderer.render(scene, cam); scene.overrideMaterial = null; cam.layers.set(0);

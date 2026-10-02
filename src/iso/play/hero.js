@@ -33,7 +33,7 @@ export class Hero extends Char {
       return; }
     // ---- a cut: J1 from rest or a run, the next link in the chain's window, a lunge out of a fast run
     const chainNext = cut ? (ct >= cut.chain ? cut.next : null) : (n === 'guard' && t - this.lastCutEnd < .3 && this.lastCut ? CUT[this.lastCut].next : 'J1');
-    const canCut = chainNext && !(n === 'roll' && ct < .36) && !(n === 'recoil' && ct < .3) && n !== 'knock' && !(n === 'skid' && ct < .2);
+    const canCut = chainNext && !this.noCut && !(n === 'roll' && ct < .36) && !(n === 'recoil' && ct < .3) && n !== 'knock' && !(n === 'skid' && ct < .2);
     if (consume('cut', () => canCut)) { const name = (n === 'run' || n === 'runArmed' || n === 'start') && a.v > 80 ? 'lunge' : chainNext; this.startCut(name, foe, dir); return; }
     // ---- moving: starts, steers, skids round; a cut or a roll in its recovery is ended by the stick
     const free = n === 'idle' || n === 'guard' || n === 'run' || n === 'runArmed' || n === 'start' || (n === 'stop' && ct > .2) || n === 'sheathe' || (cut && ct >= cut.recover) || (n === 'recoil' && ct > .3);
