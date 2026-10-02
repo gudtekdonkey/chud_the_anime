@@ -78,23 +78,23 @@ Every step has a **title** (on paper) and a **holder** (who has it now). Conques
 | City | 40 | wall, temple, magistrate | 200 | trade with 3 towns (towns reached along roads within 30 zones) |
 | Castle town | 40 | keep | 200 | the seat of a domain or province |
 
-Fields: `k, x, y, name, region, culture, founder, tier (-1 none .. 5), pop, b (building ids), cnt ({ type: standing count }), homes, cap, walls, workers, staffed (0..1: people to run the buildings), store (koku in granaries), unrest, loyalty (0..1), pool ({ ashigaru, retainer, ronin, monk, shinobi } recruitable this season), hit (hour of the last raid or siege), riot (hour), pet (a petition is open), trade, yield (koku a year), hunger (0..1), vas (vassal household heads), siege (the besieging army), grow, popDelta`.
+Fields: `k, x, y, name, region, culture, founder, tier (-1 none .. 5), pop, b (building ids), cnt ({ type: standing count }), homes, cap, walls, workers, staffed (0..1: people to run the buildings), store (koku in granaries), unrest, loyalty (0..1), pool ({ ashigaru, retainer, ronin, monk, shinobi } recruitable this season), hit (hour of the last raid or siege), riot (hour), pet (a petition is open), trade, yield (koku a year), hunger (0..1), vas (vassal household heads), siege (the besieging army), grow, popDelta, named (with the people lane: the ledger people counted in `pop` last season)`.
 
 **Who rules it:** the zone's holder, or (a new settlement on plots, like his) whoever founded it.
 
 **Every season, for each settlement:**
-- Yield = people × 1.8 koku a year + food buildings × staffing (a paddy 12, a weir 8, an orchard 6), less the laws' yield costs.
+- Yield = people × 1.8 koku a year × the land + food buildings × staffing (a paddy 12, a weir 8, an orchard 6), all × the year's weather, less the laws' yield costs. With the economy running, the land is the zone's 16 plots on the economy's land (`plotKoku`) against 34 koku (`N.LAND_NORM`, its mean village zone), held to 0.6–1.4 (`N.LAND_SPAN`), and the weather is the economy's harvest for the region (`q`); alone both are 1.
 - Tax = a quarter of the yield × the rate × (half during a riot) × (less for rebellious vassals) × (nothing under siege). A dishonest steward skims 5–20% (more if clever). A vassal lord sends 10% to his liege. The rest is the lord's rice.
 - Trade buildings, tollgates and the toll law bring mon (a market 3 mon a person a season, an inn 80, a warehouse 120, a money-changer 150, a brewery 60, a weaver 50; tolls 2–3 mon a person).
 - Food: what the tax leaves feeds the people (1 koku a year each); granaries (60 koku each) keep half the surplus and cover a shortfall. `hunger` is the share unfed.
 - Unrest moves 35% toward its target: 0.1 + (tax − 0.3) × 1.4 + hunger × 0.8 + 0.25 if raided or besieged lately + 0.2 if held by someone other than its lord on paper + the ruler's culture's hatred × 0.3 + the laws + the buildings (shrine −0.03, temple −0.06, magistrate −0.05, jail −0.02, brewery −0.02) − a magistrate's quality × 0.15 − the ruler's karma / 200 (±0.1).
 - Loyalty drifts 10% toward (1 − that target).
-- People move toward room × appeal (people lane's migration, stood in): appeal = 1 − unrest × 0.5 − hunger × 0.8 − 0.3 if lately raided + markets (+0.08) and inns (+0.04) − the toll law; growth about 0.5% a season; a small place (under 40) with appeal over 0.6 draws 1–3 settlers a season; above the target, a quarter of the excess leaves each season.
+- People move toward room × appeal (with the people lane, only the nameless part; see the `migrate` seam): appeal = 1 − unrest × 0.5 − hunger × 0.8 − 0.3 if lately raided + markets (+0.08) and inns (+0.04) − the toll law; growth about 0.5% a season; a small place (under 40) with appeal over 0.6 draws 1–3 settlers a season; above the target, a quarter of the excess leaves each season.
 - Recruits this season: ashigaru 12% of the people (24% under conscription); retainers 2% of a village or more (+2 at a seat); ronin 2 + 2% where there is an inn (+2 with amnesty); monks 4 with a temple; one shinobi in a town.
 - Trouble: unrest over 0.5 opens a petition (`dom.petition`, once until it falls below 0.4); over 0.65 (less with curfew or a weapon ban) a riot is 35% likely (a building damaged, half tax for a season); over 0.8 with loyalty under 0.35 an uprising is 50% likely.
 - **Uprisings (default 5: possession, never title):** land held by force rises for its lord on paper (possession returns to him); otherwise the least loyal vassal household (or a new rebel) takes possession, with 15% of the people as rebels (half with a weapon ban). The title never moves.
 
-Lords keep a year of rice for their men (+10 koku) and sell 80% of the rest each season at the rice price.
+Lords keep a year of rice for their men (+10 koku) and sell 80% of the rest each season at the rice price of their seat's region.
 
 **Household vassals:** `vas[actorId] = { liege, loyalty, lean }`: every household head who holds a family plot's title in a zone ruled by someone else. Loyalty moves a quarter of the way toward (1 − the settlement's unrest) + their leaning (proud, restless, cocky lean away; humble, calm, serene lean in) each season. Loyal ≥ 0.55, restless, rebellious < 0.3; rebellious ones pay half. Their changes are news (`dom.vassal`) only on the ronin's land.
 
@@ -123,7 +123,7 @@ Every row in `BUILDINGS` has footprint, cost (timber, stone, iron, tiles, mon), 
 - **Tax** `setTax(L, lord, rate)`: 0.1..0.7.
 - **Laws** `setLaw(L, lord, law, on)`: ban weapons for commoners (unrest +0.02, riots need 0.08 more, uprisings half as strong), curfew (+0.03, riots need 0.1 more, yield −5%), road toll (+0.03, 3 mon a person a season on a road, appeal −0.05), amnesty (−0.08, +2 ronin a season, karma +2), conscription (+0.08, double levy, yield −5%).
 - **Offices** `appoint(L, lord, office, actorId)`: steward (construction and tax; may skim), magistrate (calms unrest; a dishonest one works at 60%), general (battles, training), envoy (vassals' loyalty, peace terms). `officeQ(L, actor, office)` = 0.15 + 0.55 × intelligence + good traits × 0.12 − bad traits × 0.15; dishonest when greedy traits (vain, cocky, menacing, drunk) reach 0.5 or karma < −20. NPC lords fill empty offices each year from people living on their land; a clever lord sees quality, a dull one picks nearly at random.
-- **Vassal lords:** `swear(L, vassal, liege)`. Loyalty moves 20% a season toward 0.6 ± shared culture (±0.1) − the liege's bad karma (0.1) + his glory × 0.05 − grudges × 0.4 + his envoy × 0.15 − pride × 0.1 − (his tax − 0.35) × 0.5. A rebellious vassal strong enough (0.8 of his liege's side, less if bold) rises (`rebellion`).
+- **Vassal lords:** `swearFealty(L, vassal, liege, how)` (renamed from `swear` 2026-10-01: the people lane's `swear(L, companionId)` is a companion's oath). Loyalty moves 20% a season toward 0.6 ± shared culture (±0.1) − the liege's bad karma (0.1) + his glory × 0.05 − grudges × 0.4 + his envoy × 0.15 − pride × 0.1 − (his tax − 0.35) × 0.5. A rebellious vassal strong enough (0.8 of his liege's side, less if bold) rises (`rebellion`).
 - **Succession:** a dead lord's titles, holdings, rice, money, laws, offices, armies, wars, grudges, tributes, domains, provinces and realm pass to his heir (people lane: `heirOf`), with no heir to his liege (escheat), with no liege to the richest vassal household of his seat, or a new noble family there. `region.lord` follows.
 
 ## Armies
@@ -190,7 +190,7 @@ Every row in `BUILDINGS` has footprint, cost (timber, stone, iron, tiles, mon), 
 | `war.ready`, `war.peaceOffered` | `war, zone` / `war, winner` |
 | `war.peace`, `war.treaty` | `war, a, d, how, score, days` / `winner, loser, cede, tribute, hostage, marriage, vassal` |
 
-About 850 events a year on the test world (`scripts/dominion-sim.mjs` prints the counts). The core's log keeps 4,000 for every lane together, so the integrator may want to raise `LOG_CAP`.
+About 850 events a year on the test world alone (`scripts/dominion-sim.mjs` prints the counts), about 2,000 with every lane (people's deaths make successions, crime's titles move zones). The core's `LOG_CAP` went from 4,000 to 5,000 when dominion joined `scripts/sim-all.mjs`, so the log still spans what it did (about 0.4–0.5 of a year).
 
 ## Listens for (other lanes)
 
@@ -198,27 +198,32 @@ About 850 events a year on the test world (`scripts/dominion-sim.mjs` prints the
 |---|---|
 | `story.war`, `event.war` with `{ cultures: [a, b] }` (or `a`, `b`) | a real war between the strongest ruler of each culture (reason `hatred`, ignores truces) |
 | `econ.famine` with `{ region }` or `{ zone }` | empties the stores, hunger ≥ 0.5, unrest +0.15 |
-| `people.death` / `people.died` with `{ actor }` | a dead lord's land passes at once (and every year, any dead lord's) |
-| `people.settlers` with `{ zone, n }` | the settlement gains n people |
-| `crime.transfer`, `land.claimed`, `land.claim` with `{ plot }` | the zone rule and the estates catch up (`plotChanged`) |
+| `people.died` with `{ actor }` | a dead lord's land passes at once (and every year, any dead lord's) |
+| `crime.title`, `crime.seized`, `crime.retaken`, `econ.landSold`, `land.claimed`, `land.claim` with `{ plot }` | the zone rule and the estates catch up (`plotChanged`) |
+
+Settlers need no listener: a settlement the people lane keeps takes its ledger count each season (`migrate`), so `people.arrived` and `people.migrated` are already in it (the old `people.settlers` listener would have counted them twice).
 
 ## Seams (`seams.js`): what dominion needs from other lanes
 
-Each is one function; the integrator replaces its body when the lane lands.
+Each is one function. Economy, people and crime have landed (2026-10-01): each seam calls into its lane when that lane's system runs (`L.sys.economy`, `L.sys.people`, `L.sys.crime`) and keeps its stand-in for when it does not, so prototype 42 and `scripts/dominion-sim.mjs` still run dominion alone. `seams.js` imports the lanes' modules below their `index.js` (`economy/money.js`, `setup.js`, `tune.js`; `people/death.js`; `crime/land.js`, `law.js`, `rules.js`), so loading dominion never registers another lane's system; nothing in those lanes imports dominion. (For that, `crime/law.js` and `land.js` now import `people/death.js`, and `crime/index.js` registers the people system itself, as importing crime always did.)
 
-| Function | Lane | Needs | Stand-in |
+| Function | Lane | Wired to | Alone (the stand-in) |
 |---|---|---|---|
-| `zoneYield(L, s)` | economy | a settlement's koku a year | people × 1.8 + food buildings |
-| `ricePrice(L, region)`, `materialPrice(L, region, mat)` | economy | prices | 1,000 mon a koku; timber 30, stone 40, iron 200, tiles 15 |
-| `worth`, `spend`, `gain` | economy | a person's money moving (weight, banks) | mon, silver at 80, ryō at 1,000; a lord keeps his treasury in gold |
-| `heirOf(L, actor)` | people | who inherits | eldest living child of 14+, spouse, sibling |
-| `killActor(L, id, cause)` | people | a death | `alive = false`, `died`, `cause` |
-| `mortality(L, actor, r)` | people | lords dying of age | yearly 1% (<40), 3% (<55), 7% (<65), 15%; off once `L.sys.people` exists |
-| `migrate(L, s, target, appeal)` | people | people coming and going | above |
-| `transferTitle(L, plot, to, how)`, `ripens(L, zone)` | crime | lawful transfer, possession becoming title | set the plot's title; two years held |
-| `addKarma`, `addStanding` | crime | karma and standing | edit `actor.karma` / `actor.standing` |
-| `blocked`, `tileGround` | land | tile features that block building | forest, bamboo, rock, water, marsh and built tiles block |
-| `claimPlot(L, plot, who)` | land | claiming (prototype 42 only) | a nature plot becomes his |
+| `zoneYield(L, s)` | economy | **wired**: people × 1.8 × the economy's land (`plotKoku` of the zone's 16 plots ÷ `N.LAND_NORM`, held to `N.LAND_SPAN`) + food buildings, × the region's harvest weather (`regions[r].q`). Dominion keeps its own scale: the economy's land feeds about 34 koku a settled zone (its real farmers), dominion's towns 300, so swapping the number in would cut every lord's koku three to nine times | people × 1.8 + food buildings |
+| `ricePrice(L, region)`, `materialPrice(L, region, mat)` | economy | **wired**: the region's market, as a ratio to the good's base on dominion's own units (rice 1,000 a koku × price ÷ base; timber and iron move with their markets; stone and tiles are not traded). Lords now sell at their seat's market, not region 0's | 1,000 mon a koku; timber 30, stone 40, iron 200, tiles 15 |
+| `worth`, `spend`, `gain` | economy | **wired**: the economy's coins always (`worth`, `pay`, `changeUp`: 16 mon a monme of silver, not the stand-in's 80; coins are no system). With the economy running, `spend` and `gain` go on its books as `flow.other` (dominion's wages, materials and hired hands leave the ledger; its rice sales, trade, tolls, loot and tribute come in), so money stays explained | (the same coins, no books) |
+| `heirOf(L, actor)` | people | **wired**: a region lord's seat and a band chief's camp follow the people lane's choice (it has passed them when dominion hears `people.died`); anyone else the people lane's `findHeir` (his culture's order; a minor rules through his regent) | eldest living child of 14+, spouse, sibling |
+| `killActor(L, id, cause, by)` | people | **wired**: the people lane's `killActor` (grave, widow, heir, `people.died`) | `alive = false`, `died`, `cause` |
+| `mortality(L, actor, r)` | people | off while the people lane runs | yearly 1% (<40), 3% (<55), 7% (<65), 15% |
+| `migrate(L, s, target, appeal)` | people | **wired**: where the people lane keeps the place (`L.sys.people.settle`), `pop` = its ledger count as it stands + the nameless, and only the nameless drift toward the target less the ledger count (`s.named` remembers last season's ledger part). The people lane's births, deaths, moves and newcomers are counted once, by it; dominion's appeal still moves the nameless. A place it does not keep (founded on wild plots): all of it as alone | growth 0.5% a season × appeal, a few settlers to a small good place, a quarter of the excess leaves |
+| `transferTitle(L, plot, to, how)`, `ripens(L, zone)` | crime | **wired**: crime's `passTitle` (holds, claims, the contested record, `crime.title`); a zone with no title ripens after crime's `LAND.PRESCRIPTION_YEARS` (3) held | set the plot's title; two years held |
+| `addKarma`, `addStanding` | crime | **wired**: crime's (clamped to −100..100 and −1..1; standing drifts back to karma) | edit `actor.karma` / `actor.standing` |
+| `blocked`, `tileGround` | land | no lane yet | forest, bamboo, rock, water, marsh and built tiles block |
+| `claimPlot(L, plot, who)` | land | no lane yet | a nature plot becomes his (prototype 42 only) |
+
+Found while wiring them (2026-10-01): a dead outlaw chief's heir now keeps the `outlaw` flag (`transferAll`), so a band's next chief is not counted a lord. Alone it moves the 20-year test too (seed 12345: 25 outlaw chiefs left at year 20 became 53; 26 rulers became 23).
+
+Not wired, for the integrator: the story lane's own successions (`story/politics.js setLord`, a disputed seat settled later) move `region.lord` without telling dominion, so a region's lord on the story's books can hold none of dominion's land. Dominion's rice is a parallel book to the economy's granaries: it never enters a market (dominion's lords collect about 10,000 koku a year against the economy's whole crop of about 4,400, so it would end the owner's hard times), and selling it at a famine winter's price (up to 8× base) makes lords rich fast (seed 12345, 5 years with every lane: lords' median purse 275,000 mon, 128,000 alone).
 
 ### The land lane's seam (buildings as recipes)
 `recipeOf(type)` returns a recipe-shaped record: `{ id: 'build.<type>', kind: 'build', name, family, footprint: { w, h } | 'ring', needs: { plot: 'held', clear: true, ground, buildings, anyOf, tier, road }, inputs: { timber, stone, iron, tiles }, mon, labour, workers, upkeep, output: { building } }`. The land lane's recipe system and companion task planning run it:
@@ -237,6 +242,8 @@ Dominion builds no claiming and no recipes itself; `plan(..., { pay: true })` (b
 
 ## Cost
 On the test world (seed 12345, 100 regions, ~180 lords and outlaw chiefs, ~180 armies, ~440 settlements) a game day costs about 1.7–1.9 ms on average on the cloud container this was built on (a 2.1 GHz Xeon VM, where `generateWorld` takes ~330 ms against the ~230 ms in `docs/sim-core.md`): about 1.3 ms for the daily step, 0.4 for the seasons, 0.2 for the years. It was 17 ms before tuning. Idle armies and NPC construction settle weekly, lords decide every 14 days (7 at war) and weigh war every 28, and every per-hour index (armies by lord and zone, side strength, chains of fealty, seats, occupied zones) is a derived cache outside the ledger. After 20 years dominion's state is ~2.5 MB of the save (mostly ~10,000 building records).
+
+With every lane loaded (`scripts/sim-all.mjs`, 5 years, seeds 12345 and 777) dominion costs about 1.1 ms a game day at the core's reference speed; the seams add little (the economy's `plotKoku` is cached per zone).
 
 ## Open, for the owner
 The five defaults in `docs/dominion.md` still stand until the owner answers: (1) English names with the Japanese in brackets, (2) simple orders to his squads at a battle he is at, (3) building anywhere on tiles he holds, (4) he can unite every province and the game goes on, (5) vassals and uprisings take back possession, never title. Also open:

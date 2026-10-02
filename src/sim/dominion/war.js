@@ -4,7 +4,7 @@ import { plotId } from '../zone.js';
 import { N, TRAIT, traitSum } from './data.js';
 import { D, key, unkey, alive, lordOf, setZone, top, sameSide, fealtyChanged, landOf, landOfKey } from './land.js';
 import { damage, passBuildings } from './build.js';
-import { officeQ, swear } from './govern.js';
+import { officeQ, swearFealty } from './govern.js';
 import { menOf, strength, armiesAt, march, atWar, moveDay } from './army.js';
 import { addKarma, addStanding, gain, spend, worth, killActor, transferTitle } from './seams.js';
 
@@ -236,7 +236,7 @@ export function makePeace(L, warId, t) {
   if (t.tribute) lordOf(L, Lo).tribute.push({ to: W, mon: t.tribute.mon, left: t.tribute.seasons });
   if (t.hostage && alive(L, t.hostage)) { const h = L.actors[t.hostage]; h.hostage = W; const lw = d.lords[W]; if (lw.seat) h.home = unkey(lw.seat); }
   if (t.marriage && t.marriage.every(id => alive(L, id) && !L.actors[id].spouse)) marry(L.actors[t.marriage[0]], L.actors[t.marriage[1]]);
-  if (t.vassal) swear(L, Lo, W, 'treaty');
+  if (t.vassal) swearFealty(L, Lo, W, 'treaty');
   const ll = lordOf(L, Lo); ll.grudges[W] = +Math.min(1, (ll.grudges[W] || 0) + .4).toFixed(2);
   endWar(L, w, 'treaty', t);
   emit(L, 'war.treaty', { war: w.id, winner: W, loser: Lo, cede: (t.cede || []).map(unkey), tribute: t.tribute, hostage: t.hostage, marriage: t.marriage, vassal: t.vassal });

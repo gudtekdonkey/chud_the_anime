@@ -1,6 +1,6 @@
 import { emit, zoneAt } from '../ledger.js';
 import { ownerOf } from '../zone.js';
-import { findHeir } from '../people/index.js';
+import { findHeir } from '../people/death.js';
 import { raidKura } from '../economy/vault.js';
 import { HOURS_PER_YEAR } from '../time.js';
 import { LAND, K, CRIMES } from './rules.js';

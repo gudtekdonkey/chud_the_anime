@@ -2,7 +2,7 @@
 
 The crime lane on the simulation core (`docs/sim-core.md`). It follows the owner's decisions in `docs/foundations.md`: karma is shown to the player; raids take possession, never the legal title; NPCs steal, fight and kill each other; the world lives in real time while he is away. Everything runs in `onDay` or slower, so an absence is lived exactly as play is. Every number here lives in `src/sim/crime/rules.js`, and all of them are starting values to tune.
 
-Import `src/sim/crime/index.js` once, before `generateWorld` or `loadWorld` (it registers the system). It re-exports everything below. The core's `src/sim/index.js` does not import it yet: that one line is for the integrator.
+Import `src/sim/crime/index.js` once, before `generateWorld` or `loadWorld` (it registers the system, and the people system it kills through). `law.js` and `land.js` import the people lane's `death.js`, not its `index.js`, so the dominion lane's seams can use crime's `passTitle`, `addKarma` and `addStanding` without registering anything. It re-exports everything below. The core's `src/sim/index.js` does not import it yet: that one line is for the integrator.
 
 | File | What it gives |
 |---|---|

@@ -120,3 +120,9 @@ export const FAMINE_DAYS = 5, FAMINE_END_DAYS = 20;   // famine when rice in the
 // a region at once; rob: chance a day near a camp; guarded: × that chance with hired swords; near: zones from a camp that count as near
 export const CARAVAN = { every: 7, value: 30000, minGain: .15, perZone: .012, speed: 4, max: 3, rob: .06, guarded: .3, near: 2 };
 export const HISTORY = 8;                      // seasons of price history kept per region
+
+// Land for sale (owner 2026-09-26: the lord grants no free plots; the economy sells them). A plot's asking price is YEARS of what its
+// holder keeps of it (its koku less the plot tax) at the region's rice price, the price held to lo..hi × base so a famine winter does not
+// price land at four times its worth. Each bidder past the plots on offer in a zone raises the price by `bid`, up to `maxBid` ×. A buyer
+// pays from his own purse, then his house head's past that class's RESERVE. MIN_PRICE: no plot sells for less
+export const LAND_SALE = { years: 1, lo: .5, hi: 2, bid: .1, maxBid: 1.5, minPrice: 200 };

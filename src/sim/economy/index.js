@@ -4,6 +4,7 @@ import { initEconomy, index, moneySupply } from './setup.js';
 import { economyDay } from './day.js';
 import { economySeason } from './season.js';
 import { economyTrade } from './trade.js';
+import { landSeason } from './land.js';
 
 // ---- The economy lane (docs/sim-economy.md): money with weight, land in koku and taxes up the ladder, a market per region,
 // caravans on the roads, every purse earning and spending by job and class. All of it lives in L.sys.economy and runs by the day,
@@ -14,12 +15,13 @@ export { plotKoku, zoneLord, moneySupply, index as economyIndex } from './setup.
 export { daysToHarvest } from './day.js';
 export { caravanZone } from './trade.js';
 export * from './vault.js';
+export { plotPrice, buyPlot } from './land.js';
 
 export const ECONOMY = system({
   id: 'economy', order: 40,
   init: L => initEconomy(L),
   onDay: (L, cal, r) => { economyDay(L, cal); economyTrade(L, cal, r); },
-  onSeason: (L, cal, r) => economySeason(L, cal, r),
+  onSeason: (L, cal, r) => { economySeason(L, cal, r); landSeason(L); },
   onYear: (L, cal) => yearEnd(L, cal),
 });
 

@@ -38,20 +38,21 @@ function storyWar(e, L) {
 on('story.war', storyWar); on('event.war', storyWar);
 // economy: a famine empties the stores and stirs the people
 on('econ.famine', (e, L) => { if (!ok(L)) return; for (const s of Object.values(D(L).set)) if ((e.zone && key(...e.zone) === s.k) || (!e.zone && s.region === e.region)) { s.store = 0; s.hunger = Math.max(s.hunger, .5); s.unrest = Math.min(1, s.unrest + .15); } });
-// people: a death passes a lord's land on at once; settlers swell a settlement
+// people: a death passes a lord's land on at once. Settlers need no listener: a settlement the people lane keeps takes its ledger count
+// each season (seams.js migrate), so people.arrived / people.migrated are already in it
 const died = (e, L) => { if (!ok(L)) return; const id = e.actor; if (D(L).lords[id] && !L.actors[id].alive) succeed(L, id, rngish(L, id)); };
-on('people.death', died); on('people.died', died);
-on('people.settlers', (e, L) => { if (!ok(L) || !e.zone) return; const s = D(L).set[key(...e.zone)]; if (s) s.pop += e.n || 1; });
-// crime and land: a plot's title or holder changed; the zone rule and the estates catch up
+on('people.died', died);
+// crime, the economy and land: a plot's title or holder changed (crime's title ways, seizures and retakings; a plot sold); the zone rule
+// and the estates catch up
 const plot = (e, L) => { if (ok(L) && e.plot) plotChanged(L, e.plot); };
-on('crime.transfer', plot); on('land.claimed', plot); on('land.claim', plot);
+on('crime.title', plot); on('crime.seized', plot); on('crime.retaken', plot); on('econ.landSold', plot); on('land.claimed', plot); on('land.claim', plot);
 const rngish = (L, id) => rngFor(L.seed, 'dominion', 'death', id, L.hour);
 
 export * from './data.js';
 export { D as dominion, key, unkey, lordOf, top, sameSide, lordName, zoneRec, setZone, checkZoneTitle, plotChanged, plotsHeld, estatesOf, canFound, foundDomain, realmOf, holdingsOf, rankOf } from './land.js';
 export { settlementAt, lordOfSettlement, nextNeeds, vassalState } from './settle.js';
 export { recipeOf, costOf, canPlace, prereq, plan, supply, work, hire, damage, repair } from './build.js';
-export { officeQ, appoint, candidates, setTax, setLaw, swear, lordState } from './govern.js';
+export { officeQ, appoint, candidates, setTax, setLaw, swearFealty, lordState } from './govern.js';
 export { menOf, strength, armiesOf, armiesAt, recruitWhy, recruit, newArmy, setOfficer, setOrder, disband, pathTo, march, atWar, armyLabel } from './army.js';
 export { reasonFor, declareWar, activeWars, sideOf, makePeace, termsFor, settleBattle, take } from './war.js';
 export { claimPlot, worth, spend, gain } from './seams.js';

@@ -1,6 +1,6 @@
 import { emit, newId, zoneAt } from '../ledger.js';
 import { rngFor } from '../rng.js';
-import { killActor } from '../people/index.js';
+import { killActor } from '../people/death.js';   // not people/index.js: importing law.js must not register the people system (dominion's seams use it)
 import { ageOf } from '../actors.js';
 import { CRIMES, K, HONOUR, COMPANION, worse } from './rules.js';
 

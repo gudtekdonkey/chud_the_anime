@@ -18,6 +18,7 @@ Owner decisions it follows (2026-09-26): hard times, about 40% of people short o
 | `season.js` | The autumn harvest, taxes and ranks; each season's upkeep and price history |
 | `trade.js` | Caravans: set out, march, get robbed, arrive |
 | `vault.js` | The API for the ronin (and anyone): loot, buy, sell, transfer, offer, the money-changer, the kura, robbing and escorting caravans |
+| `land.js` | Land for sale: `plotPrice`, `buyPlot`, each season's sales to those who want land (below) |
 | `index.js` | Registers the system, the year's books, `war`, `garmentPrice`, read-outs for pages |
 
 Import it once (`import './src/sim/economy/index.js'`) before `generateWorld` or `loadWorld`; the core does not import lanes. The integrator adds it to the game's boot.
@@ -57,6 +58,15 @@ Every region has one market: a stock and a price for each good, and a merchant *
 ### Caravans
 The roads between region seats are found once (`routes`: `{ a, b, path: [zone index…] }`). Every `CARAVAN.every` days each road is weighed both ways: the good whose price at the far end beats the price at home by more than the haul costs (1.2% a zone) and the guild's cut sets out, `CARAVAN.value` of it, owned by one of the region's merchants, guarded half the time where ronin are for hire. A caravan marches `speed` zones a day; within `near` zones of an outlaw camp it may be robbed (`econ.caravan.robbed`: the goods go to the camp's region, its chief gets half their worth). On arrival the far guild buys the load at its price, and most of that is owed to the makers back home.
 
+### Land for sale
+The owner ruled (2026-09-26) that the lord grants no free plots: the economy sells them. The people lane marks who wants land (`actor.ambition.kind === 'land'`: married younger sons, migrants, newcomers, small holders); each season (`landSeason`, after the season's books) every town and village where someone wants land sells its free plots (the people lane's `freePlot`: plots 1–15 titled to nobody alive, or to the region's lord) one at a time to the richest of them who can pay, and `grantPlot` moves the title and possession. Without the people lane nobody wants land and nothing is sold.
+
+- **Price** (`plotPrice(L, plotId)`): `LAND_SALE.years` (1) × what the holder keeps of the plot a year, at the region's rice price held to ½–2× base: **price = plotKoku × (1 − the plot tax) × clamp(rice price, 500, 2,000) × 1**, at least 200 mon. An average settled plot (about 2 koku, half taxed) asks about 1,000 mon at base; the world's run 470–3,900 (10th to 90th percentile, seed 12345, 5 years). The clamp keeps a famine winter from pricing land at 4–8× its worth.
+- **Bidding**: a zone with more bidders than its free plots sells dearer: the price × (1 + 0.1 × the bidders still waiting behind the buyer), at most 1.5×. The richest buys first; the first who cannot pay ends the zone's sale for the season.
+- **Paying**: the buyer's own purse first, then his house head's above the head's class reserve (`RESERVE`: the family helps a son buy). The money goes to whoever holds the title (usually the region's lord: his own land is sold, never granted), else to the region's lord, else to the region's guild. It only moves: the books stay explained.
+- Bought, his `ambition` is cleared and `econ.landSold` fires (dominion's zone rule and estates hear it). The people lane founds his house at the next spring or autumn.
+- Seed 12345 with every lane, 5 years: about 1,500 plots sold (about 300 a year, mostly to commoners), about 400 people still wanting land at the end. The ronin buys with `buyPlot(L, id, plotId)` where he stands (the page asks `plotPrice` first). Crime's `buyTitle` (a contested title, 2,000 mon flat) is a different sale and is unchanged.
+
 ### Wealth sources and sinks
 Money is conserved: every flow above moves coin from one purse, guild, pool, temple or vault to another, checked day by day by the test (it never drifts more than a few mon a year, from rounding). Only these make or unmake it:
 
@@ -80,13 +90,14 @@ Both sinks grow with wealth, so the money supply settles where the mint balances
 | `kura[plotId]` | `{ owner, money }` |
 | `banks["x,y"][actorId]` | a money-changer's book: coins held |
 | `plotKoku[plotId]` | yield overrides (land lane) |
-| `flow` | this year's `mint`, `loot`, `temple`, `buried`, `fees`, `other` |
+| `flow` | this year's `mint`, `loot`, `temple`, `buried`, `fees`, `other` (`other` is net: dominion's `gain` adds to it and its `spend` takes from it, so its rice sales, trade, loot, wages and materials stay on the books) |
 | `years` | the last 20 years' books `{ year, total, purses, guild, temple, buried, mint, loot, fees, other, caravans, rice }` |
 | `hist` | the last `HISTORY` seasons' prices `{ h, price: [region][good] }` |
 | `stats.year` | this year's caravans `{ sent, arrived, robbed, value }` |
+| `stats.land` | plots sold since the world began `{ sold, mon }` (made at the first sale) |
 | `nextCaravan` | the next caravan id |
 
-**Fields read from others, never renamed**: `actor.money` (it adds `silver`/`ryo` as 0 where missing), `actor.alive/born/job/cls/home/household/holds`, `region.lord`, `region.seat`, `zone.kind/road/region/holder`, `L.plots`. **Proposed for other lanes**: `zone.lord` (a zone lord below the region lord; the land lane sets it).
+**Read by dominion** (`src/sim/dominion/seams.js`): `plotKoku` and `regions[r].q` for its settlements' yield, `regions[r].price` for rice, timber and iron, the coins of `money.js`, and `flow.other` for its money. **Fields read from others, never renamed**: `actor.money` (it adds `silver`/`ryo` as 0 where missing), `actor.alive/born/job/cls/home/household/holds`, `region.lord`, `region.seat`, `zone.kind/road/region/holder`, `L.plots`. **Proposed for other lanes**: `zone.lord` (a zone lord below the region lord; the land lane sets it).
 
 Nothing is added to actors. The economy works by region and settles each region in turn: one region in `SETTLE` each day, `SETTLE` days at a time (every rate is per day, compounded over the step), so a day costs a fraction of the world. The household index (who lives with whom, who works what) is derived from `L.actors`, built as of the start of each year and whenever people are added, and never saved; the dead are skipped where they stand, and a move or a marriage takes effect at the next build.
 
@@ -104,6 +115,7 @@ Nothing is added to actors. The economy works by region and settles each region 
 | `econ.deposit` / `econ.withdraw` | `actor, zone, value` | the money-changer |
 | `econ.note` | `actor, from, to, value` | a changer's note sent money to another town |
 | `econ.transfer` | `from, to, value, why` | a transfer of a ryō or more |
+| `econ.landSold` | `plot, actor, from (seller or null), price, zone, region, bidders` | a free plot sold to someone who wanted land |
 | `econ.year` | `year, total, mint, sinks` | the year's books closed |
 
 ## API (import from `src/sim/economy/index.js`)
@@ -114,7 +126,7 @@ Nothing is added to actors. The economy works by region and settles each region 
 - The changer: `isChanger(L, x, y)`, `deposit`, `withdraw`, `exchange(L, id, x, y, from, n, to)`, `sendNote(L, id, [x, y], [x2, y2], coins)` (draw it in another town, 3%), `accounts(L, id)`.
 - The kura: `stash(L, id, plotId, coins)`, `unstash`, `raidKura(L, plotId, by)`.
 - Caravans: `caravanZone(L, caravan)`, `robCaravan(L, id, caravanId)`, `escortCaravan(L, id, caravanId)`.
-- Land: `plotKoku(L, zx, zy, n)`, `zoneLord(L, zone)`, `lordOf(L, id)`, `daysToHarvest(cal)`.
+- Land: `plotKoku(L, zx, zy, n)`, `zoneLord(L, zone)`, `lordOf(L, id)`, `daysToHarvest(cal)`, `plotPrice(L, plotId)`, `buyPlot(L, id, plotId, price?)`.
 - Shocks: `war(L, region, days)`, `atWar(L, region)`.
 - Read-outs: `moneySupply(L)`, `wealthByClass(L)`, `economyIndex(L)`.
 
@@ -148,6 +160,7 @@ The game's HUD `INV.mon` is a separate counter today; wiring it to the ronin's `
 | `WAR_RICE`, `WAR_ARMS` | ×1.25 rice; .004 blades and .0015 horses a fighter a day | how hard war bites |
 | `CARAVAN` | a road weighed weekly; 30,000 mon a load; 15% least gain; 1.2% a zone; 4 zones a day; 3 out at once; 6% robbed a day near a camp, a third of that guarded | trade and banditry |
 | `HISTORY` | 8 seasons | price history kept |
+| `LAND_SALE` | 1 year of the holder's share; rice held to ½–2× base; +10% a waiting bidder, at most 1.5×; at least 200 mon | what land costs, and how many can buy it |
 
 ## Where it stands (seeds 12345, 777 and 4242, 10 years each)
 

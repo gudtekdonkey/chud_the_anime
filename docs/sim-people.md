@@ -2,7 +2,7 @@
 
 The people lane on the simulation core (`docs/sim-core.md`). Everyone in `L.actors` ages, works, marries, has children, wants things, and dies; land (plot titles and `actor.holds`) and money pass to heirs by their culture's rule; lords' seats pass; and the ronin's death hands the game to his heir or ends the run (owner, 2026-09-26). Everything here is a proposal to tune unless it cites an owner decision. Every number lives in `rules.js`.
 
-Import `src/sim/people/index.js` once, before `generateWorld` or `loadWorld`, to register the system (`id: 'people'`, `order: 30`). It imports only core files, so the integrator can add `export * from './people/index.js'` to `src/sim/index.js` without a cycle.
+Import `src/sim/people/index.js` once, before `generateWorld` or `loadWorld`, to register the system (`id: 'people'`, `order: 30`). It imports only core files, so the integrator can add `export * from './people/index.js'` to `src/sim/index.js` without a cycle. Other lanes that only need its functions import `death.js` or `settle.js` (crime, the dominion seams, the economy's land sales), which register nothing; importing `index.js` registers the system.
 
 ```
 node scripts/people-test.mjs [seed] [years]      # lives a world 60 years, prints it, checks the rules, exits 1 on a failure
@@ -202,4 +202,5 @@ A save grows by the dead. Once a year, the dead of more than `fadeAfter` years (
 ## For the economy lane
 
 - `actor.ambition.kind === 'land'` marks who wants land: married younger sons, migrants, small landholders. Sell or auction them plots with `grantPlot(L, pid, actor)` (moves the title from the old owner's `holds`); `freePlot(L, zone)` finds a plot titled to no living person. A married man who comes to hold land founds his own house at the next spring or autumn.
+- **Built (2026-10-01):** the economy sells them (`src/sim/economy/land.js`, `docs/sim-economy.md` → "Land for sale"): each season, in every town and village, its free plots go to the richest who want land there and can pay (his purse, then his house head's past the class reserve), at a year of what the plot yields its holder at the region's rice price; `econ.landSold`; his `ambition` is cleared. About 300 plots a year on seed 12345.
 - Set `L.sys.people.wages = false` when the economy pays wages; emit `econ.famine` with a `zone` or `region` to starve a place for a season.

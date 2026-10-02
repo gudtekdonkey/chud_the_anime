@@ -128,7 +128,7 @@ export function settleSeason(L, r) {
   // lords keep a year's rice for their men and sell half the rest for the mon that pays wages and builds
   for (const l of Object.values(d.lords)) { if (!alive(L, l.id)) continue;
     const keep = 10 + armiesOf(L, l.id).reduce((t, a) => t + a.sq.reduce((u, q) => u + q.n, 0), 0) * 1.2;
-    if (l.rice > keep) { const sell = (l.rice - keep) * .8; l.rice -= sell; gain(L, l.id, sell * ricePrice(L, 0)); } }
+    if (l.rice > keep) { const sell = (l.rice - keep) * .8; l.rice -= sell; gain(L, l.id, sell * ricePrice(L, d.set[l.seat]?.region ?? 0)); } }   // at his seat's market
   for (const l of Object.values(d.lords)) l.kokuAll = l.koku;
   for (const l of Object.values(d.lords)) { if (!l.liege) continue; let x = l.liege; for (let i = 0; i < 12 && x; i++) { const up = d.lords[x]; if (!up) break; up.kokuAll += l.koku; x = up.liege; } }
 }

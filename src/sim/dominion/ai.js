@@ -2,7 +2,7 @@ import { zoneAt } from '../ledger.js';
 import { BUILDINGS, TIERS, UNITS, N, TRAIT, traitSum } from './data.js';
 import { D, unkey, alive, top, sameSide, landOf, landOfKey } from './land.js';
 import { plan } from './build.js';
-import { setTax, setLaw, swear, lordState } from './govern.js';
+import { setTax, setLaw, swearFealty, lordState } from './govern.js';
 import { recruit, disband, menOf, armiesOf, march, atWar, atWarAny, newArmy, addSquad, sideStrength } from './army.js';
 import { declareWar, reasonFor } from './war.js';
 import { worth, ricePrice } from './seams.js';
@@ -20,7 +20,8 @@ export function lordsDay(L, cal, r) {
   }
 }
 const setsOf = (L, l) => l.zones.map(k => D(L).set[k]).filter(Boolean);
-const upkeepPerDay = (L, lord) => armiesOf(L, lord).reduce((s, a) => s + a.sq.reduce((t, q) => t + q.n * (UNITS[q.cls].wage + UNITS[q.cls].rice / 112 * ricePrice(L, 0)), 0), 0);
+const seatRegion = (L, lord) => D(L).set[D(L).lords[lord]?.seat]?.region ?? 0;   // prices at his seat's market
+const upkeepPerDay = (L, lord) => { const rp = ricePrice(L, seatRegion(L, lord)); return armiesOf(L, lord).reduce((s, a) => s + a.sq.reduce((t, q) => t + q.n * (UNITS[q.cls].wage + UNITS[q.cls].rice / 112 * rp), 0), 0); };
 
 function decide(L, l, cal, r) {
   const d = D(L), me = L.actors[l.id], sets = setsOf(L, l), clever = me.int ?? .5, bold = traitSum(me, TRAIT.bold), greedy = traitSum(me, TRAIT.greedy), kind = traitSum(me, TRAIT.kind);
@@ -68,7 +69,7 @@ function build(L, l, sets, war, r) {
 // ---- the army: as many men as the land can feed and pay, more in war and for the bold; paid swords when rich ----
 function army(L, l, sets, war, bold, r) {
   const me = L.actors[l.id], men = armiesOf(L, l.id).reduce((s, a) => s + menOf(a), 0);
-  const income = l.koku * l.tax * ricePrice(L, 0) / 112 + 5, afford = Math.floor(income / 12);   // mon a day, and a man costs about 9 a day: keep a margin
+  const income = l.koku * l.tax * ricePrice(L, seatRegion(L, l.id)) / 112 + 5, afford = Math.floor(income / 12);   // mon a day, and a man costs about 9 a day: keep a margin
   const want = Math.min(afford, Math.round(l.koku * .08 * (1 + bold * .5) * (war ? 1.8 : 1)) + 4);
   if (men > afford * 1.3 && men > 6) { const a = armiesOf(L, l.id).find(x => !x.go && x.sq.some(q => q.cls === 'ashigaru'));
     if (a) { const i = a.sq.findIndex(q => q.cls === 'ashigaru'); a.sq[i].n = Math.max(0, a.sq[i].n - Math.ceil(men - afford)); if (!a.sq[i].n) a.sq.splice(i, 1); } return; }
@@ -108,7 +109,7 @@ function diplomacy(L, l, sets, bold, kind, clever, r) {
     if (ratio >= need + (why ? 0 : .6) && (why || bold > .8) && (!best || score > best.score)) best = { t, why, score };
     // swear to a much stronger neighbour rather than be eaten (the proud never do)
     if (ratio < .3 && traitSum(L.actors[l.id], ['proud']) < .5 && l.kokuAll < 400 && r.chance(.04 + .06 * clever)) {
-      const lt = d.lords[t]; if (lt && !lt.outlaw && !lt.rebel && ((L.actors[t].culture === L.actors[l.id].culture) || r.chance(.3))) return swear(L, l.id, t, 'envoy'); }
+      const lt = d.lords[t]; if (lt && !lt.outlaw && !lt.rebel && ((L.actors[t].culture === L.actors[l.id].culture) || r.chance(.3))) return swearFealty(L, l.id, t, 'envoy'); }
   }
   if (best && r.chance((best.why ? .3 : .1) * (1 - kind * .5))) {
     const t = best.t, goal = (l.titles.find(k => d.zt[k].holder && sameSide(L, d.zt[k].holder, t))) ||

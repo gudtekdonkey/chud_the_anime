@@ -47,7 +47,7 @@ export const zoneAt = (L, x, y) => (x < 0 || y < 0 || x >= L.size.w || y >= L.si
 // ---- events: every system tells the world what happened through emit(); listeners (the HUD, quests, the notice board) react ----
 const LISTENERS = new Map();
 export function on(type, fn) { (LISTENERS.get(type) || LISTENERS.set(type, []).get(type)).push(fn); return () => { const a = LISTENERS.get(type); a.splice(a.indexOf(fn), 1); }; }
-export const LOG_CAP = 4000;
+export const LOG_CAP = 5000;   // 4000 before dominion joined the all-lanes world (about 2,000 dom./war. events a year more): the log still spans what it did
 // data: anything plain; by convention { zone: [x, y], actor, region, culture } where they apply, so the world map and the quests can find it
 export function emit(L, type, data = {}) {
   const e = { h: L.hour, type, ...data };

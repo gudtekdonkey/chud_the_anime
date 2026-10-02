@@ -1,3 +1,4 @@
+import '../people/index.js';   // crime kills and inherits through the people lane: loading crime registers it (law.js imports only its death.js)
 import { system } from '../ledger.js';
 import { fresh, fadeBounties, driftStanding } from './law.js';
 import { worldDay, huntersDay } from './world.js';

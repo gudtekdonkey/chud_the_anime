@@ -113,7 +113,8 @@ export const N = {
   CREW_WAGE: 8,           // mon a day a hired worker
   MATERIAL: { timber: 30, stone: 40, iron: 200, tiles: 15 },   // mon a unit (stand-in until the economy lane's prices)
   RICE_PRICE: 1000,       // mon a koku (stand-in)
-  SILVER: 80,             // mon a monme of silver (stand-in)
+  LAND_NORM: 34,          // koku a year of a settled zone's 16 plots on the economy's land (its mean village zone, seed 12345): YIELD_PER_HEAD is for land like this
+  LAND_SPAN: [.6, 1.4],   // how far the economy's land can move a zone's yield from that (poor hills to rich paddy)
   TAX: .35, TAX_MIN: .1, TAX_MAX: .7,
   VASSAL_SHARE: .1,       // of a vassal lord's tax that goes to his liege
   SEASONS: 4,

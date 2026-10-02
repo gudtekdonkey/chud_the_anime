@@ -66,7 +66,7 @@ export function setLaw(L, lord, law, on) {
 }
 
 // ---- vassal lords: lords sworn to a liege pay him a share and fight in his wars; loyal, restless or rebellious ----
-export function swear(L, vassal, liege, how) {
+export function swearFealty(L, vassal, liege, how) {
   const l = lordOf(L, vassal); if (vassal === liege || top(L, liege) === vassal) return null;
   l.liege = liege; l.loyalty = .7; fealtyChanged(L);
   for (const w of l.wars.slice()) { const war = D(L).wars[w]; if (war && (war.a === liege || war.d === liege)) l.wars.splice(l.wars.indexOf(w), 1); }
@@ -118,6 +118,7 @@ export function transferAll(L, from, to, how) {
   for (const reg of L.regions) if (reg.lord === from) { reg.lord = to; ha.lord = reg.id; }
   if (fa.lord != null && ha.lord == null) ha.lord = fa.lord;
   if (how !== 'escheat') { ha.job = fa.job === 'lord' ? 'lord' : ha.job;
+    if (l.outlaw && ha.cls === 'outlaw') h.outlaw = true;   // a band's next chief is a chief, not a lord (the people lane kills many)
     h.rice += l.rice; h.tax = l.tax; h.laws = { ...l.laws }; h.seat = h.seat || l.seat; h.liege = h.liege || (l.liege !== to ? l.liege : null); h.loyalty = l.loyalty;
     for (const o of OFFICES) if (!h.off[o] && l.off[o] && l.off[o] !== to) h.off[o] = l.off[o];
     for (const [g, v] of Object.entries(l.grudges)) h.grudges[g] = Math.max(h.grudges[g] || 0, v);

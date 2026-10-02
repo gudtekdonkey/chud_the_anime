@@ -1,4 +1,4 @@
-// node scripts/sim-all.mjs [seed] [years]: live a world with every lane loaded (people, economy, crime, story, travel) and check they work
+// node scripts/sim-all.mjs [seed] [years]: live a world with every lane loaded (people, economy, crime, story, travel, dominion) and check they work
 // together: no errors, the population holds, and each lane hears the others (events counted by kind). Exits 1 if a check fails.
 import { generateWorld, advance, hoursFromYears, on, systems, serialize, deserialize } from '../src/sim/index.js';
 import '../src/sim/people/index.js';
@@ -6,6 +6,7 @@ import '../src/sim/economy/index.js';
 import '../src/sim/crime/index.js';
 import '../src/sim/story/index.js';
 import '../src/sim/travel/index.js';
+import '../src/sim/dominion/index.js';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 5);
 let fails = 0; const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if (!ok) fails++; };
 
@@ -20,10 +21,15 @@ const days = years * 112;
 console.log(`living at the end of each year: ${pop.join(' ')}`);
 console.log('ms a game day at reference speed:', Object.entries(time).map(([k, v]) => `${k} ${(v / days / speed).toFixed(2)}`).join(' · '));
 const lane = p => Object.entries(seen).filter(([k]) => k.startsWith(p)).sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k.slice(p.length)} ${n}`).join(', ');
-for (const p of ['crime.', 'people.', 'econ.', 'story.', 'travel.']) console.log(`${p.padEnd(8)} ${lane(p)}`);
+for (const p of ['crime.', 'people.', 'econ.', 'story.', 'travel.', 'dom.', 'war.']) console.log(`${p.padEnd(8)} ${lane(p)}`);
 
 check(pop.at(-1) > start * .6, `the population holds (${start} → ${pop.at(-1)})`);
 check(seen['crime.raid'] > 0 && seen['crime.robbery'] > 0 && seen['crime.murder'] > 0, 'crime tells the story its raids, robberies and murders');
 check(seen['people.died'] > 0 && seen['people.arrived'] > 0, 'people die and newcomers arrive');
-const again = deserialize(serialize(L)); check(again.sys.crime && again.sys.people && again.sys.story, 'the whole ledger survives a save');
+const dom = Object.entries(seen).filter(([k]) => k.startsWith('dom.') || k.startsWith('war.')).reduce((s, [, n]) => s + n, 0);
+check(dom > 0 && seen['dom.succession'] > 0, `dominion lives with the others (${dom} dom./war. events, ${seen['dom.succession'] || 0} successions through the people lane)`);
+check(seen['econ.landSold'] > 0, `the economy sells land to those who want it (${seen['econ.landSold'] || 0} plots)`);
+const lords = Object.values(L.sys.dominion.lords).filter(l => !l.gone && L.actors[l.id].alive && l.zones.length);
+check(lords.length > 50, `dominion's lords and chiefs hold land (${lords.length})`);
+const again = deserialize(serialize(L)); check(again.sys.crime && again.sys.people && again.sys.story && again.sys.dominion && again.sys.dominion.lords, 'the whole ledger survives a save');
 process.exit(fails ? 1 : 0);
