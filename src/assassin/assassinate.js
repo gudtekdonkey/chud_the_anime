@@ -18,6 +18,7 @@ import { K, K_RANGE, updateMarkers } from './markers.js';
 import { ISOLATION, targets, hold, faceOf, roomFade } from './targets.js';
 import { pick } from './rules.js';
 import { ENEMIES } from '../world/enemies.js';
+import { hitStop } from '../player/feel.js';
 
 // ---- K on an isolated enemy: he flashes to him and plays an execution ----
 // Each execution plays on its own stage: the two bodies, the pieces and the effects, in a frame where the enemy faces left.
@@ -99,7 +100,7 @@ export function tickStages(dt) {
     }
     E.flash = St.flashUntil > c;
     // the stage's hit pauses and shakes are the game's
-    if (St.stop) { S.hitstop = Math.max(S.hitstop, St.stop); St.stop = 0; }
+    if (St.stop) { if (St.stop >= .09) hitStop('exec'); else S.hitstop = Math.max(S.hitstop, St.stop); St.stop = 0; }   // a killing blow: execution-grade (player/feel.js)
     if (St.shake) { S.shake = Math.max(S.shake, St.shake); St.shake = 0; }
     if (St.impact) { S.impact = St.impact; St.impact = 0; }
   }

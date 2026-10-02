@@ -12,8 +12,10 @@ export const threatNear = () => !S.roomClear && living().some(d => Math.hypot(d.
 export function afterAttack(moving) { if (!threatNear()) { P.armed = true; return 'sheathe'; } return moving ? 'runArmed' : pickStance(); }
 // a different one of the six counter stances each time he stops with the blade out
 export function pickStance() { let k; do k = Math.random() * 6 | 0; while (k === P.lastStance); P.lastStance = k; return 'ready' + k; }
+// a move that is not on his feet (an attack, a skill, a dodge) starts from a standstill: his run's momentum is not carried in
+const FOOT = /^(idle|run|walk|runArmed|ready\d?|idleGlitch)$/;
 export function setState(s) { if (s === 'idle' || s === 'run' || s === 'walk') P.armed = false; P.state = s; P.t = 0; P.hitDone = {}; P.ev = {}; P.combo = false; P.struck = new Set();
-  P.charge = null; P.cv = null; P.fr = null; P.trem = 0; }
+  P.charge = null; P.cv = null; P.fr = null; P.trem = 0; if (!FOOT.test(s)) P.vx = P.vy = 0; }
 // true the first time an in-state beat is reached, so a strike fires once even if a frame skips past it
 export const once = (k, when) => when && !P.ev[k] && (P.ev[k] = true);
 export function moveBy(dx, dy) { [P.x, P.y] = collide(P.x + dx, P.y + dy); }

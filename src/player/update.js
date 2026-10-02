@@ -14,8 +14,10 @@ import { motes } from './body.js';
 import { hit, hitSeg, burst } from './hits.js';
 import { meditate, spawnMirror, updateMirrors } from './mirror.js';
 import { TAP, chargeUp, TC, RIFT, release, charged } from './skills.js';
-import { gate, startCd, updateCds, canBlink, spendBlink } from './cooldowns.js';
-import { CUTS, GO, nextCut, updateFlow } from './combo.js';
+import { startCd, updateCds, canBlink, spendBlink } from './cooldowns.js';
+import { bufferIn, bufferOut, cancelOf, only } from './buffer.js';
+import { updateCamera } from '../world/camera.js';
+import { CUTS, GO, nextCut, updateFlow, aimCut, trackStep } from './combo.js';
 import { updateEnemies } from '../world/enemies.js';
 import { assassinate, tickStages, updateStages } from '../assassin/assassinate.js';
 import { K, updateMarkers } from '../assassin/markers.js';
@@ -31,18 +33,26 @@ import { BREATHS, breathKey, breathWait, breathState, updateBreath } from './bre
 import { wildGo } from './wild.js';
 import { tv, updateLine } from './mastery.js';
 import { ST } from './stats.js';
+import { hitStop, FEEL } from './feel.js';
+import { drive, speed, gaitClock } from './locomotion.js';
+import { stepSprings } from './blend.js';
 
 const DIAG_GRACE = .1;   // s a diagonal survives one of its two keys lifting
 
-// ---- The state machine: one fixed 1/60 s step ----
+// ---- The state machine: one fixed 1/60 s step, between the input buffer (player/buffer.js) and the camera ----
 export function update(dt, inp) {
+  updateCds(dt); updateFlow(dt);   // cooldowns run in real time, through hit pauses too
+  const frozen = S.hitstop > 0;
+  bufferIn(inp, dt); step(dt, inp); bufferOut(inp); updateCamera(dt);
+  if (!frozen) stepSprings(dt);   // the mantle, hat and lean springs (player/blend.js) hold still in a hit pause
+}
+function step(dt, inp) {
   for (const q of parts) { q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.grav * dt; q.life -= dt; }
   for (let i = parts.length - 1; i >= 0; i--) if (parts[i].life <= 0) parts.splice(i, 1);
   P.ghosts.forEach(g => { g.age += dt; g.white -= dt; }); P.ghosts = P.ghosts.filter(g => g.age < g.hold + .25);
   if (P.hide > 0 && P.state !== 'tele' && P.state !== 'idle' && P.state !== 'run') P.hide = 0;   // acting mid-slither: he re-forms at once
   P.hide = Math.max(0, (P.hide || 0) - dt); if (!(P.hide > 0)) P.goo = Math.max(0, (P.goo || 0) - dt);
   S.shake = Math.max(0, S.shake - dt); S.impact = Math.max(0, S.impact - 1); P.flash = Math.max(0, P.flash - dt); S.scr.t -= dt;
-  updateCds(dt); updateFlow(dt); gate(inp);   // cooldowns run in real time, through hit pauses too
   if (P.state === 'exec' && inp.tele && P.exec) P.exec.queued = true;   // K during an execution lines up the next, hit pauses included
   updateFx(dt); updateEnemies(dt, S.hitstop > 0); updateStages(dt); updateMarkers();
   updateParty(dt, S.hitstop > 0, X && X.a); updateRecruits(dt);   // the partner in a paired execution is moved by it, not by their own head
@@ -87,38 +97,32 @@ export function update(dt, inp) {
   // E beside a downed companion is for lifting them (hold); beside a recruit, a tap takes them on; otherwise it is the items'
   if (liftInput(dt, held.has('act')) || (canAttack && recruitInput(inp))) { inp.act = false; P.ePress = false; }
   if (itemInput(inp, canAttack, dt)) return;
-  if (canAttack) {
-    if (inp.slash) return setState(P.armed ? 'slash1r' : 'slash1');
-    if (inp.jump) { setState('jump'); P.vz = 150; return; }
-    if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); startCd('slide'); return; }
-    if (inp.tele) { const c = pairCandidate(); if (c) return startPair(c); }   // a companion close by and set up for it: they cut him down together
-    if (inp.tele && K.pick) return assassinate(K.pick);   // an isolated enemy in reach: K flashes to him and executes
-    if (inp.tele && canBlink()) { setState('tele'); P.blinkDir = inputDir(inp); spendBlink(); return; }
-    if (inp.tele) P.cdDeny.tele = .2;   // no blink charge left: refused, the slot blinks
-    if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'double'; startCd('double'); return; }
-    if (inp.rift) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'rift'; return; }   // O and P cool down from the release
-    if (inp.moon) { setState('moonHold'); P.charge = 0; return; }
-    if (inp.mirror) { startCd('mirror'); return meditate(); }
-    if (inp.sweep) { startCd('sweep'); return setState('sweep'); }
-    if (breathKey(inp)) return;   // C: sit on a tap, a Breath of Qi on a hold, Storm breath during the storm
-  }
+  if (canAttack && act(inp)) return;
+  // a cancel window (player/buffer.js, FEEL.cancel): after a cut's strike a slide or jump cuts it short, after its hit window a skill
+  const cw = !canAttack && cancelOf(s, T), q = cw && only(inp, cw);
+  if (q && ACTS.some(k => q[k])) { leave(s); if (act(q)) return; }
 
   switch (s) {
     case 'ready': case 'ready0': case 'ready1': case 'ready2': case 'ready3': case 'ready4': case 'ready5': case 'runArmed': {
       // blade out: he waits in guard or runs with it trailing; after ~2 s of calm he puts it away
-      if (moving) { const [dx, dy] = inputDir(inp), v = 74 * ST.speed(); moveBy(dx * v * dt, dy * v * dt); if (s !== 'runArmed') setState('runArmed'); P.still = 0; }
+      // speed ramps up and down (player/locomotion.js); the run's legs keep pace with the ground covered
+      const v = 74 * ST.speed(), [dx, dy] = moving ? inputDir(inp) : [0, 0], d = drive(dx * v, dy * v, v, dt);
+      if (moving) { if (s !== 'runArmed') setState('runArmed'); else P.t += gaitClock(s, d, dt) - dt; P.still = 0; }
+      else if (s === 'runArmed' && speed() > v * FEEL.move.stopV) P.t += gaitClock(s, d, dt) - dt;   // slowing to a stop
       else { if (s === 'runArmed') setState(pickStance()); P.still += dt; if (P.still > 2) { P.still = 0; setState('sheathe'); } }
       break;
     }
     case 'idle': case 'run': case 'walk': case 'idleGlitch': case 'sit': case 'sitDown': {
+      // hold V to walk; both speeds come from his personality. Speed ramps up and down (player/locomotion.js), and the
+      // gait's frames are driven by the ground covered, so the stride matches the speed and the feet never skate
+      const gait = moving ? held.has('walk') ? 'walk' : 'run' : s === 'walk' ? 'walk' : 'run', v = P.gait[gait] * ST.speed();   // SPD: 4% a point
+      const [dx, dy] = moving ? inputDir(inp) : [0, 0], d = drive(dx * v, dy * v, v, dt);
       if (moving) {
-        // hold V to walk; both speeds come from his personality
-        const [dx, dy] = inputDir(inp), gait = held.has('walk') ? 'walk' : 'run', v = P.gait[gait] * ST.speed();   // SPD: 4% a point
-        moveBy(dx * v * dt, dy * v * dt);
-        if (s !== gait) setState(gait);
+        if (s !== gait) setState(gait); else P.t += gaitClock(s, d, dt) - dt;
         if (EL.cur.kit && Math.floor(T / .09) !== Math.floor((T - dt) / .09)) EL.cur.kit.step(P.x, P.y);   // his footsteps leave the element behind
         P.still = 0;
-      } else {
+      } else if ((s === 'run' || s === 'walk') && speed() > v * FEEL.move.stopV) P.t += gaitClock(s, d, dt) - dt;   // slowing to a stop
+      else {
         P.still += dt;
         if (s === 'run' || s === 'walk') setState('idle');
         if (s === 'idle' && P.still > 4) { setState('idleGlitch'); P.still = 0; const k = EL.cur.kit; if (k) { if (k.idle) k.idle(); else k.residue(P.x, P.y, 6); } }
@@ -133,7 +137,7 @@ export function update(dt, inp) {
       if (u < .7 && Math.random() < .5) dust(1, P.slideDir[0]);
       if (EL.cur.kit && u < .8 && Math.random() < .5) EL.cur.kit.step(P.x - P.slideDir[0] * 4, P.y);   // the slide smears the element along the floor
       if (Math.floor(T / .04) !== Math.floor((T - dt) / .04)) ghost();
-      if (T >= D + .08) setState(moving ? 'run' : 'idle');
+      if (T >= D + .08) { setState(moving ? 'run' : 'idle'); P.vx = P.slideDir[0] * 50; P.vy = P.slideDir[1] * 50; }   // up out of it at the glide's speed
       break;
     }
     case 'jump': case 'fall': {
@@ -148,8 +152,8 @@ export function update(dt, inp) {
       // one fluid motion: the lunge travels with the hips through the cut, the strike lands as the blade passes level.
       // J again during a cut's follow-through flows into the next, as far as his basic skill reaches (player/combo.js)
       const c = CUTS[s], SK = c.sk, nx = nextCut(s);
-      if (once('go', true)) P.cutFace = P.face;
-      const fd = P.cutFace;
+      if (once('go', true)) { P.cutFace = P.face; aimCut(s); }   // the step in toward whoever he is cutting (player/combo.js)
+      const fd = P.cutFace; trackStep(T, dt);
       if (c.spin) P.face = T >= c.spin[0] && T < c.spin[1] ? -fd : fd;   // the whirl: his back to the enemy for a beat
       if (T >= SK - .05 && T < SK + .08) moveBy(fd * c.lunge * dt, 0);
       if (c.hop) { const [h0, h1] = c.hop, k = (T - h0) / (h1 - h0); P.z = k > 0 && k < 1 ? Math.round(Math.sin(k * Math.PI) * c.height) : 0; }
@@ -206,7 +210,7 @@ export function update(dt, inp) {
       if (T >= .325 && T < .4) hit('d2', P.x + P.face * rd, P.y - 12, rr2);
       // the sheath click: whatever he cut bursts now, a beat after the blades
       if (once('click', T >= .6)) { spark(P.x + P.face * 3, P.y - 10, 0, -10, .12, '#ffffff', false); sheathClick();
-        if (P.struck.size) { S.hitstop = .06; S.shake = 1 / 60; for (const d of P.struck) burst(d); } }
+        if (P.struck.size) { hitStop('light'); S.shake = Math.max(S.shake, 1 / 60); for (const d of P.struck) burst(d); } }
       if (T >= D) { P.moved = false; P.inv = false; P.armed = false; setState('idle'); }
       break;
     }
@@ -232,7 +236,7 @@ export function update(dt, inp) {
       const cx = P.x + P.face * 12;
       if (once('slam', T >= LAND)) {
         fling(P.x, P.y); powerCast();
-        P.z = 0; P.flash = .05; S.hitstop = .1; S.shake = .35; P.shakeAmp = 4;
+        P.z = 0; P.flash = .05; hitStop('exec'); S.shake = .35; P.shakeAmp = 4;
         const n = 12;
         for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + rr(-.2, .2), R = rr(42, 54) * W;
           zap(cx, P.y - 1, cx + Math.cos(a) * R, P.y - 1 + Math.sin(a) * R * .5, rr(.12, .2), 3.2, i % 2 ? '#ffffff' : COL.fx2, { every: 1, fork: true }); }
@@ -282,6 +286,25 @@ export function update(dt, inp) {
     }
   }
 }
+// a new command from a state that takes one (or a cancel window's keys); true when something started
+const ACTS = ['jump', 'slide', 'tele', 'double', 'rift', 'moon', 'mirror', 'sweep'];
+function act(inp) {
+  if (inp.slash) { setState(P.armed ? 'slash1r' : 'slash1'); return true; }
+  if (inp.jump) { setState('jump'); P.vz = 150; return true; }
+  if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); startCd('slide'); return true; }
+  if (inp.tele) { const c = pairCandidate(); if (c) { startPair(c); return true; } }   // a companion close by and set up for it: they cut him down together
+  if (inp.tele && K.pick) { assassinate(K.pick); return true; }   // an isolated enemy in reach: K flashes to him and executes
+  if (inp.tele && canBlink()) { setState('tele'); P.blinkDir = inputDir(inp); spendBlink(); return true; }
+  if (inp.tele) P.cdDeny.tele = .2;   // no blink charge left: refused, the slot blinks
+  if (inp.double) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'double'; startCd('double'); return true; }
+  if (inp.rift) { setState('double'); P.blinkDir = inputDir(inp); P.hk = 'rift'; return true; }   // O and P cool down from the release
+  if (inp.moon) { setState('moonHold'); P.charge = 0; return true; }
+  if (inp.mirror) { startCd('mirror'); meditate(); return true; }
+  if (inp.sweep) { startCd('sweep'); setState('sweep'); return true; }
+  return !!breathKey(inp);   // C: sit on a tap, a Breath of Qi on a hold, Storm breath during the storm
+}
+// cut short in a cancel window: back on the floor, facing the way he cut, the blade still out
+function leave(s) { if (CUTS[s]) P.face = P.cutFace; P.z = 0; P.inv = false; P.armed = true; P.still = 0; }
 // power III: bolts climb out of the cracks one after another, straight up, round the slam
 function pillars(x, y, W, n = 7) {
   for (let i = 0; i < n; i++) { const a = i / n * 6.28 + rr(-.3, .3), R = rr(22, 40) * W, px = x + Math.cos(a) * R, py = y + Math.sin(a) * R * .5;

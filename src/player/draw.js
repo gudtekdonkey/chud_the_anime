@@ -12,6 +12,7 @@ import { glowK } from './body.js';
 import { spriteTo, solid } from '../world/sprite.js';
 import { EL } from '../fx/element.js';
 import { dur } from '../anims/sheets.js';
+import { livePose } from './blend.js';
 
 // ---- Drawing him: shadow, reflection, afterimages, the charge rim, the strike flash, the glitch slice; and his mirror images ----
 const buf = document.createElement('canvas'), bg2 = buf.getContext('2d');
@@ -32,7 +33,8 @@ function dressed(sheet, f) {
   const cl = v => Math.max(-300, Math.min(300, v));
   if (dt > 0) wear.vel = [cl((P.x - last.x) / dt), cl((P.y - last.y) / dt)];
   Object.assign(last, { t: now, x: P.x, y: P.y }); wear.t += dt;
-  const fc = playerFacing(dt), p = !sheet.custom && sheet.poses && sheet.poses[f];
+  // the pose: the move's frame with the engine's flow on top (player/blend.js: 30 fps in-betweens, blends, springs)
+  const fc = playerFacing(dt), p = !sheet.custom && sheet.poses && livePose(sheet, f, dt);
   if (!p) return [sheet, f, P.face];   // a dropped-in strip or a hand-drawn row: side on, as it was drawn
   const cv = dress(R, wear, p, dt, fc.yaw, fc.flip);
   if (sheet.glf[f]) sliceGlitch(R.g, 0, sheet.glf[f], glitchSeed(sheet.name, f));

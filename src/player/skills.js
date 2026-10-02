@@ -14,6 +14,7 @@ import { collide } from '../world/room.js';
 import { T, powerCast } from './power.js';
 import { EL } from '../fx/element.js';
 import { tv } from './mastery.js';
+import { hitStop } from './feel.js';
 
 // ---- Charging (hold I, O or P): sparks and bolts converge onto his body while it glows ----
 export const TAP = .14, CHARGE_T = .9;
@@ -80,7 +81,7 @@ export const RIFT = { name: 'Cross Rift', dist: 120, V: .08, hold: .3,
     for (const r of [P.r1, P.r2]) r.shut = r.age;
     for (let i = 0; i < 18; i++) { const a = rr(0, 6.28), R = rr(10, h * .7), v = R / .05; spark(cx + Math.cos(a) * R, cy + Math.sin(a) * R * .6, -Math.cos(a) * v, -Math.sin(a) * v * .6, .05, i % 2 ? '#ffffff' : COL.fx2, true, 0); }
     after(.05, () => { for (const r of [P.r1, P.r2]) r.life = 0;
-      S.hitstop = .08; S.shake = 4 / 60; P.shakeAmp = 3; scrFlash(.05, .16);
+      hitStop('heavy'); S.shake = 4 / 60; P.shakeAmp = 3; scrFlash(.05, .16);
       ring(cx, cy + 2, h * .9, h * .5, .1); ring(cx, cy + 2, h * .5, h * .28, .24, 1.1, COL.fx2); ring(cx, cy + 2, 6, 3, .3, h / 5, '#ffffff'); ring(cx, cy + 12, h * .4, h * .12, .4, 1.8, COL.fx);
       hit('crB', cx, cy, h * .95); residue(cx, cy + 14, 12);
       for (let i = 0; i < 34; i++) { const a = rr(0, 6.28); spark(cx, cy, Math.cos(a) * rr(90, 220), Math.sin(a) * rr(60, 140), rr(.12, .26), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
@@ -88,7 +89,7 @@ export const RIFT = { name: 'Cross Rift', dist: 120, V: .08, hold: .3,
       const e = Math.max(T('rift', 'echo'), tv('rift', 'echo')); if (e) after(.25, () => echo(cx, cy, h * e)); }); } };
 // power III: the rift's echo, a second, smaller detonation where the X was
 function echo(cx, cy, h) {
-  S.hitstop = .05; S.shake = 2 / 60; ring(cx, cy + 2, h * .9, h * .5, .1); ring(cx, cy + 2, h * .5, h * .28, .2, 1.1, '#ffffff');
+  hitStop('heavy'); S.shake = 2 / 60; ring(cx, cy + 2, h * .9, h * .5, .1); ring(cx, cy + 2, h * .5, h * .28, .2, 1.1, '#ffffff');
   hit('crE', cx, cy, h * .95); for (let i = 0; i < 20; i++) { const a = rr(0, 6.28); spark(cx, cy, Math.cos(a) * rr(70, 170), Math.sin(a) * rr(50, 110), rr(.1, .2), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
   for (let i = 0; i < 5; i++) { const a = rr(0, 6.28), R = rr(h * .4, h * .8); zap(cx, cy, cx + Math.cos(a) * R, cy + Math.sin(a) * R * .55, rr(.08, .14), 2.5, i % 2 ? '#ffffff' : COL.fx2, { every: 1 }); } }
 // the dash both use: blink along the aim (walls and pillars clamp it), slivers at the start, a streak along the way
@@ -116,6 +117,6 @@ export function charged(dt) {
   if (once('c2', t >= V + .1)) { v.c2(); moveBy(P.face * 3, 0); }
   // the sheath click: a longer freeze and a 3-frame shake than the normal double, then the skill's payoff
   if (once('click', t >= F + .06)) { spark(P.x + P.face * 3, P.y - 10, 0, -10, .12, '#ffffff', false);
-    S.hitstop = .08; S.shake = 3 / 60; v.click(); }
+    hitStop('heavy'); S.shake = 3 / 60; v.click(); }
   if (t >= F + .2) { P.inv = false; setState('idle'); }
 }

@@ -8,6 +8,7 @@ import { at } from '../assassin/enemy-poses.js';
 import { withShadow, figure, pixelsOf, toPieces, side, updatePieces, drawPieces } from '../assassin/pieces.js';
 import { qiAdd } from '../player/qi.js';
 import { setState } from '../player/actions.js';
+import { hitStop } from '../player/feel.js';
 import { collide } from '../world/room.js';
 import { residue, rr } from '../fx/util.js';
 import { bleed, pool } from '../fx/blood.js';
@@ -62,7 +63,7 @@ const wface = (x, f) => x.s * f;
 export function slay(x, fx = {}) {
   const { e, E } = x; if (!e.alive) return;
   e.x = wx(x, E.lx); e.y = wy(x, E.ly); kill(e, { execution: true, by: x.a, pair: x.a });
-  PAIRS.done++; qiAdd(.15); S.hitstop = Math.max(S.hitstop, fx.stop ?? .09); S.shake = Math.max(S.shake, fx.shake ?? .15); if (fx.impact !== false) S.impact = 2;
+  PAIRS.done++; qiAdd(.15); if (fx.stop ?? 1) hitStop('exec'); S.shake = Math.max(S.shake, fx.shake ?? .15); if (fx.impact !== false) S.impact = 2;
 }
 // cut him into pieces of his own pixels along local lines [lx0, ly0, lx1, ly1], measured from his feet as he is drawn (up is
 // negative) before any turn a script gave him; push(piece, dx, h, i) gives each its throw from where it sits (dx toward the

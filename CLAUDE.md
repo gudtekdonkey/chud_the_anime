@@ -14,7 +14,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
-- The check reads the player, the facing he is drawn in, the enemies, what he wears, the inventory, `S` and the K markers and the black slashes through `window.__game = { P, PF, E, V, wear, INV, S, K }`, plus growth's read-only helpers `tv(skill, key)` (a tree's value now), `known(skill)`, `stat(k)` and `ST` (his stats' effects). That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
+- The check reads the player, the facing he is drawn in, the enemies, what he wears, the inventory, `S` and the K markers and the black slashes through `window.__game = { P, PF, E, V, wear, INV, S, K }`, plus growth's read-only helpers `tv(skill, key)` (a tree's value now), `known(skill)`, `stat(k)` and `ST` (his stats' effects), and the animation flow's: `FEEL` (its tuning), `stops` (the last hit pauses, by weight and frames), `PB` (the drawn pose: its move, draws since it began, its distance from the move's own frame, where the blade is), `B` (the input buffer), `CAM` (the camera offset) and `stride(anim)` (a gait's measured stride). That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
 
 ## Module map (`src/`)
 
@@ -41,13 +41,17 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `weapons/katana.js` | `KATANA_ART`: the drawing hooks every weapon's art has (`far`, `stowed`, `held`, `backHeld`, `sheathing`, optional `offHand`; the old `front`/`sit` pixel lists are unused now the rig poses those moves) |
 | `weapons/grip.js` | Shared by weapons: `grip` (two-handed poses from where the fists go), `twoHanded`, `breathe`, the draw and stow for weapons carried on the back (`slungDraw`/`slungStow`, `shoulderDraw`/`shoulderStow`), `runWith` |
 | `weapons/yari.js`, `nodachi.js`, `tanto.js`, `naginata.js`, `kanabo.js`, `kusarigama.js`, `tessen.js`, `bo.js`, `tetsubo.js`, `kama.js`, `jitte.js`, `daisho.js`, `nunchaku.js`, `wakizashi.js` | Each weapon's art, its own poses (cuts, guard, the four side-on stances, what it does with the hilt hand), `reach` and `weight` |
-| `player/update.js` | The state machine: one `update(dt, inp)` step |
+| `player/update.js` | The state machine: one `update(dt, inp)` step, between the input buffer and the camera; `act` (a new command), `leave` (cut short in a cancel window) |
+| `player/feel.js` | `FEEL`: every tuning number of the animation flow (buffer, cancel windows, hit-stop frames, camera, acceleration, turn, blend frames, 30 fps tweening, springs, the cut's step in); `hitStop(weight)` and its log |
+| `player/buffer.js` | The 0.2 s input buffer (`bufferIn` / `bufferOut`: presses remembered through hit pauses, forgotten once used) and the cancel windows (`cancelOf`, `only`) |
+| `player/locomotion.js` | Movement that flows: `drive` (speed ramps up and down), the gait's stride measured from its poses (`strideOf`) and its distance-driven clock (`gaitClock`), the turn rate |
+| `player/blend.js` | The pose he is drawn in (`livePose`): 30 fps in-betweens for locomotion, the blend into a new move, the springs on the mantle, hat and lean (`stepSprings`), the lean into a turn; `PB` for the check |
 | `player/actions.js` | `setState`, `once`, stance picking, the two-screen threat check, movement, `ghost`, `frameOf`, `inputDir` |
 | `player/skills.js` | Charging (`chargeUp`), Thousand Cuts (`TC`), Cross Rift (`RIFT`), the dash, `release`/`charged` |
 | `player/breath.js` | Breath of Qi on C: tap sits, a hold picks kata / Seiza (with ↓) / Lotus (at a shrine), Storm breath in the storm; each out-breath spends a notch of Qi and heals; the dome absorbs blows; motes, stone (II), ribbons (III) |
 | `player/mirror.js` | Mirror Meditation: the mirror images' timeline |
 | `player/hits.js` | Hit tests against the enemies, `burst` (the sheath-click payoff) |
-| `player/combo.js` | The J combo ladder (`CUTS`, `comboMax()` from `INV.basic`, landed basic cuts) and Flow (six chained cuts let the next skill on cooldown cast) |
+| `player/combo.js` | The J combo ladder (`CUTS`, `comboMax()` from `INV.basic`, landed basic cuts), Flow (six chained cuts let the next skill on cooldown cast) and the cut's step in toward its target (`aimCut`, `trackStep`) |
 | `player/cooldowns.js` | `CD` (every active's cooldown), `startCd`, `gate` (refuses a key on cooldown, or one not mastered), `onAssassination` (K back in 0.2 s) |
 | `player/mastery.js` | Growth (owner picks 1B, 2B): which keys he knows (`known`), the wild pick and its lines, each skill's tree (`TREES`, `AT`, `tv`, `pickBranch`), counting a landed cast (`castStart`, `landed`) |
 | `player/wild.js` | The wild cast: a full meter, a skill not yet mastered, cast by itself at the nearest enemy (`wildGo`); the line over his head (`drawLine`) |
@@ -89,7 +93,8 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `assassin/pieces.js` | The rig drawn live (`figure`, `withShadow`), the enemy cut into pieces of his own pixels, `dropSword`, `sever`, `shatter` |
 | `assassin/stage-fx.js` | An execution's own effects (`F`: sparks, slivers, cuts, crescents, bolts, ghosts, cracks); `F.hit` lands the blow (knockback, blood, impact frames); `wx` (stage x to world x) |
 | `assassin/stage-body.js` | The deaths pass on the stage enemy: his keys read smooth, his spring body, the thud, twitches and eye going out; pieces landing with dust and blood |
-| `world/room.js` | Floor bounds, pillars, the baked background, `collide` |
+| `world/room.js` | Floor bounds, pillars, the baked background (and `bgX`, the same drawn `MARGIN` px past the screen), `collide` |
+| `world/camera.js` | The camera: a few pixels of eased look-ahead toward his run or cut (`CAM`), whole pixels, inside the room's margin |
 | `world/enemies.js` | The samurai and the enemy API: `ENEMIES`, `living`, `nearest`, `isolated`, `damage`, `kill`, `onKill`; `DMG`, health, reactions, respawn |
 | `world/enemy-body.js` | The samurai's poses (guard, flinch, stagger, death) and the deaths pass's spring joints, floor thud, twitch, eye going out |
 | `world/enemy-draw.js` | Drawing a samurai (red-grey palette, topknot), his health bar, dropped swords |
@@ -131,6 +136,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Keep files focused and under about 400 lines. Keep the compact style and the short WHY comments.
 - A weapon changes poses and art only: its frames match the katana's count for every move, so timing, hit beats and effects stay shared. Reach and weight (hit pause, shake) are per weapon, 1 for the katana. A new move needs a pose per weapon (or the weapon's `adapt` covers it).
 - Effects are drawn in world space, never baked into sheets, so they survive real art replacing a placeholder.
+- The animation flow (owner picks 2026-10-02, `docs/design-notes.md`): every tuning number is in `player/feel.js` `FEEL`. A press goes through the buffer (`player/buffer.js`): a new key must say which state it starts (`STARTS`) so the buffer knows when it was used. A hit pause goes through `hitStop('light' | 'heavy' | 'exec')`, never a raw `S.hitstop`, for the player's own hits. Blending, tweening and springs are draw time only (`player/blend.js`): they never move a hit. A move that must snap goes in `blend.js` `SNAP`.
 - Effects take their colours from `COL` (never a literal cyan) and throw bolts, sparks and slivers through `zap`/`spark`/`residue`, so every element re-skins them. A new element is a row in `ELEMENTS` plus a kit in `fx/matter.js`.
 
 ## Design rules (from `docs/design-notes.md`)

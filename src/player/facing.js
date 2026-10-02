@@ -1,6 +1,7 @@
 import { P } from '../state.js';
 import { turner, turnTo, trueView } from '../rig/turn.js';
 import { WEST } from '../wardrobe/dress.js';
+import { FEEL } from './feel.js';
 
 // ---- The way he is drawn facing: his true facing for the moves that turn with him, side on for everything else ----
 // Idle, walk and run face the way he last moved (P.view, P.face), the west side as itself; Harvest faces north, his back to
@@ -16,5 +17,6 @@ export function playerFacing(dt) {
   if (!want) { turnTo(T, P.face < 0 ? 'W' : 'E', P.face, -1);
     const west = P.face < 0, left = west && WEST.mode === 'side';   // rig v2 at 180° (WEST.mode '3d') would redraw the cut, so that keeps the mirror
     return Object.assign(PF, { yaw: left ? Math.PI : 0, flip: left ? 1 : P.face, id: west ? 'W' : 'E' }); }
-  const d = turnTo(T, want, P.face, dt); return Object.assign(PF, { yaw: d.yaw, flip: 1, id: d.id });
+  // running, the turn is slower (FEEL.turnStep), so the run arcs round through the facings between with his speed
+  const d = turnTo(T, want, P.face, dt, P.state === 'idle' || P.state === 'idleGlitch' ? undefined : FEEL.turnStep); return Object.assign(PF, { yaw: d.yaw, flip: 1, id: d.id });
 }

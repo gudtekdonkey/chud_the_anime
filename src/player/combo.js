@@ -1,4 +1,8 @@
 import { P, INV } from '../state.js';
+import { FEEL } from './feel.js';
+import { reach } from '../weapons/weapons.js';
+import { living } from '../world/enemies.js';
+import { moveBy, ghost } from './actions.js';
 
 // ---- The J combo ladder and Flow ----
 // Basic skill grows through use (owner, 2026-09-26: skills upgrade by usage): every basic cut that lands is one point,
@@ -39,4 +43,29 @@ export const breakChain = () => { P.flowN = 0; P.flowGap = 0; };
 export function updateFlow(dt) {
   if (P.flowGap > 0 && (P.flowGap -= dt) <= 0) P.flowN = 0;
   P.flow = Math.max(0, P.flow - dt); P.flowPop = Math.max(0, P.flowPop - dt); P.flowPip = Math.max(0, P.flowPip - dt); P.comboUp = Math.max(0, P.comboUp - dt);
+}
+
+// ---- The cut tracks its target (owner, yes to prototype 46's step in): each J cut, the chain's next link too, steps him toward
+// the samurai he is cutting before its strike, up to FEEL.track.max px, stopping FEEL.track.standoff short of him, so a hit's
+// knockback never makes the next cut whiff. Only a living samurai in front of him, within the cut's reach plus that step and
+// roughly level with him; walls and pillars clamp it (moveBy), and he never steps through him. The flash step needs no help.
+export function aimCut(s) {
+  P.track = null; if (s === 'slash6') return;
+  const c = CUTS[s], fd = P.cutFace, T = FEEL.track, [d, r] = reach(c.big ? 18 : c.kick ? 12 : 14, c.big ? 28 : c.kick ? 18 : 22);
+  let e = null, best = Infinity;
+  for (const q of living()) { const dx = (q.x - P.x) * fd; if (q.held || dx <= 0 || dx > d + r + T.max || Math.abs(q.y - P.y) > T.level) continue;
+    if (dx < best) { best = dx; e = q; } }
+  if (!e) return;
+  const x = Math.min(T.max, Math.max(0, best - T.standoff)), dy = e.y - P.y, y = Math.sign(dy) * Math.min(Math.max(0, Math.abs(dy) - 2), T.dy);
+  if (x < 1 && Math.abs(y) < 1) return;
+  P.track = { e, x, y, done: 0, t1: Math.max(.04, c.sk - .05) };   // done by the lunge (CUTS: it starts 0.05 s before the strike)
+  if (x > 12) ghost();
+}
+// one step of it: eased out, and never past his standoff even if he was shoved further since
+export function trackStep(T, dt) {
+  const q = P.track; if (!q) return;
+  const k = 1 - Math.pow(1 - Math.min(1, T / q.t1), 2), dk = k - q.done; q.done = k;
+  const room = Math.max(0, (q.e.x - P.x) * P.cutFace - FEEL.track.standoff);
+  moveBy(P.cutFace * Math.min(q.x * dk, room), q.y * dk);
+  if (k >= 1) P.track = null;
 }

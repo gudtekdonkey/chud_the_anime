@@ -18,7 +18,8 @@ import { drawMarkers, drawPrompt } from '../assassin/markers.js';
 import { weapon } from '../weapons/weapons.js';
 import { drawHud } from '../ui/hud.js';
 import { itemDrawables, drawItemsOver, drawSmoke } from '../items/items.js';
-import { PILLARS, bg, drawPillar } from './room.js';
+import { PILLARS, bgX, MARGIN, drawPillar } from './room.js';
+import { CAM } from './camera.js';
 import { partyDrawables } from '../party/companions.js';
 import { recruitDrawables } from '../party/recruit.js';
 import { X as PAIR, pairedDrawables, drawPairLines } from '../party/paired.js';
@@ -29,10 +30,10 @@ import { drawLine } from '../player/wild.js';
 
 export function render() {
   g.setTransform(PX, 0, 0, PX, 0, 0); g.imageSmoothingEnabled = false;   // everything draws in world units; figures carry PX pixels
-  g.save();
+  g.save(); g.translate(-CAM.ox, -CAM.oy);   // the camera's look-ahead (world/camera.js), whole pixels, inside the room's margin
   if (S.shake > 0) { const a = Math.max(1, Math.round((P.shakeAmp || 2) * Math.min(1, S.shake / .15))); g.translate(sgn() * a, sgn() * Math.ceil(a / 2)); } // never a zero offset
   if (S.shake <= 0) P.shakeAmp = 2;
-  g.drawImage(bg, 0, 0);
+  g.drawImage(bgX, -MARGIN, -MARGIN);
   const fade = ENEMIES[0].alpha;   // the fallen, their swords and their blood fade together before a new squad
   drawBloodFloor(fade); drawFloorFx(); drawStagesFloor(); drawSmoke(false); drawBreathBack();
   const t = performance.now() / 1000; drawMarkers(t);
@@ -52,7 +53,7 @@ export function render() {
   g.globalAlpha = 1;
   drawNums();   // over the effects, so a number is never lost in the flash of the hit it counts
   g.restore();
-  drawItemsOver();   // unshaken, like the HUD: the lock-on and prompt stay put while the world shakes
+  g.save(); g.translate(-CAM.ox, -CAM.oy); drawItemsOver(); g.restore();   // unshaken: the lock-on and prompt stay put while the world shakes, but go with the camera
   if (S.scr.t > 0) { g.globalAlpha = S.scr.a * S.scr.t / S.scr.max; g.fillStyle = COL.flash; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   if (S.impact > 0) impactFrame(S.impact === 1);
   drawHud(); drawPartyHud();

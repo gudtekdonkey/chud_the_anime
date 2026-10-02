@@ -7,6 +7,7 @@ import { rr, FRAG_COLS, ring, spark, dust, scrFlash, after } from './util.js';
 import { hit, burst } from '../player/hits.js';
 import { T, powerCast } from '../player/power.js';
 import { tv } from '../player/mastery.js';
+import { hitStop } from '../player/feel.js';
 
 // ---- Crescent Moon (O): charge in place, release one giant crescent that sweeps into being along its arc ----
 const arcA = sw => -1.75 + 3.5 * sw;                                     // the arc's reach: it sweeps from overhead down through the front
@@ -43,7 +44,7 @@ function shatter(m) {
     spark(x, y, m.face * Math.cos(a) * rr(20, 70), Math.sin(a) * rr(10, 40) - rr(10, 30), rr(.4, .8), [COL.core, COL.fx2, COL.fx][i % 3], true, 90); }
   ring(m.x + m.face * m.R * .4, m.fy + 1, m.R * .5, m.R * .16, .3, 1.2, COL.core);
   if (T('moon', 'shards')) { const before = new Set(P.struck); hit('cmS' + (m.twin ? 't' : ''), m.x + m.face * m.R * .45, m.fy - 6, m.R * .9); for (const d of P.struck) if (!before.has(d) && !m.struck.includes(d)) m.struck.push(d); }   // power II: the shatter cuts too
-  if (m.struck.length) { S.hitstop = .06; S.shake = 2 / 60; for (const d of m.struck) burst(d, 1 + .5 * m.k); }
+  if (m.struck.length) { hitStop('heavy'); S.shake = 2 / 60; for (const d of m.struck) burst(d, 1 + .5 * m.k); }
 }
 export function drawMoon(m) {
   const sw = Math.min(1, m.age / m.SW), A = arcA(sw), gk = Math.max(0, (m.age - m.SW - m.HOLD) / m.GLOW); // gk: 0 until it shatters, then 0→1 as the afterglow dies

@@ -21,6 +21,16 @@ export const bg = document.createElement('canvas'); bg.width = W; bg.height = H;
   for (let y = 6; y < 46; y += 10) g.fillRect(0, y, W, 1);
   g.fillStyle = '#1d2020'; g.fillRect(0, 0, 14, H); g.fillRect(W - 14, 0, 14, H);
 })();
+// the room drawn MARGIN px past every edge of the screen (its edges mirrored out), so the camera's look-ahead and the shake
+// (world/camera.js) never show past the room
+export const MARGIN = 12;
+export const bgX = document.createElement('canvas'); bgX.width = W + 2 * MARGIN; bgX.height = H + 2 * MARGIN;
+(() => { const g = bgX.getContext('2d'), M = MARGIN, flip = (src, sx, sy, sw, sh, tx, ty, fx, fy, dx, dy) => {
+    g.save(); g.translate(tx, ty); g.scale(fx, fy); g.drawImage(src, sx, sy, sw, sh, dx, dy, sw, sh); g.restore(); };
+  g.drawImage(bg, M, M);
+  flip(bg, 0, 0, M, H, M, M, -1, 1, 0, 0); flip(bg, W - M, 0, M, H, W + M, M, -1, 1, -M, 0);   // the side walls
+  const c = document.createElement('canvas'); c.width = bgX.width; c.height = bgX.height; c.getContext('2d').drawImage(bgX, 0, 0);
+  flip(c, 0, M, W + 2 * M, M, 0, M, 1, -1, 0, 0); flip(c, 0, H, W + 2 * M, M, 0, H + M, 1, -1, 0, -M); })();   // the back wall, the floor
 export function drawPillar(g, p) {
   g.fillStyle = '#2b2f2e'; g.fillRect(p.x, p.y - 30, p.w, p.h + 30);
   g.fillStyle = '#3c4140'; g.fillRect(p.x, p.y - 34, p.w, 6);

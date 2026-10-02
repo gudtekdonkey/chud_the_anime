@@ -5,6 +5,7 @@ import { fromSide, solve } from './skeleton.js';
 import { drawBody3d } from '../rig/body3d.js';
 import { port } from '../rig/port.js';
 import { HD } from '../rig/rig.js';
+import { FEEL } from '../player/feel.js';
 
 // ---- Dressing a figure: the rig's pose and everything it wears, into one depth raster ----
 // a figure: the item ids it wears, the cloth state of each loose part, its clock and its velocity (px/s on the screen)
@@ -30,7 +31,9 @@ export function dress(R, F, p, dt = 0, yaw = 0, flip = 1) {
   const sp = flip * m; if (F.side !== sp) { mirrorCloth(F); F.side = sp; }
   const live = new Set();
   // the breeze, plus the wind of his own motion
-  const env = { t: F.t, wind: [Math.sin(F.t * .9) * 9 + Math.sin(F.t * 2.1) * 4 - F.vel[0] * sp * 1.3, 0, Math.sin(F.t * .7 + 1) * 3 - F.vel[1] * 1.3] };
+  // and, as it swings on his start and stop, his acceleration (F.acc, set by player/blend.js; FEEL.spring.cloth, owner pick Q5C)
+  const acc = F.acc || [0, 0];
+  const env = { t: F.t, wind: [Math.sin(F.t * .9) * 9 + Math.sin(F.t * 2.1) * 4 - F.vel[0] * sp * 1.3 - acc[0] * sp * FEEL.spring.cloth, 0, Math.sin(F.t * .7 + 1) * 3 - F.vel[1] * 1.3 - acc[1] * FEEL.spring.cloth] };
   const steps = dt > 0 ? Math.min(3, Math.max(1, Math.round(dt * 60))) : 0;
   for (const id of F.outfit) { const it = BY_ID[id]; if (!it) continue;
     it.parts.forEach((part, pi) => {

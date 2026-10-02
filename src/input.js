@@ -16,7 +16,9 @@ document.querySelectorAll('.pad button').forEach(b => {
   ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => b.addEventListener(ev, () => held.delete(k)));
 });
 export function readInput() {
-  const inp = { mx: (held.has('right') ? 1 : 0) - (held.has('left') ? 1 : 0), my: (held.has('down') ? 1 : 0) - (held.has('up') ? 1 : 0),
+  // a direction pressed and let go between two steps still counts for one step (it turns him), instead of being lost
+  const ax = (a, b) => (held.has(b) || taps.has(b) ? 1 : 0) - (held.has(a) || taps.has(a) ? 1 : 0);
+  const inp = { mx: ax('left', 'right'), my: ax('up', 'down'),
     slash: taps.has('slash'), jump: taps.has('jump'), slide: taps.has('slide'), tele: taps.has('tele'),
     double: taps.has('double'), sweep: taps.has('sweep'), sit: taps.has('sit'), die: taps.has('die'),
     moon: taps.has('moon'), rift: taps.has('rift'), mirror: taps.has('mirror'),

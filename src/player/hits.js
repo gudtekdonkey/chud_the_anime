@@ -9,15 +9,16 @@ import { has } from '../items/inventory.js';
 import { landCut } from './combo.js';
 import { landed, skillOf, tv } from './mastery.js';
 import { ST, HEAVY } from './stats.js';
+import { hitStop, weightOf } from './feel.js';
 
 // ---- Hits: each enemy once per kind per move; P.struck remembers them for the sheath-click burst ----
 export function hitOne(e, i, kind, fx = P.x, fy = P.y) {
   if (!e.alive || e.held) return;   // the fallen are not cut again, nor one an execution holds
   P.hitDone[kind + i] = true; P.struck.add(e);
-  // short on purpose: a 3-frame white flash (damage() sets it), a 3-frame freeze, ONE shaken frame
-  // a heavier weapon holds the freeze and the shake longer (weight: 1 for the katana)
+  // short on purpose: a 3-frame white flash (damage() sets it), then the freeze by the hit's weight (player/feel.js: 3 / 5 / 8
+  // frames for light / heavy / execution-grade); a heavier weapon holds it longer and a heavy hit shakes (weight: 1 for the katana)
   const wt = weapon().weight;
-  S.hitstop = Math.max(S.hitstop, .05 * wt.stop); S.shake = Math.max(S.shake, wt.shake / 60);
+  hitStop(weightOf(kind), wt.stop, wt.shake);
   if (kind === 'sw') e.zap = .25;
   const base = kind.match(/^[a-zA-Z]+/)[0];
   // 6-12 short streaks, mostly thrown away from whoever cut it
