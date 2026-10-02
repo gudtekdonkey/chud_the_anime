@@ -23,13 +23,14 @@ import { REELS, M as REEL_M, reelPos } from './reel.js';
 import { piece } from './gfx/build.js';
 import { shadeMat } from './gfx/shade.js';
 import { RAMP } from './gfx/palette.js';
-import { initSkills, skillControl, skillsRender, drawSkills, drawSkillHud, skillState } from './skills/skills.js';
+import { initSkills, skillControl, skillsRender, drawSkills, drawSkillHud, skillState } from './skills/reserved.js';   // F R Q X (skills/reserved.js)
 import { makeSquad } from './enemies/squad.js';
 import { buildPicker } from './enemies/ui.js';
 import { addFolk, drawLabels } from './persona/npcs.js';     // personalities on the 3D body, the townsfolk, the idles (persona/, anim/idles.js)
 import { personaPanel } from './persona/panel.js';
 import { runGallery } from './persona/gallery.js';
 import * as PROBE from './persona/probe.js';
+import { makeSkills } from './skills/skills.js';                  // I O P N U C and Storm Chain (skills/skills.js)
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
@@ -66,6 +67,7 @@ function runGame(reel) {
     reel.build({ hero: (x, z, h) => place(hero, x, z, h), foe: (x, z, h) => { foe.a.alpha = 1; return place(foe, x, z, h); }, at: (t, fn) => script.push([t, fn]), M: REEL_M });
     script.sort((a, b) => a[0] - b[0]); PIPE.cine = Q.has('cine') ? 1 : 0; PIPE.clash = Q.has('clash') ? 1 : 0; }
   const live = () => foes.filter(f => !f.parked), game = { hero, foe, get foes() { return live(); } }; hitRules(game);
+  const skills = reel ? null : makeSkills({ hero, foe, foes: live, scene, look: lookKind, Q, root }); hero.skills = skills;   // the skills (skills/): I O P N U C, Storm Chain, the skill bar
   initInput(canvas);
   initSkills({ hero, get foes() { return live(); }, scene, game });
   // the enemy types (enemies/, docs/enemies.md): &group=<name> or the overlay's picker; the samurai (the squad of &foes) is the default.
@@ -73,7 +75,7 @@ function runGame(reel) {
   const squad = makeSquad({ scene, hero, foe, foes, chars, look: () => lookKind, hpK: +(Q.get('ehp') || 1) });
   if (!reel) { buildPicker(root, squad, Q.get('group') || 'samurai'); squad.spawn(Q.get('group') || 'samurai'); }
   // the model switch: every character's look is swapped; nothing else is told
-  const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } root.querySelector('#o-look').value = kind; };
+  const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } if (skills) skills.setLook(kind); root.querySelector('#o-look').value = kind; };
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
   personaPanel(root, { hero, foe });
 
@@ -95,7 +97,8 @@ function runGame(reel) {
     if (hero.state === 'J3' && hero.prevState !== 'J3' && nf && !nf.dead && Math.hypot(nf.x - hero.x, nf.z - hero.z) < 40) startCine(hero, nf);
     hero.prevState = hero.state; cineStep(W.stop > 0 ? 0 : dt); }
   function tick() {
-    if (W.stop <= 0 && !reel) { const inp = readInput(); if (!skillControl()) hero.control(inp, squad.on ? squad.aim(hero, inp.dir) : nearFoe(), W.t);   // a hit-stop holds the presses (they outlive it); a skill owns him first (skills/)
+    if (skills) skills.tick(1 / 60);
+    if (W.stop <= 0 && !reel) { const inp = readInput(); if (!skillControl() && !(skills && skills.control(inp))) hero.control(inp, squad.on ? squad.aim(hero, inp.dir) : nearFoe(), W.t);   // a hit-stop holds the presses (they outlive it); a skill owns him first (skills/: the reserved keys, then the kit)
       for (const f of foes) if (!f.frozen && !f.parked) f.control(hero, W.t, 1 / 60); squad.control(1 / 60);
       for (const n of folk) n.control(hero, [...live(), ...folk], W.t); }
     presentation(1 / 60);
@@ -112,12 +115,14 @@ function runGame(reel) {
     room.update(W.t, hero);
     SH.uHatOn.value = 0;
     for (const c of chars) { if (c.shown !== c.a.out || c.lookKind === '3d') { const f = c.frame(c === hero); if (f) c.look.show(f); c.shown = c.a.out; } }
+    if (skills) skills.render();
     const g = pipe.fx; g.clearRect(0, 0, pipe.fxCanvas.width, pipe.fxCanvas.height);
     for (const c of chars) drawTrail(g, c.trail.map(s => s.gap ? s : { t: s.t, a: toPx(s.mid), b: toPx(s.tip) }), c.a.out ? c.a.out.t : W.t, STYLE.s.trail);
     drawFx(g, W); drawLabels(g, folk, toPx); squad.draw(g); skillsRender(); drawSkills(g);
     if (PIPE.clash) { drawFocus(g, W);   // focus lines on a hit; speed lines behind a roll, a lunge or a skid
       for (const c of chars) if (['roll', 'lunge', 'skid', 'knock'].includes(c.state)) { const [x, y] = toPx([c.x, 10, c.z]), v = [Math.sin(c.a.h), Math.cos(c.a.h) * OBL.a]; speedLines(g, x, y, v[0], v[1], W.t); } }
     for (const c of chars) c.look.stamp(g);
+    if (skills) skills.draw(g);
     if (!reel) drawSkillHud(g);
     pipe.render(scene, cam);
   }
@@ -147,12 +152,13 @@ function runGame(reel) {
       get hero() { return { ...who(hero), armed: hero.armed, iframes: hero.iframes, hits: hero.hits, taken: hero.taken }; },
       get foe() { return { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) }; },
       get foes() { return foes.map(f => ({ ...who(f), hp: f.hp, dead: f.dead, frozen: f.frozen, hits: f.hits, deaths: f.deaths, reacts: f.reacts.slice(-6) })); },
-      get skills() { return skillState(); }, get gray() { return MOMENT.gray; }, get away() { return !!hero.bladeAway; },
+      get reserved() { return skillState(); }, get gray() { return MOMENT.gray; }, get away() { return !!hero.bladeAway; },
       // where each one's feet are on the canvas, 0..1 (for the check's close-up shots)
       get px() { const n = nearFoe(); return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)), near: toPx([n.x, 0, n.z]).map((v, i) => v / (i ? 540 : VW)) }; },
       get enemies() { return squad.debug(); },
       get folk() { return folk.map(n => ({ ...who(n), kind: n.kind, culture: n.culture, list: n.list, idles: n.a.idler ? n.a.idler.n : 0, played: n.a.idler ? n.a.idler.played.slice() : [] })); },
       get persona() { return { hero: hero.list || [], heroIdles: hero.a.idler ? hero.a.idler.played.slice() : [], heroCur: hero.a.idler ? hero.a.idler.cur : null, foe: foe.list || [], behave: foe.bh, ...PROBE }; },
+      get skills() { return skills && skills.state(); },   // the I O P N U C skills (skills/skills.js); `reserved` is F R Q X's (skills/reserved.js)
       get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }

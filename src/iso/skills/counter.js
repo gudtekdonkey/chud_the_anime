@@ -13,7 +13,7 @@ import { shake, toScreen } from '../gfx/view.js';
 import { startCine } from '../fx/cine.js';
 import { pending } from '../play/input.js';
 import { ATTACKS } from '../play/foe.js';
-import { ANSWER } from './moves.js';
+import { ANSWER } from './reserved-moves.js';
 import { KIT, tv, startCd, castStart, landed, qiAdd, pop } from './kit.js';
 import { star, ringAt } from './sfx.js';
 
