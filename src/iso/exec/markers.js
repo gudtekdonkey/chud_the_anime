@@ -37,7 +37,7 @@ export function drawMarkers(g, hero, t) {
 // over him: the K keycap (9×9 game px), bobbing a pixel
 export function drawPrompt(g, t) {
   const e = KM.pick; if (!e || CAM.zoom > 1.05) return;
-  const p = toScreen(e.x, 31, e.z), x = Math.round(p[0] / S - 4) * S, y = Math.round(p[1] / S + (t % 1 < .5 ? 0 : 1)) * S, R = (a, b, w, h, c) => { g.fillStyle = c; g.fillRect(x + a * S, y + b * S, w * S, h * S); };
+  const p = toScreen(e.x, 40, e.z), x = Math.round(p[0] / S - 4) * S, y = Math.round(p[1] / S + (t % 1 < .5 ? 0 : 1)) * S, R = (a, b, w, h, c) => { g.fillStyle = c; g.fillRect(x + a * S, y + b * S, w * S, h * S); };
   R(0, 0, 9, 9, '#1b1e21'); R(0, 0, 9, 1, CY); R(0, 8, 9, 1, CY); R(0, 0, 1, 9, CY); R(8, 0, 1, 9, CY);
   R(3, 2, 1, 5, '#fff'); R(4, 4, 1, 1, '#fff'); R(5, 3, 1, 1, '#fff'); R(5, 5, 1, 1, '#fff'); R(6, 2, 1, 1, '#fff'); R(6, 6, 1, 1, '#fff');
 }

@@ -11,8 +11,8 @@ export const pose = o => ({ pel: [0, H - 2.3], lean: .14, head: .03, fN: [5.5, 1
 const bare = o => pose({ blade: SH, ...o });             // no sword in his hands (dropped, or never drawn): the hands go where they are put
 export const sheathedAt = g => ({ out: 0, g, ang: .5, two: 0 });
 // raised off the floor by h world units (a leap, a body flung): the whole pose goes up
-export function lift(p, h) { if (!h) return p; const u = h * 2, up = v => v && [v[0], v[1] + u], q = { ...p, pel: up(p.pel), fN: up(p.fN), fF: up(p.fF), hN: up(p.hN), hF: up(p.hF) };
-  if (p.blade) q.blade = { ...p.blade, g: up(p.blade.g) }; return q; }
+export function lift(p, h) { if (!h) return p; const u = h * 2, q = { ...p }; for (const k of ['pel', 'fN', 'fF', 'hN', 'hF']) if (p[k]) q[k] = [p[k][0], p[k][1] + u];
+  if (p.blade && p.blade.g) q.blade = { ...p.blade, g: [p.blade.g[0], p.blade.g[1] + u] }; return q; }
 // eased keys [t, pose, ease] (ease on the way INTO that key: 'lin', 'hold' (a cut), or the flow's EZ names; 'io' if none)
 export function at(keys, t) {
   if (t <= keys[0][0]) return keys[0][1];

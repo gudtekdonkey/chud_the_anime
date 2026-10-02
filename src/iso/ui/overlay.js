@@ -31,7 +31,7 @@ export function buildPage() {
   document.title = 'Ronin, iso slice';
   document.body.innerHTML = ''; const st = document.createElement('style'); st.textContent = CSS; document.head.appendChild(st);
   const root = document.createElement('div'); root.className = 'iso';
-  root.innerHTML = `<div class="stage"><canvas id="iso" tabindex="0" aria-label="The iso slice. Click, then move with WASD or the arrows, J to cut, Shift or L to roll."></canvas></div>
+  root.innerHTML = `<div class="stage"><canvas id="iso" tabindex="0" aria-label="The iso slice. Click, then move with WASD or the arrows, J to cut, Shift or L to roll, K to execute."></canvas></div>
   <aside aria-label="Slice settings">
     <h1>Iron Ash · iso slice</h1>
     <div class="ms" id="ms" aria-live="off">—</div>
@@ -59,7 +59,7 @@ export function buildPage() {
     <label><input type="checkbox" id="o-fog">Ground mist<kbd>9</kbd></label>
     <label><input type="checkbox" id="o-rain">Rain<kbd>0</kbd></label>
     <h2>Controls</h2>
-    <div class="keys"><div><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> run</div><div>J3 on him: the close-up (any key skips)</div><div><kbd>J</kbd> cut, again for J2, J3</div><div><kbd>Shift</kbd>/<kbd>L</kbd> roll (cancels a cut)</div><div>J out of a run: the lunge</div></div>
+    <div class="keys"><div><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> run</div><div>J3 on him: the close-up (any key skips)</div><div><kbd>J</kbd> cut, again for J2, J3</div><div><kbd>Shift</kbd>/<kbd>L</kbd> roll (cancels a cut)</div><div>J out of a run: the lunge</div><div><kbd>K</kbd> execute him when he is alone and in reach (the K over him)</div></div>
     <p class="note">The samurai answers if you stand close (open with <code>&amp;calm</code> to stop him).</p>
   </aside>`;
   document.body.appendChild(root);

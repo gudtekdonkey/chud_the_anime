@@ -17,7 +17,7 @@ const R = RAMP.r, G = 150;                        // gravity in world units/s² 
 // a hit's weight: drops, their speed, how wide the fan opens, the drop size (render px), a gush after a kill
 export const WEIGHT = { light: { n: 12, spd: 62, cone: .5, sz: 1.4 }, heavy: { n: 24, spd: 80, cone: .6, sz: 1.8 }, kill: { n: 42, spd: 96, cone: .7, sz: 2.2, gush: .32 } };
 const CAP = { decals: 40, blobs: 90, splash: 14 };   // stains and pools kept on the floor; blobs in one stain; splashes on one body
-export const BL = { drops: [], emit: [], decals: [], scene: null, stats: { sprays: 0, landed: 0, stains: 0, pools: 0, flicks: 0, splashes: 0, drips: 0 } };
+export const BL = { drops: [], emit: [], decals: [], scene: null, stats: { sprays: 0, landed: 0, stains: 0, pools: 0, flicks: 0, splashes: 0, drips: 0, coats: 0 } };
 const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16), bay = (x, y) => BAY[(y & 3) * 4 + (x & 3)];
 const norm = v => { const l = Math.hypot(...v) || 1; return v.map(c => c / l); };
 
@@ -147,7 +147,7 @@ export const LOOK = { soft: 'paint', crisp: 'pix', white: 'anime', dither: 'dith
 export function bloodDraw(g) {
   const mode = LOOK[STYLE.s.trail] || 'paint', z = CAM.zoom;
   for (const d of BL.drops) { const [x, y] = toScreen(d.x, d.y, d.z); if (x < -4 || y < -4 || x > VW + 4 || y > VH + 4) continue;
-    const [qx, qy] = toScreen(d.x - d.vx * .022, d.y - d.vy * .022, d.z - d.vz * .022), s = Math.max(1, d.sz * z * .8);
+    const [qx, qy] = toScreen(d.x - d.vx * .022, d.y - d.vy * .022, d.z - d.vz * .022), s = Math.max(1, d.sz * z ** .6 * .8);   // the close-up enlarges drops less than the bodies
     if (mode === 'pix') { const S = Math.max(1, Math.round(s * .8)), X = Math.round(x), Y = Math.round(y); g.fillStyle = s > 1.8 ? R[4] : R[3]; g.fillRect(X, Y, S, S);
       if (S > 1) { g.fillStyle = R[6]; g.fillRect(X, Y, 1, 1); } }
     else if (mode === 'dither') { const X = x | 0, Y = y | 0, S = s > 1.6 ? 2 : 1; g.fillStyle = bay(X, Y) < .5 ? R[3] : R[5]; g.fillRect(X, Y, S, S);

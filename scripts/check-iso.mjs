@@ -104,9 +104,9 @@ try {
   // ---- blood: each of the three hits sprayed, the drops land as stains, the samurai and the blade carry it
   step = 'blood'; { const b = (await G()).gore;
     if (b.sprays < 3) fail(`${b.sprays} sprays for three hits`);
-    if (b.splashFoe < 1) fail('no splash on the samurai'); if (b.blade <= 0) fail('no blood on the blade');
+    if (b.splashFoe < 1) fail('no splash on the samurai'); if (b.coats < 3) fail(`the blade took blood from ${b.coats} of three hits`);
     await until('the drops landing as stains', () => window.__iso.gore.landed > 10 && window.__iso.gore.decals > 0);
-    const c = (await G()).gore; ok(`${c.sprays} sprays, ${c.landed} drops landed in ${c.decals} stains, ${c.splashFoe} splashes on him, ${c.splashHero} on the ronin, blade ${c.blade.toFixed(2)}`); }
+    const c = (await G()).gore; ok(`${c.sprays} sprays, ${c.landed} drops landed in ${c.decals} stains, ${c.splashFoe} splashes on him, ${c.splashHero} on the ronin, the blade coated by ${c.coats} hits`); }
 
   // ---- a cut cancelled into the roll: J, then Shift as soon as it has struck
   step = 'cancel into the roll'; await settle(); await forget(); { await page.keyboard.press('KeyJ'); await seen('J1');

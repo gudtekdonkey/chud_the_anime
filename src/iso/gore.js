@@ -10,7 +10,7 @@ import { W } from './play/sim.js';
 import { STATS } from './play/rules.js';
 import { CUT } from './play/hero.js';
 import { consume } from './play/input.js';
-import { AF, hv, rnd } from './anim/flow.js';
+import { hv, rnd } from './anim/flow.js';
 import { CINE, startCine } from './fx/cine.js';
 import { PIPE } from './gfx/post.js';
 import * as B from './fx/blood.js';
@@ -26,6 +26,7 @@ const norm = v => { const l = Math.hypot(...v) || 1; return v.map(c => c / l); }
 
 export function installGore({ hero, foe, scene }) {
   B.initBlood(scene); initSever(scene); severWorld(W); ghostScene(scene); cineGate(() => PIPE.cine);
+  let cutsNow = 0, cutsAt = -9;
   const recs = new Map(), rec = c => { if (!recs.has(c)) recs.set(c, { splashes: [], cut: [], stumps: [], blade: 0, rig: null, dirty: 0 }); return recs.get(c); };
   const rigOf = c => c.look && c.look.kind === '3d' ? c.look.rig : null;
   const chest = (c, f = 2.5) => { const v = hv(c.a.h); return [c.x + v[0] * f, 13, c.z + v[1] * f]; };
@@ -41,7 +42,7 @@ export function installGore({ hero, foe, scene }) {
     B.spray(...at, dir, w);
     B.splash(r, rigOf(foe), at, chest(hero, 0), w === 'light' ? .8 : 1.1); r.dirty = 1;
     if (w !== 'light' || rnd() < .35) { const h = rec(hero), p = chest(hero, 2.4); p[1] = 9 + rnd() * 8; p[0] += (rnd() - .5) * 3; B.splash(h, rigOf(hero), p, at, w === 'kill' ? 1 : .7); h.dirty = 1; }
-    rec(hero).blade = Math.min(1, rec(hero).blade + BLADE[w]);
+    rec(hero).blade = Math.min(1, rec(hero).blade + BLADE[w]); B.BL.stats.coats++;
     return { at, dir, b };
   }
   // cut `part` off `who`: the piece (sever.js), the stump and its spurts, the gout at the cut
@@ -51,10 +52,12 @@ export function installGore({ hero, foe, scene }) {
     if (rig) { if (!r.stumpMat) r.stumpMat = shadeMat({ obj: who.foe ? 2 : 1, stencil: true }); hidePart(rig, part); const m = addStump(rig, part, r.stumpMat); if (m) r.stumps.push(m); }
     if (part === 'sword' || part === 'all') return pc;
     const at = () => { const rg = rigOf(who), n = rg && (PARTS[part].b ? rg.B[PARTS[part].b] : null); if (n) { const p = n.getWorldPosition(new THREE.Vector3()); return [p.x, p.y, p.z]; } return [who.x, HEIGHT[part], who.z]; };
+    // several parts at once (an execution taking him apart) share the blood, so it stays controlled
+    cutsNow = W.t - cutsAt < .05 ? cutsNow + 1 : 1; cutsAt = W.t; const k = 1 / Math.sqrt(cutsNow);
     const up = PARTS[part].up ? [0, 1, 0] : norm([o.v ? -o.v[0] : 0, .8, o.v ? -o.v[2] : 0]);
-    B.emitter({ at, dir: up, life: 1.5, rate: 46, spd: 34, pulse: 2.2, sz: 1.7 });
-    B.emitter({ at, dir: null, life: 3.2, rate: 7, sz: 1.2 });
-    const p0 = at(); B.spray(...p0, o.v ? norm([o.v[0], Math.abs(o.v[1]) + 8, o.v[2]]) : [0, 1, 0], 'heavy', { k: .7, noGush: true });
+    B.emitter({ at, dir: up, life: 1.2, rate: 32 * k, spd: 32, pulse: 2.2, sz: 1.6 });
+    B.emitter({ at, dir: null, life: 2.6, rate: 5 * k, sz: 1.2 });
+    const p0 = at(); B.spray(...p0, o.v ? norm([o.v[0], Math.abs(o.v[1]) + 8, o.v[2]]) : [0, 1, 0], 'heavy', { k: .6 * k, noGush: true });
     return pc;
   }
   // he is dead: the reacts, the pool under where he falls
@@ -69,7 +72,7 @@ export function installGore({ hero, foe, scene }) {
     const fwd = hv(hero.a.h), tip = h.b ? h.b.tip : [foe.x, 14, foe.z], mid = h.b ? h.b.mid : [hero.x, 14, hero.z];
     const far = [tip[0] + (tip[0] - mid[0]) * 1.5, tip[1] + (tip[1] - mid[1]) * 1.5, tip[2] + (tip[2] - mid[2]) * 1.5];
     const part = nearestPart(rigOf(foe), mid, far, c && c.w > 1) || (tip[1] > 15 ? 'head' : tip[1] > 9 ? 'armR' : 'thighR');
-    cut(foe, part, { v: [h.dir[0] * 30 + fwd[0] * 22, 30 + rnd() * 16, h.dir[2] * 30 + fwd[1] * 22], w: [(rnd() - .5) * 16, (rnd() - .5) * 8, (rnd() - .5) * 16] });
+    cut(foe, part, { v: [h.dir[0] * 18 + fwd[0] * 14, 26 + rnd() * 12, h.dir[2] * 18 + fwd[1] * 14], w: [(rnd() - .5) * 16, (rnd() - .5) * 8, (rnd() - .5) * 16] });
     cut(foe, 'sword', { v: [fwd[0] * 26 + (rnd() - .5) * 10, 34, fwd[1] * 26 + (rnd() - .5) * 10], w: [(rnd() - .5) * 18, (rnd() - .5) * 12, (rnd() - .5) * 18] });
     B.pool(foe.x + fwd[0] * 7, foe.z + fwd[1] * 7, 7.5, 2.4, .7);
     STATS.log.push(`sever:${part}`);
@@ -79,7 +82,7 @@ export function installGore({ hero, foe, scene }) {
     const v = hv(a.h), p = chest(hero, 0); B.spray(...p, [v[0], .3, v[1]], 'light'); const h = rec(hero); B.splash(h, rigOf(hero), p, chest(foe), 1); h.dirty = 1; };
 
   // ---- K: an execution takes both of them over until the ronin is handed back ----
-  const api = { spray: (p, d, w, o) => { const h = rec(hero); h.blade = Math.min(1, h.blade + BLADE[w] * .8); B.spray(...p, d, w, o); }, cut, kill, flick: c => flick(c), over: f => { f.diedAt = W.t - 1.1; } };
+  const api = { spray: (p, d, w, o) => { const h = rec(hero); h.blade = Math.min(1, h.blade + BLADE[w] * .8); B.BL.stats.coats++; B.spray(...p, d, w, o); }, cut, kill, flick: c => flick(c), over: f => { f.diedAt = W.t - 1.1; } };
   const free = ['idle', 'guard', 'run', 'runArmed', 'start', 'stop', 'skid', 'sheathe'];
   const canExec = () => { const n = hero.state, c = CUT[n]; return !!KM.pick && !EX.on && (free.includes(n) || (c && hero.a.ct >= c.hit + 2 / 60)); };
   const baseHero = hero.control.bind(hero), baseFoe = foe.control.bind(foe);

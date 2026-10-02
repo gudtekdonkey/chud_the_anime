@@ -117,7 +117,7 @@ const GH = [];
 function ghost(kind, p, x, z, h, tint, life) {
   let gh = GH.find(q => q.kind === kind && q.age >= q.life);
   if (!gh) { if (GH.length >= 6) return; gh = { kind, look: makeLook(kind, { foe: false }) }; gh.look.mount(GHOST_SCENE); GH.push(gh); }
-  p = { hN: [p.pel[0] + 4, p.pel[1] + 2], hF: [p.pel[0] + 3, p.pel[1] + 2], ...p };   // the hands' defaults, as the flow's actor fills them
+  p = { ...p, hN: p.hN || [p.pel[0] + 4, p.pel[1] + 2], hF: p.hF || [p.pel[0] + 3, p.pel[1] + 2] };   // the hands' defaults, as the flow's actor fills them
   Object.assign(gh, { age: 0, life, frame: { pose: p, x, y: 0, z, yaw: FA[faceK(h)], flash: false, tint: tint === 'c' ? [.43, .95, .89] : [1, 1, 1], tintA: .85, alpha: 1, hero: false } });
 }
 let GHOST_SCENE = null; export const ghostScene = s => { GHOST_SCENE = s; };
