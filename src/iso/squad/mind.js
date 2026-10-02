@@ -3,7 +3,7 @@
 // (temper) weights how willingly he does it: a bold striker swings sooner, a cautious one steps back when hurt, a patient
 // assassin waits for the moment. Engine side: agents and numbers only.
 import { dist, headTo, wrapA, enemies, sees } from '../ai/senses.js';
-import { choose, meleeOptions, rangedOptions, awayPoint, pt } from '../ai/brain.js';
+import { choose, meleeOptions, rangedOptions, awayPoint, pt, inRoom } from '../ai/brain.js';
 import { LIBERTY } from './orders.js';
 import { weakest } from './squad.js';
 
@@ -105,14 +105,23 @@ function assassinOpts(W, ag, pool, opts, k) {
   // nothing to hunt: he stays near, as a striker
   if (!prey) { const home = ag.anchor || W.hero, tgt = tacticTarget(W, ag, pool.filter(e => Math.hypot(e.x - home.x, e.z - home.z) < LIBERTY.near.leash + 30)); m.target = tgt; if (tgt) opts.push(...meleeOptions(W, ag, tgt, { ...k, combo: 2 })); return; }
   m.target = prey; logOnce(W, ag, 'p' + prey.id, `prey:${ag.name}>${prey.name} (isolated)`);
-  const watched = all.some(f => f !== prey && dist(f, ag) < 150 && sees(W, f, ag) > 0);
+  const watchers = all.filter(f => f !== prey && dist(f, ag) < 150 && sees(W, f, ag) > 0);
   const seen = prey.mind && prey.mind.mode === 'engaged' && prey.mind.target === ag;
-  const d = dist(ag, prey), back = pt(prey, prey.h + Math.PI, 12), inCone = Math.abs(wrapA(headTo(prey, ag) - prey.h)) < 1.25 && d < 150;
-  if (d < 22 && m.cd <= 0) opts.push({ s: 2.2, it: { k: 'attack', target: prey, combo: seen ? 2 : 1, exec: !seen, why: seen ? 'duel' : 'execute' } });
-  else if (watched && d > 40) opts.push({ s: 1.05, it: { k: 'idle', face: prey, why: 'wait unseen' } });
-  else if (inCone && !seen && d > 26) { const side = wrapA(headTo(prey, ag) - prey.h) > 0 ? 1 : -1, fl = pt(prey, prey.h + side * 1.9, Math.max(40, Math.min(80, d)));
+  const d = dist(ag, prey), back = inRoom(pt(prey, prey.h + Math.PI, 12)), inCone = Math.abs(wrapA(headTo(prey, ag) - prey.h)) < 1.3 && d < 190;
+  // the way in: round any other foe near the line (he never crosses in front of the squad)
+  const route = goal => { const dx = goal.x - ag.x, dz = goal.z - ag.z, L = Math.hypot(dx, dz) || 1;
+    for (const f of all) { if (f === prey) continue; const u = Math.max(0, Math.min(1, ((f.x - ag.x) * dx + (f.z - ag.z) * dz) / (L * L))), cx = ag.x + dx * u, cz = ag.z + dz * u;
+      if (Math.hypot(f.x - cx, f.z - cz) < 75 && u > 0 && u < 1) { const side = ((f.x - ag.x) * dz - (f.z - ag.z) * dx) > 0 ? -1 : 1; return inRoom({ x: f.x + dz / L * 100 * side, z: f.z - dx / L * 100 * side }); } }
+    return goal; };
+  if (d < 22 && m.cd <= 0) opts.push({ s: 2.2, it: { k: 'attack', target: prey, combo: seen ? 2 : 1, exec: !seen, sneak: seen ? 0 : 1, why: seen ? 'duel' : 'execute' } });
+  else if (watchers.length && d > 40) { const p = awayPoint(W, ag, watchers, 50); opts.push({ s: 1.05, it: { k: 'move', x: p.x, z: p.z, speed: 50, sneak: 1, why: 'hide' } }); }
+  else if (inCone && !seen && d > 26) {   // round the cone: the flank whose point the walls leave open (a man in a corner has one), wide of his sight
+    const r = 130, fp = sd => pt(prey, prey.h + sd * 1.9, r), cut = q => { const c = inRoom(q); return Math.hypot(c.x - q.x, c.z - q.z); };
+    const near = wrapA(headTo(prey, ag) - prey.h) > 0 ? 1 : -1, side = cut(fp(near)) > cut(fp(-near)) + 10 ? -near : near;
+    // an arc, not a chord: a step of the way round on a circle wider than his sight
+    const cur = headTo(prey, ag), step = Math.max(-.7, Math.min(.7, wrapA(prey.h + side * 1.9 - cur))), fl = route(inRoom(pt(prey, cur + step, Math.max(d, 150))));
     opts.push({ s: 1.1, it: { k: 'move', x: fl.x, z: fl.z, speed: 50, sneak: 1, why: 'flank' } }); }
-  else opts.push({ s: 1.1, it: { k: 'move', x: back.x, z: back.z, speed: d > 60 ? 58 : 34, face: d < 40 ? prey : null, sneak: 1, why: 'stalk' } });
+  else { const g = route(back); opts.push({ s: 1.1, it: { k: 'move', x: g.x, z: g.z, speed: d > 60 ? 58 : 34, face: d < 40 ? prey : null, sneak: 1, why: g === back ? 'stalk' : 'go round' } }); }
   // pressed by someone else: defend himself
   const on = all.find(e => e !== prey && e.mind && e.mind.target === ag && dist(e, ag) < 26);
   if (on) opts.push(...meleeOptions(W, ag, on, { ...k, combo: 2, attack: .5, why: 'defend' }));

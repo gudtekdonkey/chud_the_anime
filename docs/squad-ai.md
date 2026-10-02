@@ -120,7 +120,7 @@ reach, a heavy's unblockable swing and a ninja's vanish would each want an actio
 ## The enemies
 
 - **Senses.** A cone of 115° from his facing, out to 150 × (0.75 + 0.5 wit) units, blocked by walls and posts; inside it
-  the alert meter fills (faster close up, or when the other runs or fights); right beside him (20) he feels you anyway.
+  the alert meter fills (faster close up, or when the other runs or fights); right beside him (20; 9 for a man creeping up) he feels you anyway.
   Noises: a run's steps (50), a blow landing (110), a bow (60), a shout (110, his own side: they come engaged and know
   where). Calm < 0.3 ≤ suspicious (a "?": he turns to look, then walks over) < 1 ≤ engaged (a "!" for a moment; he
   shouts). Losing everyone for 6 s he searches the last place, then calms. Walking in a cone at a calm man (an assassin's

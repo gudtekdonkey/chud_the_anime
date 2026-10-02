@@ -147,9 +147,12 @@ export async function squadSteps({ page, base, until, gameWait, ok, fail, setSte
     ok(moved.map(([n, b, a]) => `${n} ${b.toFixed(0)}→${a.toFixed(0)}`).join(', ') + ' from the foes'); }
 
   setStep('squad: the assassin finds the isolated target'); {
-    await evWait('Suzume picking the lone archer', 'prey:Suzume>Kage \\(isolated\\)', 60000);
-    await evWait('Kage dead', 'kill:Kage', 150000); const e = (await ev()).filter(x => /Suzume|Kage/.test(x));
-    if (!e.some(x => /execute:Suzume>Kage/.test(x))) fail(`Kage died but not by Suzume's execution: ${e.slice(-8).join('; ')}`);
-    await shotPage('squad-05-execute'); ok(e.filter(x => /prey|execute|kill:Kage/.test(x)).join('; ')); }
+    // she picks the lone archer by the walkway from the start (the other archer, beside the officer, is not alone), goes
+    // round the squad and his sight, and executes the isolated high-value foe she reaches unseen (Kage, or Yumi if Yumi
+    // has kited away from the officer and is alone first)
+    if (!(await ev()).some(x => /prey:Suzume>Kage \(isolated\)/.test(x))) fail('Suzume never picked Kage, the lone archer');
+    await evWait('Suzume executing an isolated archer', 'execute:Suzume>(Kage|Yumi)', 150000);
+    const e = (await ev()).filter(x => /prey:Suzume|execute:Suzume|kill:(Kage|Yumi)/.test(x));
+    await shotPage('squad-05-execute'); ok(e.join('; ')); }
   errorsCheck();
 }

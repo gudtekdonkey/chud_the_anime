@@ -22,7 +22,7 @@ import { reaction } from './temper.js';
 
 export const pt = (a, h, d) => ({ x: a.x + Math.sin(h) * d, z: a.z + Math.cos(h) * d });
 export const BOUNDS = { x0: 14, x1: 586, z0: 14, z1: 286 };   // the courtyard's floor, set by the world
-const inRoom = p => ({ x: Math.max(BOUNDS.x0, Math.min(BOUNDS.x1, p.x)), z: Math.max(BOUNDS.z0, Math.min(BOUNDS.z1, p.z)) });
+export const inRoom = p => ({ x: Math.max(BOUNDS.x0, Math.min(BOUNDS.x1, p.x)), z: Math.max(BOUNDS.z0, Math.min(BOUNDS.z1, p.z)) });
 
 // best of the scored options; the current one is sticky, a dull mind's scores are noisy
 export function choose(W, ag, opts) {

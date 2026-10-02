@@ -26,7 +26,7 @@ export function initMind(ag) {
 
 // can ag see o now (and how well: 0..1)
 export function sees(W, ag, o) {
-  const d = dist(ag, o); if (d < SENSE.feel) return 1;
+  const d = dist(ag, o); if (d < (o.sneaking ? SENSE.feel * .45 : SENSE.feel)) return 1;   // a man creeping up from behind is felt only at arm's length
   const range = SENSE.sight * (.75 + .5 * ag.temper.wit); if (d > range) return 0;
   const m = ag.mind, engaged = m.mode === 'engaged';
   if (!engaged && Math.abs(wrapA(headTo(ag, o) - ag.h)) > SENSE.half) return 0;
