@@ -126,12 +126,17 @@ try {
         if (Math.hypot(f.x - h.x, f.z - h.z) > 26) { await walkTo(f.x - 22, f.z, 6); await settle(); }
         await page.keyboard.press('KeyJ'); await gameWait(.32); }
       await until('the samurai dying', () => window.__iso.foe.dead);
+      // the pieces are watched every frame while he lies there: they settle on the game's clock, and he stands up whole
+      // (taking them away) 2.9 s after he dies, which a poll from here can straddle on a slow software GPU
+      await page.evaluate(() => { const R = window.__rest = { pieces: 0, resting: 0, lowest: 99 }; const f = () => { const g = window.__iso.gore;
+        if (g.foePieces >= 2 && g.resting >= 2) { R.pieces = Math.max(R.pieces, g.foePieces); R.resting = Math.max(R.resting, g.resting); R.lowest = Math.min(R.lowest, g.lowest); }
+        if (!(R.resting >= 2 && R.lowest < 4)) requestAnimationFrame(f); }; f(); });
       // the killing blow took the part nearest the blade: a piece and his sword fall and come to rest on the floor (read
       // before any screenshot: the game runs on through one, and he stands up whole 2.9 s after he dies), a pool spreads
       { const b = (await G()).gore; if (b.severs < 1 || !b.cut.some(p => p !== 'sword')) fail(`no sever on the killing blow (cut: ${b.cut.join(' ')})`);
         if (b.swords < 1) fail('his sword did not drop'); if (b.pools < 1) fail('no pool under him');
-        await until('the pieces at rest on the floor', () => window.__iso.gore.foePieces >= 2 && window.__iso.gore.resting >= 2 && window.__iso.gore.lowest < 4);
-        const c = (await G()).gore; await shot('sever', ['hero', 'foe']); ok(`cut ${c.cut.join(' + ')}; ${c.resting} pieces at rest, the lowest at ${c.lowest.toFixed(1)}; ${c.clatters} clatters; flicks ${c.flicks}`);
+        await until('the pieces at rest on the floor', () => window.__rest.pieces >= 2 && window.__rest.resting >= 2 && window.__rest.lowest < 4);
+        const c = { ...(await G()).gore, ...(await page.evaluate(() => window.__rest)) }; await shot('sever', ['hero', 'foe']); ok(`cut ${c.cut.join(' + ')}; ${c.resting} pieces at rest, the lowest at ${c.lowest.toFixed(1)}; ${c.clatters} clatters; flicks ${c.flicks}`);
         if (c.flicks < 1) fail('the sheathe never flicked the blade clean'); }
 
       await until('the respawn', () => !window.__iso.foe.dead && window.__iso.foe.hp === 5, undefined, 90000); ok(`deaths ${(await G()).foe.deaths}`); }
