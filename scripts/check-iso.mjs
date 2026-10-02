@@ -2,7 +2,7 @@
 // Chromium: no page errors; the run in all 8 directions (the stick maps straight to the screen, he faces where he
 // runs); the roll (its i-frames, its distance); J1 → J2 → J3 on the samurai with every hit landing and the samurai
 // reacting; a cut cancelled into the roll; a kill and the respawn; the same loop with the pixel look; one shot per
-// pipeline toggle; the blood (sprays, stains, splashes, the blade's coat flicked off), the killing blow's sever (the
+// pipeline toggle; the outfit picker (a preset, a random outfit, dressed in both looks); the blood (sprays, stains, splashes, the blade's coat flicked off), the killing blow's sever (the
 // piece and the dropped sword coming to rest on the floor, the pool) and every execution on K (gore.js, exec/); the 15 weapons (drawn, J1 → J3, stowed in all 8 facings, then in play with their reach and hit-stops);
 // the personalities (each idle plays, no traits = the plain ronin, two personalities differ, [ / ]
 // give the ronin and the samurai one, the townsfolk idle and wander) and the idle gallery (?iso&idles). Screenshots land in test-output/iso/. Chromium comes from PLAYWRIGHT_BROWSERS_PATH (never downloaded),
@@ -154,6 +154,26 @@ try {
       await page.keyboard.press('KeyJ'); await until('J1', () => window.__iso.hero.state === 'J1'); await until('a hit', n => window.__iso.STATS.log.length > n, n0); await shot('pixel-J1', ['hero', 'foe']);
       ok((await G()).log.slice(n0).join(' ')); }
     await page.keyboard.press('KeyM'); await until('the 3D look', () => window.__iso.look === '3d');
+
+    // ---- the outfit picker (src/iso/gear/, docs/gear.md): a preset, then a random outfit on him, a cut landing in each,
+    // the pixel look dressed, then back to Iron Ash as built. Picked through the overlay, as the owner would
+    const cutOnHim = async name => { await settle(); await until('the samurai standing', () => !window.__iso.foe.dead, undefined, 90000);
+      const f = (await G()).foe; await walkTo(f.x - 22, f.z, 6); await settle(); const n = (await G()).log.length;
+      await page.keyboard.press('KeyJ'); await until(`a cut in ${name}`, n => window.__iso.STATS.log.length > n, n); await shot(`outfit-${name}`, ['hero', 'foe']);
+      const last = (await G()).log.at(-1); if (!/hit|miss/.test(last)) fail(`the cut in ${name}: ${last}`); return last; };
+    const worn = () => page.evaluate(() => ({ outfit: window.__iso.outfit, dressed: window.__iso.dressed }));
+    step = 'outfit: a preset'; await page.selectOption('#g-preset', 'general'); await page.evaluate(() => document.querySelector('canvas').focus());
+    await until('the general', () => (window.__iso.outfit || '').includes('o-yoroi'));
+    { const w = await worn(), n = Object.keys(w.dressed).length, built = Object.values(w.dressed).reduce((a, r) => a + r.built, 0);
+      if (n !== 16) fail(`${n} pieces worn, wanted 16`); ok(`16 pieces, ${built} parts built; ${await cutOnHim('general')}`); }
+    step = 'outfit: randomise'; { const before = (await worn()).outfit; await page.keyboard.press('Backquote');
+      await until('a new outfit', b => window.__iso.outfit && window.__iso.outfit !== b, before);
+      const w = await worn(); if (w.outfit.split(',').some(id => !id)) fail(`a random outfit left a slot empty: ${w.outfit}`); ok(`${await cutOnHim('random')}`); }
+    step = 'outfit: the pixel look'; await page.keyboard.press('KeyM'); await until('the pixel look', () => window.__iso.look === 'pixel');
+    ok(await cutOnHim('random-pixel')); await page.keyboard.press('KeyM'); await until('the 3D look', () => window.__iso.look === '3d');
+    step = 'outfit: as built'; await page.selectOption('#g-preset', 'built'); await page.evaluate(() => document.querySelector('canvas').focus());
+    await until('Iron Ash as built', () => window.__iso.outfit === null); errorsCheck(); ok();
+
 
     // ---- one shot per pipeline step, toggled off and on again
     step = 'pipeline toggles';

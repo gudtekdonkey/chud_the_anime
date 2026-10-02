@@ -41,6 +41,8 @@ import { SK } from './skills/skills.js';
 import { ICONS as KIT_ICONS, ICON_COL as KIT_COL } from './skills/hud.js';
 import { addSkill } from './hud/skill-bar.js';
 import { installGore } from './gore.js';
+import { startOutfit, wireGear } from './gear/ui.js';
+import { encode } from './gear/outfits.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
@@ -51,7 +53,7 @@ if (Q.has('arsenal')) runArsenal({ scene, cam, pipe, Q }); else if (Q.has('sheet
 
 // ?iso&sheet: the contact sheet (sheet.js), frozen
 function runSheet() {
-  scene.add(piece().box(900, 2, 600, RAMP.n[5], { p: [240, -1, 150] }).mesh(shadeMat({ obj: 0 }))); const rows = (Q.get('rows') || '0,1,2,3').split(',').map(i => SHEET_ROWS[+i]); const sh = buildSheet(scene, Q.has('foe'), rows); sh.show();
+  scene.add(piece().box(900, 2, 600, RAMP.n[5], { p: [240, -1, 150] }).mesh(shadeMat({ obj: 0 }))); const rows = (Q.get('rows') || '0,1,2,3').split(',').map(i => SHEET_ROWS[+i]); const sh = buildSheet(scene, Q.has('foe'), rows, Q.has('outfit') ? startOutfit(Q) : null); sh.show();
   PIPE.rain = 0; PIPE.fog = 0; PIPE.k = Q.has('k') ? +Q.get('k') : 2;
   const loop = () => { CAM.px = CAM.x = sh.center[0]; CAM.py = CAM.z = sh.center[1]; projMatrix(cam.projectionMatrix, CAM.px, CAM.py, +(Q.get('zoom') || 1.9)); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
     pipe.fx.clearRect(0, 0, 960, 540); sh.stamp(pipe.fx); pipe.render(scene, cam); requestAnimationFrame(loop); };
@@ -64,7 +66,10 @@ function runGame(reel) {
   let lookKind = Q.get('look') === 'pixel' ? 'pixel' : '3d';
   // &squad: the squad battle (squad/battle.js, docs/squad-ai.md) instead of the samurai: its own cast, rules and controls,
   // so the samurai's systems below (the enemy types, the skills, the gore, the townsfolk, the personalities) stay out of it
-  const isBattle = Q.has('squad') && !reel, hero = new Hero(isBattle ? { x: 96, z: 150, h: Math.PI / 2, look: lookKind } : { x: 250, z: 120, h: 0, look: lookKind });
+  // what he wears (gear/, the outfit picker): Iron Ash as built unless the URL or the last visit picked an outfit;
+  // a reel keeps the Animation Flow page's look unless the URL asks
+  const outfit = reel && !Q.has('outfit') ? null : startOutfit(Q);
+  const isBattle = Q.has('squad') && !reel, hero = new Hero(isBattle ? { x: 96, z: 150, h: Math.PI / 2, look: lookKind, outfit } : { x: 250, z: 120, h: 0, look: lookKind, outfit });
   const foe = isBattle ? null : new Foe({ x: 330, z: 110, h: -Math.PI / 2, look: lookKind }, Q.has('calm') || !!reel);
   // a squad (&foes=N, 3 by default, up to 5) so the chain and Time Slice have someone to leap to; the first is the one the loop was built on
   const SPAWN = [[372, 176], [296, 206], [200, 212], [420, 84]], foes = foe ? [foe] : [];
@@ -95,6 +100,7 @@ function runGame(reel) {
   const setLook = kind => { lookKind = kind; if (port) port.setLook(kind); for (const c of chars) { c.setLook(kind, scene); c.shown = null; } if (skills) skills.setLook(kind); root.querySelector('#o-look').value = kind; };
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
   if (!battle) personaPanel(root, { hero, foe });
+  wireGear(root, outfit, o => hero.dress(o, scene));   // the outfit picker (gear/)
   wirePicker(root, id => equip(hero, id), Q.get('weapon') || 'katana');   // the 15 weapons (weapons/)
   // the rest of today's game in 3D (port.js): the party, items and Harvest, today's HUD, the combo prompts, click to move;
   // not in the squad battle, which has its own companions, left click and E
@@ -196,6 +202,6 @@ function runGame(reel) {
       get folk() { return folk.map(n => ({ ...who(n), kind: n.kind, culture: n.culture, list: n.list, idles: n.a.idler ? n.a.idler.n : 0, played: n.a.idler ? n.a.idler.played.slice() : [] })); },
       get persona() { return { hero: hero.list || [], heroIdles: hero.a.idler ? hero.a.idler.played.slice() : [], heroCur: hero.a.idler ? hero.a.idler.cur : null, foe: foe ? foe.list || [] : [], behave: foe && foe.bh, ...PROBE }; },
       get skills() { return skills && skills.state(); },   // the I O P N U C skills (skills/skills.js); `reserved` is F R Q X's (skills/reserved.js)
-      get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get gore() { return gore && gore.view(); }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
+      get look() { return lookKind; }, get outfit() { return hero.outfit ? encode(hero.outfit) : null; }, get dressed() { return hero.look.rig ? hero.look.rig.report || null : null; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get gore() { return gore && gore.view(); }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }
