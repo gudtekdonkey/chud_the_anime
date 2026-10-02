@@ -23,6 +23,7 @@ All of it lives in `src/iso/`. It is a test bed for the owner's picks, not the g
 | `/?iso&weapon=yari` | start with a weapon (any of the 15 ids below; `=` steps through them in play, `-` back) |
 | `/?iso&arsenal` | the weapons' contact sheet: weapons down (`&w=0-4`, `&w=yari,bo`), the loop's moments across in one facing (`&face=0..7`, `&mo=J1,J3`), or the eight facings of one moment (`&m=J1`); `&sweep` also plays every weapon through the loop in all 8 facings off screen and leaves the result in `window.__arsenal` |
 | `/?iso&sheet` | a frozen contact sheet: four moments of the loop × the eight facings (`&rows=4,5,6,7` the other four, `&look=pixel`, `&foe`, `&zoom=1.9`) |
+| `/?iso&squad` | the squad battle: five companions against a samurai squad, enemy AI, roles, orders and the mouse (`docs/squad-ai.md`; `&calm` keeps the foes at their posts) |
 | `npm run check:iso` | builds, then `scripts/check-iso.mjs` plays the loop in Chromium and asserts it (below); screenshots in `test-output/iso/` |
 
 three.js is a new dependency (`three`, pinned in `package.json`): run `npm install` once. A checkout whose
@@ -42,12 +43,13 @@ it), `Q` casts Lightning Chain, `X` Time Slice on a full Qi meter (below). `=` t
 (Painterly, Pixel-render, Anime limited, Toon + dither); `=` / `-` the weapon (the 15, with its line; it was T and
 Shift+T: T is the facings, Shift the roll); `Y` clashes (it was C: C is Breath of Qi now); `Z` the finisher's
 close-up (it was X: X is Time Slice now); the pipeline
-steps `1` low-res target, `2` toon bands, `3` dither, `4` palette, `5` outline, `6` pixel upscale, `7` rim light,
-`8` keep the glints, and the number of bands; `B` the bodies' camera (picked 39.5°, upright 20°, true 54°), the hat's
-tilt and brim; `T` the facings (it was F: F is the counter now) (8 stepped, as baked sprites would be, or free); `9` mist, `0` rain;
-Personality: `[` the ronin's, `]` the samurai's (a character, a person of a culture, or one trait), `\` a new person of
-the same culture, `;` the names over the townsfolk (at the merge these moved off P / O / R / T, which are Cross Rift,
-Crescent Moon, Blade Recall and the facings).
+steps `Alt+1` low-res target, `Alt+2` toon bands, `Alt+3` dither, `Alt+4` palette, `Alt+5` outline, `Alt+6` pixel upscale,
+`Alt+7` rim light, `Alt+8` keep the glints, and the number of bands (the pipeline's numbers are Alt + the number since the
+squad battle, whose groups are the bare 1–9); `B` the bodies' camera (picked 39.5°, upright 20°, true 54°), the hat's
+tilt and brim; `T` the facings (it was F: F is the counter now) (8 stepped, as baked sprites would be, or free);
+`Alt+9` mist, `Alt+0` rain. Personality: `[` the ronin's, `]` the samurai's (a character, a person of a culture, or one
+trait), `\` a new person of the same culture, `;` the names over the townsfolk (at the merge these moved off P / O / R / T,
+which are Cross Rift, Crescent Moon, Blade Recall and the facings). Enemies: `,` the next group, `.` the group again.
 
 The default style is **Painterly** (owner 2026-10-02 over the "Ronin 3D Styles" page: "Painterly with Anime Limited
 clashing and attack full screen animation"). The camera and hat defaults are the 3D faces page's picks: bodies from
@@ -432,6 +434,8 @@ the katana's beat and every move the katana's length), seven contact sheets (`ar
 the weapon's hit-stops, the cut faces him (all 8 facings across the round), and he stows it after the calm.
 
 Then the enemy types (`scripts/check-iso-enemies.mjs`, `docs/enemies.md`): each type telegraphing, striking and killed, and a patrol taking turns.
+
+Then the squad battle (`?iso&squad`, `scripts/check-iso-squad.mjs`; what it covers is in `docs/squad-ai.md`).
 
 Then the new skills: F timed in the page on the samurai's blow (a press
 0.33–0.46 s into it counters and the answer lands; 0.02–0.2 s only blocks; a counter that kills plays the close-up);

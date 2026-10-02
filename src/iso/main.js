@@ -35,6 +35,7 @@ import './weapons/poses.js';
 import { equip, ARSENAL } from './weapons/arsenal.js';
 import { wirePicker } from './weapons/picker.js';
 import { runArsenal } from './weapons/sheet.js';
+import { squadGame } from './squad/battle.js';
 import { installGore } from './gore.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
@@ -57,12 +58,16 @@ function runSheet() {
 function runGame(reel) {
   const room = buildRoom(scene);
   let lookKind = Q.get('look') === 'pixel' ? 'pixel' : '3d';
-  const hero = new Hero({ x: 250, z: 120, h: 0, look: lookKind }), foe = new Foe({ x: 330, z: 110, h: -Math.PI / 2, look: lookKind }, Q.has('calm') || !!reel);
+  // &squad: the squad battle (squad/battle.js, docs/squad-ai.md) instead of the samurai: its own cast, rules and controls,
+  // so the samurai's systems below (the enemy types, the skills, the gore, the townsfolk, the personalities) stay out of it
+  const isBattle = Q.has('squad') && !reel, hero = new Hero(isBattle ? { x: 96, z: 150, h: Math.PI / 2, look: lookKind } : { x: 250, z: 120, h: 0, look: lookKind });
+  const foe = isBattle ? null : new Foe({ x: 330, z: 110, h: -Math.PI / 2, look: lookKind }, Q.has('calm') || !!reel);
   // a squad (&foes=N, 3 by default, up to 5) so the chain and Time Slice have someone to leap to; the first is the one the loop was built on
-  const SPAWN = [[372, 176], [296, 206], [200, 212], [420, 84]], foes = [foe];
-  for (let i = 1; i < (reel ? 1 : Math.max(1, Math.min(5, +(Q.get('foes') ?? 3)))); i++) foes.push(new Foe({ x: SPAWN[i - 1][0], z: SPAWN[i - 1][1], h: -Math.PI / 2, look: lookKind }, Q.has('calm')));
-  const folk = reel || Q.get('folk') === '0' ? [] : addFolk(scene);   // the courtyard's people (&folk=0: none)
+  const SPAWN = [[372, 176], [296, 206], [200, 212], [420, 84]], foes = foe ? [foe] : [];
+  for (let i = 1; foe && i < (reel ? 1 : Math.max(1, Math.min(5, +(Q.get('foes') ?? 3)))); i++) foes.push(new Foe({ x: SPAWN[i - 1][0], z: SPAWN[i - 1][1], h: -Math.PI / 2, look: lookKind }, Q.has('calm')));
+  const folk = reel || isBattle || Q.get('folk') === '0' ? [] : addFolk(scene);   // the courtyard's people (&folk=0: none)
   const chars = [hero, ...foes, ...folk]; for (const c of [hero, ...foes]) c.look.mount(scene);
+  const battle = isBattle ? squadGame({ hero, lookKind, canvas, root, scene, calm: Q.has('calm') }) : null; if (battle) chars.push(...battle.chars);
   // the nearest samurai standing (the one a cut turns to)
   const nearFoe = () => { let b = foe, bd = 1e9; for (const f of foes) { if (f.dead || f.frozen || f.parked) continue; const d = Math.hypot(f.x - hero.x, f.z - hero.z); if (d < bd) { bd = d; b = f; } } return b; };
   const script = [];
@@ -72,19 +77,19 @@ function runGame(reel) {
     reel.build({ hero: (x, z, h) => place(hero, x, z, h), foe: (x, z, h) => { foe.a.alpha = 1; return place(foe, x, z, h); }, at: (t, fn) => script.push([t, fn]), M: REEL_M });
     script.sort((a, b) => a[0] - b[0]); PIPE.cine = Q.has('cine') ? 1 : 0; PIPE.clash = Q.has('clash') ? 1 : 0; }
   if (Q.has('foehp')) for (const f of foes) f.maxHp = f.hp = +Q.get('foehp');   // &foehp=N: tougher samurai (the check's weapon round; &hp is the hero's health, skills/)
-  const live = () => foes.filter(f => !f.parked), game = { hero, foe, get foes() { return live(); } }; hitRules(game);
-  const skills = reel ? null : makeSkills({ hero, foe, foes: live, scene, look: lookKind, Q, root }); hero.skills = skills;   // the skills (skills/): I O P N U C, Storm Chain, the skill bar
-  const gore = reel ? null : installGore({ hero, foe, all: foes, live, scene });   // blood, severing, the executions (gore.js); not in the reels
+  const live = () => foes.filter(f => !f.parked), game = { hero, foe, get foes() { return live(); } }; if (!battle) hitRules(game);   // the battle has its own (squad/combat.js)
+  const skills = reel || battle ? null : makeSkills({ hero, foe, foes: live, scene, look: lookKind, Q, root }); hero.skills = skills;   // the skills (skills/): I O P N U C, Storm Chain, the skill bar
+  const gore = reel || battle ? null : installGore({ hero, foe, all: foes, live, scene });   // blood, severing, the executions (gore.js); not in the reels
   initInput(canvas);
-  initSkills({ hero, get foes() { return live(); }, scene, game });
+  if (!battle) initSkills({ hero, get foes() { return live(); }, scene, game });
   // the enemy types (enemies/, docs/enemies.md): &group=<name> or the overlay's picker; the samurai (the squad of &foes) is the default.
   // Another group parks every samurai (out of the skills' and the cuts' reach) until the samurai are picked again
-  const squad = makeSquad({ scene, hero, foe, foes, chars, look: () => lookKind, hpK: +(Q.get('ehp') || 1) });
-  if (!reel) { buildPicker(root, squad, Q.get('group') || 'samurai'); squad.spawn(Q.get('group') || 'samurai'); }
+  const squad = battle ? null : makeSquad({ scene, hero, foe, foes, chars, look: () => lookKind, hpK: +(Q.get('ehp') || 1) });
+  if (squad && !reel) { buildPicker(root, squad, Q.get('group') || 'samurai'); squad.spawn(Q.get('group') || 'samurai'); }
   // the model switch: every character's look is swapped; nothing else is told
   const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } if (skills) skills.setLook(kind); root.querySelector('#o-look').value = kind; };
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
-  personaPanel(root, { hero, foe });
+  if (!battle) personaPanel(root, { hero, foe });
   wirePicker(root, id => equip(hero, id), Q.get('weapon') || 'katana');   // the 15 weapons (weapons/)
 
   // the canvas fills the stage (16:9, under the window's height). With the low-res target on it shows the 960×540
@@ -101,12 +106,13 @@ function runGame(reel) {
   const trailOf = c => { const b = c.bladeWorld(); c.trail.push(b ? { t: W.t, mid: b.mid, tip: b.tip } : { t: W.t, gap: 1 }); while (c.trail.length && W.t - c.trail[0].t > .2) c.trail.shift(); };
   const runScript = () => { while (script.length && script[0][0] <= W.t) script.shift()[1](); };
   // the finisher's close-up (fx/cine.js): J3 starting on a samurai within reach
-  function presentation(dt) { const nf = squad.on ? squad.near(hero, 40) : nearFoe();
+  function presentation(dt) { const nf = battle ? battle.near() : squad.on ? squad.near(hero, 40) : nearFoe();
     if (hero.state === 'J3' && hero.prevState !== 'J3' && nf && !nf.dead && Math.hypot(nf.x - hero.x, nf.z - hero.z) < 40) startCine(hero, nf);
     hero.prevState = hero.state; cineStep(W.stop > 0 ? 0 : dt); }
   function tick() {
     if (skills) skills.tick(1 / 60);
-    if (W.stop <= 0 && !reel) { const inp = readInput(); if (!skillControl() && !(skills && skills.control(inp))) hero.control(inp, squad.on ? squad.aim(hero, inp.dir) : nearFoe(), W.t);   // a hit-stop holds the presses (they outlive it); a skill owns him first (skills/: the reserved keys, then the kit)
+    if (W.stop <= 0 && !reel && battle) battle.control(readInput());   // the battle steps the hero and everyone (squad/battle.js)
+    else if (W.stop <= 0 && !reel) { const inp = readInput(); if (!skillControl() && !(skills && skills.control(inp))) hero.control(inp, squad.on ? squad.aim(hero, inp.dir) : nearFoe(), W.t);   // a hit-stop holds the presses (they outlive it); a skill owns him first (skills/: the reserved keys, then the kit)
       for (const f of foes) if (!f.frozen && !f.parked) f.control(hero, W.t, 1 / 60); squad.control(1 / 60);
       for (const n of folk) n.control(hero, [...live(), ...folk], W.t); }
     presentation(1 / 60);
@@ -129,12 +135,12 @@ function runGame(reel) {
     for (const c of chars) drawTrail(g, c.trail.map(s => s.gap ? s : { t: s.t, a: toPx(s.mid), b: toPx(s.tip) }), c.a.out ? c.a.out.t : W.t, STYLE.s.trail);
     drawFx(g, W);
     if (gore) gore.draw(g);
-    drawLabels(g, folk, toPx); squad.draw(g); skillsRender(); drawSkills(g);
+    if (battle) battle.draw(g); else { drawLabels(g, folk, toPx); squad.draw(g); skillsRender(); drawSkills(g); }
     if (PIPE.clash) { drawFocus(g, W);   // focus lines on a hit; speed lines behind a roll, a lunge or a skid
       for (const c of chars) if (['roll', 'lunge', 'skid', 'knock'].includes(c.state)) { const [x, y] = toPx([c.x, 10, c.z]), v = [Math.sin(c.a.h), Math.cos(c.a.h) * OBL.a]; speedLines(g, x, y, v[0], v[1], W.t); } }
     for (const c of chars) c.look.stamp(g);
     if (skills) skills.draw(g);
-    if (!reel) drawSkillHud(g);
+    if (!reel && !battle) drawSkillHud(g);
     pipe.render(scene, cam);
   }
   const toPx = p => toScreen(p[0], p[1], p[2]);
@@ -142,8 +148,8 @@ function runGame(reel) {
     const dt = Math.min(.1, (now - last) / 1000); last = now; fps += (1 / Math.max(dt, 1e-3) - fps) * .05;
     const t0 = performance.now();
     if (reel) { /* the reel steps only when asked (window.__reel.seek) */ }
-    else if (TICKS) for (let i = 0; i < TICKS; i++) tick();   // &tick=N (the check, on a slow software GPU): N steps a frame, whatever the wall clock
-  else { acc = Math.min(acc + dt, .1); while (acc >= 1 / 60) { acc -= 1 / 60; tick(); } }
+    else if (TICKS) for (let i = 0, n = battle ? battle.ticks(TICKS) : TICKS; i < n; i++) tick();   // &tick=N (the check, on a slow software GPU): N steps a frame, whatever the wall clock
+  else { acc = Math.min(acc + dt * (battle ? battle.scale() : 1), .1); while (acc >= 1 / 60) { acc -= 1 / 60; tick(); } }   // the squad's order slow-motion scales the clock
     render(dt);
     frameMs += (performance.now() - t0 - frameMs) * .1;
     ms.textContent = `${frameMs.toFixed(1)} ms a frame (update + render) · ${fps.toFixed(0)} fps · ${Math.round(VW * pipe.k)}×${Math.round(540 * pipe.k)}`;
@@ -163,14 +169,15 @@ function runGame(reel) {
       get hero() { const o = hero.a.out, b = o && o.pose.blade; return { ...who(hero), armed: hero.armed, iframes: hero.iframes, hits: hero.hits, taken: hero.taken,
         weapon: hero.weapon, out: !!(b && b.out), held: hero.look.rig && hero.look.rig.wstate ? { ...hero.look.rig.wstate } : null }; },
       weapons: ARSENAL.map(w => ({ id: w.id, reach: w.reach, stop: w.weight.stop, shake: w.weight.shake })),
-      get foe() { return { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) }; },
+      get foe() { return foe ? { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) } : null; },
       get foes() { return foes.map(f => ({ ...who(f), hp: f.hp, dead: f.dead, frozen: f.frozen, hits: f.hits, deaths: f.deaths, reacts: f.reacts.slice(-6) })); },
-      get reserved() { return skillState(); }, get gray() { return MOMENT.gray; }, get away() { return !!hero.bladeAway; },
+      get reserved() { return battle ? null : skillState(); }, get gray() { return MOMENT.gray; }, get away() { return !!hero.bladeAway; },
       // where each one's feet are on the canvas, 0..1 (for the check's close-up shots)
-      get px() { const n = nearFoe(); return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)), near: toPx([n.x, 0, n.z]).map((v, i) => v / (i ? 540 : VW)) }; },
-      get enemies() { return squad.debug(); },
+      get px() { const f = foe || (battle && battle.near()) || hero, n = foe ? nearFoe() : f; return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([f.x, 0, f.z]).map((v, i) => v / (i ? 540 : VW)), near: toPx([n.x, 0, n.z]).map((v, i) => v / (i ? 540 : VW)) }; },
+      get enemies() { return squad && squad.debug(); },
+      squad: battle ? battle.hook : null,
       get folk() { return folk.map(n => ({ ...who(n), kind: n.kind, culture: n.culture, list: n.list, idles: n.a.idler ? n.a.idler.n : 0, played: n.a.idler ? n.a.idler.played.slice() : [] })); },
-      get persona() { return { hero: hero.list || [], heroIdles: hero.a.idler ? hero.a.idler.played.slice() : [], heroCur: hero.a.idler ? hero.a.idler.cur : null, foe: foe.list || [], behave: foe.bh, ...PROBE }; },
+      get persona() { return { hero: hero.list || [], heroIdles: hero.a.idler ? hero.a.idler.played.slice() : [], heroCur: hero.a.idler ? hero.a.idler.cur : null, foe: foe ? foe.list || [] : [], behave: foe && foe.bh, ...PROBE }; },
       get skills() { return skills && skills.state(); },   // the I O P N U C skills (skills/skills.js); `reserved` is F R Q X's (skills/reserved.js)
       get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get gore() { return gore && gore.view(); }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }

@@ -42,14 +42,14 @@ export function buildPage() {
     <label><input type="checkbox" id="o-cine">Finisher close-up<kbd>Z</kbd></label>
     <label><input type="checkbox" id="o-assist">Counter assist: the closing ring</label>
     <h2>Pipeline</h2>
-    <label><input type="checkbox" id="o-lowres">Low-res target<kbd>1</kbd></label>
-    <label><input type="checkbox" id="o-toon">Toon bands<kbd>2</kbd></label>
-    <label><input type="checkbox" id="o-dither">Dither<kbd>3</kbd></label>
-    <label><input type="checkbox" id="o-palette">Palette<kbd>4</kbd></label>
-    <label><input type="checkbox" id="o-outline">Outline<kbd>5</kbd></label>
-    <label><input type="checkbox" id="o-nearest">Pixel upscale<kbd>6</kbd></label>
-    <label><input type="checkbox" id="o-rim">Rim light<kbd>7</kbd></label>
-    <label><input type="checkbox" id="o-glint">Keep the glints<kbd>8</kbd></label>
+    <label><input type="checkbox" id="o-lowres">Low-res target<kbd>Alt+1</kbd></label>
+    <label><input type="checkbox" id="o-toon">Toon bands<kbd>Alt+2</kbd></label>
+    <label><input type="checkbox" id="o-dither">Dither<kbd>Alt+3</kbd></label>
+    <label><input type="checkbox" id="o-palette">Palette<kbd>Alt+4</kbd></label>
+    <label><input type="checkbox" id="o-outline">Outline<kbd>Alt+5</kbd></label>
+    <label><input type="checkbox" id="o-nearest">Pixel upscale<kbd>Alt+6</kbd></label>
+    <label><input type="checkbox" id="o-rim">Rim light<kbd>Alt+7</kbd></label>
+    <label><input type="checkbox" id="o-glint">Keep the glints<kbd>Alt+8</kbd></label>
     <label>Bands <select id="o-bands"><option>3</option><option>4</option><option>5</option></select></label>
     <h2>Camera and hat</h2>
     <label>Bodies <select id="o-body"><option value="39.5">Picked: oblique, body from 39.5°</option><option value="upright">Upright: full height, 20°</option><option value="54">True 54°</option></select><kbd>B</kbd></label>
@@ -57,11 +57,12 @@ export function buildPage() {
     <label>Brim <select id="o-brim"><option value="1">Wide, as drawn</option><option value=".72">Medium</option></select></label>
     <label>Facings <select id="o-free"><option value="0">8, stepped (sprites)</option><option value="1">Free (any angle)</option></select><kbd>T</kbd></label>
     <h2>World</h2>
-    <label><input type="checkbox" id="o-fog">Ground mist<kbd>9</kbd></label>
-    <label><input type="checkbox" id="o-rain">Rain<kbd>0</kbd></label>
+    <label><input type="checkbox" id="o-fog">Ground mist<kbd>Alt+9</kbd></label>
+    <label><input type="checkbox" id="o-rain">Rain<kbd>Alt+0</kbd></label>
     <h2>Controls</h2>
     <div class="keys"><div><kbd>WASD</kbd>/<kbd>←↑↓→</kbd> run</div><div>J3 on him: the close-up (any key skips)</div><div><kbd>J</kbd> cut, again for J2, J3</div><div><kbd>Shift</kbd>/<kbd>L</kbd> roll (cancels a cut)</div><div>J out of a run: the lunge</div><div><kbd>K</kbd> execute him when he is alone and in reach (the K over him)</div><div><kbd>F</kbd> counter: tap as the blow comes (0.2 s)</div><div><kbd>R</kbd> throw the blade; tap to call it back, hold to go to it</div><div><kbd>Q</kbd> Lightning Chain</div><div><kbd>X</kbd> Time Slice (a full Qi meter)</div></div>
     <p class="note">The samurai answer if you stand close (open with <code>&amp;calm</code> to stop them; <code>&amp;foes=1</code> for one, up to 5).</p>
+    <p class="note"><a id="o-squad" style="color:var(--cyan)" href="?iso&amp;squad">The squad battle</a>: five companions against a samurai squad, orders and the mouse (<code>&amp;squad</code>, docs/squad-ai.md).</p>
   </aside>`;
   document.body.appendChild(root);
   const canvas = root.querySelector('#iso');
@@ -85,9 +86,11 @@ export function wireOverlay(root, onLook) {
   $('o-style').value = String(STYLE.i); $('o-style').onchange = e => { setStyle(+e.target.value); syncBoxes(); };
   const cycle = (el, fire) => { el.selectedIndex = (el.selectedIndex + 1) % el.options.length; fire(el); };
   addEventListener('keydown', e => {
-    if (e.target.tagName === 'SELECT' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
-    const k = Object.keys(boxes).find(b => 'Digit' + boxes[b] === e.code || 'Key' + boxes[b] === e.code);
-    if (k) { const el = $('o-' + k); el.checked = !el.checked; el.onchange(); return; }
+    if (e.target.tagName === 'SELECT' || e.repeat || e.ctrlKey || e.metaKey) return;
+    // the pipeline's number keys are Alt + the number (1–9 recall the squad's groups, docs/squad-ai.md); the letters stay bare
+    const k = Object.keys(boxes).find(b => /\d/.test(boxes[b]) ? e.altKey && 'Digit' + boxes[b] === e.code : !e.altKey && 'Key' + boxes[b] === e.code);
+    if (k) { e.preventDefault(); const el = $('o-' + k); el.checked = !el.checked; el.onchange(); return; }
+    if (e.altKey) return;
     if (e.code === 'KeyM') cycle($('o-look'), el => onLook(el.value));
     if (e.code === 'KeyB') cycle($('o-body'), el => setBody(el.value));
     if (e.code === 'KeyT') cycle($('o-free'), el => { SETTINGS.free = +el.value; });
