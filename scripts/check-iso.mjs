@@ -8,6 +8,7 @@
 import { chromium } from 'playwright';
 import { preview } from 'vite';
 import fs from 'node:fs';
+import { squadSteps } from './check-iso-squad.mjs';
 
 const OUT = 'test-output/iso'; fs.mkdirSync(OUT, { recursive: true });
 let step = '';
@@ -26,7 +27,7 @@ await page.route(/^https?:\/\/(?!localhost|127\.0\.0\.1)/, r => r.abort());   //
 const G = () => page.evaluate(() => ({ hero: window.__iso.hero, foe: window.__iso.foe, t: window.__iso.t, look: window.__iso.look, log: window.__iso.STATS.log.slice() }));
 const until = async (what, fn, arg, timeout = 60000) => {
   try { await page.waitForFunction(fn, arg, { timeout, polling: 50 }); }
-  catch { const g = await G(); fail(`never reached ${what} (hero ${g.hero.state} at ${g.hero.x.toFixed(1)},${g.hero.z.toFixed(1)}; foe ${g.foe.state} hp ${g.foe.hp})`); } };
+  catch { const g = await G(); fail(`never reached ${what} (hero ${g.hero.state} at ${g.hero.x.toFixed(1)},${g.hero.z.toFixed(1)}${g.foe ? `; foe ${g.foe.state} hp ${g.foe.hp}` : ''})`); } };
 const gameWait = sec => page.evaluate(s => new Promise(r => { const t0 = window.__iso.t; const f = () => window.__iso.t - t0 >= s ? r() : requestAnimationFrame(f); f(); }), sec);
 const settle = () => until('a standstill', () => ['idle', 'guard'].includes(window.__iso.hero.state) && Math.abs(window.__iso.hero.v) < 1);
 const errorsCheck = () => { if (errors.length) fail(errors.join('\n')); };
@@ -134,9 +135,12 @@ try {
   // ---- one shot per pipeline step, toggled off and on again
   step = 'pipeline toggles';
   for (const [key, name] of [['Digit1', 'lowres'], ['Digit2', 'toon'], ['Digit3', 'dither'], ['Digit4', 'palette'], ['Digit5', 'outline'], ['Digit7', 'rim'], ['Digit8', 'glint']]) {
-    await page.keyboard.press(key); await gameWait(.1); await shot(`pipe-${name}-flipped`); await page.keyboard.press(key); }
+    await page.keyboard.press('Alt+' + key); await gameWait(.1); await shot(`pipe-${name}-flipped`); await page.keyboard.press('Alt+' + key); }   // Alt + the number (1–9 are the squad's groups)
   ok();
   errorsCheck();
+
+  // ---- the squad battle (?iso&squad): its own steps (scripts/check-iso-squad.mjs)
+  await squadSteps({ page, base, until, gameWait, ok, fail, errorsCheck, setStep: s => { step = s; }, shotPage: name => page.locator('canvas').screenshot({ path: `${OUT}/${name}.png` }) });
   console.log('\ncheck:iso passed');
 } catch (e) { if (!process.exitCode) { console.error(e); process.exitCode = 1; } }
 finally { await browser.close(); await server.close(); }

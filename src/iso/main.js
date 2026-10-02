@@ -23,6 +23,7 @@ import { REELS, M as REEL_M, reelPos } from './reel.js';
 import { piece } from './gfx/build.js';
 import { shadeMat } from './gfx/shade.js';
 import { RAMP } from './gfx/palette.js';
+import { squadGame } from './squad/battle.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
@@ -44,15 +45,18 @@ function runSheet() {
 function runGame(reel) {
   const room = buildRoom(scene);
   let lookKind = Q.get('look') === 'pixel' ? 'pixel' : '3d';
-  const hero = new Hero({ x: 250, z: 120, h: 0, look: lookKind }), foe = new Foe({ x: 330, z: 110, h: -Math.PI / 2, look: lookKind }, Q.has('calm') || !!reel);
-  const chars = [hero, foe]; for (const c of chars) c.look.mount(scene);
+  // &squad: the squad battle (squad/battle.js, docs/squad-ai.md) instead of the one samurai
+  const squad = Q.has('squad') && !reel, hero = new Hero(squad ? { x: 96, z: 150, h: Math.PI / 2, look: lookKind } : { x: 250, z: 120, h: 0, look: lookKind });
+  const foe = squad ? null : new Foe({ x: 330, z: 110, h: -Math.PI / 2, look: lookKind }, Q.has('calm') || !!reel);
+  const chars = squad ? [hero] : [hero, foe]; for (const c of chars) c.look.mount(scene);
+  const sq = squad ? squadGame({ hero, lookKind, canvas, root, scene, calm: Q.has('calm') }) : null; if (sq) chars.push(...sq.chars);
   const script = [];
   if (reel) {   // place them as the page does, hide the samurai unless the scenario has one, and queue its commands
     foe.a.alpha = 0; foe.reel = true; const place = (c, x, z, h) => { const [wx, wz] = reelPos(x, z); c.a.x = wx / AF; c.a.z = wz / AF; c.a.h = c.a.ht = h;
       c.a.feet.N.lock = c.a.feet.F.lock = 0; c.a.feet.N.off = c.a.feet.F.off = 0; c.a.prev = null; c.a.update(W.dt); c.a.sample(true); return c.a; };   // moved: let go of the planted feet
     reel.build({ hero: (x, z, h) => place(hero, x, z, h), foe: (x, z, h) => { foe.a.alpha = 1; return place(foe, x, z, h); }, at: (t, fn) => script.push([t, fn]), M: REEL_M });
     script.sort((a, b) => a[0] - b[0]); PIPE.cine = Q.has('cine') ? 1 : 0; PIPE.clash = Q.has('clash') ? 1 : 0; }
-  hitRules({ hero, foe });
+  if (!sq) hitRules({ hero, foe });
   initInput(canvas);
   // the model switch: every character's look is swapped; nothing else is told
   const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } root.querySelector('#o-look').value = kind; };
@@ -72,10 +76,10 @@ function runGame(reel) {
   const trailOf = c => { const b = c.bladeWorld(); c.trail.push(b ? { t: W.t, mid: b.mid, tip: b.tip } : { t: W.t, gap: 1 }); while (c.trail.length && W.t - c.trail[0].t > .2) c.trail.shift(); };
   const runScript = () => { while (script.length && script[0][0] <= W.t) script.shift()[1](); };
   // the finisher's close-up (fx/cine.js): J3 starting on a samurai within reach
-  function presentation(dt) { if (hero.state === 'J3' && hero.prevState !== 'J3' && !foe.dead && Math.hypot(foe.x - hero.x, foe.z - hero.z) < 40) startCine(hero, foe);
+  function presentation(dt) { const f = sq ? sq.near() : foe; if (f && hero.state === 'J3' && hero.prevState !== 'J3' && !f.dead && Math.hypot(f.x - hero.x, f.z - hero.z) < 40) startCine(hero, f);
     hero.prevState = hero.state; cineStep(W.stop > 0 ? 0 : dt); }
   function tick() {
-    if (W.stop <= 0 && !reel) { hero.control(readInput(), foe, W.t); foe.control(hero, W.t, 1 / 60); }   // a hit-stop holds the presses (they outlive it)
+    if (W.stop <= 0 && !reel) { if (sq) sq.control(readInput()); else { hero.control(readInput(), foe, W.t); foe.control(hero, W.t, 1 / 60); } }   // a hit-stop holds the presses (they outlive it)
     presentation(1 / 60);
     for (let i = 0; i < 2; i++) if (W.step(reel ? runScript : null)) for (const c of chars) if (c.a.out !== c.sampled) { c.sampled = c.a.out; trailOf(c); }
   }
@@ -92,7 +96,7 @@ function runGame(reel) {
     for (const c of chars) { if (c.shown !== c.a.out || c.lookKind === '3d') { const f = c.frame(c === hero); if (f) c.look.show(f); c.shown = c.a.out; } }
     const g = pipe.fx; g.clearRect(0, 0, pipe.fxCanvas.width, pipe.fxCanvas.height);
     for (const c of chars) drawTrail(g, c.trail.map(s => s.gap ? s : { t: s.t, a: toPx(s.mid), b: toPx(s.tip) }), c.a.out ? c.a.out.t : W.t, STYLE.s.trail);
-    drawFx(g, W);
+    drawFx(g, W); if (sq) sq.draw(g);
     if (PIPE.clash) { drawFocus(g, W);   // focus lines on a hit; speed lines behind a roll, a lunge or a skid
       for (const c of chars) if (['roll', 'lunge', 'skid', 'knock'].includes(c.state)) { const [x, y] = toPx([c.x, 10, c.z]), v = [Math.sin(c.a.h), Math.cos(c.a.h) * OBL.a]; speedLines(g, x, y, v[0], v[1], W.t); } }
     for (const c of chars) c.look.stamp(g);
@@ -103,8 +107,8 @@ function runGame(reel) {
     const dt = Math.min(.1, (now - last) / 1000); last = now; fps += (1 / Math.max(dt, 1e-3) - fps) * .05;
     const t0 = performance.now();
     if (reel) { /* the reel steps only when asked (window.__reel.seek) */ }
-    else if (TICKS) for (let i = 0; i < TICKS; i++) tick();   // &tick=N (the check, on a slow software GPU): N steps a frame, whatever the wall clock
-  else { acc = Math.min(acc + dt, .1); while (acc >= 1 / 60) { acc -= 1 / 60; tick(); } }
+    else if (TICKS) for (let i = 0, n = sq ? sq.ticks(TICKS) : TICKS; i < n; i++) tick();   // &tick=N (the check, on a slow software GPU): N steps a frame, whatever the wall clock
+  else { acc = Math.min(acc + dt * (sq ? sq.scale() : 1), .1); while (acc >= 1 / 60) { acc -= 1 / 60; tick(); } }   // the squad's order slow-motion scales the clock
     render(dt);
     frameMs += (performance.now() - t0 - frameMs) * .1;
     ms.textContent = `${frameMs.toFixed(1)} ms a frame (update + render) · ${fps.toFixed(0)} fps · ${Math.round(VW * pipe.k)}×${Math.round(540 * pipe.k)}`;
@@ -122,9 +126,10 @@ function runGame(reel) {
     const who = c => ({ x: c.x, z: c.z, h: c.a.h, yaw: c.a.out ? c.a.out.yaw : 0, state: c.state, ct: c.a.ct, v: c.a.v });
     window.__iso = { ready: true, STATS, PIPE, SETTINGS,
       get hero() { return { ...who(hero), armed: hero.armed, iframes: hero.iframes, hits: hero.hits, taken: hero.taken }; },
-      get foe() { return { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) }; },
+      get foe() { return foe ? { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) } : null; },
       // where each one's feet are on the canvas, 0..1 (for the check's close-up shots)
-      get px() { return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)) }; },
+      get px() { const f = foe || (sq && sq.near()) || hero; return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([f.x, 0, f.z]).map((v, i) => v / (i ? 540 : VW)) }; },
+      squad: sq ? sq.hook : null,
       get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }

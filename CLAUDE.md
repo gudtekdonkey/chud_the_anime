@@ -12,7 +12,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `npm run check` | Builds, then `scripts/check.mjs` plays a key sequence in Chromium and asserts the states and no page errors. Screenshots and the state log go to `test-output/` |
 | `npm run check:hd` | The same check at 2× (`?hd`), screenshots in `test-output/hd/` |
 | `node scripts/iso-reel.mjs chain 3` | After a build: one of the Animation Flow page's scenarios as the slice plays it, laid out as the page's contact sheets (`AF_DIR` at the page's source draws the page's sheet above it), into `test-output/iso/reel-<name>[-vs].png` |
-| `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle. Screenshots in `test-output/iso/` |
+| `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle; then the squad battle (`scripts/check-iso-squad.mjs`): drag-select, groups, right-click orders, formations, follow / hold, the tank's aggro, the archer's distance, the protector, charge / fall back, the assassin. Screenshots in `test-output/iso/` |
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
@@ -149,7 +149,7 @@ Phase 0 of the new direction: Iron Ash V3 in a night courtyard, the Sea of Stars
 
 | File | Owns |
 |---|---|
-| `iso/main.js` | Boot of the slice: the page, the pipeline, the room, the hero and the samurai, the 60 Hz loop (the flow steps twice at 1/120 s), the model switch, `window.__iso`; `?iso&sheet` hands over to `sheet.js` |
+| `iso/main.js` | Boot of the slice: the page, the pipeline, the room, the hero and the samurai, the 60 Hz loop (the flow steps twice at 1/120 s), the model switch, `window.__iso`; `?iso&sheet` hands over to `sheet.js`; `?iso&squad` adds the squad battle (`squad/battle.js`) in place of the one samurai |
 | `iso/gfx/view.js` | The camera: `VW`/`VH` (960×540) and `U` (2 render px a world unit), the oblique projection (`OBL`, `projMatrix`, `toScreen`), the bodies' camera (`BODY`, `setBody`, `BODY_SHEAR`: picked 39.5°, upright 20°, true 54°), the follow with lag, look-ahead and shake |
 | `iso/gfx/shade.js` | The scene material (toon bands, the world-anchored dither, key / bounce / rim, the brim's shadow, the lanterns, the ground and its mist) writing colour, data and normal; `SH` (shared light and toggle uniforms); the silhouette material |
 | `iso/gfx/post.js` | The pipeline: the 3-attachment target at k× (`PIPE` holds every toggle, the owner's faces-page defaults), the silhouette pass, the post pass (outline, palette, effects layer, rain), the effects canvas |
@@ -164,13 +164,37 @@ Phase 0 of the new direction: Iron Ash V3 in a night courtyard, the Sea of Stars
 | `iso/world/room.js` | The courtyard: geometry, the four lanterns, colliders (`SOLID`, `collide`), the raised engawa (`groundAt`), the eave that dissolves over him |
 | `iso/fx/fx.js` | Effects on the effects layer: dust, sparks, rings, cracks, the black slash (fx/void.js's tear, ported), the blade's trail in each style's look, the clash's focus and speed lines |
 | `iso/fx/cine.js` | The finisher's close-up: J3 on a samurai in reach punches the camera in, letterboxed, ink and speed lines, then back (~0.8 s, any key skips); presentation only |
-| `iso/ui/overlay.js` | The ?iso page and its overlay: frame time, the model switch, the pipeline toggles, camera and hat, controls; every choice a key |
+| `iso/ui/overlay.js` | The ?iso page and its overlay: frame time, the model switch, the pipeline toggles (Alt + 1–0: the bare numbers are the squad's groups), camera and hat, controls; every choice a key |
 | `iso/sheet.js` | `?iso&sheet`: a frozen contact sheet of the loop's moments in the 8 facings, either look |
 | `iso/reel.js` | `?iso&reel=<name>`: the Animation Flow page's demo scenarios on its script and clock (`window.__reel.steps(n)`), for `scripts/iso-reel.mjs`'s side-by-side sheets against the page's own |
+| `iso/anim/moves-squad.js` | Additions for the squad AI (marked, like `moves-extra.js`): strafe, block, aim (the bow's draw and `loose`), taunt, downed, lift |
 
 - Everything in `src/iso/` keeps to the slice: never import it from today's game, and never import today's game modules (`screen.js` grabs `#game`) into it.
 - A character's look is swapped through `look/look.js` only. The controller hands it the flow's side pose; a new look (a modelled character, a baked sprite sheet) implements the same four calls.
 - The moves are the Animation Flow page's data: change them there first (or mark an addition in `moves-extra.js`), so the slice keeps matching what the owner approved.
+
+## The squad AI (`src/iso/ai/`, `src/iso/squad/`, `?iso&squad`, `docs/squad-ai.md`)
+
+Enemies that fight properly and companions with jobs, orders and RTS control, in the slice behind `?iso&squad` (`&calm`: the foes keep their posts). Utility AI (each think scores the options; personality weights how willingly, intelligence (`wit`) how well). `src/main.js`'s slice only calls `squadGame()` when the flag is set; without it the slice is unchanged.
+
+| File | Owns |
+|---|---|
+| `iso/ai/temper.js` | Behaviour knobs (bold, aggro, patience, caution, discipline, wit) from the movement traits (`TRAIT_TEMPER`; `src/traits` is only read) |
+| `iso/ai/senses.js` | Sight cones, hearing, the alert meter (calm / suspicious / engaged), the aggro table and target choice |
+| `iso/ai/director.js` | Attack tokens (2 on one, 3 a side), rings round a target, morale and breaking, shouts |
+| `iso/ai/brain.js` | The utility brain (`choose`, shared melee / ranged / flee / guard options, `thinkFoe`, `thinkSide`) and the INTENT a body reads |
+| `iso/squad/orders.js` | `ROLES`, `LIBERTY`, `FORMATIONS`, `TACTICS`, `ORDERS` (the dominion lane's names where they overlap), defaults by weapon, slot arithmetic |
+| `iso/squad/squad.js` | `SQ` (selection, groups, the ordering slow-motion), giving orders and settings, anchors and formation slots |
+| `iso/squad/mind.js` | A companion's think: the role (tank, protector, assassin; striker / ranged / support), the leash, the order and tactic |
+| `iso/squad/npc.js` | `Npc`: a Char that is also an agent: intents to clips, swings, hits and parries, downed and lifted, the bow prop |
+| `iso/squad/combat.js` | Whose blow lands on whom (the hero's keep the slice's hit-stop and clashes), arrows, the taunt |
+| `iso/squad/battle.js` | `squadGame()`: the cast (`CAST`), the AI's world, the step order, waves, the read-only hook `window.__iso.squad` |
+| `iso/squad/control.js` | Mouse, touch and keys: left = the hero and selecting, right = orders, the radial, Ctrl + 1–9 / 1–9 groups, G, E, Esc |
+| `iso/squad/draw.js`, `iso/squad/panel.js` | The marks on the effects layer; the order bar under the game and the companion settings (Tab, pauses) |
+
+- `ai/` and the engine half of `squad/` (`orders.js`, `squad.js`, `mind.js`) import no three.js, no DOM and nothing of the slice's drawing: they read plain agents, so the 2D game can adopt them. Keep it so.
+- A companion never starts a fight on his own (only once a foe is fighting the party, once the hero has struck, or on Charge / Attack that); the assassin's hunt is the exception.
+- A new behaviour is a new option with a score, not a branch; a new trait's behaviour is a row in `TRAIT_TEMPER`.
 
 ## Design rules (from `docs/design-notes.md`)
 

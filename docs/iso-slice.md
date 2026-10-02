@@ -16,6 +16,7 @@ All of it lives in `src/iso/`. It is a test bed for the owner's picks, not the g
 | `/?iso&reel=chain` | one of the Animation Flow page's scenarios (idle, start, turn, stop, roll, chain, lunge, sheathe) on its script and clock; `node scripts/iso-reel.mjs chain 3` lays it out as the page's contact sheets do (with `AF_DIR` at the page's source, the page's own sheet above it) into `test-output/iso/reel-chain-vs.png` |
 | `/?iso&style=1` | start on a style (0 Toon + dither, 1 Pixel-render, 2 Anime limited, 3 Painterly) |
 | `/?iso&sheet` | a frozen contact sheet: four moments of the loop × the eight facings (`&rows=4,5,6,7` the other four, `&look=pixel`, `&foe`, `&zoom=1.9`) |
+| `/?iso&squad` | the squad battle: five companions against a samurai squad, enemy AI, roles, orders and the mouse (`docs/squad-ai.md`; `&calm` keeps the foes at their posts) |
 | `npm run check:iso` | builds, then `scripts/check-iso.mjs` plays the loop in Chromium and asserts it (below); screenshots in `test-output/iso/` |
 
 three.js is a new dependency (`three`, pinned in `package.json`): run `npm install` once. A checkout whose
@@ -28,9 +29,9 @@ it has struck. Presses are remembered 0.2 s.
 
 **The overlay** (beside the game, every choice also a key): the frame time; `M` the model (3D / Pixel); `V` the style
 (Painterly, Pixel-render, Anime limited, Toon + dither); `C` clashes; `X` the finisher's close-up; the pipeline
-steps `1` low-res target, `2` toon bands, `3` dither, `4` palette, `5` outline, `6` pixel upscale, `7` rim light,
-`8` keep the glints, and the number of bands; `B` the bodies' camera (picked 39.5°, upright 20°, true 54°), the hat's
-tilt and brim; `F` the facings (8 stepped, as baked sprites would be, or free); `9` mist, `0` rain.
+steps `Alt+1` low-res target, `2` toon bands, `3` dither, `4` palette, `5` outline, `6` pixel upscale, `7` rim light,
+`8` keep the glints, and the number of bands (the pipeline's numbers are Alt + the number since the squad battle, whose groups are the bare 1–9); `B` the bodies' camera (picked 39.5°, upright 20°, true 54°), the hat's
+tilt and brim; `F` the facings (8 stepped, as baked sprites would be, or free); `Alt+9` mist, `Alt+0` rain.
 
 The default style is **Painterly** (owner 2026-10-02 over the "Ronin 3D Styles" page: "Painterly with Anime Limited
 clashing and attack full screen animation"). The camera and hat defaults are the 3D faces page's picks: bodies from
