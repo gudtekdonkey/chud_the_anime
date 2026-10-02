@@ -2,7 +2,8 @@
 // Chromium: no page errors; the run in all 8 directions (the stick maps straight to the screen, he faces where he
 // runs); the roll (its i-frames, its distance); J1 → J2 → J3 on the samurai with every hit landing and the samurai
 // reacting; a cut cancelled into the roll; a kill and the respawn; the same loop with the pixel look; one shot per
-// pipeline toggle. Screenshots land in test-output/iso/. Chromium comes from PLAYWRIGHT_BROWSERS_PATH (never downloaded),
+// pipeline toggle; the blood (sprays, stains, splashes, the blade's coat flicked off), the killing blow's sever (the
+// piece and the dropped sword coming to rest on the floor, the pool) and every execution on K (gore.js, exec/). Screenshots land in test-output/iso/. Chromium comes from PLAYWRIGHT_BROWSERS_PATH (never downloaded),
 // with WebGL on SwiftShader, which draws a few frames a second: the page runs with &tick=N (N game steps a frame), and
 // every wait here is on the game's own clock or state, never the wall clock.
 import { chromium } from 'playwright';
@@ -23,7 +24,7 @@ page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
 page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push(`console: ${m.text()}`); });
 await page.route(/^https?:\/\/(?!localhost|127\.0\.0\.1)/, r => r.abort());   // hermetic
 
-const G = () => page.evaluate(() => ({ hero: window.__iso.hero, foe: window.__iso.foe, t: window.__iso.t, look: window.__iso.look, log: window.__iso.STATS.log.slice() }));
+const G = () => page.evaluate(() => ({ hero: window.__iso.hero, foe: window.__iso.foe, t: window.__iso.t, look: window.__iso.look, log: window.__iso.STATS.log.slice(), gore: window.__iso.gore }));
 const until = async (what, fn, arg, timeout = 60000) => {
   try { await page.waitForFunction(fn, arg, { timeout, polling: 50 }); }
   catch { const g = await G(); fail(`never reached ${what} (hero ${g.hero.state} at ${g.hero.x.toFixed(1)},${g.hero.z.toFixed(1)}; foe ${g.foe.state} hp ${g.foe.hp})`); } };
@@ -100,6 +101,13 @@ try {
     await seen('cine');   // J3 on him: the finisher's close-up
     ok(`${log.join(' ')}; he reacted ${g.foe.reacts.slice(-3).join(', ')}; impact frames and the close-up played`); }
 
+  // ---- blood: each of the three hits sprayed, the drops land as stains, the samurai and the blade carry it
+  step = 'blood'; { const b = (await G()).gore;
+    if (b.sprays < 3) fail(`${b.sprays} sprays for three hits`);
+    if (b.splashFoe < 1) fail('no splash on the samurai'); if (b.blade <= 0) fail('no blood on the blade');
+    await until('the drops landing as stains', () => window.__iso.gore.landed > 10 && window.__iso.gore.decals > 0);
+    const c = (await G()).gore; ok(`${c.sprays} sprays, ${c.landed} drops landed in ${c.decals} stains, ${c.splashFoe} splashes on him, ${c.splashHero} on the ronin, blade ${c.blade.toFixed(2)}`); }
+
   // ---- a cut cancelled into the roll: J, then Shift as soon as it has struck
   step = 'cancel into the roll'; await settle(); await forget(); { await page.keyboard.press('KeyJ'); await seen('J1');
     await page.keyboard.press('Shift'); await seen('roll'); await shot('cancel-roll');
@@ -110,6 +118,12 @@ try {
       if (Math.hypot(f.x - h.x, f.z - h.z) > 26) { await walkTo(f.x - 22, f.z, 6); await settle(); }
       await page.keyboard.press('KeyJ'); await gameWait(.32); }
     await until('the samurai dying', () => window.__iso.foe.dead); await gameWait(.6); await shot('death', ['hero', 'foe']);
+    // the killing blow took the part nearest the blade: a piece and his sword fall, come to rest on the floor, a pool spreads
+    { const b = (await G()).gore; if (b.severs < 1 || !b.cut.some(p => p !== 'sword')) fail(`no sever on the killing blow (cut: ${b.cut.join(' ')})`);
+      if (b.swords < 1) fail('his sword did not drop'); if (b.pools < 1) fail('no pool under him');
+      await until('the pieces at rest on the floor', () => window.__iso.gore.foePieces >= 2 && window.__iso.gore.resting >= 2 && window.__iso.gore.lowest < 4);
+      const c = (await G()).gore; await shot('sever', ['foe']); ok(`cut ${c.cut.join(' + ')}; ${c.resting} pieces at rest, the lowest at ${c.lowest.toFixed(1)}; ${c.clatters} clatters; flicks ${c.flicks}`);
+      if (c.flicks < 1) fail('the sheathe never flicked the blade clean'); }
     await until('the respawn', () => !window.__iso.foe.dead && window.__iso.foe.hp === 5, undefined, 90000); ok(`deaths ${(await G()).foe.deaths}`); }
   step = 'close-ups of J1 and J2'; await settle(); { const f = (await G()).foe; await walkTo(f.x - 22, f.z, 6); await settle();
     let n = (await G()).log.length; await page.keyboard.press('KeyJ'); await until('J1 landing', n => window.__iso.STATS.log.length > n, n); await shot('cut-J1', ['hero', 'foe']);
@@ -136,6 +150,27 @@ try {
   for (const [key, name] of [['Digit1', 'lowres'], ['Digit2', 'toon'], ['Digit3', 'dither'], ['Digit4', 'palette'], ['Digit5', 'outline'], ['Digit7', 'rim'], ['Digit8', 'glint']]) {
     await page.keyboard.press(key); await gameWait(.1); await shot(`pipe-${name}-flipped`); await page.keyboard.press(key); }
   ok();
+
+  // ---- the executions: K on the lone samurai in reach, each of the five in turn (exec/executions.js); each plays its
+  // close-up, cuts him into real pieces, and hands the ronin back
+  const NAMES = ['Behind the back', 'Through and past', 'Whirlwind', 'Far behind', 'Peek-a-boo'];
+  for (const name of NAMES) {
+    step = `execution: ${name}`;
+    await until('him standing again', () => !window.__iso.foe.dead && window.__iso.foe.state === 'guard', undefined, 90000);
+    { const f = (await G()).foe; await walkTo(f.x - 40, f.z, 8); } await settle();
+    await until('the K prompt (alone, in reach)', () => window.__iso.gore.kpick);
+    const n0 = (await G()).gore.execs; await forget(); await shot(`exec-${NAMES.indexOf(name)}-prompt`, ['hero', 'foe']);
+    await page.keyboard.press('KeyK');
+    await until('the execution', n => window.__iso.gore.execOn, undefined);
+    if ((await G()).gore.exec !== name) fail(`played ${(await G()).gore.exec}`);
+    await until('the killing cut', () => window.__iso.gore.cut.some(p => p !== 'sword'));
+    await shot(`exec-${NAMES.indexOf(name)}`, ['hero', 'foe']);
+    await until('the ronin handed back', () => !window.__iso.gore.execOn && window.__iso.hero.state === 'idle');
+    await until('the stage ending', n => window.__iso.gore.execs > n, n0);
+    const g = await G(); if (!g.foe.dead) fail('the samurai survived his execution');
+    if (!(await page.evaluate(() => window.__seen.has('cine')))) fail('no close-up');
+    if (g.gore.foePieces < 1) fail('no pieces'); ok(`cut ${g.gore.cut.join(' + ')}; ${g.gore.foePieces} pieces; the close-up played; flicks ${g.gore.flicks}`);
+  }
   errorsCheck();
   console.log('\ncheck:iso passed');
 } catch (e) { if (!process.exitCode) { console.error(e); process.exitCode = 1; } }

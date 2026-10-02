@@ -1,11 +1,11 @@
-// ---- Keys for the slice: WASD / arrows move (the stick maps straight to the screen), Shift or L rolls, J cuts.
+// ---- Keys for the slice: WASD / arrows move (the stick maps straight to the screen), Shift or L rolls, J cuts, K executes.
 // A press is remembered 0.2 s (the owner's Q3A input buffer) until a state can take it; held keys are read each step.
 const DOWN = new Set(), PRESS = [];
 const MAP = { KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
-  ShiftLeft: 'roll', ShiftRight: 'roll', KeyL: 'roll', KeyJ: 'cut' };
+  ShiftLeft: 'roll', ShiftRight: 'roll', KeyL: 'roll', KeyJ: 'cut', KeyK: 'exec' };
 export const BUFFER = .2;
 export function initInput(target) {
-  addEventListener('keydown', e => { const k = MAP[e.code]; if (!k) return; e.preventDefault(); if (!e.repeat && (k === 'roll' || k === 'cut')) PRESS.push({ k, age: 0 }); DOWN.add(k); });
+  addEventListener('keydown', e => { const k = MAP[e.code]; if (!k) return; e.preventDefault(); if (!e.repeat && (k === 'roll' || k === 'cut' || k === 'exec')) PRESS.push({ k, age: 0 }); DOWN.add(k); });
   addEventListener('keyup', e => { const k = MAP[e.code]; if (k) DOWN.delete(k); });
   addEventListener('blur', () => DOWN.clear());
   target.addEventListener('pointerdown', () => target.focus());

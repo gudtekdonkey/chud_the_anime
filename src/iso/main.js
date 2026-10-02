@@ -23,6 +23,7 @@ import { REELS, M as REEL_M, reelPos } from './reel.js';
 import { piece } from './gfx/build.js';
 import { shadeMat } from './gfx/shade.js';
 import { RAMP } from './gfx/palette.js';
+import { installGore } from './gore.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
@@ -53,6 +54,7 @@ function runGame(reel) {
     reel.build({ hero: (x, z, h) => place(hero, x, z, h), foe: (x, z, h) => { foe.a.alpha = 1; return place(foe, x, z, h); }, at: (t, fn) => script.push([t, fn]), M: REEL_M });
     script.sort((a, b) => a[0] - b[0]); PIPE.cine = Q.has('cine') ? 1 : 0; PIPE.clash = Q.has('clash') ? 1 : 0; }
   hitRules({ hero, foe });
+  const gore = reel ? null : installGore({ hero, foe, scene });   // blood, severing, the executions (gore.js); not in the reels
   initInput(canvas);
   // the model switch: every character's look is swapped; nothing else is told
   const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } root.querySelector('#o-look').value = kind; };
@@ -90,9 +92,11 @@ function runGame(reel) {
     room.update(W.t, hero);
     SH.uHatOn.value = 0;
     for (const c of chars) { if (c.shown !== c.a.out || c.lookKind === '3d') { const f = c.frame(c === hero); if (f) c.look.show(f); c.shown = c.a.out; } }
+    if (gore) gore.sync();
     const g = pipe.fx; g.clearRect(0, 0, pipe.fxCanvas.width, pipe.fxCanvas.height);
     for (const c of chars) drawTrail(g, c.trail.map(s => s.gap ? s : { t: s.t, a: toPx(s.mid), b: toPx(s.tip) }), c.a.out ? c.a.out.t : W.t, STYLE.s.trail);
     drawFx(g, W);
+    if (gore) gore.draw(g);
     if (PIPE.clash) { drawFocus(g, W);   // focus lines on a hit; speed lines behind a roll, a lunge or a skid
       for (const c of chars) if (['roll', 'lunge', 'skid', 'knock'].includes(c.state)) { const [x, y] = toPx([c.x, 10, c.z]), v = [Math.sin(c.a.h), Math.cos(c.a.h) * OBL.a]; speedLines(g, x, y, v[0], v[1], W.t); } }
     for (const c of chars) c.look.stamp(g);
@@ -125,6 +129,6 @@ function runGame(reel) {
       get foe() { return { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) }; },
       // where each one's feet are on the canvas, 0..1 (for the check's close-up shots)
       get px() { return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)) }; },
-      get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
+      get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get gore() { return gore && gore.view(); }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }

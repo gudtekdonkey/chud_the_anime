@@ -13,6 +13,7 @@ export const RAMP = {
   w: ['#1f1510', '#33201a', '#4d2c1d', '#6e3a20', '#94502a', '#b8602a', '#e08a3a', '#ffb36a', '#ffd29a', '#fff0d0'], // lantern light
   g: ['#1d2633', '#27324a', '#3a4660', '#56637d'],                                                     // fog
   f: ['#1c1f16', '#262b1d', '#323a26'],                                                                // moss between the stones
+  r: ['#1e0507', '#33080b', '#4d0c10', '#6a1115', '#8a1a1c', '#ad2623', '#d03a2e'],                   // blood (fx/blood.js), dark to fresh
 };
 export const hex = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
 export const PALETTE = Object.values(RAMP).flat().map(hex);
