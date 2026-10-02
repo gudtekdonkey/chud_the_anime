@@ -42,7 +42,7 @@ piece (`-l`, `-r`), so one ō-sode and one bare chain arm, or a claw on the swor
 That makes **200 pieces: 168 designs, 32 of them arm and hand designs in a left and a right piece.**
 
 **Families:** samurai 76, villager 63, ninja 61 (samurai lead in the armour layer: "different samurai armors").
-**Rarity** (by colour, below): 117 common, 58 uncommon, 21 rare, 2 epic, 2 legendary.
+**Rarity** (by colour, below): 118 common, 57 uncommon, 21 rare, 2 epic, 2 legendary.
 
 ## Why any two pieces fit: shells
 
@@ -109,8 +109,8 @@ A piece's rarity is its rarest colour. In the Pixel-render style the palette ste
 
 The party's four on the existing scale: `stats: 'V2E1'` is VIG +2, EDG +1 (`party/kit.js` `gearStats` reads the same
 keys: vigor, edge, speed, focus). 1–4 points a piece; samurai armour leans to VIG and EDG, ninja to SPD and EDG,
-villager to VIG and FOC. **Open for the owner:** a full outfit is 16 pieces, so it sums to ~15–25 points (Iron Ash in
-gear: VIG +16), where today's 7-slot wardrobe sums to ~8. On `player/stats.js`'s per-point effects (VIG 5% less damage a
+villager to VIG and FOC. **Open for the owner:** a full outfit is 16 pieces, so it sums to ~20–33 points (Iron Ash in
+gear: VIG +16, 23 in all; random outfits 21–33, the general 33), where today's 7-slot wardrobe sums to ~8. On `player/stats.js`'s per-point effects (VIG 5% less damage a
 point) that is too strong once gear reaches the game: either base pieces give nothing, or the per-point effects shrink,
 or stats come only from the armour layer. Placeholders until then.
 
@@ -136,8 +136,9 @@ random full outfit; the 11 presets (every slot filled) in 10 moments of the core
 (300 any family, 100 per family, every slot filled, every piece worn); for each: no errors, no slot worn that shows
 nothing, finite geometry within 30 units, every zone's pad between 0 and 3.2 units off the body, the pose applied in all
 8 facings, the pixel engine's drawing, the outfit string round-tripping.
-`npm run check:iso` adds the picker in the browser: a preset and a random outfit on the hero, a cut chain dressed, the
-pixel look dressed, no page errors (screenshots in `test-output/iso/`).
+`npm run check:iso` adds the picker in the browser, picked through the overlay: a preset (16 pieces built), a random
+outfit (`G`, every slot filled), a cut landing on the samurai in each and in the pixel look, back to Iron Ash as built,
+no page errors (screenshots `outfit-*.png` in `test-output/iso/`).
 
 ## Placeholder, and what an artist replaces
 

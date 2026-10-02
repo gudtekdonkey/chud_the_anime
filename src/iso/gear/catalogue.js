@@ -88,14 +88,17 @@ const W0 = { t: 0, dt: 1 / 120, fx: [], event() {}, actors: [] }, poseCache = {}
 function poseOf(name) { if (poseCache[name]) return poseCache[name]; const [clip, t] = POSES[name], a = new Actor(W0, { x: 0, z: 0, h: 0, foe: 0 });
   a.v = clip === 'run' ? 110 : 0; a.vt = a.v; a.play(clip, { blend: 0 }); for (let i = 0, n = Math.round(t / W0.dt); i <= n; i++) a.update(W0.dt); return poseCache[name] = a.pose; }
 // draw `outfit` at `yaw`, zoomed, and copy the middle of the frame into the 2D canvas `out`
-// where a card looks: each slot framed on its own part of him (height in world units, zoom)
-const FRAME = { head: [19.5, 8], torso: [12.5, 6.4], armL: [13, 6.4], armR: [13, 6.4], handL: [9, 8], handR: [9, 8], legs: [6, 6.2], feet: [3, 8], all: [11, 6.4] };
+// where a card looks: each slot framed on its own bone, wherever the pose put it ([bone, zoom, height above it])
+const FRAME = { head: ['head', 8, 2.2], torso: ['chest', 6.4, .6], armL: ['foreL', 7, .5], armR: ['foreR', 7, .5], handL: ['handL', 9, -.4], handR: ['handR', 9, -.4],
+  legs: ['shinR', 6.2, 1.2], feet: ['footR', 8, .2], all: ['hips', 6.2, 1.6] };
 // a wide brim needs the frame pulled back to fit
-const frameOf = p => { const hat = p.parts.find(q => q.k === 'hat' && q.R); return hat ? [19, Math.min(8, 40 / hat.R)] : FRAME[p.slot]; };
-function draw(outfit, yaw, out, [ty, zoom]) {
+const frameOf = p => { const hat = p.parts.find(q => q.k === 'hat' && q.R); return hat ? ['head', Math.min(8, 40 / hat.R), 3] : FRAME[p.slot]; };
+const _v = new THREE.Vector3();
+function draw(outfit, yaw, out, [bone, zoom, up], pose = $('f-pose').value) {
   const look = threeLook({ outfit, body: MANNEQUIN }); look.mount(scene); LOOK3D.hatTilt = 14;
-  SH.uHatOn.value = 0; look.show({ pose: poseOf($('f-pose').value), x: 0, y: 0, z: 0, yaw, flash: false, tint: null, alpha: 1, hero: true });
-  const tz = OBL.b * ty / OBL.a; CAM.px = 0; CAM.py = -tz; projMatrix(cam.projectionMatrix, 0, -tz, zoom); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
+  SH.uHatOn.value = 0; look.show({ pose: poseOf(pose), x: 0, y: 0, z: 0, yaw, flash: false, tint: null, alpha: 1, hero: true });
+  look.rig.B[bone].getWorldPosition(_v); _v.y += up;
+  const px = _v.x, py = _v.z - OBL.b * _v.y / OBL.a; CAM.px = px; CAM.py = py; projMatrix(cam.projectionMatrix, px, py, zoom); cam.projectionMatrixInverse.copy(cam.projectionMatrix).invert();
   SH.uDOff.value.set(0, 0); pipe.fx.clearRect(0, 0, pipe.fxCanvas.width, pipe.fxCanvas.height); look.stamp(pipe.fx);
   pipe.render(scene, cam);
   const g = out.getContext('2d'), k = pipe.k, w = out.width * k, h = out.height * k;
@@ -122,7 +125,10 @@ const cards = GEAR.map(p => {
 const queue = new Set(), seen = new IntersectionObserver(es => { for (const e of es) { const c = cards.find(c => c.el === e.target); if (e.isIntersecting) queue.add(c); else queue.delete(c); } }, { rootMargin: '300px' });
 for (const c of cards) seen.observe(c.el);
 const view = () => `${$('f-on').value}|${$('f-face').value}|${$('f-pose').value}|${$('f-style').value}`;
-function pump() { const v = view(); let n = 0; for (const c of queue) { if (c.el.hidden || c.drawn === v) continue; draw(wearOne(c.p), FACINGS[+$('f-face').value][1], c.cv, frameOf(c.p)); c.drawn = v; if (++n >= 3) break; }
+// a left piece is drawn from the mirrored facing, so it faces us; hands in the guard (in idle the hilt hides them)
+function pump() { const v = view(); let n = 0; for (const c of queue) { if (c.el.hidden || c.drawn === v) continue;
+    const pose = c.p.slot.startsWith('hand') && $('f-pose').value === 'idle' ? 'guard' : $('f-pose').value;
+    draw(wearOne(c.p), FACINGS[+$('f-face').value][1] * (c.p.side === 'L' ? -1 : 1), c.cv, frameOf(c.p), pose); c.drawn = v; c.el.dataset.v = 'y'; if (++n >= 3) break; }
   requestAnimationFrame(pump); }
 requestAnimationFrame(pump);
 function filter() { const s = $('f-slot').value, l = $('f-layer').value, f = $('f-fam').value, q = $('f-q').value.trim().toLowerCase(); let n = 0;
