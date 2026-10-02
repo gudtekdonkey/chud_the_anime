@@ -107,7 +107,9 @@ export async function portSteps({ page, base, fail, ok, setStep, shot, OUT }) {
   // ---- down, lifted, dead: H cuts the nearest companion down; a click on them takes him there and holds E; H twice kills
   setStep('port: down and lifted'); { await settle(); await page.keyboard.press('KeyH'); await until('a companion down', () => window.__iso.port.party.some(a => a.downed));
     const a = (await D()).party.find(a => a.downed); await gameWait(.5); await shot('port-downed', ['hero']);
-    await clickWorld(a.x, a.z, 6); await until('him lifting', () => window.__iso.port.items.lifting, undefined, 60000); await until('them back up', id => !window.__iso.port.party.find(a => a.id === id).downed, a.id);
+    await clickWorld(a.x, a.z, 6); await page.waitForFunction(() => window.__iso.port.click.log.at(-1) === 'lift' || window.__iso.port.items.lifting, undefined, { timeout: 5000, polling: 50 }).catch(() => {});
+    { const d = await D(); if (d.click.log.at(-1) !== 'lift' && !d.items.lifting) fail(`the click on ${a.name} (${a.x.toFixed(0)},${a.z.toFixed(0)}) read ${d.click.log.at(-1)}; screen ${JSON.stringify(await page.evaluate(([x, z]) => window.__iso.screenOf(x, z, 6), [a.x, a.z]))}`); }
+    await until('him lifting', () => window.__iso.port.items.lifting, undefined, 60000); await until('them back up', id => !window.__iso.port.party.find(a => a.id === id).downed, a.id);
     const b = (await D()).party.find(x => x.id === a.id); if (Math.abs(b.hp - .35) > .01) fail(`lifted at ${b.hp}`); ok(`${a.name} lifted at ${b.hp}`); }
   setStep('port: dead for good'); { await settle(); const bag0 = (await D()).bag.weapons, n0 = (await D()).party.length;
     await page.keyboard.press('KeyH'); await until('one down', () => window.__iso.port.party.some(a => a.downed)); await page.keyboard.press('KeyH');
@@ -119,7 +121,7 @@ export async function portSteps({ page, base, fail, ok, setStep, shot, OUT }) {
     await use('shrine', 64, 70, 8, () => window.__iso.port.items.used.shrine); let d = await D(); if (d.inv.hp < .99 || d.inv.qi < .99) fail(`after praying health ${d.inv.hp}, Qi ${d.inv.qi}`); if (!(await page.evaluate(() => window.__seen.has('pray')))) fail('he never prayed');
     await use('nodachi', 214, 246, 10, () => window.__iso.port.items.used.nodachi); d = await D(); if (d.inv.weapon !== 'nodachi') fail(`weapon ${d.inv.weapon}`);
     const mon0 = d.inv.mon; await use('chest', 380, 222, 6, () => window.__iso.port.items.used.chest); await until('the loot in', m => window.__iso.port.inv.mon >= m + 4, mon0);
-    await use('tablet', 100, 226, 10, () => window.__iso.port.items.used.tablet); d = await D(); if (d.inv.banner !== 'CROSS RIFT') fail(`banner ${d.inv.banner}`);
+    await use('tablet', 100, 226, 10, () => window.__iso.port.items.used.tablet); d = await D(); if (!d.inv.rift) fail('the tablet taught nothing');
     ok(`prayed (health ${d.inv.hp.toFixed(2)}), the nodachi taken, the chest's loot (+${d.inv.mon - mon0} mon), the tablet read`); }
 
   // ---- the pickups: the coins fly in within the magnet's reach; the relic to the empty charm slot
@@ -132,7 +134,8 @@ export async function portSteps({ page, base, fail, ok, setStep, shot, OUT }) {
     await until('the samurai standing', () => !window.__iso.foe.dead, undefined, 90000); const f = (await D()).foe, h0 = f.hits; await page.keyboard.press('Digit2'); await until('the talisman striking', h => window.__iso.foe.hits > h || window.__iso.foe.dead, h0); await settle();
     await page.keyboard.press('Digit3'); await until('the edge', () => window.__iso.port.inv.edge > 15); await shot('port-whetstone', ['hero']); await settle();
     await page.keyboard.press('KeyH'); await page.keyboard.press('KeyH');   // two cuts on him if nobody is left to take them, else on a companion
-    const hp0 = (await D()).inv.hp; await page.keyboard.press('Digit4'); await until('the incense healing', h => window.__iso.port.inv.hp > h + .05 || h > .95, hp0); await settle();
+    const hp0 = (await D()).inv.hp, n4 = (await D()).inv.quick[3].n; await page.keyboard.press('Digit4'); await until('the incense lit', n => (window.__iso.port.inv.quick[3] || { n: 0 }).n < n, n4);
+    await until('the incense healing', h => window.__iso.port.inv.hp > h + .05 || h > .95, hp0); await settle();
     const q1 = (await D()).inv.quick.map(q => q && q.n); if (!q0.every((n, i) => (q1[i] || 0) === n - 1)) fail(`stacks ${q0} → ${q1}`); ok(`stacks ${q0.join(' ')} → ${q1.join(' ')}`); }
 
   // ---- a click on the samurai: he runs in and cuts
@@ -151,6 +154,6 @@ export async function portSteps({ page, base, fail, ok, setStep, shot, OUT }) {
 
   // ---- the companions through the look seam: M swaps everyone's model, theirs included
   setStep('port: the pixel look'); { await page.keyboard.press('KeyM'); await until('the pixel look', () => window.__iso.look === 'pixel'); await gameWait(.4); await shot('port-pixel', ['hero']);
-    await page.keyboard.press('KeyM'); await until('the 3D look', () => window.__iso.look === '3d'); ok(`${(await D()).party.length} companions redrawn`); }
+    await page.keyboard.press('KeyM'); await until('the 3D look', () => window.__iso.look === '3d'); ok(`him and ${(await D()).party.length} companion(s) redrawn`); }
   void OUT;
 }

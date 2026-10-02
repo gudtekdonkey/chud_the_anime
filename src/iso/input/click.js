@@ -24,10 +24,14 @@ export function floorAt(canvas, cx, cy) { const r = canvas.getBoundingClientRect
   return { sx, sy, x: CAM.px + (sx - VW / 2) / (U * CAM.zoom), z: CAM.py + (sy - VH / 2) / (U * CAM.zoom * OBL.a) }; }
 // what is under a screen point: the samurai's body, a big item, a companion down, the fallen, a pickup, else the floor
 function pick(p) {
-  const over = (x, z, w, h) => { const [fx, fy] = toScreen(x, 0, z), [, hy] = toScreen(x, h, z); return Math.abs(p.sx - fx) < w && p.sy < fy + 6 && p.sy > hy - 4; };
-  for (const f of living()) if (over(f.x, f.z, 14, 26)) return { kind: 'foe', foe: f };
-  for (const it of BIG) if (usable(it) && over(it.x, it.z, it.w + 4, it.h)) return { kind: 'item', it, x: it.x, z: it.z };
-  for (const al of PARTY.downed()) if (over(al.x, al.z, 14, 16)) return { kind: 'lift', al, x: al.x, z: al.z };
+  // every body or marker whose box holds the point; the one whose middle is nearest the click wins
+  let best = null, d0 = 1e9;
+  const over = (x, z, w, h, g) => { const [fx, fy] = toScreen(x, 0, z), [, hy] = toScreen(x, h, z); if (Math.abs(p.sx - fx) < w && p.sy < fy + 6 && p.sy > hy - 4) {
+    const d = Math.hypot(p.sx - fx, p.sy - (fy + hy) / 2); if (d < d0) { d0 = d; best = g; } } };
+  for (const f of living()) over(f.x, f.z, 14, 26, { kind: 'foe', foe: f });
+  for (const it of BIG) if (usable(it)) over(it.x, it.z, it.w + 4, it.h, { kind: 'item', it, x: it.x, z: it.z });
+  for (const al of PARTY.downed()) over(al.x, al.z, 14, 16, { kind: 'lift', al, x: al.x, z: al.z });
+  if (best) return best;
   for (const f of FALLEN) if (Math.hypot(f.x - p.x, f.z - p.z) < 8) return { kind: 'harvest', x: f.x, z: f.z };
   for (const it of PICKUPS) if (!it.relic && Math.hypot(it.x - p.x, it.z - p.z) < 8) return { kind: 'floor', x: it.x, z: it.z };
   return { kind: 'floor', x: p.x, z: p.z };

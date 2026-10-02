@@ -20,20 +20,20 @@ export const PAIR_CD = 5, K_RANGE = 70, PARTNER_RANGE = 90;   // the party's coo
 export const PAIR = { cd: 0, last: null, run: null, done: 0, log: [] };
 const heroFits = ex => !ex.needs.hero || ex.needs.hero.includes(P.weapon || 'katana');
 
-// the paired execution K would play now: { al, f, opts } or null
+// the paired executions K could play now: { al, f, opts: [{ al, ex }] } (al: the nearest partner) or null
 export function pairCandidate() {
   if (PAIR.run || PAIR.cd > 0 || CTX.busy) return null;
   const hero = CTX.hero, f = nearestFoe(hero.x, hero.z, K_RANGE); if (!f || !lone(f)) return null;
-  for (const al of PARTY.standing()) { if (Math.hypot(al.x - f.x, al.z - f.z) > PARTNER_RANGE) continue;
-    const opts = PAIRED.filter(ex => STAGE[ex.id] && fits(al.c, ex) && heroFits(ex)); if (opts.length) return { al, f, opts }; }
-  return null;
+  const near = PARTY.standing().filter(al => Math.hypot(al.x - f.x, al.z - f.z) <= PARTNER_RANGE).sort((a, b) => Math.hypot(a.x - f.x, a.z - f.z) - Math.hypot(b.x - f.x, b.z - f.z));
+  const opts = near.flatMap(al => PAIRED.filter(ex => STAGE[ex.id] && fits(al.c, ex) && heroFits(ex)).map(ex => ({ al, ex })));
+  return opts.length ? { al: opts[0].al, f, opts } : null;
 }
-// K: play one (any that fits, never the same twice running). `force` picks one by id (the check, the picker)
+// K: play one (any pair that fits, never the same one twice running). `force` picks one by id (the check, &pair=)
 export function startPaired(force) {
   const c = pairCandidate(); if (!c) return false;
-  let opts = force ? c.opts.filter(o => o.id === force) : c.opts.filter(o => o.id !== PAIR.last); if (!opts.length) opts = c.opts;
-  const ex = opts[Math.floor(Math.random() * opts.length)]; PAIR.last = ex.id; PAIR.log.push(ex.id);
-  begin(ex, c.al, c.f); return ex.id;
+  let opts = force ? c.opts.filter(o => o.ex.id === force) : c.opts.filter(o => o.ex.id !== PAIR.last); if (!opts.length) opts = c.opts;
+  const { al, ex } = opts[Math.floor(Math.random() * opts.length)]; PAIR.last = ex.id; PAIR.log.push(ex.id);
+  begin(ex, al, c.f); return ex.id;
 }
 // a staging without a partner (port.js: K's solo finisher on a combo, until the executions are ported)
 export function startSolo(f) { if (!f || f.dead || PAIR.run || CTX.busy) return false; begin({ id: 'solo' }, null, f); return 'solo'; }
