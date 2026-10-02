@@ -7,6 +7,8 @@ import { ENEMIES, DMG, damage } from '../world/enemies.js';
 import { weapon } from '../weapons/weapons.js';
 import { has } from '../items/inventory.js';
 import { landCut } from './combo.js';
+import { landed, skillOf, tv } from './mastery.js';
+import { ST, HEAVY } from './stats.js';
 
 // ---- Hits: each enemy once per kind per move; P.struck remembers them for the sheath-click burst ----
 export function hitOne(e, i, kind, fx = P.x, fy = P.y) {
@@ -23,11 +25,14 @@ export function hitOne(e, i, kind, fx = P.x, fy = P.y) {
   for (let i = 0; i < n; i++) { const a = i < n * .7 ? away + rr(-1.1, 1.1) : rr(0, Math.PI * 2), v = rr(110, 170);
     spark(e.x + rr(-2, 2), e.y - 16 + rr(-4, 4), Math.cos(a) * v, Math.sin(a) * v * .7, rr(.09, .16), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
   if (base === 'slash') landCut();   // basic skill and the Flow chain
+  const sk = skillOf(base); if (sk) landed(sk);   // a skill's cast landed: a point in its tree
   if (P.storm > 0) chainFrom(e); else qiAdd((QI_GAIN[base] || 0) * qiMul());
-  damage(e, (DMG[base] || 1) * pw('dmg'), fx, fy);   // power: up to 1.5x
+  // EDG: now and then a cut lands heavy, a white cross over the struck man
+  const heavy = Math.random() < ST.heavy(); if (heavy) for (let i = 0; i < 4; i++) spark(e.x, e.y - 16, [1, -1, 0, 0][i] * 90, [0, 0, 1, -1][i] * 60, .1, '#ffffff', true);
+  damage(e, (DMG[base] || 1) * pw('dmg') * (sk ? tv(sk, 'dmg') : 1) * (heavy ? HEAVY : 1), fx, fy);   // power: up to 1.5x; the tree; a heavy cut
 }
 // Split Tsuba: +25%; a whetstone edge: twice as fast; power: up to +30%
-const qiMul = () => (has('tsuba') ? 1.25 : 1) * (INV.edge > 0 ? 2 : 1) * pw('qi');
+const qiMul = () => (has('tsuba') ? 1.25 : 1) * (INV.edge > 0 ? 2 : 1) * pw('qi') * ST.qi();   // FOC: +10% a point
 // the blade's own cuts (J, and I's two) reach further with a longer weapon
 export function hit(kind, cx, cy, r) {
   ENEMIES.forEach((d, i) => { if (d.alive && !P.hitDone[kind + i] && Math.hypot(d.x - cx, (d.y - 10 - cy) * 1.4) <= r) hitOne(d, i, kind); });

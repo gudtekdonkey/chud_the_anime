@@ -12,11 +12,14 @@ import { EL } from '../fx/element.js';
 import { has } from '../items/inventory.js';
 import { partyHas } from '../party/kit.js';
 import { T, pw, powerCast } from './power.js';
+import { allKnown, pickWild } from './mastery.js';
 
 // ---- Qi and the Storm Chain passive: hits fill it, a full meter wakes the storm for 8 s ----
 // the Qi each kind of hit feeds: bigger moves feed more (chain hits feed none, or the storm would never end)
 export const QI_GAIN = { slash: .1, d: .09, sw: .16, tc: .05, cm: .2, cr: .08, crB: .1, mi: .07 };
-export function qiAdd(v) { if (!v) return; P.qiIdle = 0; P.qi = Math.min(1, P.qi + v); INV.fx.qi = .06; if (P.qi >= 1) stormOn(); }
+// until he has mastered every skill a full meter is not the storm: it casts a skill he has not mastered, by itself (player/wild.js runs it)
+export function qiAdd(v) { if (!v || P.wild) return; P.qiIdle = 0; P.qi = Math.min(1, P.qi + v); INV.fx.qi = .06;
+  if (P.qi >= 1) { if (allKnown()) stormOn(); else P.wild = pickWild(); } }
 // Qi from items and shrines fills the meter but never wakes the storm by itself: a full meter waits for the next landed hit
 export function qiFill(v, flash = true) { if (!v || P.storm > 0) return; P.qiIdle = 0; P.qi = Math.min(1, P.qi + v); if (flash) INV.fx.qi = .06; }
 function stormOn() { qiFx(stormBurst); }

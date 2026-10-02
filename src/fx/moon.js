@@ -6,14 +6,15 @@ import { tearArc } from './void.js';
 import { rr, FRAG_COLS, ring, spark, dust, scrFlash, after } from './util.js';
 import { hit, burst } from '../player/hits.js';
 import { T, powerCast } from '../player/power.js';
+import { tv } from '../player/mastery.js';
 
 // ---- Crescent Moon (O): charge in place, release one giant crescent that sweeps into being along its arc ----
 const arcA = sw => -1.75 + 3.5 * sw;                                     // the arc's reach: it sweeps from overhead down through the front
 const moonPt = (m, a, r) => [m.x + m.face * Math.cos(a) * r, m.y + Math.sin(a) * r * SQ];
 export function unleashMoon(pow, twin = false) {
-  const face = twin ? -P.face : P.face, k = .35 + .65 * pow, R = Math.round(23 * (1 + 2 * k) * (twin ? .75 : 1)), cx = P.x + face * R * .25, cy = P.y - 13;
+  const face = twin ? -P.face : P.face, k = .35 + .65 * pow, R = Math.round(23 * (1 + 2 * k) * (twin ? .75 : 1) * tv('moon', 'size')), cx = P.x + face * R * .25, cy = P.y - 13;
   if (!twin) { powerCast(); if (T('moon', 'twin')) after(.1, () => unleashMoon(pow, true)); }   // power III: a smaller second moon sweeps the other way
-  moons.push({ x: cx, y: cy, fy: P.y, face, R, d: 6 + 9 * k, k, age: 0, SW: .15, HOLD: .3 + .14 * k, GLOW: .55, seed: Math.random(), echo: 0, shat: false, hit: false, struck: [], twin });
+  moons.push({ x: cx, y: cy, fy: P.y, face, R, d: 6 + 9 * k, k, age: 0, SW: .15, HOLD: .3 + .14 * k + tv('moon', 'hold'), GLOW: .55, seed: Math.random(), echo: 0, shat: false, hit: false, struck: [], twin });
   // the black slash: a slit of void opens along the arc just inside the blade, sweeping with it, and snaps shut as the moon shatters
   const m = moons[moons.length - 1]; tearArc(cx, cy, face, m.R - m.d - 1, arcA(0), arcA(1), 2 + 4 * k, m.SW + m.HOLD, m.SW);
   P.flash = .05; scrFlash(.08, .12 + .16 * pow); S.shake = .1; P.shakeAmp = 1 + Math.round(2 * pow);
@@ -27,7 +28,8 @@ export function updateMoons(dt) {
       if ((m.echo -= dt) <= 0) { m.echo = .035; crescent(m.x - m.face * rr(5, 12), m.y + rr(-4, 4), m.face, rr(-.35, .35), 1, m.R * rr(.4, .65), 4, .03, .22, .5); }
       for (let i = 0; i < 3; i++) { const [x, y] = moonPt(m, A, m.R - rr(0, m.d)), life = rr(.25, .5);
         frags.push({ x, y, w: 1 + (Math.random() * 2 | 0), col: i % 2 ? COL.core : COL.fx2, vx: -m.face * rr(10, 40), vy: rr(-20, 4), life, max: life, jx: 0, on: true }); } }
-    if (!m.hit && sw >= .5) { m.hit = true; const before = new Set(P.struck); hit(m.twin ? 'cmT' : 'cm', m.x + m.face * m.R * .45, m.y, m.R * 1.05); m.struck = [...P.struck].filter(d => !before.has(d)); }
+    if (!m.hit && sw >= .5) { m.hit = true; const before = new Set(P.struck); hit(m.twin ? 'cmT' : 'cm', m.x + m.face * m.R * .45, m.y, m.R * 1.05); m.struck = [...P.struck].filter(d => !before.has(d));
+      const pull = tv('moon', 'pull'); if (pull) for (const d of m.struck) if (d.alive) d.vx = Math.sign(P.x - d.x) * pull; }   // TIDE: what it cut slides toward him
     if (m.age >= m.SW && m.age < m.SW + m.HOLD && Math.random() < .7) { const [x, y] = moonPt(m, rr(-1.6, 1.6), m.R - rr(0, 3)), life = rr(.3, .6);
       frags.push({ x, y, w: 1, col: Math.random() < .5 ? COL.fx2 : COL.core, vx: m.face * rr(2, 10), vy: -rr(6, 16), life, max: life, jx: 0, on: true }); }
     if (!m.shat && m.age >= m.SW + m.HOLD) { m.shat = true; shatter(m); } }

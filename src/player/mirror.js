@@ -5,7 +5,8 @@ import { SLASH_BREAK, crescent } from '../fx/slash.js';
 import { rr, residue, spark } from '../fx/util.js';
 import { tear } from '../fx/void.js';
 import { setState } from './actions.js';
-import { hitOne } from './hits.js';
+import { hitOne, burst } from './hits.js';
+import { tv } from './mastery.js';
 import { ease } from '../rig/pose.js';
 import { ENEMIES, viewTo } from '../world/enemies.js';
 import { T, powerCast } from './power.js';
@@ -19,7 +20,7 @@ export function meditate() {
   const near = ENEMIES.map((d, i) => ({ d, i, r: Math.hypot(d.x - P.x, (d.y - P.y) * 1.3) })).filter(q => q.d.alive).sort((a, b) => a.r - b.r);
   // nobody left standing: the images still step out and cut the air around him
   if (!near.length) for (let j = 0; j < 3; j++) near.push({ d: { x: P.x + (j % 2 ? -1 : 1) * 34, y: P.y + (j - 1) * 14 }, i: -1, r: 0 });
-  const more = T('mirror', 'more'), n = Math.max(3 + more, Math.min(5 + more, near.filter(q => q.r < 200).length));   // more images with power
+  const more = T('mirror', 'more') + tv('mirror', 'more'), n = Math.max(3 + more, Math.min(5 + more, near.filter(q => q.r < 200 + tv('mirror', 'range')).length));   // more images with power and the tree
   powerCast();
   P.mq = Array.from({ length: n }, (_, j) => near[j % near.length]);   // spread across different enemies, nearest first
 }
@@ -42,7 +43,10 @@ export function updateMirrors(dt) {
     else if (t < MS + MD + MC) { const tc = t - MS - MD; m.st = 'slash1'; m.f = Math.min(SHEETS.slash1.n - 1, tc * 30 | 0); m.glitch = .4; m.y = m.ty;
       if (!m.done.cut && tc >= .16) { m.done.cut = 1; m.white = .05;
         crescent(m.x + m.face * 5, m.y - 12, m.face, .15, 1, 16, 5, .05, SLASH_BREAK, .9); tear(m.x + m.face * 6, m.y - 18, m.x + m.face * 24, m.y - 8, 2, .22); hitOne(m.d, m.di, 'mi' + m.j, m.x, m.y);
-        for (let k = 0; k < 4; k++) { const life = rr(.06, .12); frags.push({ x: m.x - m.face * rr(4, 18), y: m.y - rr(4, 24), w: 3 + (Math.random() * 6 | 0), col: k % 2 ? '#ffffff' : COL.fx2, vx: m.face * rr(10, 30), vy: 0, life, max: life, jx: 0, on: true }); } } }
+        for (let k = 0; k < 4; k++) { const life = rr(.06, .12); frags.push({ x: m.x - m.face * rr(4, 18), y: m.y - rr(4, 24), w: 3 + (Math.random() * 6 | 0), col: k % 2 ? '#ffffff' : COL.fx2, vx: m.face * rr(10, 30), vy: 0, life, max: life, jx: 0, on: true }); } }
+      // TWIN CUTS: a second, rising cut on the way back; at its deepest the target bursts on it
+      const tw = tv('mirror', 'twice'); if (tw && !m.done.cut2 && tc >= .28) { m.done.cut2 = 1; m.white = .04; crescent(m.x + m.face * 5, m.y - 12, m.face, -.5, -1, 15, 4, .05, SLASH_BREAK, .9);
+        hitOne(m.d, m.di, 'mi' + m.j + 'b', m.x, m.y); if (tw > 1 && m.d.alive != null) burst(m.d, .6); } }
     else { const k = (t - MS - MD - MC) / MF; m.a = 1 - k; m.glitch = .6 + 3 * k;
       if (!m.done.fade) { m.done.fade = 1; for (let i = 0; i < 12; i++) { const life = rr(.4, .8); frags.push({ x: m.x + rr(-8, 8), y: m.y - rr(2, 28), w: 1 + (Math.random() * 4 | 0), col: [COL.fx, COL.fx2, '#ffffff'][i % 3], vx: rr(-6, 6), vy: rr(-10, -2), life, max: life, jx: 0, on: true }); } } } }
   for (let i = mirrors.length - 1; i >= 0; i--) if (mirrors[i].t > MS + MD + MC + MF) mirrors.splice(i, 1);

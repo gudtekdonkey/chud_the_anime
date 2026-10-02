@@ -13,6 +13,7 @@ import { CD, startCd } from './cooldowns.js';
 import { collide } from '../world/room.js';
 import { T, powerCast } from './power.js';
 import { EL } from '../fx/element.js';
+import { tv } from './mastery.js';
 
 // ---- Charging (hold I, O or P): sparks and bolts converge onto his body while it glows ----
 export const TAP = .14, CHARGE_T = .9;
@@ -41,7 +42,7 @@ export function chargeUp(dt, inp) {
 // vanish (4) for V s, lunge cut (5-6), second cut (7-8), freeze (9) for `hold` s, resheathe (13-15); the payoff lands on the click in frame 14.
 export const TC = { name: 'Thousand Cuts', dist: 110, V: .34, hold: .24,
   go() { const x0 = P.x, y0 = P.y; residue(x0, y0, 14); blink(P.dist, P.blinkDir); P.C = [P.x, P.y]; P.face0 = P.face; P.a0 = rr(0, 6.28); P.last = [x0, y0 - 12];
-    P.tcN = T('tc', 'cuts');   // more cuts with power, packed into the same vanish
+    P.tcN = T('tc', 'cuts') + tv('double', 'cuts');   // more cuts with power (and THOUSAND MORE), packed into the same vanish
     hit('tc', P.x, P.y - 12, 30 + 30 * P.k); },
   frame(t) { const n = P.tcN || 7, j = t / (this.V / n) | 0, ph = t - j * this.V / n; return ph < .033 ? 5 + j % 4 : 4; },
   tick(t) { const n = P.tcN || 7, j = Math.min(n - 1, t / (this.V / n) | 0); if (t >= this.V || !once('tc' + j, true)) return;
@@ -62,7 +63,7 @@ export const TC = { name: 'Thousand Cuts', dist: 110, V: .34, hold: .24,
     for (const d of P.struck) burst(d, 1.2); } };
 export const RIFT = { name: 'Cross Rift', dist: 120, V: .08, hold: .3,
   go() { dash(); },
-  arm(sign) { const h = (30 + 42 * P.k) * T('rift', 'size'), cx = P.x + P.face * (30 + 26 * P.k), cy = P.y - 12, hx = h * .85, hy = h * .42 * sign;
+  arm(sign) { const h = (30 + 42 * P.k) * T('rift', 'size') * tv('rift', 'size'), cx = P.x + P.face * (30 + 26 * P.k), cy = P.y - 12, hx = h * .85, hy = h * .42 * sign;
     P.X = [cx, cy, h]; hitSeg('cr' + sign, cx - hx, cy - hy, cx + hx, cy + hy, 12 + 8 * P.k);
     return xTear(cx, cy, h, sign, 2.5 + 3.5 * P.k); },
   c1() { strike(-.5, 1, true); P.r1 = this.arm(1); }, c2() { strike(.5, -1, true); P.r2 = this.arm(-1); },
@@ -84,7 +85,7 @@ export const RIFT = { name: 'Cross Rift', dist: 120, V: .08, hold: .3,
       hit('crB', cx, cy, h * .95); residue(cx, cy + 14, 12);
       for (let i = 0; i < 34; i++) { const a = rr(0, 6.28); spark(cx, cy, Math.cos(a) * rr(90, 220), Math.sin(a) * rr(60, 140), rr(.12, .26), ['#ffffff', COL.fx2, COL.fx][i % 3], true); }
       for (const d of P.struck) burst(d, 1.2);
-      const e = T('rift', 'echo'); if (e) after(.25, () => echo(cx, cy, h * e)); }); } };
+      const e = Math.max(T('rift', 'echo'), tv('rift', 'echo')); if (e) after(.25, () => echo(cx, cy, h * e)); }); } };
 // power III: the rift's echo, a second, smaller detonation where the X was
 function echo(cx, cy, h) {
   S.hitstop = .05; S.shake = 2 / 60; ring(cx, cy + 2, h * .9, h * .5, .1); ring(cx, cy + 2, h * .5, h * .28, .2, 1.1, '#ffffff');
@@ -100,7 +101,7 @@ function dash() {
 export function release(v, min = 0) {
   const c = Math.max(min, P.charge || 0); P.cv = v; P.pow = c; P.ct = -.05; P.trem = 0; P.charge = null; // -.05: the glitch frame 3 plays before he vanishes
   P.k = .35 + .65 * c; // size scale: a short hold is still a charged move, a full one is the full thing
-  P.dist = 44 + (v.dist - 44) * c;
+  P.dist = 44 + (v.dist * (v === RIFT ? tv('rift', 'dist') : 1) - 44) * c;
   startCd(v === RIFT ? 'rift' : 'double', v === RIFT ? CD.rift : CD.tc);   // cools down from the release
   powerCast();
 }

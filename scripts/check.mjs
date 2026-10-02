@@ -68,6 +68,8 @@ try {
   const inv = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__game.INV)));
   const run = async (name, fn) => { step = name; await fn(); console.log(`  ok  ${name}`); };
 
+  // every key works from the start for the steps below (the skills picker); growth's own steps switch it back to 'as played'
+  await page.selectOption('#skills', 'mastered'); await page.locator('#game').click();
   // the party would cut the test samurai down before he can: they wait at camp (sent there on the kit screen) until the party steps
   const party = () => page.evaluate(() => ({ members: [...window.__game.party.members], order: window.__game.party.order,
     allies: window.__game.allies.map(a => ({ id: a.c.id, state: a.state, x: a.x, y: a.y, lv: a.c.lv, exp: a.c.exp })) }));
@@ -343,7 +345,8 @@ try {
     await until('an out-breath', q => window.__game.P.qi < q - .2, q0, 6000); await kb.up('c'); await kb.up('s');
     await reach(FREE, 6000); if (await page.evaluate(() => window.__game.P.shield)) fail('the shield stayed up after Seiza'); });
   await run('hold C at the shrine: Lotus pours the meter into health', async () => {
-    await qiUp(.4); await walkTo(78, 98); const q0 = await page.evaluate(() => window.__game.P.qi);
+    // .6: the walk to the shrine can take long enough for the meter to ebb under a notch
+    await qiUp(.6); await walkTo(78, 98); const q0 = await page.evaluate(() => window.__game.P.qi);
     await kb.down('c'); await reach(/^lotus$/); await sleep(400); await shot('07d-lotus');
     await until('the meter draining', q => window.__game.P.qi < q - .1, q0, 6000); await kb.up('c'); await reach(FREE, 8000); });
   await run('C in the storm: Storm breath spends the storm at once, heals and throws the samurai', async () => {
@@ -351,6 +354,83 @@ try {
     await kb.press('c'); await reach(/^sbreath$/); await sleep(300); await shot('07e-storm-breath');
     await until('the storm spent', () => !(window.__game.P.storm > 0) && window.__game.P.qi === 0, null, 6000); await reach(FREE, 8000);
     const hp1 = (await inv()).hp; if (!(hp1 >= hp0)) fail(`Storm breath lowered his health (${hp0} → ${hp1})`); });
+  // ---- growth (owner picks 2026-10-01, "Ronin Growth Ideas": 1B trees, 2B wild until mastered, 3A stats on gear) ----
+  // cut the nearest samurai, as a player would, until fn (read-only) is true
+  const cutUntil = async (what, fn, arg, tries = 140) => {
+    for (let i = 0; i < tries; i++) {
+      if (await page.evaluate(fn, arg)) return;
+      const e = await page.evaluate(() => { const P = window.__game.P, L = window.__game.E.filter(e => e.alive);
+        L.sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y)); return L[0] && { x: L[0].x, y: L[0].y }; });
+      if (!e) { await sleep(500); continue; }
+      if (await page.evaluate(q => Math.abs(window.__game.P.y - q.y) > 4 || Math.abs(window.__game.P.x - q.x) > 30, e)) await walkTo(e.x - 16, e.y, 10000, true).catch(() => {});
+      await kb.press('d'); await reach(FREE, 8000); await kb.press('j');
+      await page.waitForFunction(() => /^slash/.test(window.__game.P.state), undefined, { timeout: 3000 }).catch(() => {}); await reach(FREE, 8000); }   // a wild cast may take the turn
+    fail(`never got ${what} by cutting`); };
+  const wilds = () => page.evaluate(() => Object.fromEntries(Object.entries(window.__game.INV.sk).map(([k, v]) => [k, v.wild])));
+  await run('stats on gear: the mantle and hat add VIG and FOC; the Retainer outfit adds more, and it takes less', async () => {
+    const s0 = await page.evaluate(() => ({ v: window.__game.stat('vigor'), f: window.__game.stat('focus'), t: window.__game.ST.taken }));
+    if (s0.v !== 2 || s0.f < 2) fail(`the default outfit gives VIG ${s0.v} FOC ${s0.f}: the mantle adds VIG +1 and the hat FOC +1`);   // a relic picked up on the way may add FOC
+    await page.locator('[data-outfit="Retainer"]').click();
+    const s1 = await page.evaluate(() => ({ v: window.__game.stat('vigor'), t: window.__game.ST.taken }));
+    if (!(s1.v === 4 && s1.t < s0.t)) fail(`the Retainer outfit: VIG ${s1.v}, takes x${s1.t} (was x${s0.t})`);
+    await page.locator('[data-outfit="Default"]').click(); await page.locator('#game').click(); });
+  await run('as played: a full meter casts a skill he has not mastered by itself, says a line, and its key stays locked', async () => {
+    await page.selectOption('#skills', 'played'); await page.locator('#game').click();
+    // every line he says, as it appears (one lasts about 2 s, shorter than a step can take to look)
+    await page.evaluate(() => { window.__lines = []; const tick = () => { const l = window.__game.P.line;
+      if (l && window.__lines[window.__lines.length - 1] !== l) window.__lines.push(l); requestAnimationFrame(tick); }; tick(); });
+    await until('the storm over', () => !(window.__game.P.storm > 0), null, 15000);
+    const w0 = await wilds();
+    await cutUntil('a wild cast', w => Object.entries(window.__game.INV.sk).some(([k, v]) => v.wild > w[k]), w0);
+    const w1 = await wilds(), k = Object.keys(w1).find(q => w1[q] > w0[q]);
+    await until('the line over his head', () => window.__lines.length > 0, undefined, 3000);
+    if (await page.waitForFunction(() => window.__game.P.line && window.__game.P.line.t > .25, undefined, { timeout: 1500 }).then(() => true, () => false)) await shot('17-wild-cast');
+    const line = await page.evaluate(() => window.__lines.at(-1).s);
+    if (!["What's happening to me?", 'That again.', 'I think I can hold it.'].includes(line)) fail(`the line was "${line}"`);
+    if (w1[k] < 3 && await page.evaluate(q => window.__game.known(q), k)) fail(`${k} unlocked after ${w1[k]} wild cast(s)`);
+    if (w1[k] < 3) { await reach(FREE, 8000);
+      const key = { double: 'i', moon: 'o', rift: 'p', mirror: 'n', sweep: 'u', breath: 'c' }[k];
+      if (key === 'c') { await kb.down('c'); await sleep(400); await kb.up('c'); await sleep(200); if (/^(kata|seiza|lotus)$/.test(await state())) fail('a locked Breath of Qi started'); await reach(FREE, 5000); }
+      else { await kb.press(key);
+        // refused, or (the bug) the move started: he may already stand in a stance, so "not idle" proves nothing
+        const MOVE = { double: /^double/, moon: /^moon/, rift: /^double/, mirror: /^meditate/, sweep: /^sweep/ }[k];
+        await until('the refused press', ([q, m]) => window.__game.P.cdDeny[q] > 0 || new RegExp(m).test(window.__game.P.state), [k, MOVE.source], 1000);
+        if (await page.evaluate(q => !(window.__game.P.cdDeny[q] > 0), k)) fail(`${key.toUpperCase()} was not refused while ${k} is locked (state ${await state()})`); } }
+    console.log(`  (the wild cast was ${k}: "${line}")`); });
+  await run('three wild casts of one skill (the picker forces Crescent Moon) unlock its key: O works', async () => {
+    await page.selectOption('#skills', 'wild:moon'); await page.locator('#game').click();
+    await cutUntil('three wild moons', () => window.__game.INV.sk.moon.wild >= 3);
+    await until('the third line', () => window.__lines.some(l => l.s === 'I think I can hold it.'), undefined, 3000);
+    if (await page.waitForFunction(() => window.__game.P.line && window.__game.P.line.t > .25, undefined, { timeout: 1500 }).then(() => true, () => false)) await shot('18-wild-third');
+    if (!(await page.evaluate(() => window.__game.known('moon')))) fail('three wild moons did not unlock O');
+    await reach(FREE, 8000); await until('O ready', () => !(window.__game.P.cd.moon > 0), null, 12000);
+    await kb.down('o'); await reach(/^moonHold$/); await kb.up('o'); await reach(/^moon$/); await reach(FREE, 8000); });
+  await run('a landed cast earns a point in its tree; at II a fork picked on the kit screen (THOUSAND MORE) adds two cuts', async () => {
+    await page.selectOption('#skills', 'mastered'); await page.locator('#game').click();
+    const p0 = await page.evaluate(() => window.__game.INV.sk.double.pts);
+    for (let i = 0; i < 12 && await page.evaluate(p => window.__game.INV.sk.double.pts <= p, p0); i++) {
+      const e = await page.evaluate(() => { const P = window.__game.P, L = window.__game.E.filter(e => e.alive);
+        L.sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y)); return L[0] && { x: L[0].x, y: L[0].y }; });
+      if (!e) { await sleep(500); continue; }
+      await walkTo(e.x - 20, e.y, 10000, true).catch(() => {}); await kb.press('d'); await reach(FREE, 8000);
+      await until('I ready', () => !(window.__game.P.cd.double > 0), null, 4000); await kb.press('i'); await reach(FREE, 6000); }
+    if (await page.evaluate(p => window.__game.INV.sk.double.pts <= p, p0)) fail('no tree point from landed double slashes');
+    await page.selectOption('#skills', 'trees'); await page.selectOption('#power', '2'); await until('power II', () => window.__game.INV.power === 2);
+    if (await page.evaluate(() => window.__game.tv('double', 'cuts')) !== 0) fail('THOUSAND MORE works before it is picked');
+    await page.locator('#game').click(); await kb.press('Tab'); await until('the kit screen', () => window.__game.KIT.open);
+    for (let i = 0; i < 12 && await page.evaluate(() => window.__game.KIT.row !== 9); i++) await kb.press('s');
+    await kb.press('j'); await shot('19-kit-tree'); await kb.press('j');
+    if (await page.evaluate(() => window.__game.INV.sk.double.pick) !== 'a') fail('the fork pick did not take');
+    await shot('19a-kit-picked');
+    for (let i = 0; i < 12 && await page.evaluate(() => window.__game.KIT.row !== 0); i++) await kb.press('s');   // back to the top row for the steps after
+    await kb.press('Tab'); await until('the kit screen shut', () => !window.__game.KIT.open);
+    const n = await page.evaluate(() => window.__game.tv('double', 'cuts')); if (n !== 2) fail(`THOUSAND MORE adds ${n} cuts, not 2`);
+    await until('I ready', () => !(window.__game.P.cd.double > 0), null, 4000);
+    await kb.down('i'); await until('the I charge', () => window.__game.P.charge > .5); await kb.up('i'); await cv('Thousand Cuts');
+    await until('the vanish', () => window.__game.P.ct > .05, undefined, 2000);   // the cuts are counted as he vanishes
+    const cuts = await page.evaluate(() => window.__game.P.tcN); if (cuts !== 11) fail(`Thousand Cuts at II with THOUSAND MORE cut ${cuts} times, not 9 + 2`);
+    await reach(FREE, 6000);
+    await page.selectOption('#skills', 'mastered'); await page.selectOption('#power', '1'); await page.locator('#game').click(); });
   // ---- the party (prototypes/34-companions.html) ----
   await run('Tab: bring the three back, dress one and hand Kuro the katana from the bag', async () => {
     await kb.press('Tab'); await until('the kit screen', () => window.__game.KIT.open);

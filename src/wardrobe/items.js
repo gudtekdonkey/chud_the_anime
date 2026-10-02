@@ -15,54 +15,54 @@ const STRAW = ['........GGGG........', '.....GGHHHHHHGG.....', '..GGHHHHHHHHHHHH
 const STRAW_3D = { sit: 3, levels: [{ h: -1, r: 8, fill: 'B', edge: 'K' }, { h: 0, r: 9, fill: 'B', edge: 'G' }, { h: 1, r: 8, fill: 'H', edge: 'G', ew: 2 }, { h: 2, r: 5, fill: 'H', edge: 'G', ew: 2 }, { h: 3, r: 2, fill: 'G', edge: 'G' }] };
 export const ITEMS = [
   // ---- head ----
-  { id: 'straw', slot: 'head', name: 'Wide straw hat', about: 'The one he walked in with. Its brim tips forward on a cut.',
+  { id: 'straw', slot: 'head', stats: { focus: 1 }, name: 'Wide straw hat', about: 'The one he walked in with. Its brim tips forward on a cut.',
     parts: [{ kind: 'sidehat', rows: STRAW, hd: (...a) => strawHD(...a), hat3d: STRAW_3D, bias: 2.6 }] },   // over his head and eye, under the mantle and the near arm
   // ---- shoulders ----
-  { id: 'mantle', slot: 'shoulders', name: 'Flat mantle', about: 'His mantle from the start. Draped flat down the back, never a hump; its tip lifts a hair when he moves.',
+  { id: 'mantle', slot: 'shoulders', stats: { vigor: 1 }, name: 'Flat mantle', about: 'His mantle from the start. Draped flat down the back, never a hump; its tip lifts a hair when he moves.',
     parts: [{ kind: 'drape', col: 'M', edge: 'm', bias: 2.65 }] },   // over the head and hat, under the near arm, as it always was
-  { id: 'ragged', slot: 'shoulders', name: 'Ragged mantle', about: 'Short and heavy, frayed at the hem. It settles back onto his shoulders after every cut.',
+  { id: 'ragged', slot: 'shoulders', stats: { vigor: 2 }, name: 'Ragged mantle', about: 'Short and heavy, frayed at the hem. It settles back onto his shoulders after every cut.',
     parts: [{ kind: 'shell', rings: [{ f: 'c', u: 8.8, vf: 1.5, vb: -1.8, b: 2.2 }, MANTLE_RING], col: ['c5'], bias: .5 },
       { kind: 'skirt', f: 'c', ring: MANTLE_RING, cols: 16, rows: 2, drop: [1.9, 4.3], flare: .5, jag: .35, down: 'frame', stiff: .35, catch: .6, col: { out: 'c2', in: 'c0' }, bias: .5 }] },
-  { id: 'crow', slot: 'shoulders', name: 'Crow mantle', about: 'Long feathered layers to the elbow. They lift like wings when he turns.',
+  { id: 'crow', slot: 'shoulders', stats: { speed: 1, focus: 1 }, name: 'Crow mantle', about: 'Long feathered layers to the elbow. They lift like wings when he turns.',
     parts: [{ kind: 'shell', rings: [{ f: 'c', u: 8.8, vf: 1.5, vb: -1.8, b: 2.2 }, MANTLE_RING], col: ['c4'], bias: .5 },
       { kind: 'skirt', f: 'c', ring: MANTLE_RING, cols: 16, rows: 3, drop: [3.4, 5.6], flare: 1.1, jag: .45, down: 'frame', stiff: .12, catch: .8, col: { out: 'c1', in: 'c0', hem: 'c0' }, bias: .5 }] },
   // ---- neck ----
-  { id: 'scarf', slot: 'neck', name: 'Short scarf', about: 'A wrap and a stub of a tail. Just enough to flick when he stops.',
+  { id: 'scarf', slot: 'neck', stats: { speed: 1 }, name: 'Short scarf', about: 'A wrap and a stub of a tail. Just enough to flick when he stops.',
     parts: [{ kind: 'shell', rings: NECK, col: ['c4'], bias: .9 },
       { kind: 'chain', f: 'c', u: 8.7, v: -2.1, b: 1, n: 5, seg: 1.4, dir: [-.6, -1, .2], w: [2, 1], col: ['c4', 'c3'], stiff: .02, bias: .9 }] },
-  { id: 'longscarf', slot: 'neck', name: 'Long scarf', about: 'Two long tails that stream a body-length behind him when he runs.',
+  { id: 'longscarf', slot: 'neck', stats: { speed: 1, edge: 1 }, name: 'Long scarf', about: 'Two long tails that stream a body-length behind him when he runs.',
     parts: [{ kind: 'shell', rings: NECK, col: ['c3'], bias: .9 },
       { kind: 'chain', f: 'c', u: 8.7, v: -2.1, b: .9, n: 14, seg: 1.5, dir: [-.6, -1, .2], w: [2, 1], split: .6, col: ['c3', 'c2'], catch: 1.4, bias: .9 },
       { kind: 'chain', f: 'c', u: 8.5, v: -2.1, b: -.3, n: 9, seg: 1.4, dir: [-.6, -1, -.2], w: [1, 1], col: ['c2', 'c2'], catch: 1.2, bias: .85 }] },
   // ---- back ----
-  { id: 'cape', slot: 'back', name: 'Short cape', about: 'Shoulder to hip. It swings wide on a turn and snaps back.',
+  { id: 'cape', slot: 'back', stats: { speed: 1 }, name: 'Short cape', about: 'Shoulder to hip. It swings wide on a turn and snaps back.',
     parts: [{ kind: 'sheet', f: 'c', u: 8.1, v: -2.3, b0: -2.5, b1: 2.5, cols: 5, rows: 7, seg: 1.5, back: .3, stiff: .01, col: { out: 'c4', in: 'c1', hem: 'c2', edge: 'c5' }, bias: 0 }] },
-  { id: 'tattered', slot: 'back', name: 'Tattered long cape', about: 'Torn to the knee, with holes you can see the floor through.',
+  { id: 'tattered', slot: 'back', stats: { edge: 1, speed: 1 }, name: 'Tattered long cape', about: 'Torn to the knee, with holes you can see the floor through.',
     parts: [{ kind: 'sheet', f: 'c', u: 8.1, v: -2.3, b0: -2.7, b1: 2.7, cols: 6, rows: 11, seg: 1.6, back: .3, stiff: .005, lens: TATTER, holes: [[1, 5], [3, 7], [4, 3]], col: { out: 'c2', in: 'c0', hem: 'c1', edge: 'c4' }, bias: 0 }] },
   // ---- waist ----
-  { id: 'obi', slot: 'waist', name: 'Obi sash', about: 'A wide sash, knotted at the back, its two tails following him.',
+  { id: 'obi', slot: 'waist', stats: { focus: 1 }, name: 'Obi sash', about: 'A wide sash, knotted at the back, its two tails following him.',
     parts: [{ kind: 'shell', rings: [{ f: 'h', u: 1.4, vf: 2.3, vb: -2.3, b: 2.6 }, { f: 'h', u: 3.1, vf: 2.3, vb: -2.4, b: 2.6 }], col: ['c3'], bias: .3 },
       { kind: 'line', f: 'h', u: 3.1, vf: 2.3, vb: -2.4, b: 2.6, col: 'c5', bias: .35 },
       { kind: 'knot', f: 'h', u: 2.3, v: -2.7, b: -.6, size: 2, col: 'c4', bias: .4 },
       { kind: 'chain', f: 'h', u: 2, v: -2.8, b: -.9, n: 5, seg: 1.3, dir: [-.3, -1, 0], w: [2, 1], col: ['c3', 'c2'], bias: .35 },
       { kind: 'chain', f: 'h', u: 2, v: -2.8, b: -.2, n: 4, seg: 1.3, dir: [-.3, -1, .2], w: [1, 1], col: ['c2', 'c2'], bias: .3 }] },
-  { id: 'cord', slot: 'waist', name: "Wanderer's cord", about: 'A thin rope belt. One tasselled end swings at his left hip.',
+  { id: 'cord', slot: 'waist', stats: { speed: 1 }, name: "Wanderer's cord", about: 'A thin rope belt. One tasselled end swings at his left hip.',
     parts: [{ kind: 'line', f: 'h', u: 2.3, vf: 2.25, vb: -2.3, b: 2.55, col: 'c5', bias: .3 },
       { kind: 'knot', f: 'h', u: 2.2, v: 1.3, b: -2.2, size: 2, col: 'c5', bias: .35 },
       { kind: 'chain', f: 'h', u: 2, v: 1.3, b: -2.4, n: 5, seg: 1.2, dir: [.1, -1, -.1], w: [1, 1], col: ['c5', 'c4'], tassel: 'c4', bias: .35 }] },
   // ---- body ----
-  { id: 'plates', slot: 'body', name: 'Lamellar plates', about: 'Light lacquered plates on the chest, shoulders and hips. Enough to turn a glancing cut.',
+  { id: 'plates', slot: 'body', stats: { vigor: 2 }, name: 'Lamellar plates', about: 'Light lacquered plates on the chest, shoulders and hips. Enough to turn a glancing cut.',
     parts: [{ kind: 'shell', rings: [{ f: 'c', u: 4.2, vf: 2.4, vb: -2.6, b: 2.6 }, { f: 'c', u: 7.4, vf: 2.7, vb: -2.8, b: 3.1 }], col: ['c3'], bias: .2 },
       { kind: 'line', f: 'c', u: 5.3, vf: 2.5, vb: -2.7, b: 2.8, col: 'c5', bias: .25 }, { kind: 'line', f: 'c', u: 6.4, vf: 2.6, vb: -2.75, b: 3.0, col: 'c5', bias: .25 },
       { kind: 'skirt', f: 'h', ring: { u: 1, vf: 2.5, vb: -2.6, b: 2.9 }, cols: 8, rows: 2, drop: [3.6, 3.6], flare: 1, down: 'frame', stiff: .45, catch: .3, col: { out: 'c2', in: 'c0', hem: 'c4' }, bias: .2 },
       { kind: 'sode', col: 'c3', edge: 'c5', bias: .8 }] },
-  { id: 'coat', slot: 'body', name: 'Long coat', about: 'Knee-length and open at the front, so the skirts part around his legs.',
+  { id: 'coat', slot: 'body', stats: { vigor: 1, focus: 1 }, name: 'Long coat', about: 'Knee-length and open at the front, so the skirts part around his legs.',
     parts: [{ kind: 'shell', rings: [{ f: 'h', u: .3, vf: 2.3, vb: -2.3, b: 2.6 }, { f: 'c', u: 4, vf: 2.3, vb: -2.4, b: 2.5 }, { f: 'c', u: 7.3, vf: 2.6, vb: -2.7, b: 3.1 }, { f: 'c', u: 8.7, vf: 1.8, vb: -2, b: 2.1 }], col: ['c1', 'c1', 'c3'], bias: .15 },
       { kind: 'lapel', col: 'c4', bias: .3 },
       { kind: 'skirt', f: 'h', ring: { u: .5, vf: 2.6, vb: -2.7, b: 3 }, arc: [.5, TAU - .5], cols: 12, rows: 4, drop: [5.4, 6], flare: 1.3, stiff: .05, col: { out: 'c1', in: 'c0', hem: 'c0', edge: 'c3' }, bias: .15 }] },
   // ---- hands ----
-  { id: 'wraps', slot: 'hands', name: 'Hand wraps', about: 'Cloth bound from knuckle to elbow, for the grip.', parts: [{ kind: 'arm', style: 'wrap', col: ['c5', 'c3'], bias: .3 }] },
-  { id: 'kote', slot: 'hands', name: 'Iron kote', about: 'Armoured sleeves, plated from the wrist to the elbow.', parts: [{ kind: 'arm', style: 'kote', col: ['c3', 'c4'], edge: 'c6', bias: .3 }] },
+  { id: 'wraps', slot: 'hands', stats: { edge: 1 }, name: 'Hand wraps', about: 'Cloth bound from knuckle to elbow, for the grip.', parts: [{ kind: 'arm', style: 'wrap', col: ['c5', 'c3'], bias: .3 }] },
+  { id: 'kote', slot: 'hands', stats: { vigor: 1, edge: 1 }, name: 'Iron kote', about: 'Armoured sleeves, plated from the wrist to the elbow.', parts: [{ kind: 'arm', style: 'kote', col: ['c3', 'c4'], edge: 'c6', bias: .3 }] },
 ];
 export const BY_ID = Object.fromEntries(ITEMS.map(i => [i.id, i]));
 export const SLOTS = [['head', 'Head'], ['shoulders', 'Shoulders'], ['neck', 'Neck'], ['back', 'Back'], ['waist', 'Waist'], ['body', 'Body'], ['hands', 'Hands']];

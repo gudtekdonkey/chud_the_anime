@@ -24,6 +24,11 @@ import { WAKIZASHI } from './wakizashi.js';
 const KATANA = { id: 'katana', name: 'Katana', about: 'The sheathed blade at his hip: quick draw, clean arcs, the slow resheathe.', art: KATANA_ART, poses: {},
   reach: 1, weight: { stop: 1, shake: 1 } };
 export const WEAPONS = [KATANA, YARI, NODACHI, TANTO, NAGINATA, KANABO, KUSARIGAMA, TESSEN, BO, TETSUBO, KAMA, JITTE, DAISHO, NUNCHAKU, WAKIZASHI];
+// what each weapon adds to its wielder's four stats (owner pick 2026-10-01, "3A": gear adds points; party/kit.js gearStats)
+const STATS = { katana: { edge: 1 }, yari: { vigor: 1, focus: 1 }, nodachi: { edge: 2 }, tanto: { speed: 2 }, naginata: { vigor: 1, edge: 1 },
+  kanabo: { vigor: 2 }, kusarigama: { speed: 1, focus: 1 }, tessen: { focus: 2 }, bo: { vigor: 1, speed: 1 }, tetsubo: { vigor: 1, edge: 1 },
+  kama: { speed: 1, edge: 1 }, jitte: { vigor: 1, focus: 1 }, daisho: { edge: 2 }, nunchaku: { speed: 2 }, wakizashi: { speed: 1, edge: 1 } };
+for (const w of WEAPONS) w.stats = STATS[w.id];
 export const weapon = () => WEAPONS.find(w => w.id === P.weapon) || KATANA;
 
 export function framesFor(w, name) {

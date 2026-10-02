@@ -13,6 +13,7 @@ import { HURT_HOOKS } from '../items/harvest.js';
 import { BIG } from '../items/big.js';
 import { living } from '../world/enemies.js';
 import { kick } from '../world/enemy-body.js';
+import { known, castStart, landed, tv } from './mastery.js';
 
 // ---- Breath of Qi (C): healing by meditation, the four approved takes (prototypes/18-skills-ideas.html) ----
 // tap C: sit, as before (during Storm Chain: Storm breath) · hold C: Standing kata · hold C and down: Seiza, the shield · hold C at a shrine: Lotus
@@ -32,7 +33,7 @@ const nearShrine = () => BIG.some(it => it.id === 'shrine' && Math.hypot(it.x - 
 // C pressed with the blade free: during the storm it is Storm breath at once; otherwise wait to see if it is held
 export function breathKey(inp) {
   if (!inp.sit || P.state === 'sit' || P.state === 'sitDown') return false;
-  if (P.storm > 0) { start('sbreath'); return true; }
+  if (P.storm > 0 && known('breath')) { start('sbreath'); return true; }
   P.cWait = 0; return true;
 }
 // runs every step: a C still down after HOLD s picks the take; let go sooner and he sits
@@ -43,10 +44,11 @@ export function breathWait(dt, canAttack) {
   if ((P.cWait += dt) < HOLD) return false;
   P.cWait = null;
   const take = nearShrine() ? 'lotus' : held.has('down') ? 'seiza' : 'kata';
-  if (P.qi < NOTCH) { fizzle(); return false; }
+  if (!known('breath')) { P.cdDeny.breath = .2; return false; }   // not mastered yet: refused like a cooldown (player/mastery.js)
+  if (P.qi < cost()) { fizzle(); return false; }
   start(take); return true;
 }
-function start(s) { setState(s); P.aura = 0; P.bN = 0; P.z = 0; P.shield = false;
+function start(s) { setState(s); castStart('breath'); P.aura = 0; P.bN = 0; P.z = 0; P.shield = false;
   if (s === 'lotus') { P.lotusHp = 1 - INV.hp; P.lotusQi = P.qi; }
 }
 // not a notch of Qi: a grey puff at his chest and the meter blinks
@@ -54,11 +56,18 @@ function fizzle() { INV.fx.qi = .12; for (let i = 0; i < 5; i++) spark(P.x + rr(
 function spend(n = NOTCH) { P.qiIdle = 0; INV.fx.qi = .08;
   if (P.storm > 0) P.storm = Math.max(1e-3, P.storm - n * P.stormMax);   // the storm woke mid-breath (a companion's hit): the breath spends the storm
   else P.qi = Math.max(0, P.qi - n - 1e-6); }
-function end() { P.shield = false; P.z = 0; P.aura = 0; setState('idle'); }
+// the wild breath (player/wild.js): a kata he never chose, held for him until the meter is spent
+export function wildBreath() { start('kata'); P.wildHold = true; }
+// a notch, less with STILL WATER (the breath's tree)
+const cost = () => NOTCH * tv('breath', 'cost');
+// one out-breath: a notch spent, a heal (DEEP LUNGS), SECOND WIND off every cooldown; it counts as the breath landing
+function outBreath(h) { spend(cost()); heal(h * tv('breath', 'heal')); INV.fx.hp = .1; landed('breath');
+  const c = tv('breath', 'cool'); if (c) for (const k in P.cd) if (P.cd[k] > 0 && k !== 'tele') P.cd[k] = Math.max(1e-3, P.cd[k] - c); }
+function end() { P.wildHold = false; P.shield = false; P.z = 0; P.aura = 0; setState('idle'); }
 
 // one step of whichever take is playing
 export function breathState(s, T, dt) {
-  const k = tier(), tx = P.x + P.face, ty = P.y - 14 - P.z, holding = held.has('sit');
+  const k = tier(), tx = P.x + P.face, ty = P.y - 14 - P.z, holding = held.has('sit') || P.wildHold;
   P.aura = Math.min(.5, T * 1.2); P.qiIdle = 0;   // a breath is not idling: the meter does not ebb
   if (s === 'kata') { const b = BT.kata;
     if (!holding && T < 3.55) return end();   // let go: straight back into the fight
@@ -67,12 +76,12 @@ export function breathState(s, T, dt) {
         for (let q = 0; q < QI_RATE[k]; q++) { const a = rr(0, 6.28), r = rr(10, 34); motes.push(mote(P.x + Math.cos(a) * r, P.y + Math.sin(a) * r * .4, up[0], up[1], rr(.4, .7), rr(-6, 6))); }
         if (k >= 1) chip(k, 34, up[0], up[1]); }
       if (T >= t0 + .55 && T < t0 + .85) for (let q = 0; q < Math.ceil(QI_RATE[k] / 3); q++) motes.push(mote(P.x + P.face * 2 + rr(-8, 8), P.y - 30 + rr(-4, 4), tx, P.y - 9, rr(.2, .35), 0));   // out: sinking to the belly
-      if (beat('k' + i, T >= t0 + b.OUT)) { if (P.qi < NOTCH) return end(); spend(); heal(HEAL.kata); INV.fx.hp = .1; ring(tx, P.y - 9, 2, 2, .25, 6, COL.core); } }
+      if (beat('k' + i, T >= t0 + b.OUT)) { if (P.qi < cost()) return end(); outBreath(HEAL.kata); ring(tx, P.y - 9, 2, 2, .25, 6, COL.core); } }
   } else if (s === 'seiza') { const b = BT.seiza;
     if (!holding && T < b.GET) return end();
     P.shield = T >= b.UP && T < b.GET;
     let inb = false; for (let i = 0; i < 3; i++) { const t0 = b.B0 + i * b.BP; if (T >= t0 && T < t0 + b.OUT) inb = true;
-      if (beat('s' + i, T >= t0 + b.OUT)) { if (P.qi < NOTCH) return end(); spend(); heal(HEAL.seiza); INV.fx.hp = .1; ring(tx, ty, 2, 2, .25, 5, COL.core); } }
+      if (beat('s' + i, T >= t0 + b.OUT)) { if (P.qi < cost()) return end(); outBreath(HEAL.seiza); ring(tx, ty, 2, 2, .25, 5, COL.core); } }
     if (inb) { gather(k ? QI_RATE[k] / 2 : QI_RATE[k], tx, ty, 18, 70); if (k >= 1) chip(k, 40, tx, ty); }   // halved at II and III so the dome never buries him
     else if (T > b.UP && T < b.GET && Math.random() < .5) gather(k, tx, ty, 20, 50, 1.4);
     if (beat('fold', T >= b.GET - .05)) { const d = DOME[k]; qiFx(() => { for (let q = 0; q < 14 + k * 10; q++) { const a = rr(Math.PI, 2 * Math.PI);
@@ -96,7 +105,7 @@ const beat = (key, cond) => { if (!cond || P.ev['b' + key]) return false; P.ev['
 
 // Storm breath's out-breath: the rest of the storm spent at once, a big heal, and a shockwave that throws everyone near him
 function exhale(k) {
-  P.storm = 0; P.qi = 0; INV.fx.qi = .1; heal(HEAL.sbreath); INV.fx.hp = .12; P.trem = 0;
+  P.storm = 0; P.qi = 0; INV.fx.qi = .1; heal(HEAL.sbreath * tv('breath', 'heal')); landed('breath'); INV.fx.hp = .12; P.trem = 0;
   P.flash = .05; S.hitstop = .08; S.shake = .22; P.shakeAmp = 3; scrFlash(.04, .2);
   qiFx(() => {
     // the shockwave is air at his chest, never a ripple on the floor (Qi skills leave nothing there)
@@ -126,7 +135,7 @@ function path(sx, sy, tx, ty, q, curl) { const dx = tx - sx, dy = ty - sy, L = M
 export function updateBreath(dt) {
   clk += dt;
   for (const L of [motes, chips]) for (let i = L.length - 1; i >= 0; i--) if (clk - L[i].t0 >= L[i].dur) L.splice(i, 1);
-  if (!BREATHS.has(P.state)) { P.shield = false; if (P.z && P.state !== 'jump' && P.state !== 'fall' && P.state !== 'sweep') P.z = 0; }
+  if (!BREATHS.has(P.state)) { P.shield = false; P.wildHold = false; if (P.z && P.state !== 'jump' && P.state !== 'fall' && P.state !== 'sweep') P.z = 0; }
 }
 const px = (x, y) => g.fillRect(Math.round(x), Math.round(y), 1, 1);
 // behind him (drawn before the depth sort): the room darkening for Storm breath, and the far halves of the dome, the ribbons and the lotus ring

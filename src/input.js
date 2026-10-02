@@ -28,3 +28,7 @@ export function readInput() {
 document.getElementById('clear').addEventListener('change', e => { S.roomClear = e.target.checked; game.focus(); });
 // a testing override for the power tier: 0 is as earned
 document.getElementById('power').addEventListener('change', e => { S.powerTest = +e.target.value; game.focus(); });
+// a testing override for skill mastery (player/mastery.js): as played, all mastered, every tree full, or as played with the wild pick forced
+{ const sk = document.getElementById('skills'), N = { double: 'I, Thousand Cuts', moon: 'O, Crescent Moon', rift: 'P, Cross Rift', mirror: 'N, Mirror Meditation', sweep: 'U, Sky Drop', breath: 'C, Breath of Qi' };
+  sk.insertAdjacentHTML('beforeend', Object.entries(N).map(([k, n]) => `<option value="wild:${k}">as played, wild casts are always ${n}</option>`).join(''));
+  sk.addEventListener('change', e => { S.skillTest = e.target.value; game.focus(); }); }

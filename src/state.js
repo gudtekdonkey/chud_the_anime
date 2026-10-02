@@ -16,6 +16,7 @@ export const wear = makeFigure();
 // reassigned from many modules, so they live on one object: screen shake, hit pause, the pale screen flash,
 // and roomClear (page checkbox: treat the enemies as no threat)
 export const S = { shake: 0, hitstop: 0, impact: 0, scr: { t: 0, max: 1, a: 0 }, roomClear: false, banner: null, powerTest: 0,
+  skillTest: 'played',   // the page's skills picker (player/mastery.js): 'played', 'mastered', 'trees' (every tree full) or 'wild:<skill>'
   smoke: 0 };   // seconds of the static bomb's smoke left: while it is up every enemy counts as isolated, so K can take any of them
 
 
@@ -26,6 +27,8 @@ export const INV = { hp: .6, mon: 0, shards: 0, exp: 0, lv: 1, power: 1, upgrade
   weapon: 'katana',   // mirrors P.weapon for the HUD; the weapon system (src/weapons/) sets both
   quick: [{ id: 'bomb', n: 3 }, { id: 'talisman', n: 2 }, { id: 'whetstone', n: 2 }, { id: 'incense', n: 3 }],   // null = empty
   charms: ['bead', 'mirror', 'knot', null],
+  // each skill's growth (player/mastery.js): wild casts so far (three and its key works), known, tree points from landed casts, the fork's pick
+  sk: Object.fromEntries(['double', 'moon', 'rift', 'mirror', 'sweep', 'tele', 'breath'].map(k => [k, { wild: 0, known: k === 'tele', pts: 0, pick: null }])),
   fx: { qi: 0, mon: 0, shards: 0, weapon: 0, hp: 0, quick: [0, 0, 0, 0], charms: [0, 0, 0, 0] } };   // flash timers the HUD counts down
 // rising +1 text and plus marks, and the glints on a caught coin (world space, drawn over everything)
 export const pops = [], glints = [];

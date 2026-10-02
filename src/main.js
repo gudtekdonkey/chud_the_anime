@@ -17,6 +17,9 @@ import { ROSTER, party } from './party/kit.js';
 import { allies } from './party/companions.js';
 import { PF } from './player/facing.js';
 import { PAIRS, pairCandidate } from './party/paired.js';
+import { tv, known } from './player/mastery.js';
+import { ST } from './player/stats.js';
+import { statOf } from './party/kit.js';
 
 let last = performance.now(), acc = 0;
 function frame(now) {
@@ -35,4 +38,6 @@ initWeaponPicker();
 initWardrobe();
 
 // a read-only debug hook for `npm run check`: in dev, or in any build opened with ?test
-if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) window.__game = { P, PF, E: ENEMIES, N: NUMS, V: voids, wear, INV, S, K, ROSTER, party, allies, KIT, PAIRS, pairReady: () => !!pairCandidate() };
+if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) window.__game = { P, PF, E: ENEMIES, N: NUMS, V: voids, wear, INV, S, K, ROSTER, party, allies, KIT, PAIRS, pairReady: () => !!pairCandidate(),
+  // growth, read-only: a tree's value now, whether a key works, his stats in full and what they do
+  tv, known, stat: k => statOf(ROSTER[0], k), get ST() { return Object.fromEntries(Object.entries(ST).map(([k, f]) => [k, f()])); } };

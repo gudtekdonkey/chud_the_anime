@@ -7,47 +7,54 @@ import { ICON } from './icons.js';
 import { panel, slot } from './hud-kit.js';
 import { text, textW } from './pixfont.js';
 import { ROSTER, BAG, CHARMS, ROLES, WEAPON_NAME, SLOT_ROWS as ROW, party, inParty, charmSlots, wornIn, PARTY_MAX, FROM,
-  putOn, takeOff, giveWeapon, charmFits, putCharm, dropCharm, toggleParty, pairsFor, SKILLS, STATS, expNeed, leansOf } from '../party/kit.js';
+  putOn, takeOff, giveWeapon, charmFits, putCharm, dropCharm, toggleParty, pairsFor, SKILLS, STATS, expNeed, leansOf, statOf, statsText } from '../party/kit.js';
+import { SK_ROW, skillAt, skillOptions, skillHover, drawSkillsRow, drawHeroStats } from './kit-skills.js';
 import { WEAPONS } from '../weapons/weapons.js';
 import { allies, syncParty } from '../party/companions.js';
 import { frames, poseOf, lenOf, paint, figureFor } from '../party/figures.js';
 
 // ---- The kit screen (Tab, prototypes/34-companions.html): anyone in the roster, then any slot, then what goes in it. Keys or mouse ----
 // The game is paused while it is open (main.js). His kit is the game's own state, so what he is given here is what he fights with.
-export const KIT = { open: false, who: 0, row: 0, charm: 0, col: 'slots', opt: 0, scroll: 0, note: '', noteT: 0, clock: 0, hover: null };
+export const KIT = { open: false, who: 0, row: 0, charm: 0, sk: 0, col: 'slots', opt: 0, scroll: 0, note: '', noteT: 0, clock: 0, hover: null };
 const boxes = [], camp = new Map();
 const CY = '#6ff3e4', WH = '#ffffff', GREY = '#7d868e', DIM = '#565e66', INK = '#e9eeee';
 const sel = () => ROSTER[KIT.who = Math.min(KIT.who, ROSTER.length - 1)];
 // the figure to dress: his own, a companion's in the room, or one kept here for those waiting at camp
 const figOf = c => c.id === 'hero' ? wear : (allies.find(a => a.c === c) || {}).F || camp.get(c.id) || camp.set(c.id, figureFor(c)).get(c.id);
-const about = w => WEAPONS.find(v => v.id === w).about;
+// a piece's description leads with what it adds to the four stats (owner pick "3A": gear adds points)
+const withStats = (st, s) => (st ? statsText(st) + '. ' : '') + s;
+const about = w => { const v = WEAPONS.find(x => x.id === w); return withStats(v.stats, v.about); };
+const wAbout = id => withStats(BY_ID[id].stats, BY_ID[id].about), cAbout = id => withStats(CHARMS[id].stats, CHARMS[id].about);
+// his rows end with SKILLS (a tree per skill, kit-skills.js); a companion's do not
+const rows = () => sel().id === 'hero' ? [...ROW, SK_ROW] : ROW;
 const icon = id => ICON[id] || null;
 
 function options() {
-  const c = sel(), r = ROW[KIT.row];
+  const c = sel(), r = rows()[KIT.row];
+  if (r.key === 'skills') return skillOptions(skillAt(KIT.sk));
   const role = w => about(w) + ' As a companion: ' + ROLES[w].name + '. ' + ROLES[w].about;
   if (r.key === 'weapon') return [{ label: WEAPON_NAME[c.kit.weapon], on: true, about: role(c.kit.weapon), act: () => '' },
     ...BAG.weapons.map(w => ({ label: WEAPON_NAME[w], tag: 'BAG', about: role(w) + ' Yours goes in the bag.', act: () => giveWeapon(c, w, null) })),
     ...ROSTER.filter(o => o !== c).map(o => ({ label: WEAPON_NAME[o.kit.weapon], tag: o.name, about: role(o.kit.weapon) + ' A trade: ' + o.name + ' takes yours.', act: () => giveWeapon(c, o.kit.weapon, o) }))];
   if (r.key === 'charms') {
     const i = KIT.charm, out = [{ label: 'NONE', about: 'Leave the slot empty. The charm goes back in the bag.', act: () => (dropCharm(c, i), '') }];
-    BAG.charms.forEach((id, b) => out.push({ label: CHARMS[id].name, about: CHARMS[id].about, why: charmFits(c, id), act: () => putCharm(c, i, id, { bag: b }) }));
+    BAG.charms.forEach((id, b) => out.push({ label: CHARMS[id].name, about: cAbout(id), why: charmFits(c, id), act: () => putCharm(c, i, id, { bag: b }) }));
     for (const o of ROSTER) o.kit.charms.forEach((id, j) => { if (!CHARMS[id]) return; const self = o === c && j === i;
-      out.push({ label: CHARMS[id].name, on: self, tag: self ? '' : o === c ? 'SLOT ' + (j + 1) : o.name, about: CHARMS[id].about, why: self ? '' : charmFits(c, id),
+      out.push({ label: CHARMS[id].name, on: self, tag: self ? '' : o === c ? 'SLOT ' + (j + 1) : o.name, about: cAbout(id), why: self ? '' : charmFits(c, id),
         act: () => self ? '' : putCharm(c, i, id, { who: o, i: j }) }); });
     return out;
   }
   const cur = wornIn(c, r.key), inBag = [...new Set(BAG.wear.filter(id => BY_ID[id].slot === r.key))];
   const worn = ROSTER.filter(o => o !== c).flatMap(o => [...o.kit.wear].filter(id => BY_ID[id] && BY_ID[id].slot === r.key).map(id => [id, o]));
   return [{ label: 'NONE', on: !cur, about: 'Nothing in this slot.', act: () => takeOff(c, r.key) },
-    ...(cur ? [{ label: BY_ID[cur].name.toUpperCase(), on: true, about: BY_ID[cur].about, act: () => '' }] : []),
-    ...inBag.map(id => { const n = BAG.wear.filter(x => x === id).length; return { label: BY_ID[id].name.toUpperCase(), tag: n > 1 ? 'BAG x' + n : 'BAG', about: BY_ID[id].about, act: () => putOn(c, id, null) }; }),
-    ...worn.map(([id, o]) => ({ label: BY_ID[id].name.toUpperCase(), tag: o.name, about: BY_ID[id].about + ' Taken from ' + o.name + '.', act: () => putOn(c, id, o) }))];
+    ...(cur ? [{ label: BY_ID[cur].name.toUpperCase(), on: true, about: wAbout(cur), act: () => '' }] : []),
+    ...inBag.map(id => { const n = BAG.wear.filter(x => x === id).length; return { label: BY_ID[id].name.toUpperCase(), tag: n > 1 ? 'BAG x' + n : 'BAG', about: wAbout(id), act: () => putOn(c, id, null) }; }),
+    ...worn.map(([id, o]) => ({ label: BY_ID[id].name.toUpperCase(), tag: o.name, about: wAbout(id) + ' Taken from ' + o.name + '.', act: () => putOn(c, id, o) }))];
 }
 const say = s => { if (s) { KIT.note = s; KIT.noteT = 2.4; } };
 function apply(o) { if (o.why) return say(o.why); say(o.act()); syncParty(); KIT.col = 'slots'; }
-function switchWho(d) { KIT.who = (KIT.who + d + ROSTER.length) % ROSTER.length; KIT.col = 'slots'; KIT.charm = Math.min(KIT.charm, charmSlots(sel()) - 1); }
-const pickRow = i => { KIT.row = i; const o = options(); KIT.col = 'opts'; KIT.opt = Math.max(0, o.findIndex(x => x.on)); };
+function switchWho(d) { KIT.who = (KIT.who + d + ROSTER.length) % ROSTER.length; KIT.col = 'slots'; KIT.row = Math.min(KIT.row, rows().length - 1); KIT.charm = Math.min(KIT.charm, charmSlots(sel()) - 1); }
+const pickRow = i => { KIT.row = i; const o = options(); KIT.col = 'opts'; KIT.opt = Math.max(0, o.findIndex(x => x.on || x.first)); };
 
 export function toggleKit(open = !KIT.open) { KIT.open = open; if (open) Object.assign(KIT, { who: 0, col: 'slots' });   /* it opens on him */ held.clear(); taps.clear(); KIT.hover = null; }
 function key(k) {
@@ -55,12 +62,14 @@ function key(k) {
   if (k === 'e') return switchWho(1);
   if (k === ' ') { say(toggleParty(sel())); return syncParty(); }
   if (KIT.col === 'slots') {
-    if (k === 'w') KIT.row = (KIT.row + ROW.length - 1) % ROW.length;
-    if (k === 's') KIT.row = (KIT.row + 1) % ROW.length;
-    if (ROW[KIT.row].key === 'charms' && (k === 'a' || k === 'd')) KIT.charm = (KIT.charm + (k === 'a' ? -1 : 1) + charmSlots(sel())) % charmSlots(sel());
+    const R = rows();
+    if (k === 'w') KIT.row = (KIT.row + R.length - 1) % R.length;
+    if (k === 's') KIT.row = (KIT.row + 1) % R.length;
+    if (R[KIT.row].key === 'skills' && (k === 'a' || k === 'd')) KIT.sk = (KIT.sk + (k === 'a' ? -1 : 1) + 7) % 7;
+    else if (R[KIT.row].key === 'charms' && (k === 'a' || k === 'd')) KIT.charm = (KIT.charm + (k === 'a' ? -1 : 1) + charmSlots(sel())) % charmSlots(sel());
     else if (k === 'a') switchWho(-1); else if (k === 'd') switchWho(1);
     if (k === 'j') pickRow(KIT.row);
-    if (k === 'k') { const r = ROW[KIT.row]; if (r.key === 'charms') dropCharm(sel(), KIT.charm); else if (r.key !== 'weapon') takeOff(sel(), r.key); syncParty(); }
+    if (k === 'k') { const r = R[KIT.row]; if (r.key === 'charms') dropCharm(sel(), KIT.charm); else if (r.key !== 'weapon' && r.key !== 'skills') takeOff(sel(), r.key); syncParty(); }
   } else {
     const n = options().length;
     if (k === 'w') KIT.opt = (KIT.opt + n - 1) % n;
@@ -115,7 +124,7 @@ function tabs() {
     text(fit(o.name, 32), x + 26, y + 8, on ? WH : '#a9b1b6');
     const st = o.id === 'hero' ? 'YOU' : inParty(o) ? 'PARTY' : 'CAMP';
     text(st, x + 26, y + 16, st === 'CAMP' ? DIM : CY); text(WEAPON_NAME[o.kit.weapon].split(' ').pop(), x + 26, y + 24, GREY);
-    box(x, y, 60, 34, () => { KIT.who = i; KIT.col = 'slots'; KIT.charm = Math.min(KIT.charm, charmSlots(o) - 1); });
+    box(x, y, 60, 34, () => { KIT.who = i; KIT.col = 'slots'; KIT.row = Math.min(KIT.row, rows().length - 1); KIT.charm = Math.min(KIT.charm, charmSlots(o) - 1); });
   });
 }
 function whoPanel(c, dt) {
@@ -125,11 +134,12 @@ function whoPanel(c, dt) {
   if (FROM[c.from]) text(FROM[c.from], 11, 47, DIM);
   const hero = c.id === 'hero', lv = 'LV ' + c.lv;
   text(lv, 146 - textW(lv, 2), 156, CY, 2);
-  text(hero ? 'COMPANIONS CHOOSE THEIR OWN STATS' : ROLES[c.kit.weapon].name, 12, 178, hero ? GREY : CY);
+  text(hero ? 'GEAR ADDS POINTS, POWER MULTIPLIES' : ROLES[c.kit.weapon].name, 12, 178, hero ? GREY : CY);
   g.fillStyle = '#23272d'; g.fillRect(12, 186, 134, 2); g.fillStyle = '#b8fff6'; g.fillRect(12, 186, Math.round(134 * Math.min(1, c.exp / expNeed(c.lv))), 2);
   if (!hero) Object.entries(STATS).forEach(([k, St], i) => { const x = 12 + i * 34, mine = c.chose === k;
-    text(St.name, x, 191, mine ? CY : DIM); text(String(c.stats[k]), x + 14, 191, WH);
-    box(x, 190, 30, 7, () => {}, { label: St.long, about: St.about + ' This companion chooses their own points.' }); });
+    text(St.name, x, 191, mine ? CY : DIM); text(String(statOf(c, k)), x + 14, 191, WH);
+    box(x, 190, 30, 7, () => {}, { label: St.long, about: St.about + ' This companion chooses their own points; gear adds more.' }); });
+  if (hero) drawHeroStats(box);
   const tr = c.traits.length ? c.traits.map(([id]) => id.replace(/[A-Z]/g, m => ' ' + m).toUpperCase()).join(', ') : 'NONE: HIS OWN WALK';
   if (!hero) { const sk = c.skills.map(k => SKILLS[k]), pr = pairsFor(c);
     text('LEANS', 12, 200, DIM); text(fit(leansOf(c).join(', ') + (c.chose ? '. LAST: ' + STATS[c.chose].long : ''), 104), 40, 200, '#a9b1b6');
@@ -137,15 +147,16 @@ function whoPanel(c, dt) {
     if (sk.length) text('KNOWS ' + sk.join(', '), 146 - textW('KNOWS ' + sk.join(', ')), 170, '#a9b1b6');
     const on = inParty(c); g.fillStyle = on ? '#182423' : 'rgba(12,13,17,.9)'; g.fillRect(104, 55, 44, 11); frameRect(104, 55, 44, 11, on ? CY : DIM);
     text(on ? 'IN PARTY' : 'AT CAMP', 107, 58, on ? CY : GREY); box(104, 55, 44, 11, () => { say(toggleParty(c)); syncParty(); }); }
-  const my = hero ? 196 : 216; text('MOVES', 12, my, DIM); text(fit(tr, 104), 40, my, '#a9b1b6');
+  const my = hero ? 215 : 216; text('MOVES', 12, my, DIM); text(fit(tr, 104), 40, my, '#a9b1b6');
 }
 function slotsPanel(c) {
   panel(156, 42, 150, 182);
-  ROW.forEach((r, i) => {
+  rows().forEach((r, i) => {
     const y = 47 + i * 14, focus = i === KIT.row;
-    if (focus && r.key !== 'charms') { g.fillStyle = KIT.col === 'slots' ? '#182423' : '#15191b'; g.fillRect(158, y - 3, 146, 12); }
+    if (focus && r.key !== 'charms' && r.key !== 'skills') { g.fillStyle = KIT.col === 'slots' ? '#182423' : '#15191b'; g.fillRect(158, y - 3, 146, 12); }
     text(r.name, 161, y, focus ? CY : GREY);
     if (r.key === 'weapon') text(WEAPON_NAME[c.kit.weapon], 208, y, INK);
+    else if (r.key === 'skills') drawSkillsRow(y, focus, KIT.sk, KIT.col, box, pickRow, i, KIT);
     else if (r.key === 'charms') {
       for (let k = 0; k < 4; k++) { const x = 206 + k * 24, sy = y - 2, open = k < charmSlots(c), id = CHARMS[c.kit.charms[k]] ? c.kit.charms[k] : null;
         if (!open) { g.fillStyle = 'rgba(12,13,17,.5)'; g.fillRect(x, sy, 20, 20); frameRect(x, sy, 20, 20, '#23272d'); continue; }
@@ -154,13 +165,13 @@ function slotsPanel(c) {
         if (focus && k === KIT.charm) frameRect(x - 2, sy - 2, 24, 24, KIT.col === 'slots' ? CY : GREY);
         box(x, sy, 20, 20, () => { KIT.charm = k; pickRow(i); }, id ? { label: CHARMS[id].name, about: CHARMS[id].about } : null); }
     } else { const id = wornIn(c, r.key); text(id ? fit(BY_ID[id].name.toUpperCase(), 92) : '-', 208, y, id ? INK : DIM); }
-    if (r.key !== 'charms') box(158, y - 3, 146, 12, () => pickRow(i));
+    if (r.key !== 'charms' && r.key !== 'skills') box(158, y - 3, 146, 12, () => pickRow(i));
   });
 }
 function optsPanel(opts, r) {
   panel(310, 42, 164, 182);
   const N = 13;
-  text((r.key === 'charms' ? 'CHARM ' + (KIT.charm + 1) : r.name) + (KIT.col === 'opts' ? '' : ' (J)'), 315, 47, KIT.col === 'opts' ? CY : GREY);
+  text((r.key === 'charms' ? 'CHARM ' + (KIT.charm + 1) : r.key === 'skills' ? skillHover(skillAt(KIT.sk)).label : r.name) + (KIT.col === 'opts' ? '' : ' (J)'), 315, 47, KIT.col === 'opts' ? CY : GREY);
   KIT.opt = Math.min(KIT.opt, opts.length - 1);
   if (KIT.opt < KIT.scroll) KIT.scroll = KIT.opt; if (KIT.opt >= KIT.scroll + N) KIT.scroll = KIT.opt - N + 1;
   KIT.scroll = Math.max(0, Math.min(KIT.scroll, opts.length - N));
@@ -177,8 +188,8 @@ function optsPanel(opts, r) {
 function aboutPanel(c, opts, r) {
   panel(6, 228, 468, 38);
   const worn = r.key !== 'weapon' && r.key !== 'charms' && wornIn(c, r.key), ch = CHARMS[c.kit.charms[KIT.charm]];
-  const hv = KIT.hover || (KIT.col === 'opts' ? opts[KIT.opt] : r.key === 'charms' ? (ch ? { label: ch.name, about: ch.about } : { label: 'EMPTY CHARM SLOT', about: 'J to choose a charm.' })
-    : r.key === 'weapon' ? { label: WEAPON_NAME[c.kit.weapon], about: about(c.kit.weapon) } : worn ? { label: BY_ID[worn].name.toUpperCase(), about: BY_ID[worn].about } : { label: r.name, about: 'Nothing worn here. J to choose.' });
+  const hv = KIT.hover || (KIT.col === 'opts' ? opts[KIT.opt] : r.key === 'skills' ? skillHover(skillAt(KIT.sk)) : r.key === 'charms' ? (ch ? { label: ch.name, about: cAbout(c.kit.charms[KIT.charm]) } : { label: 'EMPTY CHARM SLOT', about: 'J to choose a charm.' })
+    : r.key === 'weapon' ? { label: WEAPON_NAME[c.kit.weapon], about: about(c.kit.weapon) } : worn ? { label: BY_ID[worn].name.toUpperCase(), about: wAbout(worn) } : { label: r.name, about: 'Nothing worn here. J to choose.' });
   if (hv) { text(hv.label, 12, 233, WH); if (hv.why) text(hv.why, 12 + textW(hv.label) + 8, 233, '#ff5a4a');
     wrap(hv.about.toUpperCase(), 330).slice(0, 3).forEach((l, i) => text(l, 12, 242 + i * 7, '#a9b1b6')); }
   g.fillStyle = '#2c323b'; g.fillRect(352, 231, 1, 32);
@@ -190,7 +201,7 @@ let last = 0;
 export function drawKit() {
   const now = performance.now() / 1000, dt = Math.min(.05, last ? now - last : 0); last = now;
   KIT.clock += dt; KIT.noteT = Math.max(0, KIT.noteT - dt); boxes.length = 0;
-  const c = sel(), r = ROW[KIT.row], opts = options();
+  const c = sel(), r = rows()[KIT.row], opts = options();
   g.fillStyle = 'rgba(8,9,11,.95)'; g.fillRect(0, 0, W, H);
   tabs(); whoPanel(c, dt); slotsPanel(c); optsPanel(opts, r); aboutPanel(c, opts, r);
 }

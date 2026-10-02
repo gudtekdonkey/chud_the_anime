@@ -2,6 +2,8 @@ import { P, INV } from '../state.js';
 import { threatNear } from './actions.js';
 import { pw } from './power.js';
 import { FLOW_KEYS, breakChain } from './combo.js';
+import { known, castStart, tv } from './mastery.js';
+import { ST } from './stats.js';
 
 // ---- Cooldowns: every active has one, keyed by its input name; the skill bar draws them ----
 // seconds. I's slot takes the tap's 2 s, or Thousand Cuts' 8 s when the hold is released. tele only keys K's slot: the blink runs on charges
@@ -15,19 +17,22 @@ export const ready = k => !(P.cd[k] > 0);
 // casting a skill breaks the Flow count; with Flow earned, a skill still cooling down casts anyway and spends it
 export function startCd(k, t = CD[k]) {
   if (FLOW_KEYS.has(k)) { breakChain(); if (P.cd[k] > 0 && P.flow > 0) { P.flow = 0; P.flowUsed = .3; P.cdPop[k] = .25; } }
-  t *= pw('cd'); P.cd[k] = t; P.cdMax[k] = t; }   // power shortens every cooldown (up to 20% at III)
+  castStart(k);   // a cast of a skill with a tree: its first landed hit earns a point (player/mastery.js)
+  t *= pw('cd') * ST.cd() * (INV.sk[k] ? tv(k, 'cd') : 1); P.cd[k] = t; P.cdMax[k] = t; }   // power shortens every cooldown (up to 20% at III), then FOC and the tree
 // the plain blink: free with no enemy near (design notes: he can spam it), otherwise it takes a charge, or Flow when none is left
 export const canBlink = () => !threatNear() || P.blinks > 0 || P.flow > 0;
 export function spendBlink() {
   breakChain(); if (!threatNear()) return;
   if (P.blinks > 0) P.blinks--; else { P.flow = 0; P.flowUsed = .3; P.cdPop.tele = .25; }
-  P.blinkT = BLINK_REFILL; if (!P.blinks) P.cd.tele = P.cdMax.tele = BLINK_REFILL;   // out of charges: the K slot counts down the refill
+  const R = BLINK_REFILL * tv('tele', 'refill'); P.blinkT = R; if (!P.blinks) P.cd.tele = P.cdMax.tele = R;   // out of charges: the K slot counts down the refill
 }
 // call this when a K assassination kills: the flash is recastable after 0.2 s. Executions never spend a charge
 export function onAssassination() { P.kLock = FLASH_RESET; if (P.blinks > 0) P.cd.tele = P.cdMax.tele = FLASH_RESET; }
 // a key pressed while its skill is cooling down does nothing, and its slot blinks. K's own cooldown is only the flash reset;
 // an empty blink is refused where it would blink (player/update.js), so executions still go with no charges left
+// a key he has not mastered yet (player/mastery.js) is refused the same way, Flow or not
 export function gate(inp) {
+  for (const k in CD) if (inp[k] && !known(k)) { inp[k] = false; P.cdDeny[k] = .2; }
   for (const k in CD) if (inp[k] && (k === 'tele' ? P.kLock > 0 : !ready(k)) && !(P.flow > 0 && FLOW_KEYS.has(k))) { inp[k] = false; P.cdDeny[k] = .2; } }
 export function updateCds(dt) {
   P.kLock = Math.max(0, (P.kLock || 0) - dt);

@@ -5,6 +5,8 @@ import { text, textW } from './pixfont.js';
 import { g } from '../screen.js';
 import { comboMax, FLOW_KEYS, FLOW_N, FLOW_KEEP } from '../player/combo.js';
 import { blinkMax } from '../player/cooldowns.js';
+import { known } from '../player/mastery.js';
+import { BREATHS } from '../player/breath.js';
 
 // ---- The skills' cooldowns (PR #1's logic), drawn in the items HUD's style: a row of small slots under health and Qi ----
 // a cooldown is the slot's shade draining upward, with the seconds left; a refused press blinks the frame white; ready again, it glints
@@ -16,6 +18,7 @@ const ICONS = {
   mirror: ['..##....++..', '..##....++..', '.####..++++.', '#.##.#+.++.+', '..##....++..', '..##....++..', '.#..#..+..+.', '.#..#..+..+.', '.#..#..+..+.', '............', '.####..++++.', '............'],
   sweep:  ['.....ww.....', '.....##.....', '.....##.....', '.....##.....', '....####....', '.....##.....', '..+..##..+..', '.+...ww...+.', '+...wwww...+', '.+........+.', '..++....++..', '....++++....'],
   tele:   ['............', '.+......ww..', '.......wwww.', '..++..wwwwww', '......wwwwww', '+++..#wwwwww', '......wwwwww', '..++..wwwwww', '.......wwww.', '.+......ww..', '............', '............'],
+  breath: ['.....++.....', '....+ww+....', '.....++.....', '............', '..#..##..#..', '.#+#.##.#+#.', '#+..####..+#', '.#..####..#.', '..#.####.#..', '...######...', '............', '..########..'],
   slide:  ['............', '............', '.........##.', '........###.', '..+++..####.', '.......###..', '.++++.#####.', '.....######.', '..+++.....##', '............', '.##########.', '............'],
 };
 const icon = rows => { const c = document.createElement('canvas'); c.width = c.height = 12; const cg = c.getContext('2d');
@@ -27,6 +30,7 @@ const SLOTS = [
   { k: 'rift', key: 'P', on: () => P.state === 'double' && P.hk === 'rift' },
   { k: 'mirror', key: 'N', on: () => P.state === 'meditate' },
   { k: 'sweep', key: 'U', on: () => P.state === 'sweep' },
+  { k: 'breath', key: 'C', on: () => BREATHS.has(P.state) },
   { k: 'tele', key: 'K', on: () => P.state === 'tele' },
   { k: 'slide', key: 'SH', on: () => P.state === 'slide' },
 ].map(s => ({ ...s, img: icon(ICONS[s.k]) }));
@@ -44,6 +48,9 @@ export function drawSkills() {
   panel(X0, Y0, 3 + SLOTS.length * STEP + 2, SZ + 6);
   SLOTS.forEach((s, i) => {
     const x = X0 + 3 + i * STEP, y = Y0 + 3, left = P.cd[s.k] || 0, deny = P.cdDeny[s.k] > 0;
+    // a skill he has not mastered (player/mastery.js): a dark, keyless square; a press on it blinks like a cooldown
+    if (!known(s.k)) { g.fillStyle = '#08090b'; g.fillRect(x, y, SZ, SZ); g.fillStyle = deny && blink ? '#ffffff' : '#1c2025';
+      g.fillRect(x, y, SZ, 1); g.fillRect(x, y + SZ - 1, SZ, 1); g.fillRect(x, y, 1, SZ); g.fillRect(x + SZ - 1, y, 1, SZ); return; }
     slot(x, y, SZ, 'skill', s.img, { cd: left > 0 ? left / (P.cdMax[s.k] || left) : 0, flash: deny ? blink : (P.cdPop[s.k] || 0) * 4,
       frame: s.on() ? COL.fx2 : left > 0 ? (flow && FLOW_KEYS.has(s.k) ? (blink ? COL.fx : COL.eye) : '#2c323b') : undefined });
     if (left > 0) count(x, y, left); else text(s.key, x + 1, y + 1, '#7d868e');

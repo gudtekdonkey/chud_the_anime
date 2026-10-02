@@ -28,6 +28,9 @@ import { recruitInput, updateRecruits } from '../party/recruit.js';
 import { X, pairCandidate, startPair, pairStep } from '../party/paired.js';
 import { T as pT, powerCast } from './power.js';
 import { BREATHS, breathKey, breathWait, breathState, updateBreath } from './breath.js';
+import { wildGo } from './wild.js';
+import { tv, updateLine } from './mastery.js';
+import { ST } from './stats.js';
 
 // ---- The state machine: one fixed 1/60 s step ----
 export function update(dt, inp) {
@@ -44,7 +47,7 @@ export function update(dt, inp) {
   if (inp.order) toggleOrder();   // party orders are not lost to a hit pause
   if (inp.hurt) hurtNearest();
   if (S.hitstop > 0) { S.hitstop -= dt; return; }
-  updateCuts(dt); updateMirrors(dt); tickStages(dt); updateBreath(dt);
+  updateCuts(dt); updateMirrors(dt); tickStages(dt); updateBreath(dt); updateLine(dt);
   for (const t of timers.splice(0)) if ((t.t -= dt) <= 0) t.fn(); else timers.push(t); // sequenced payoffs (implosions, chain links)
   if (pairStep(dt)) return;   // a paired execution moves him (party/paired.js)
 
@@ -60,6 +63,7 @@ export function update(dt, inp) {
   updateItems(dt, canAttack && s !== 'sit' && s !== 'sitDown');
   if (s === 'exec') return;   // the execution's stage moves him (assassin/assassinate.js)
   if (inp.die && s !== 'death') { setState('death'); return; }
+  if (canAttack && s !== 'sit' && s !== 'sitDown' && P.cWait == null && wildGo()) return;   // a full meter, a skill not yet mastered: it casts itself (player/wild.js)
   if (breathWait(dt, canAttack)) return;   // C held: which breath (player/breath.js)
   if (s === 'sit' || s === 'sitDown') {
     if (moving || inp.slash || inp.jump || inp.slide || inp.tele || inp.double || inp.sweep || inp.sit || inp.moon || inp.rift || inp.mirror) {
@@ -93,15 +97,15 @@ export function update(dt, inp) {
   switch (s) {
     case 'ready': case 'ready0': case 'ready1': case 'ready2': case 'ready3': case 'ready4': case 'ready5': case 'runArmed': {
       // blade out: he waits in guard or runs with it trailing; after ~2 s of calm he puts it away
-      if (moving) { const [dx, dy] = inputDir(inp); moveBy(dx * 74 * dt, dy * 74 * dt); if (s !== 'runArmed') setState('runArmed'); P.still = 0; }
+      if (moving) { const [dx, dy] = inputDir(inp), v = 74 * ST.speed(); moveBy(dx * v * dt, dy * v * dt); if (s !== 'runArmed') setState('runArmed'); P.still = 0; }
       else { if (s === 'runArmed') setState(pickStance()); P.still += dt; if (P.still > 2) { P.still = 0; setState('sheathe'); } }
       break;
     }
     case 'idle': case 'run': case 'walk': case 'idleGlitch': case 'sit': case 'sitDown': {
       if (moving) {
         // hold V to walk; both speeds come from his personality
-        const [dx, dy] = inputDir(inp), gait = held.has('walk') ? 'walk' : 'run';
-        moveBy(dx * P.gait[gait] * dt, dy * P.gait[gait] * dt);
+        const [dx, dy] = inputDir(inp), gait = held.has('walk') ? 'walk' : 'run', v = P.gait[gait] * ST.speed();   // SPD: 4% a point
+        moveBy(dx * v * dt, dy * v * dt);
         if (s !== gait) setState(gait);
         if (EL.cur.kit && Math.floor(T / .09) !== Math.floor((T - dt) / .09)) EL.cur.kit.step(P.x, P.y);   // his footsteps leave the element behind
         P.still = 0;
@@ -165,7 +169,7 @@ export function update(dt, inp) {
     }
     case 'tele': {
       P.inv = true;
-      if (u >= .45 && !P.moved) { P.moved = true; const fx = P.x, fy = P.y; blink(56, P.blinkDir);
+      if (u >= .45 && !P.moved) { P.moved = true; const fx = P.x, fy = P.y; blink(56 + tv('tele', 'blink'), P.blinkDir);
         if (EL.cur.kit) { EL.cur.kit.travel(fx, fy); mirrorCut(fx, fy); break; }
         residue(fx, fy, 12); residue(P.x, P.y, 12); storm(P.x, P.y); mirrorCut(fx, fy);
         const n = Math.hypot(P.x - fx, P.y - fy) | 0;
@@ -188,7 +192,7 @@ export function update(dt, inp) {
       if (once('c1', T >= .225)) { strike(-.5, 1, true); xTear(P.x + P.face * 22, P.y - 12, 22, 1, 3.5, .6 - T); moveBy(P.face * 3, 0); }
       if (once('c2', T >= .325)) { strike(.5, -1, true); xTear(P.x + P.face * 25, P.y - 12, 22, -1, 3.5, .6 - T); moveBy(P.face * 3, 0);
         cuts.push({ x0: P.x + P.face * 2, x1: P.x + P.face * 48, y: Math.round(P.y - 12), life: .1, max: .1 }); }
-      const [rd, rr2] = reach(14, 26);
+      const [rd, rr2] = reach(14, 26 * tv('double', 'reach'));
       if (T >= .225 && T < .3) hit('d1', P.x + P.face * rd, P.y - 12, rr2);
       if (T >= .325 && T < .4) hit('d2', P.x + P.face * rd, P.y - 12, rr2);
       // the sheath click: whatever he cut bursts now, a beat after the blades
@@ -205,7 +209,7 @@ export function update(dt, inp) {
       break;
     }
     case 'sweep': {   // Sky Drop (owner pick 2026-10-01, prototypes: the "U Slam Redesign" page, option A)
-      const W = pT('sweep', 'r'), UP = .12, DROP = .36, LAND = .44, HIGH = 44, AHEAD = 54;
+      const W = pT('sweep', 'r') * tv('sweep', 'r'), UP = .12, DROP = .36, LAND = .44, HIGH = 44, AHEAD = 54 * tv('sweep', 'ahead');
       if (once('scrape', T >= .07)) dust(5);
       // the blink up and forward: an afterimage where he stood, slivers at both ends
       if (once('up', T >= UP)) { ghost(.45); residue(P.x, P.y, 9); dust(8); P.z = HIGH; P.glitchNow = .1; blink(AHEAD * .8, [P.face, 0]); residue(P.x, P.y - P.z, 6); }
@@ -227,7 +231,7 @@ export function update(dt, inp) {
         rings.push({ x: cx, y: P.y, rx: 22, ry: 11, life: 2 / 60 });
         crack(cx, P.y);
         xTear(cx, P.y - 10, 40 * W, 1, 5, .42); xTear(cx, P.y - 10, 40 * W, -1, 5, .42);   // the black slash: the great X over the crater, shut 0.42 s later
-        if (pT('sweep', 'pillars')) pillars(cx, P.y, W);
+        const np = pT('sweep', 'pillars') ? 7 : tv('sweep', 'pillars'); if (np) pillars(cx, P.y, W, np);   // power III, or THUNDERHEAD's few
         dust(24);
       }
       if (T >= LAND && T < LAND + .1) hit('sw', cx, P.y - 6, 52 * W);
@@ -270,7 +274,7 @@ export function update(dt, inp) {
   }
 }
 // power III: bolts climb out of the cracks one after another, straight up, round the slam
-function pillars(x, y, W) {
-  for (let i = 0; i < 7; i++) { const a = i / 7 * 6.28 + rr(-.3, .3), R = rr(22, 40) * W, px = x + Math.cos(a) * R, py = y + Math.sin(a) * R * .5;
+function pillars(x, y, W, n = 7) {
+  for (let i = 0; i < n; i++) { const a = i / n * 6.28 + rr(-.3, .3), R = rr(22, 40) * W, px = x + Math.cos(a) * R, py = y + Math.sin(a) * R * .5;
     after(.05 + i * .035, () => { zap(px, py, px + rr(-3, 3), py - rr(26, 38), rr(.12, .18), 2.5, i % 2 ? '#ffffff' : COL.fx2, { every: 1, fork: true }); spark(px, py - 2, 0, -20, .2, COL.fx2, false, 0); }); }
 }

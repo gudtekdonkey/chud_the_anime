@@ -26,12 +26,12 @@ export const WEAPON_NAME = Object.fromEntries(WEAPONS.map(w => [w.id, w.name.toU
 // scope: 'party' works whoever wears it; 'wearer' acts on whoever wears it; 'hero' needs his skills; 'ally' needs a companion
 export const CHARMS = {
   bead: { name: 'THUNDER BEAD', scope: 'party', about: 'Storm Chain jumps one more, whoever wears it.' },
-  tsuba: { name: 'SPLIT TSUBA', scope: 'wearer', about: 'The wearer\'s landed hits build 25% more Qi.' },
-  crane: { name: 'PAPER CRANE', scope: 'wearer', about: 'Once per area, a killing blow on the wearer leaves them at a sliver instead.' },
-  knot: { name: 'SAGEO KNOT', scope: 'wearer', about: 'The wearer\'s sheath click after a kill shocks enemies nearby.' },
+  tsuba: { name: 'SPLIT TSUBA', scope: 'wearer', stats: { focus: 1 }, about: 'The wearer\'s landed hits build 25% more Qi.' },
+  crane: { name: 'PAPER CRANE', scope: 'wearer', stats: { vigor: 1 }, about: 'Once per area, a killing blow on the wearer leaves them at a sliver instead.' },
+  knot: { name: 'SAGEO KNOT', scope: 'wearer', stats: { edge: 1 }, about: 'The wearer\'s sheath click after a kill shocks enemies nearby.' },
   mirror: { name: 'CRACKED MIRROR', scope: 'hero', about: 'Each glitch teleport leaves an afterimage that cuts once.' },
   bell: { name: 'TEMPLE BELL', scope: 'hero', about: 'Each execution gives 25% Qi.' },
-  oath: { name: 'IRON OATH', scope: 'ally', about: 'Once per area the wearer steps in and takes a blow meant for you.' },
+  oath: { name: 'IRON OATH', scope: 'ally', stats: { vigor: 1 }, about: 'Once per area the wearer steps in and takes a blow meant for you.' },
 };
 // paired executions: each says what a partner needs, like the solo executions' rules (assassin/rules.js), and any companion
 // who meets it can join K. needs: weapons (any of), skill (they know it), item (they wear any of), hero (his own weapon, any of).
@@ -85,7 +85,19 @@ export function gainExp(c, n) {
     c.stats[pick]++; c.chose = pick; }
   return ups;
 }
-export const stat = (c, k) => c.stats ? c.stats[k] - 1 : 0;   // points above the start
+// gear adds points to anyone who wears it (owner pick 2026-10-01, "3A"): wardrobe items, charms and the weapon carry `stats` as data
+export function gearStats(c) {
+  const out = { vigor: 0, edge: 0, speed: 0, focus: 0 }, add = st => { if (st) for (const k in st) out[k] += st[k]; };
+  for (const id of c.kit.wear) add(BY_ID[id] && BY_ID[id].stats);
+  for (const id of c.kit.charms) add(CHARMS[id] && CHARMS[id].stats);
+  add((WEAPONS.find(w => w.id === c.kit.weapon) || {}).stats);
+  return out;
+}
+// a stat in full: his own 1 (a companion's levelled points) plus gear
+export const statOf = (c, k) => (c.stats ? c.stats[k] : 1) + gearStats(c)[k];
+export const stat = (c, k) => statOf(c, k) - 1;   // points above the start
+// '+1 VIG +1 FOC' for a piece's description
+export const statsText = st => st ? Object.entries(st).map(([k, v]) => STATS[k].name + ' +' + v).join(' ') : '';
 export const HERO_CHARMS = 4, ALLY_CHARMS = 2, PARTY_MAX = 30;
 
 // ---- Who: him, bound to the game's state, then the three we know by name ----
