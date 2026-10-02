@@ -99,21 +99,27 @@ export async function skillSteps({ page, G, until, gameWait, settle, walkTo, sho
   await page.selectOption('#o-power', '1'); await page.locator('canvas').focus();
   errorsCheck();
 
-  // ---- the Seiza shield against a real cut: the samurai off his leash (no &calm), a full meter
-  setStep('skills: Seiza, the shield'); await page.goto(new URL('?iso&test&solo&combo=free&tick=8&qi=1&foes=1', base).href);
-  await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 }); await page.evaluate(() => document.querySelector('canvas').focus());   // a click would be a click to move (port.js)
-  { let absorbed = 0;
-    // a press made while his blow lands (the recoil) is never taken, and the held ↓ then runs him off: so each try starts
-    // beside him, gives the kneel 1.5 s of game time, and on a miss lets go and walks back for another
-    for (let i = 0; i < 8 && !absorbed; i++) { { const f = (await G()).foe; await walkTo(f.x - 16, f.z, 4); }
-      await until('ready to kneel', () => ['idle', 'guard'].includes(window.__iso.hero.state)); const n0 = (await SK()).n, t0 = (await G()).t;
-      await page.keyboard.down('KeyC'); await gameWait(.1); await page.keyboard.down('ArrowDown');
-      await until('the kneel or 1.5 s', ([n0, t0]) => { const s = window.__iso.skills, k = Math.min(s.log.length, s.n - n0); return (k > 0 && s.log.slice(-k).includes('breath:seiza')) || window.__iso.t - t0 > 1.5; }, [n0, t0]);
-      if (!(await since(n0)).includes('breath:seiza')) { await page.keyboard.up('ArrowDown'); await page.keyboard.up('KeyC'); await gameWait(.3); continue; }
-      await until('the seiza ending or a blow', n0 => { const s = window.__iso.skills, k = Math.min(s.log.length, s.n - n0); return window.__iso.hero.state !== 'skSeiza' || s.log.slice(-k).includes('foe:blocked'); }, n0, 60000);
-      if ((await since(n0)).includes('foe:blocked')) { absorbed = 1; await shot('skill-seiza', ['hero', 'foe']); }
-      await page.keyboard.up('ArrowDown'); await page.keyboard.up('KeyC'); await gameWait(.3); }
-    if (!absorbed) fail('the samurai never cut into the dome'); ok(`the dome took the cut (${(await SK()).absorbed})`); }
+  // ---- the Seiza shield against a real cut: the samurai off his leash (no &calm), a full meter. The setup is waited for,
+  // never the outcome steered: he only cuts from his guard with the hero inside his reach (48 rig px, 24 world units), and
+  // he stops closing in at his hold distance (76 rig px), so the hero kneels only once the samurai stands in guard within
+  // 20 units of him; the cut then comes inside the dome's window (0.55–2.95 s) unless it was already on its way, and a
+  // try whose kneel is broken by that cut (or that spent the meter) starts again on a fresh page, its meter full
+  setStep('skills: Seiza, the shield');
+  { let absorbed = 0, tries = '';
+    for (let i = 0; i < 6 && !absorbed; i++) {
+      await page.goto(new URL('?iso&test&solo&combo=free&tick=8&qi=1&foes=1', base).href);
+      await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 }); await page.evaluate(() => document.querySelector('canvas').focus());   // a click would be a click to move (port.js)
+      for (let k = 0; k < 12; k++) { const g = await G(); if (g.foe.state === 'guard' && Math.hypot(g.foe.x - g.hero.x, g.foe.z - g.hero.z) < 20 && ['idle', 'guard'].includes(g.hero.state)) break;
+        await walkTo(g.foe.x - 14, g.foe.z, 3); await gameWait(.2); }
+      await until('ready to kneel, in his reach', () => { const h = window.__iso.hero, f = window.__iso.foe; return ['idle', 'guard'].includes(h.state) && f.state === 'guard' && Math.hypot(f.x - h.x, f.z - h.z) < 20; });
+      const n0 = (await SK()).n;
+      await page.keyboard.down('KeyC'); await page.keyboard.down('ArrowDown');   // together: the hold reads ↓ when it counts (0.2 s)
+      await until('the kneel or the end of the try', n0 => { const s = window.__iso.skills, k = Math.min(s.log.length, s.n - n0), L = s.log.slice(-k);
+        return L.includes('foe:blocked') || (L.includes('breath:seiza') && window.__iso.hero.state !== 'skSeiza') || (!L.includes('breath:seiza') && (window.__iso.hero.state === 'recoil' || L.some(e => /^breath:(kata|sit|fizzle|lotus)/.test(e)))); }, n0, 60000);
+      const log = await since(n0); tries += `${i + 1}: ${log.join(' ') || '-'}; `;
+      if (log.includes('foe:blocked')) { absorbed = 1; await shot('skill-seiza', ['hero', 'foe']); }
+      await page.keyboard.up('ArrowDown'); await page.keyboard.up('KeyC'); }
+    if (!absorbed) fail(`the samurai never cut into the dome (${tries})`); ok(`the dome took the cut (${(await SK()).absorbed}); ${tries}`); }
 
   // ---- Lotus by the tōrō: one long breath, the meter into health
   setStep('skills: Lotus by the tōrō'); await page.goto(new URL('?iso&test&solo&combo=free&calm&tick=8&qi=1&hp=.3&foes=1', base).href);
