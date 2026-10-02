@@ -42,7 +42,7 @@ function spawn(C, j, q) {
   const m = { j, f: q.f, at: q.at, a, t: 0, x0: hero.x, z0: hero.z, ox, oz, alpha: 0, glitch: .4, white: 0 }; a.mirror = m; W.actors.push(a);
   m.echo = C.echoes.image(() => { const o = a.out; if (!o || m.gone) return null; const fl = Math.random() < m.glitch * .25;
     return { pose: o.pose, x: o.x * AF, y: groundAt(o.x * AF, o.z * AF), z: o.z * AF, yaw: o.yaw, alpha: Math.max(0, Math.min(1, m.alpha * (fl ? .45 : 1))), flash: m.white > 0, tintA: fl ? .85 : .55 }; });
-  images.push(m); residue([hero.x, 0, hero.z], 3); spark([hero.x, 14, hero.z], [0, 8, 0], .15, 1); C.log('mirror:image');
+  images.push(m); if (images.length >= 3) C.mark('images'); residue([hero.x, 0, hero.z], 3); spark([hero.x, 14, hero.z], [0, 8, 0], .15, 1); C.log('mirror:image');
 }
 export function mirrorsStep(C, dt) {
   for (const m of images) { const t = (m.t += dt), a = m.a; m.white -= dt;
@@ -73,7 +73,7 @@ export const DROPS = { id: 'sweep', key: 'sweep',
       const cx = hero.x + v[0] * (12 + 8 + 2), cz = hero.z + v[1] * (12 + 8 + 2), t = cur.aim.tgt;
       if (t && !t.dead && t.hp <= DMG.sw * C.pw('dmg') && Math.hypot(t.x - cx, t.z - cz) <= 52 * Wr) { startCine(hero, t); C.log('sweep:cine'); } }
     // at the top the storm comes down out of the sky into the blade
-    if (ct >= DROP.up && ct < DROP.drop) { C.shift(h, 8 * dt / (DROP.drop - DROP.up)); const tip = hero.bladeWorld(); const tp = tip ? tip.tip : [hero.x, 70, hero.z];
+    if (ct >= DROP.up && ct < DROP.drop) { C.shift(h, 8 * dt / (DROP.drop - DROP.up)); if (hero.a.pose && hero.a.pose.pel[1] > 60) C.mark('aloft'); const tip = hero.bladeWorld(); const tp = tip ? tip.tip : [hero.x, 70, hero.z];
       if (Math.random() < .2) bolt([tp[0] + rr(-10, 10), tp[1] + 70, tp[2] - rr(0, 20)], tp, rr(.05, .08), 2.4, Math.random() < .5 ? .6 : 1, { fork: true });
       if (Math.random() < .15) spark(tp, [rr(-30, 30), rr(-30, 30), rr(-20, 20)], .2, .7); }
     // the drop, blade first, trailing afterimages

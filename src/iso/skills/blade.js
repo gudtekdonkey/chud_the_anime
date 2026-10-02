@@ -90,7 +90,7 @@ function RELEASE(C, cur, ct) {
     const [cx, cz] = cur.C, n = cur.n;
     if (once(cur, 'go', true)) { const s = [hero.x, 0, hero.z]; C.ghost(.03, .2, .6); residue(s, 14); C.place(cx, cz); cur.last = [s[0], 12, s[2]]; cur.a0 = rr(0, TAU);
       for (const f of C.foes) if (Math.hypot(f.x - cx, f.z - cz) <= 30 + 30 * k && C.land('tc', f, { stop: 'light', at: [s[0], s[2]] })) cur.struck.add(f); }
-    if (ct < V) { const j = Math.min(n - 1, ct / (V / n) | 0), ph = ct - j * V / n; hero.a.alpha = ph < .033 ? 1 : 0;
+    if (ct < V) { const j = Math.min(n - 1, ct / (V / n) | 0), ph = ct - j * V / n; hero.a.alpha = ph < .033 ? 1 : 0; if (!hero.a.alpha) C.mark('vanish');
       if (once(cur, 'tc' + j, true)) { const a = cur.a0 + j * 2.4, rad = 16 + 12 * k, sx = cx + Math.cos(a) * rad, sz = cz + Math.sin(a) * rad * .6, hf = C.snap8(Math.atan2(cx - sx, cz - sz));
         C.place(sx, sz); C.face(hf); hero.a.co.cutJ = j; const p = [sx, 12, sz]; bolt(cur.last, p, .07, 1.2, .5); cur.last = p;
         strike(C, hf, rr(-1.1, 1.1), Math.random() < .5, false, { c: v3.add(p, axes(hf).f, 8), R: 17 + 6 * k });

@@ -47,7 +47,7 @@ export function brush(g) {
       const X = x | 0, Y = y | 0; if (bay(X, Y) < fade) return; fill(col, 1); g.fillRect(X, Y, sz, sz);
     },
     // the void inside the black slash (always black: it is a hole in the picture, whatever the style)
-    hole(x, y) { if (off(x, y)) return; if (m === 'crisp') { fill(VOID, 1); g.fillRect((x >> 1) << 1, (y >> 1) << 1, 2, 2); } else { fill(VOID, m === 'soft' ? .96 : 1); g.fillRect(x | 0, y | 0, 1, 1); } },
+    hole(x, y, sz = 1) { if (off(x, y)) return; if (m === 'crisp') { fill(VOID, 1); g.fillRect((x >> 1) << 1, (y >> 1) << 1, Math.max(2, sz), Math.max(2, sz)); } else { fill(VOID, m === 'soft' ? .96 : 1); g.fillRect(x | 0, y | 0, sz, sz); } },
     // an effect's outer edge: the anime style inks it, the others leave it to the glow
     rim(x, y) { if (m !== 'white' || off(x, y)) return; fill(INK, 1); g.fillRect(x | 0, y | 0, 1, 1); },
     // a line of dots (Bresenham, so pixel styles stay whole pixels); heat may run along it

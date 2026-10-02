@@ -54,7 +54,7 @@ export const BREATH = { id: 'breath', key: 'breath',
         if (T >= t0 && T < t0 + .5 && Math.random() < .5) { for (let q = 0; q < QI_RATE[k] / 2; q++) { const a = rr(0, TAU), r = rr(10, 34); mote([hero.x + Math.cos(a) * r, 0, hero.z + Math.sin(a) * r * .6], up, rr(.4, .7), rr(-6, 6)); }   // in: Qi rises to his hands
           if (k >= 1 && Math.random() < .3) chipUp(C, k, 34, up); }
         if (T >= t0 + .55 && T < t0 + .85 && Math.random() < .5) mote(v3a(up, rr(-6, 6)), [hero.x, 10, hero.z], rr(.2, .35), 0, .7);   // out: sinking to the belly
-        if (beat(cur, 'k' + i, T >= t0 + b.OUT)) { if (SK.qi < NOTCH && SK.storm <= 0) { hero.a.play('idle', { blend: .12 }); return; } out(C, HEAL.kata); ring([hero.x, 10, hero.z], 1, 5, .25, 1); } } }
+        if (beat(cur, 'k' + i, T >= t0 + b.OUT)) { if (SK.qi < NOTCH && SK.storm <= 0) { hero.a.play('idle', { blend: .12 }); C.log('breath:spent'); return; } out(C, HEAL.kata); ring([hero.x, 10, hero.z], 1, 5, .25, 1); } } }
     else if (cur.take === 'seiza') { const b = BT.seiza; SK.shield = T >= b.UP && T < b.GET;
       let inb = false; for (let i = 0; i < 3; i++) { const t0 = b.B0 + i * b.BP; if (T >= t0 && T < t0 + b.OUT) inb = true;
         if (beat(cur, 's' + i, T >= t0 + b.OUT)) { if (SK.qi < NOTCH && SK.storm <= 0) continue; out(C, HEAL.seiza); ring(ch, 1, 6, .25, 1); cur.band = T; } }

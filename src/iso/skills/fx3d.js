@@ -90,7 +90,8 @@ export function fxDraw(g) {
         for (let i = 0; i <= n; i++) { const u = i / n, x = ax + (bx - ax) * u, y = ay + (by - ay) * u, tip = s[4] + u * .3;
           B.solid(x, y, '#121516', f2, 2); if (tip > .8 && fd < .5) B.dot(x, y, .3, fd * 2); } } break;
       case 'pool': { const I = (1 - fd) * e.I; if (I <= .05) break; const [cx, cy] = S3(e.c), rx = Math.round(e.rx * 2 * CAM.zoom), ry = Math.round(e.rz * 2 * CAM.zoom * .81);
-        for (let dy = -ry; dy <= ry; dy += 1) for (let dx = -rx; dx <= rx; dx += 1) { const q = (dx / rx) ** 2 + (dy / ry) ** 2; if (q > 1 || ((dx + dy) & 1)) continue; B.dot(cx + dx, cy + dy, 0, 1 - I * (q < .3 ? .5 : .28)); } break; }
+        const st = Math.max(1, Math.round(CAM.zoom));   // close up (the finisher's camera) it is drawn coarser, not ten times the dots
+        for (let dy = -ry; dy <= ry; dy += st) for (let dx = -rx; dx <= rx; dx += st) { const q = (dx / rx) ** 2 + (dy / ry) ** 2; if (q > 1 || (((dx + dy) / st) & 1)) continue; B.dot(cx + dx, cy + dy, 0, 1 - I * (q < .3 ? .5 : .28), st); } break; }
       case 'flash': B.screen(e.col, e.a * (1 - fd)); break;
       case 'spark': { const [x, y] = S3(e.p), [x0, y0] = S3([e.p[0] - e.v[0] * .02, e.p[1] - e.v[1] * .02, e.p[2] - e.v[2] * .02]); B.line(x0, y0, x, y, e.heat * .6, fd, e.heat); break; }
       case 'mote': { const q = Math.min(1, age / e.life) ** 2, s = e.s, t = e.t, mid = [(s[0] + t[0]) / 2 + e.curl, (s[1] + t[1]) / 2 + Math.abs(e.curl) * .3, (s[2] + t[2]) / 2 - e.curl * .4];
@@ -113,25 +114,25 @@ function drawArc(B, e, age) {
   const sw = Math.min(1, age / e.sweep), aE = e.a0 + (e.a1 - e.a0) * sw, gk = Math.max(0, (age - e.sweep - e.hold) / e.glow); if (gk >= 1) return;
   const P = (a, r) => S3([e.c[0] + (Math.cos(a) * e.A[0] + Math.sin(a) * e.B[0]) * r, e.c[1] + (Math.cos(a) * e.A[1] + Math.sin(a) * e.B[1]) * r, e.c[2] + (Math.cos(a) * e.A[2] + Math.sin(a) * e.B[2]) * r]);
   const span = Math.abs(aE - e.a0); if (span < 1e-3) return;
-  const n = Math.min(1400, Math.max(8, Math.ceil(span * e.R * 2.4 * CAM.zoom))), fade = e.shatter ? gk * .5 : gk;
+  const st = Math.max(1, CAM.zoom * .6), sz = st > 1 ? Math.ceil(st) + 1 : 1, n = Math.min(1400, Math.max(8, Math.ceil(span * e.R * 2.4 * CAM.zoom / st))), fade = e.shatter ? gk * .5 : gk;
   for (let i = 0; i <= n; i++) { const t = i / n, a = e.a0 + (aE - e.a0) * t, along = (a - e.a0) / (e.a1 - e.a0);
     if (e.shatter && gk > 0 && ((a * e.R / 5 + e.seed) % 1 + 1) % 1 < gk * .9) continue;   // the shatter: gaps widen until only slivers are left
     const w = e.w * Math.pow(Math.max(0, Math.sin(Math.PI * along)), .7) * (1 - gk * .6) + .6, [ox, oy] = P(a, e.R), [ix, iy] = P(a, e.R - w);
-    const tip = sw < 1 && Math.abs(aE - a) < .14 ? 1 : 0, L = Math.ceil(Math.hypot(ox - ix, oy - iy));
+    const tip = sw < 1 && Math.abs(aE - a) < .14 ? 1 : 0, L = Math.ceil(Math.hypot(ox - ix, oy - iy) / st);
     for (let j = 0; j <= L; j++) { const u = L ? j / L : 1, h = tip ? 1 : u > .82 ? e.heat + .3 : u > .55 ? e.heat : e.heat * .5 * (j % 2 ? 1 : .7);
-      B.dot(ix + (ox - ix) * u, iy + (oy - iy) * u, Math.min(1, h), fade); }
+      B.dot(ix + (ox - ix) * u, iy + (oy - iy) * u, Math.min(1, h), fade, sz); }
     B.rim(ox + (ox - ix) / (L || 1), oy + (oy - iy) / (L || 1)); }
 }
 // the black slash: a white hairline that opens into a jagged slit of void with cyan lips, then snaps shut (void.js)
 function drawTear(B, e, age) {
   const kd = Math.min(1, age / e.draw), op = Math.min(1, Math.max(0, (age - e.draw) / .12)), open = (op * op * (3 - 2 * op)) * (e.shut == null ? 1 : Math.max(0, 1 - (age - e.shut) / .05));
   const scr = t => { const q = e.pt(t); if (q.scr) { const [x, y] = S3(q.c), z = 2 * CAM.zoom; return [x + q.dx * z, y + q.dy * z]; } return S3(q); };
-  const a = scr(0), b = scr(1), Lp = Math.hypot(b[0] - a[0], b[1] - a[1]) + 8, n = Math.min(900, Math.max(6, Math.ceil(Lp * kd))), Wp = e.W * 2 * CAM.zoom;
+  const a = scr(0), b = scr(1), Lp = Math.hypot(b[0] - a[0], b[1] - a[1]) + 8, st = Math.max(1, CAM.zoom * .6), sz = Math.ceil(st), n = Math.min(900, Math.max(6, Math.ceil(Lp * kd / st))), Wp = e.W * 2 * CAM.zoom;
   for (let i = 0; i <= n; i++) { const t = i / n * kd, p = scr(t), p2 = scr(Math.min(1, t + .01)), p1 = scr(Math.max(0, t - .01)); let nx = -(p2[1] - p1[1]), ny = p2[0] - p1[0]; const l = Math.hypot(nx, ny) || 1; nx /= l; ny /= l;
     const j = e.jag[Math.min(47, t * 47 | 0)], w = open * Wp * Math.pow(Math.sin(Math.PI * t), .6);
     if (w <= 1.2) { B.dot(p[0], p[1], 1, 0); continue; }   // still just the cut: a white hairline
-    for (let s = -w - 2; s <= w + 2; s += .7) { const lim = w + (s < 0 ? j[0] : j[1]) * open * 1.5, as = Math.abs(s), x = p[0] + nx * s, y = p[1] + ny * s;
-      if (as <= lim - 1) B.hole(x, y); else if (as <= lim) B.dot(x, y, e.shut != null ? 1 : .75, 0); else if (as <= lim + 1.6 && open > .25 && ((x + y) | 0) % 3) B.dot(x, y, 0, .55), B.rim(x, y); }
+    for (let s = -w - 2; s <= w + 2; s += .7 * st) { const lim = w + (s < 0 ? j[0] : j[1]) * open * 1.5, as = Math.abs(s), x = p[0] + nx * s, y = p[1] + ny * s;
+      if (as <= lim - 1) B.hole(x, y, sz); else if (as <= lim) B.dot(x, y, e.shut != null ? 1 : .75, 0, sz); else if (as <= lim + 1.6 && open > .25 && ((x + y) | 0) % 3) B.dot(x, y, 0, .55), B.rim(x, y); }
     if (open > .4 && i % 11 === 5) B.dot(p[0] + nx * j[0] * w * .4, p[1] + ny * j[0] * w * .4, 1, 0); }   // specks of far-off light inside the dark
 }
 function drawBolt(B, e, fd) {

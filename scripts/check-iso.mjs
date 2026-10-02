@@ -8,6 +8,7 @@
 import { chromium } from 'playwright';
 import { preview } from 'vite';
 import fs from 'node:fs';
+import { skillSteps } from './check-iso-skills.mjs';
 
 const OUT = 'test-output/iso'; fs.mkdirSync(OUT, { recursive: true });
 let step = '';
@@ -49,6 +50,7 @@ try {
   await page.locator('canvas').click();
   // what he has been through, recorded every frame in the page (a poll from here can miss a state that lasts 2 frames)
   await page.evaluate(() => { window.__seen = new Set(); window.__seq = []; const f = () => { const h = window.__iso.hero; window.__seen.add(h.state); if (h.iframes) window.__seen.add('iframes'); if (window.__iso.cine) window.__seen.add('cine'); if (window.__iso.impact) window.__seen.add('impact');
+    const s = window.__iso.skills; if (s && s.images >= 3) window.__seen.add('images');
     if (window.__seq.at(-1) !== h.state) window.__seq.push(h.state); requestAnimationFrame(f); }; f(); });
   const seen = (what, timeout) => until(what, w => window.__seen.has(w), what, timeout), forget = () => page.evaluate(() => { window.__seen.clear(); window.__seq = []; });
   errorsCheck(); ok(`look ${(await G()).look}`); await shot('00-start', ['hero', 'foe']);
@@ -137,6 +139,7 @@ try {
     await page.keyboard.press(key); await gameWait(.1); await shot(`pipe-${name}-flipped`); await page.keyboard.press(key); }
   ok();
   errorsCheck();
+  await skillSteps({ page, G, until, gameWait, settle, walkTo, shot, seen, forget, ok, fail, errorsCheck, base, setStep: v => { step = v; } });
   console.log('\ncheck:iso passed');
 } catch (e) { if (!process.exitCode) { console.error(e); process.exitCode = 1; } }
 finally { await browser.close(); await server.close(); }

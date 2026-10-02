@@ -25,7 +25,7 @@ import './moves.js';
 
 // the skills' state, read by the HUD and the check (window.__iso.skills); hp and qi are 0..1 as today's INV
 export const SK = { power: 1, hp: .6, qi: 0, storm: 0, stormMax: 8, qiIdle: 0, shield: false, cWait: null, cur: null, cd: {}, cdMax: {}, deny: {}, pop: {},
-  casts: {}, landed: {}, chains: 0, absorbed: 0, heals: 0, log: [], logN: 0 };
+  casts: {}, landed: {}, chains: 0, absorbed: 0, heals: 0, log: [], logN: 0, marks: new Set() };
 export const T = (skill, k) => TIERS[skill][k][SK.power - 1], pw = k => PW[k][SK.power - 1];
 const snap8 = h => Math.round(h / (Math.PI / 4)) * (Math.PI / 4);
 const ORDER = [...BLADE, MIRROR, DROPS];   // whose press is looked at first (C is BREATH.wait's)
@@ -48,6 +48,7 @@ export function makeSkills({ hero, foe, scene, look, Q, root }) {
     // world-time callbacks (frozen by a hit-stop like everything else): the rift's detonation .05 s after its click
     after(t, fn) { timers.push({ t, fn }); },
     log(s) { SK.log.push(s); SK.logN++; if (SK.log.length > 60) SK.log.shift(); },
+    mark(k) { SK.marks.add(k); },   // a moment the check asks after (vanished, aloft, the images out), however briefly it lasted
     // a point on his body in the world, from his side pose (rig px [forward, up], lateral `lat` world units), as the trail does
     body(fu, lat = 0, who = hero) { const o = who.a.out; if (!o) return [who.x, 12, who.z]; const cy = Math.cos(o.yaw), sy = Math.sin(o.yaw);
       _v.set(lat, fu[1] * AF, fu[0] * AF); _v.set(_v.x * cy + _v.z * sy, _v.y, -_v.x * sy + _v.z * cy).applyMatrix4(BODY_SHEAR); return [o.x * AF + _v.x, who.gy + _v.y, o.z * AF + _v.z]; },
@@ -133,7 +134,7 @@ export function makeSkills({ hero, foe, scene, look, Q, root }) {
   function tryStart(inp) {
     for (const s of ORDER) { if (!pending(s.key) || (s.when && !s.when(C))) continue;
       const k = s.cdKey || s.key; if (SK.cd[k] > 0) { consume(s.key, () => true); SK.deny[k] = .2; continue; }
-      consume(s.key, () => true); SK.cur = null; s.start(C, inp); if (SK.cur) { SK.casts[s.id] = (SK.casts[s.id] || 0) + 1; C.log(`${s.id}:cast`); } return true; }
+      consume(s.key, () => true); if (SK.cur) end(SK.cur); SK.cur = null; s.start(C, inp); if (SK.cur) { SK.casts[s.id] = (SK.casts[s.id] || 0) + 1; C.log(`${s.id}:cast`); } return true; }
     return false; }
   function end(cur) { const a = hero.a; a.alpha = 1; a.tint = null; a.tintA = 0; SK.shield = false; if (cur.s.end) cur.s.end(C, cur); }
 
@@ -159,6 +160,6 @@ export function makeSkills({ hero, foe, scene, look, Q, root }) {
     get armed() { const c = SK.cur; return !!(c && c.armed && c.armed(hero.a.ct)); },
     get iframes() { const c = SK.cur; return !!(c && c.inv && c.inv(hero.a.ct)); },
     state() { return { cur: SK.cur ? SK.cur.id : null, clip: hero.state, ct: hero.a.ct, qi: SK.qi, hp: SK.hp, storm: SK.storm, power: SK.power, shield: SK.shield, cd: { ...SK.cd },
-      casts: { ...SK.casts }, landed: { ...SK.landed }, chains: SK.chains, absorbed: SK.absorbed, heals: SK.heals, log: SK.log.slice(), n: SK.logN, images: echoes.busy, fx: FX.length, alpha: hero.a.alpha, pel: hero.a.pose ? hero.a.pose.pel[1] : 0 }; },
+      casts: { ...SK.casts }, landed: { ...SK.landed }, chains: SK.chains, absorbed: SK.absorbed, heals: SK.heals, log: SK.log.slice(), n: SK.logN, images: echoes.busy, fx: FX.length, alpha: hero.a.alpha, pel: hero.a.pose ? hero.a.pose.pel[1] : 0, marks: [...SK.marks] }; },
   };
 }

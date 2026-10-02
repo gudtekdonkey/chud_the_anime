@@ -24,10 +24,12 @@ three.js is a new dependency (`three`, pinned in `package.json`): run `npm insta
 
 **Controls.** WASD or the arrows run (the stick maps straight to the screen, all 8 directions). `J` cuts; again in
 the follow-through for J2, then J3. `J` out of a fast run is the lunge. `Shift` or `L` rolls, and cancels a cut once
-it has struck. Presses are remembered 0.2 s.
+it has struck. Presses are remembered 0.2 s. The skills, as today's game keys them (below): `I` tap the double slash,
+hold Thousand Cuts · `O` hold Crescent Moon · `P` Cross Rift (hold to charge) · `N` Mirror Meditation · `U` Sky Drop ·
+`C` tap sit, hold Breath of Qi (with `↓` Seiza, by the tōrō Lotus, in the storm Storm breath) · Storm Chain passive.
 
 **The overlay** (beside the game, every choice also a key): the frame time; `M` the model (3D / Pixel); `V` the style
-(Painterly, Pixel-render, Anime limited, Toon + dither); `C` clashes; `X` the finisher's close-up; the pipeline
+(Painterly, Pixel-render, Anime limited, Toon + dither); `Z` clashes (was `C`, which is Breath of Qi now); `X` the finisher's close-up; the pipeline
 steps `1` low-res target, `2` toon bands, `3` dither, `4` palette, `5` outline, `6` pixel upscale, `7` rim light,
 `8` keep the glints, and the number of bands; `B` the bodies' camera (picked 39.5°, upright 20°, true 54°), the hat's
 tilt and brim; `F` the facings (8 stepped, as baked sprites would be, or free); `9` mist, `0` rain.
@@ -153,13 +155,74 @@ lateral axis, so a 3D artist's clips are what will add twists and sideways reach
   replace it; the light uniforms and the cut-away rule stay.
 - **The effects**: the trail, sparks and the black slash are the pages' pixel effects in world space; they stay.
 
+## The skills (`skills/`)
+
+Owner request (2026-10-02, "Skills and their animation"): today's kit in the test level, animated in the Animation Flow
+style on the 3D skeleton (and the pixel drawing, through the look seam), effects in 3D drawn the active style's way,
+cooldowns and the skill bar as in today's game. The keys, timings, hit beats, damage, Qi, cooldowns and power tiers are
+today's (`src/player/`, `src/fx/`), gathered in `skills/beats.js`; distances are today's pixels, which are the slice's
+world units.
+
+| Key | Skill | In the slice |
+|---|---|---|
+| `I` tap | glitch double slash | crouch into the draw, glitch out and blink 44 (stopping short of the samurai), the lunge cut (.225 s), the second cut (.325), each a crescent and an arm of the black X; held, the quick sheathe, and on the click (.6) whatever he cut bursts. 2 s |
+| `I` hold | Thousand Cuts | held past .14 s the crouch charges (0.9 s to full, sparks and bolts converging on him, a cyan glow, one flash when full); let go: he vanishes to the point (the samurai he aims at, else 44–110 ahead), flashes in at 7 / 9 / 11 spots round him in 0.34 s, each a cut, a bolt from the last spot and a black slash through him; the closing X, held, the click bursts it. 8 s |
+| `P` | Cross Rift | charges from the press (a tap is a medium rift); let go: the dash, the two arms of the X torn in reality ahead of him, stone and motes drawn into its lips while it hangs, the click shuts it and it detonates (1 an arm, 2 the detonation); at III an echo .25 s later. 12 s |
+| `O` hold | Crescent Moon | the blade raised behind his head, charging in place; let go: one huge crescent sweeps round him at chest height in 0.15 s, descending from his left to his right, the black slash along its inner edge, its light pooled on the floor, echoes peeling off; it hangs, the slit shuts and it shatters (II: the shatter cuts; III: a twin moon behind). 10 s |
+| `N` | Mirror Meditation | he stands, palms together, head bowed, a faint cyan aura, 1.4 s; 3 (+1 at II, +2 at III) images of him (his own look, cyan, glitching) step out one by one, dash to the samurai, cut him with the page's J1 (on its own hit beat), each cut a crescent and a black slash, and dissolve into slivers. 14 s |
+| `U` | Sky Drop | the redesign: a 0.12 s crouch, a blink up 44 and forward leaving an afterimage, the storm coming down into the raised blade, at .36 the blade turned point down and the drop with afterimages, the landing at .44: the crater (cracks, flung stone, twelve forked bolts on the floor, a ring), everyone in it thrown, the great black X shut .42 s later; II widens it, III sends bolts up out of the cracks. When the crater will kill, the full-screen close-up (`fx/cine.js`). 8 s |
+| `C` | the sit, Breath of Qi | tap: he sits cross-legged, his back to the camera, any key gets him up. Hold: the kata (three breaths: arms up as Qi rises from the floor, palms down as it sinks to a point at his belly; each out-breath a notch of Qi for 20% health); with `↓` Seiza (kneeling inside a dome that takes the samurai's cut); by the tōrō, the courtyard's rest point, Lotus (lifted, a ring of Qi circling, the whole meter into health); during the storm Storm breath (Qi from the whole screen, the room darkens, a held beat with blazing eyes, the out-breath: 40% health, the storm spent, the samurai thrown). Letting go ends it early; no notch: a grey puff |
+| passive | Storm Chain | landed hits fill the Qi meter (today's gains); full, 8 s of storm (9, 10 with power): a burst of bolts, bolts crackling on his body, and every hit throws lightning: to the nearest other samurai (3 / 4 / 5 links; the slice has one, so the storm also answers each hit with a bolt from the sky onto him) |
+
+**How it fits the controller.** A skill owns the hero while its clips play (`skills.js` `control`, called before
+`play/hero.js`'s); it hands him back in its cancel windows (`beats.js` `CANCEL`: a roll from `roll` s, J or another skill
+from `any` s, today's numbers) and when it ends. A skill starts from anything today's `canAttack` allows, and from a
+cut once its hit has passed. Presses go through the same 0.2 s buffer; a press on a skill cooling down is refused and
+forgotten (its slot blinks). Each skill turns to the samurai in front of him and reaches him (the double's blink, Thousand
+Cuts' point, the rift's dash and Sky Drop's crater land on him), as the cut tracks its target. Hits go through
+`foe.react` like J's, with hit-stop by weight (3 / 5 / 8 frames), the clash's impact frames and focus lines.
+
+**The moves** (`skills/moves.js`) are poses in the Animation Flow page's language (pel, feet, hands, lean, head, the
+blade's grip and angle), keyed or procedural clips on the flow engine, so the 3D skeleton and the pixel drawing both
+take them: the draw crouch, the two cuts and the quick sheathe, the charge crouch, Thousand Cuts' four flashed cut poses,
+the moon's raised blade and its descending cut, the meditation, the mirror images' dash (then the page's own J1), Sky
+Drop's crouch / overhead / point-down / kneel in the crater (lifted off the floor by the clip, so the shadow stays down),
+the kata's raise and press, the seiza kneel, the lotus (lifted, turning), Storm breath's arms thrown back and palms driven
+forward, the sit. They are ADDITIONS: the page's own Sky Drop and blink were left out of the slice and its source is not
+in this checkout; swap a clip for the page's keys behind the same name.
+
+**Effects in 3D, through the style.** Every skill effect lives in world space (`skills/fx3d.js`): crescents are arcs in
+the plane of his cut, the moon sweeps round him in the floor's perspective, bolts come down from above and lie on the
+floor, rings and cracks are on the floor, motes fly 3D curves, the black slash opens along a 3D path (the moon's arc) or
+facing the camera (the X arms, as today's game draws them). The camera projects them each frame and each pixel goes
+through the ink (`skills/ink.js`), the active style's way of drawing an effect: **Painterly** soft dots with alpha, cyan
+into warm white, a glow round the hottest; **Pixel-render** snapped to the world's pixels, the cyan ramp, fades
+dithered, held at 12 fps; **Anime limited** flat white over a cyan body with an ink rim, hard fades, on twos; **Toon +
+dither** the page's dithered cyan. The void inside the black slash is black in every style. Mirror images and
+afterimages are more of his look (`skills/echo.js`: the 3D model or the pixel drawing, tinted cyan, dissolving through
+the look's own dither).
+
+**The HUD** (`skills/hud.js`, today's): health and Qi top left (Qi notched in thirds, STORM while it runs; he starts at
+60% health so heals show, and the samurai's cut takes 12%), the skill bar under them: the Storm Chain passive, then I, O,
+P, N, U, C, each with its key, its cooldown shade and seconds, a white blink on a refused press, a glint when ready.
+The overlay's **Skills** section picks the power tier (I / II / III) and lists the keys. URL: `&power=3`, `&qi=1`,
+`&hp=.3` start there. Not in the slice: K (the blink and the executions are other work), growth (every skill is known,
+as the check's "all mastered"), the slide's cooldown (the roll stays the page's).
+
 ## What the check covers (`npm run check:iso`)
 
 No page errors; the run in all 8 directions (he moves where the keys point and is drawn facing that way); the stop;
 the roll (its i-frames, ~25 units); walking up to the samurai and J1 → J2 → J3 with all three hits landing and three
 reactions, an impact frame in the hit-stops and the finisher's close-up; a cut cancelled into the roll; hitting him
 until he dies, and his respawn; the four styles switched live with a cut in each; the same chain with the pixel look;
-one screenshot per pipeline step flipped. SwiftShader draws a few frames a second, so the page runs with
+one screenshot per pipeline step flipped. Then the skills (`scripts/check-iso-skills.mjs`): the double slash landing
+both cuts and its cooldown refusing a second press; Thousand Cuts (the charge, the vanish, the hits, the click); Cross
+Rift (the arms and the detonation); Crescent Moon (the hit and the shatter); Mirror Meditation (three images out, their
+cuts landing); Sky Drop (aloft, the crater landing) and Sky Drop on a kill (the close-up); Storm Chain waking from landed
+hits and chaining; Storm breath (the heal, the storm spent, the samurai thrown); the sit (his back to the camera, up on a
+direction); the kata (a heal for a notch, let go); a double slash in each style; the images and Sky Drop in the pixel
+look; power III's twin moon and rift echo; the Seiza dome taking a real cut (the samurai off his leash); Lotus by the
+tōrō (the meter into health). SwiftShader draws a few frames a second, so the page runs with
 `&tick=8` (8 game steps a frame) and every wait is on the game's clock.
 
 ## Performance
