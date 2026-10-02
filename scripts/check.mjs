@@ -202,7 +202,14 @@ try {
     await kb.up('o'); await reach(/^moon$/); await sleep(120); await shot('04-moon'); await reach(FREE); });
   await run('P: Cross Rift', async () => { await kb.press('p'); await cv('Cross Rift'); await sleep(200); await shot('05-rift'); await reach(FREE); });
   await run('N: Mirror Meditation', async () => { await kb.press('n'); await reach(/^meditate$/); await sleep(500); await shot('06-mirrors'); await reach(FREE); });
-  await run('U: storm slam', async () => { await kb.press('u'); await reach(/^sweep$/); await reach(FREE, 8000); });
+  await run('U: Sky Drop, up and forward, then down blade first into the crater', async () => {
+    // from open floor, facing into the room (the step before leaves him against the west wall)
+    await walkTo(180, 100); await kb.press('d'); await reach(FREE);
+    const x0 = await page.evaluate(() => window.__game.P.x); await kb.press('u'); await reach(/^sweep$/);
+    await until('in the air', () => window.__game.P.z > 30, undefined, 1000);
+    await until('landed in the crater', () => window.__game.P.t > .45 && window.__game.P.z === 0, undefined, 1500); await shot('07a-sky-drop');
+    const d = await page.evaluate(x => Math.abs(window.__game.P.x - x), x0); if (!(d > 10)) fail(`Sky Drop landed where it started (${d.toFixed(1)} px)`);
+    await reach(FREE, 8000); });
   await run('skill bar: the skills just used are cooling down, K still waits out its minute', async () => {
     const cd = await page.evaluate(() => ({ ...window.__game.P.cd, blinks: window.__game.P.blinks }));
     for (const k of ['moon', 'rift', 'mirror', 'sweep']) if (!(cd[k] > 0)) fail(`${k} is not cooling down (${JSON.stringify(cd)})`);
@@ -239,7 +246,7 @@ try {
     await kb.down('o'); await reach(/^moonHold$/); await until('the O charge', () => window.__game.P.charge > .9);
     await kb.up('o'); await reach(/^moon$/); await sleep(200); await shot('15-power-III-moon'); await reach(FREE);
     await until('U ready', () => !(window.__game.P.cd.sweep > 0), null, 10000);
-    await kb.press('u'); await reach(/^sweep$/); await until('the slam', () => window.__game.P.t > 1.9); await shot('16-power-III-slam'); await reach(FREE, 8000);
+    await kb.press('u'); await reach(/^sweep$/); await until('the slam', () => window.__game.P.t > .5); await shot('16-power-III-slam'); await reach(FREE, 8000);
     await page.selectOption('#power', '0'); });
   await run('C: sit, then a key to stand', async () => {
     await until('the storm over (C in the storm is Storm breath)', () => !(window.__game.P.storm > 0), null, 15000);

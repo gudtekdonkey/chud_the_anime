@@ -204,37 +204,35 @@ export function update(dt, inp) {
       if (T >= D) setState('idle');
       break;
     }
-    case 'sweep': {
-      const cx = P.x, cy = P.y - 13, W = pT('sweep', 'r'), KNEEL = .3, RISE = 1.3, TOP = 1.7, SLAM = 1.8;
-      // the gather: stone chips lift off the floor all around, drift in and start circling him
-      if (T >= KNEEL && T < RISE) { const k = (T - KNEEL) / (RISE - KNEEL);
-        if (Math.random() < .35 + k * .5) gather(P.x, P.y);
-        if (Math.random() < k * .5 && debris.length > 3) { const a = debris[Math.random() * debris.length | 0], b = debris[Math.random() * debris.length | 0];
-          if (a !== b) zap(...debrisXY(a), ...debrisXY(b), rr(.04, .07), 1.4, Math.random() < .6 ? COL.fx : COL.fx2); }
-        if (Math.random() < .4) { const a = rr(0, 6.28), R = rr(34, 60); spark(P.x + Math.cos(a) * R, P.y + Math.sin(a) * R * .45, -Math.cos(a) * 40, -Math.sin(a) * 18, .5, '#8f9692'); } }
-      // the cyclone: bolts whipping round him in a rising spiral while he comes up out of the kneel
-      if (T >= RISE && T < TOP) { const k = (T - RISE) / (TOP - RISE);
-        P.z = Math.round(k * 7);
-        for (let i = 0; i < 2; i++) { const a = T * 26 + i * Math.PI + rr(-.3, .3), R = 10 + k * 8, y = P.y - 4 - k * 20 - rr(0, 6);
-          zap(cx + Math.cos(a) * R, y, cx + Math.cos(a + 1.1) * R, y + Math.sin(a) * 3, rr(.05, .09), 1.6, [COL.fx, COL.fx2, '#ffffff'][i + (Math.random() * 2 | 0)]); }
-        if (Math.random() < .5) { const a = rr(0, 6.28); spark(cx + Math.cos(a) * 30, P.y - 1, -Math.cos(a) * 60, -rr(5, 20), .3, '#8f9692'); } }
-      if (T >= TOP && T < SLAM) P.z = 8;
-      if (once('slam', T >= SLAM)) {
+    case 'sweep': {   // Sky Drop (owner pick 2026-10-01, prototypes: the "U Slam Redesign" page, option A)
+      const W = pT('sweep', 'r'), UP = .12, DROP = .36, LAND = .44, HIGH = 44, AHEAD = 54;
+      if (once('scrape', T >= .07)) dust(5);
+      // the blink up and forward: an afterimage where he stood, slivers at both ends
+      if (once('up', T >= UP)) { ghost(.45); residue(P.x, P.y, 9); dust(8); P.z = HIGH; P.glitchNow = .1; blink(AHEAD * .8, [P.face, 0]); residue(P.x, P.y - P.z, 6); }
+      // at the top the storm comes down out of the sky into the blade
+      if (T >= UP && T < DROP) { P.z = HIGH + Math.round(4 * (T - UP) / (DROP - UP)); moveBy(P.face * 8 * dt / (DROP - UP), 0);
+        const tx = P.x + P.face * 4, ty = P.y - P.z - 22;
+        if (Math.random() < .35) zap(tx + rr(-10, 10), Math.max(-2, ty - 70), tx, ty, rr(.05, .08), 2.4, Math.random() < .5 ? COL.fx2 : '#ffffff', { every: 1, fork: true });
+        if (Math.random() < .3) spark(tx, ty, rr(-30, 30), rr(-30, 30), .2, COL.fx2, true); }
+      // the drop, blade first, trailing afterimages
+      if (T >= DROP && T < LAND) { const k = (T - DROP) / (LAND - DROP); P.z = Math.round((HIGH + 4) * (1 - k * k)); moveBy(P.face * 25 * dt, 0); if (once('trail', true) || Math.random() < .5) ghost(); }
+      const cx = P.x + P.face * 12;
+      if (once('slam', T >= LAND)) {
         fling(P.x, P.y); powerCast();
-        P.z = 0; P.flash = .05; S.hitstop = .08; S.shake = .3; P.shakeAmp = 3;
-        const n = 10 + (Math.random() * 4 | 0);
-        for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + rr(-.2, .2), R = rr(48, 60) * W;
-          zap(cx + P.face * 8, P.y - 2, cx + P.face * 8 + Math.cos(a) * R, P.y - 2 + Math.sin(a) * R * .5, rr(.12, .2), 3.2, i % 2 ? '#ffffff' : COL.fx2, { every: 1, fork: true }); }
-        rings.push({ x: cx + P.face * 8, y: P.y - 2, rx: 56 * W, ry: 28 * W, life: 1 / 60 });
-        rings.push({ x: cx + P.face * 8, y: P.y - 2, rx: 30, ry: 15, life: 2 / 60 });
-        crack(cx + P.face * 10, P.y);
-        xTear(cx + P.face * 10, P.y - 8, 34 * W, 1, 4, .35); xTear(cx + P.face * 10, P.y - 8, 34 * W, -1, 4, .35);   // the black slash: a great X where the blade lands
-        if (pT('sweep', 'pillars')) pillars(cx + P.face * 10, P.y, W);
+        P.z = 0; P.flash = .05; S.hitstop = .1; S.shake = .35; P.shakeAmp = 4;
+        const n = 12;
+        for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2 + rr(-.2, .2), R = rr(42, 54) * W;
+          zap(cx, P.y - 1, cx + Math.cos(a) * R, P.y - 1 + Math.sin(a) * R * .5, rr(.12, .2), 3.2, i % 2 ? '#ffffff' : COL.fx2, { every: 1, fork: true }); }
+        rings.push({ x: cx, y: P.y, rx: 48 * W, ry: 24 * W, life: 1 / 60 });
+        rings.push({ x: cx, y: P.y, rx: 22, ry: 11, life: 2 / 60 });
+        crack(cx, P.y);
+        xTear(cx, P.y - 10, 40 * W, 1, 5, .42); xTear(cx, P.y - 10, 40 * W, -1, 5, .42);   // the black slash: the great X over the crater, shut 0.42 s later
+        if (pT('sweep', 'pillars')) pillars(cx, P.y, W);
         dust(24);
       }
-      if (T >= SLAM && T < SLAM + .1) hit('sw', cx + P.face * 8, P.y - 6, 60 * W);
-      if (T > SLAM + .04 && Math.random() < (1 - (T - SLAM) / .4) * .7) { const a = rr(0, 6.28), R = rr(10, 55), x = cx + Math.cos(a) * R, y = P.y + Math.sin(a) * R * .5;
-        zap(x, y, x + rr(-7, 7), y + rr(-4, 4), rr(.06, .12), 2, Math.random() < .7 ? COL.fx : COL.fx2); }
+      if (T >= LAND && T < LAND + .1) hit('sw', cx, P.y - 6, 52 * W);
+      if (T > LAND + .02 && T < LAND + .36 && Math.random() < .5) { const a = rr(0, 6.28), R = rr(8, 46) * W, x = cx + Math.cos(a) * R, y = P.y + Math.sin(a) * R * .5;
+        zap(x, y, x + rr(-7, 7), y + rr(-4, 4), rr(.06, .1), 2, Math.random() < .7 ? COL.fx : COL.fx2); }
       if (T >= D) { P.z = 0; P.armed = true; P.still = 0; setState(afterAttack(false)); }
       break;
     }

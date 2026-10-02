@@ -15,7 +15,7 @@ export const TIERS = {
   rift: { size: [1, 1.15, 1.15], echo: [0, 0, .6] }, // Cross Rift: a bigger X; at III a second, smaller detonation
   moon: { shards: [0, 1, 1], twin: [0, 0, 1] },      // Crescent Moon: at II its shatter cuts too; at III a second moon behind him
   mirror: { more: [0, 1, 2] },                       // Mirror Meditation: more images
-  sweep: { r: [1, 1.2, 1.2], pillars: [0, 0, 1] },   // storm slam: a wider slam; at III bolts climb out of every crack
+  sweep: { r: [1, 1.2, 1.2], pillars: [0, 0, 1] },   // Sky Drop: a wider crater; at III bolts climb out of every crack
 };
 export const T = (skill, k) => TIERS[skill][k][INV.power - 1];
 // the look (design notes): I is quiet; II adds matter lifting off the floor; III adds ribbons of light. Nothing drawn on the floor.

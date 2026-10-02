@@ -122,20 +122,17 @@ export const POSES = {
     pz({ hx: 4, hy: 2, lean: .35, fl: [.7, .7], bl: [-.6, .2], fa: [.8, .7], sheathing: true, ba: [-.6, .2] }),
     pz({ hx: 2, hy: 1, lean: .15, fl: [.3, .3], bl: [-.3, .2], fa: HILT, ba: [-.3, .2] }),
   ],
-  // U: a slow kneel, a rising cyclone with the blade whirling, a leap, then the blade brought all the way down
+  // U, Sky Drop (owner pick 2026-10-01): a short crouch, the blink up with the blade overhead, the drop blade first, the kneel in the crater, up out of it
   sweep: [
-    ...[0, 1, 2, 3, 4, 5].map(i => { const k = i / 5; return pz({ hy: Math.round(k * 6), lean: .05 + k * .35, fl: [.2 + k * 1.0, .2 + k * 1.75], bl: [-.1 - k * .05, .1 + k * 2.3],
-      fa: i < 2 ? HILT : [.9 - k * .3, .4], sword: i < 2 ? null : 1.45, ba: [-.1, .2 + k * .4] }); }),
-    ...Array.from({ length: 20 }, (_, i) => pz({ hx: i > 13 ? (i % 2 ? 1 : 0) : 0, hy: 6, lean: .4 + (i > 6 && i < 14 ? .03 : 0), fl: [1.2, 1.95], bl: [-.15, 2.4],
-      fa: [.6, .4], sword: 1.45, ba: [-.1, .6], breath: [0, 0, .3, .7, 1, 1, .7, .3][i % 8], flutter: i > 9 ? i % 2 : 0 })),
-    ...[0, 1, 2, 3, 4, 5, 6, 7].map(i => { const k = i / 7; return pz({ hy: Math.round(6 - k * 8), lean: .3 - k * .45, fl: [1.2 - k * .9, 1.9 - k * 1.7], bl: [-.1 - k * .2, 2.3 - k * 2.1],
-      fa: [1.6 + k * 1.2, .1], sword: -1.2 + i * 2.4, ba: [-1.2 - k * 1.2, .1], hat: i % 2 ? -1 : 0, flutter: i % 2 }); }),
-    pz({ hy: -3, lean: -.2, fl: [.4, .5], bl: [-.3, .6], fa: [3.0, 0], sword: -1.62, ba: [2.9, .1], hat: -1, flutter: 1 }),
-    pz({ hy: -3, lean: -.22, fl: [.4, .5], bl: [-.3, .6], fa: [3.05, 0], sword: -1.62, ba: [2.95, .1], hat: -1 }),
+    ...[0, 1, 2].map(i => { const k = i / 2; return pz({ hy: Math.round(k * 4), lean: .1 + k * .3, fl: [.3 + k * .6, .3 + k * 1.0], bl: [-.2, .2 + k * 1.2], fa: [.9 + k * .8, .3], sword: .4 + k * .8, ba: [-.4, .3] }); }),
+    ...[0, 1, 2, 3, 4].map(i => pz({ hy: -3, lean: -.2, fl: [.4, .5], bl: [-.3, .6], fa: [3.0 + (i % 2) * .05, 0], sword: -1.62, ba: [2.9 + (i % 2) * .05, .1], hat: -1, flutter: i % 2 })),
+    pz({ hy: -1, lean: .2, fl: [.6, .7], bl: [-.5, .5], fa: [2.4, 0], sword: -.9, ba: [2.1, .2], hat: -1, flutter: 1 }),
     pz({ hx: 2, hy: 3, lean: .5, fl: [1.0, 1.0], bl: [-.9, .3], fa: [1.9, 0], sword: -.2, ba: [1.4, .3], flutter: 1 }),
-    ...[0, 1, 2, 3, 4].map(i => pz({ hx: 3, hy: 6, lean: .9, fl: [1.35, 1.6], bl: [-1.2, .15], fa: [.9, .05], sword: 1.35, ba: [.9, .2], hat: 1, flutter: i === 0 ? 1 : 0 })),
+    ...Array.from({ length: 10 }, (_, i) => pz({ hx: 3, hy: 6, lean: .9, fl: [1.35, 1.6], bl: [-1.2, .15], fa: [.9, .05], sword: 1.35, ba: [.9, .2], hat: 1, flutter: i === 0 ? 1 : 0 })),
     pz({ hx: 2, hy: 4, lean: .55, fl: [1.0, 1.2], bl: [-.9, .3], fa: [1.1, .3], sword: 1.1, ba: [-.3, .3] }),
     pz({ hx: 1, hy: 2, lean: .25, fl: [.5, .5], bl: [-.4, .3], fa: [1.2, .4], sword: .8, ba: [-.4, .3] }),
+    pz({ hx: 1, hy: 1, lean: .15, fl: [.3, .3], bl: [-.3, .3], fa: [1.2, .4], sword: .8, ba: [-.4, .3] }),
+    pz({ hy: 0, lean: .1, fl: [.2, .2], bl: [-.2, .3], fa: [1.2, .4], sword: .8, ba: [-.4, .3] }),
   ],
   death: [
     pz({ hx: -1, lean: -.35, fa: [.9, .5], ba: [-1.2, .2] }),

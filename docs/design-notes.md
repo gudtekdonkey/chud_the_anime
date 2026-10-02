@@ -21,6 +21,7 @@ Decisions made in the design sessions so far, newest last.
 - **K, glitch teleport:** electric flurry on arrival, then random glitching for a few seconds. With no enemy near, you can spam it.
 - **I, glitch double slash:** approved as is.
 - **U, storm slam:** a slow kneel, then a full second gathering power while stone chips and dust lift off the floor and circle him. He rises in a cyclone with the debris, then slams; the debris flies out and the screen shakes.
+- **U, redesigned as Sky Drop (owner pick 2026-10-01, "U slam: A" over the artifact "U Slam Redesign"):** it replaces the storm slam above, whose 1.8 s wind-up was the longest in his kit. A 0.12 s crouch, then he glitch-blinks up and forward (about 50 px), leaving an afterimage; at the top the storm comes down out of the sky into his blade; he drops blade first, trailing afterimages, and lands at 0.44 s. The crater: cracks, flung stone, a ring of forked bolts, 52 px round (×1.2 at power II), damage 2, and the great black X over it, shut 0.42 s later. III keeps the bolts climbing out of the cracks. Cooldown 8 s, unchanged.
 - **C, sit:** back to the camera, cross-legged like a monk. Standing up plays before anything else.
 
 - **Sword out:** after an attack he waits with the blade out in one of six stances, picked at random each time and never the same twice running: four side-on counter stances with the blade in his back hand pointing at the ground, and two opened to the camera.
