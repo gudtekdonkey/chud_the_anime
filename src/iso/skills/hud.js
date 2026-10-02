@@ -3,8 +3,8 @@
 // Storm Chain passive first (the Qi fills its icon, the storm drains it), then I, O, P, N, U and C, each with its key,
 // its cooldown as a dark shade with the seconds left (whole seconds, tenths under one), a white blink when a press is
 // refused, a glint when it is ready again. Drawn on the effects layer at the world's pixel scale (2 render px each).
-const ICON_COL = { '#': '#6ff3e4', '+': '#52e8d6', w: '#ffffff', k: '#0d1012' };
-const ICONS = {   // today's 12×12 icons (ui/skill-bar.js)
+export const ICON_COL = { '#': '#6ff3e4', '+': '#52e8d6', w: '#ffffff', k: '#0d1012' };
+export const ICONS = {   // today's 12×12 icons (ui/skill-bar.js)
   storm:  ['......ww....', '.....ww.....', '....ww......', '...www......', '..wwwwwww...', '......ww....', '.....ww.....', '....ww......', '...w#.......', '..#.........', '.+..........', '............'],
   double: ['w..........w', '.+........+.', '..#......#..', '...#....#...', '....#..#....', '.....##.....', '.....##.....', '....#..#....', '...#....#...', '..#......#..', '.+........+.', 'w..........w'],
   moon:   ['....####....', '..##+++.....', '.#++........', '.#+.........', '#+..........', '#+......w...', '#+..........', '#+..........', '.#+.........', '.#++........', '..##+++.....', '....####....'],

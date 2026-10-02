@@ -100,8 +100,8 @@ export async function skillSteps({ page, G, until, gameWait, settle, walkTo, sho
   errorsCheck();
 
   // ---- the Seiza shield against a real cut: the samurai off his leash (no &calm), a full meter
-  setStep('skills: Seiza, the shield'); await page.goto(new URL('?iso&test&tick=8&qi=1&foes=1', base).href);
-  await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 }); await page.locator('canvas').click();
+  setStep('skills: Seiza, the shield'); await page.goto(new URL('?iso&test&solo&combo=free&tick=8&qi=1&foes=1', base).href);
+  await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 }); await page.evaluate(() => document.querySelector('canvas').focus());   // a click would be a click to move (port.js)
   { const f = (await G()).foe; await walkTo(f.x - 16, f.z, 4); let absorbed = 0;
     for (let i = 0; i < 4 && !absorbed; i++) { await until('ready to kneel', () => ['idle', 'guard'].includes(window.__iso.hero.state)); const n0 = (await SK()).n;
       await page.keyboard.down('KeyC'); await gameWait(.1); await page.keyboard.down('ArrowDown'); await logged('breath:seiza', n0).catch(() => {});
@@ -111,8 +111,8 @@ export async function skillSteps({ page, G, until, gameWait, settle, walkTo, sho
     if (!absorbed) fail('the samurai never cut into the dome'); ok(`the dome took the cut (${(await SK()).absorbed})`); }
 
   // ---- Lotus by the tōrō: one long breath, the meter into health
-  setStep('skills: Lotus by the tōrō'); await page.goto(new URL('?iso&test&calm&tick=8&qi=1&hp=.3&foes=1', base).href);
-  await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 }); await page.locator('canvas').click();
+  setStep('skills: Lotus by the tōrō'); await page.goto(new URL('?iso&test&solo&combo=free&calm&tick=8&qi=1&hp=.3&foes=1', base).href);
+  await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 }); await page.evaluate(() => document.querySelector('canvas').focus());   // a click would be a click to move (port.js)
   { await walkTo(204, 152, 6); await settle(); const n0 = (await SK()).n; await page.keyboard.down('KeyC'); await logged('breath:lotus', n0); await until('aloft', () => window.__iso.skills.ct > 1.6);
     await shot('skill-lotus', ['hero']); await until('the lotus ending', () => window.__iso.hero.state !== 'skLotus', undefined, 60000); await page.keyboard.up('KeyC'); const s = await SK();
     if (s.hp < .95) fail(`the lotus healed to ${s.hp.toFixed(2)}`); if (s.qi > .02) fail(`the lotus left Qi ${s.qi.toFixed(2)}`); ok(`health .30 → ${s.hp.toFixed(2)}, the meter spent`); }

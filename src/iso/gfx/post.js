@@ -16,7 +16,7 @@ export const MOMENT = { impact: 0, cine: 0, bars: 0, focus: [480, 270], gray: 0 
 
 const POST = /* glsl */`
 precision highp float;
-uniform sampler2D tC, tD, tN, tFx; uniform vec3 uPal[${PALETTE.length}];
+uniform sampler2D tC, tD, tN, tFx, tHud; uniform float uHudOn, uHudS; uniform vec3 uPal[${PALETTE.length}];
 uniform float uPalOn, uOutline, uRain, uTime, uK, uOW, uOLChar, uImpact, uCine, uBars, uGray; uniform vec2 uDOff, uFocus; uniform vec3 uInk; uniform ivec2 uSize;
 in vec2 vUv; layout(location = 0) out vec4 oC;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -57,6 +57,8 @@ void main() {
   if (uImpact > .5) { float l = dot(c, vec3(.3, .59, .11)); bool hi = l > .16; if (uImpact > 1.5) hi = !hi; c = hi ? vec3(.98) : vec3(.03); }
   // letterbox
   float by = gl_FragCoord.y / float(uSize.y); if (uBars > 0. && (by < .12 * uBars || by > 1. - .12 * uBars)) c = vec3(0.);
+  // the HUD (src/iso/hud/): today's 480×270 canvas laid on top, whole game pixels, never clashed, inked or letterboxed
+  if (uHudOn > .5) { ivec2 hp = ivec2(vec2(p) / (uK * uHudS)); vec4 h = texelFetch(tHud, ivec2(hp.x, ${VH} / int(uHudS) - 1 - hp.y), 0); c = mix(c, h.rgb, h.a); }
   oC = vec4(c, 1.);
 }`;
 
@@ -72,7 +74,7 @@ export function makePipeline(canvas) {
   const post = new THREE.RawShaderMaterial({ glslVersion: THREE.GLSL3, depthTest: false, depthWrite: false,
     vertexShader: 'precision highp float; in vec3 position; out vec2 vUv; void main() { vUv = position.xy * .5 + .5; gl_Position = vec4(position.xy, 0., 1.); }',
     fragmentShader: POST,
-    uniforms: { tC: { value: rt.textures[0] }, tD: { value: rt.textures[1] }, tN: { value: rt.textures[2] }, tFx: { value: fxTex },
+    uniforms: { tC: { value: rt.textures[0] }, tD: { value: rt.textures[1] }, tN: { value: rt.textures[2] }, tFx: { value: fxTex }, tHud: { value: fxTex }, uHudOn: { value: 0 }, uHudS: { value: 2 },
       uPal: { value: PALETTE.map(c => new THREE.Vector3(...c)) }, uPalOn: { value: 1 }, uOutline: { value: 1 }, uRain: { value: 1 },
       uTime: SH.uTime, uDOff: SH.uDOff, uK: { value: 1 }, uOW: { value: 1 }, uOLChar: { value: 0 }, uImpact: { value: 0 }, uCine: { value: 0 }, uBars: { value: 0 }, uGray: { value: 0 }, uFocus: { value: new THREE.Vector2(480, 270) }, uSize: { value: new THREE.Vector2(VW, VH) }, uInk: { value: new THREE.Vector3(...hex('#060709')) } } });
   const quad = new THREE.Mesh(new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3)), post);
@@ -93,8 +95,12 @@ export function makePipeline(canvas) {
     renderer.setRenderTarget(rt); renderer.setClearColor(0x000000, 0); renderer.clear(true, true, true);
     cam.layers.set(0); renderer.render(scene, cam);
     scene.overrideMaterial = sil; cam.layers.set(1); renderer.render(scene, cam); scene.overrideMaterial = null; cam.layers.set(0);
-    fxTex.needsUpdate = true;
+    fxTex.needsUpdate = true; if (hudTex) hudTex.needsUpdate = true;
     renderer.setRenderTarget(null); renderer.render(postScene, postCam);
   }
-  return { renderer, render, fx, fxCanvas, get k() { return k; } };
+  // a HUD canvas (480×270, the game's pixels) to lay over the finished frame
+  let hudTex = null;
+  function setHud(c) { hudTex = new THREE.CanvasTexture(c); hudTex.minFilter = hudTex.magFilter = THREE.NearestFilter; hudTex.generateMipmaps = false; hudTex.flipY = false;
+    post.uniforms.tHud.value = hudTex; post.uniforms.uHudOn.value = 1; post.uniforms.uHudS.value = VW / c.width; }
+  return { renderer, render, fx, fxCanvas, setHud, get k() { return k; } };
 }

@@ -4,9 +4,9 @@
 // two attacking at once, at least two of them attacking) and spreads round him (two on opposite flanks). Everything
 // is read from window.__iso.enemies, never steered through it; the hero is driven by keys like a player.
 export async function enemySteps({ page, browser, base, OUT, fail, ok, setStep }) {
-  await page.goto(new URL('?iso&test&tick=8&ehp=.5', base).href);
+  await page.goto(new URL('?iso&test&solo&combo=free&tick=8&ehp=.5', base).href);
   await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 });
-  await page.locator('canvas').click();
+  await page.evaluate(() => document.querySelector('canvas').focus());   // a click would be a click to move (port.js)
   const E = () => page.evaluate(() => ({ ...window.__iso.enemies, hero: window.__iso.hero, t: window.__iso.t }));
   const gameWait = sec => page.evaluate(s => new Promise(r => { const t0 = window.__iso.t; const f = () => window.__iso.t - t0 >= s ? r() : requestAnimationFrame(f); f(); }), sec);
   const until = async (what, fn, arg, timeout = 90000) => { try { await page.waitForFunction(fn, arg, { timeout, polling: 50 }); }

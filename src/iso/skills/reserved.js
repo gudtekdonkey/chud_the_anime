@@ -49,7 +49,7 @@ export function skillControl() {
 export function skillsRender() { recall.render(C); }
 // the effects layer: each skill's effects, then the HUD (after everything, so nothing draws over it)
 export function drawSkills(g) { for (const sk of ALL) sk.draw(g, C); }
-export function drawSkillHud(g) { drawHud(g, { recall: recall.away }); }
+export function drawSkillHud(g, o = {}) { drawHud(g, { recall: recall.away, lift: o.lift || 0 }); }   // lift: raised over today's bottom bar (port.js)
 // read-only, for the check (window.__iso.skills)
 export const skillState = () => ({ qi: KIT.qi, power: KIT.power, cd: { ...KIT.cd }, pts: { ...KIT.pts }, casts: { ...KIT.casts },
   counter: counter.phase, recall: recall.blade, chain: chain.phase, slice: timeslice.phase });

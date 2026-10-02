@@ -31,7 +31,7 @@ const ICON = {
 };
 const S = 30, GAP = 8;
 export function drawHud(g, extra = {}) {
-  const n = SKILLS.length, w = n * S + (n - 1) * GAP, x0 = Math.round(VW / 2 - w / 2), y0 = VH - S - 18;
+  const n = SKILLS.length, w = n * S + (n - 1) * GAP, x0 = Math.round(VW / 2 - w / 2), y0 = VH - S - 18 - (extra.lift || 0);
   // the Qi meter, notched in thirds; full, it breathes
   const qy = y0 - 12, full = KIT.qi >= .999;
   g.fillStyle = 'rgba(5,7,10,.78)'; g.fillRect(x0 - 1, qy - 1, w + 2, 7); g.fillStyle = full ? (Math.floor(W.t * 3) % 2 ? CY[2] : CY[1]) : CY[0]; g.fillRect(x0, qy, Math.round(w * KIT.qi), 5);

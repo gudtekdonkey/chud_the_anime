@@ -111,7 +111,7 @@ export function makeSkills({ hero, foe, foes: liveFoes = () => [foe], scene, loo
   W.on.hit = (a, w) => { if (a.mirror) return MIRROR.hit(C, a); const L = C.foes, n = L.map(f => f.hits); hit0(a, w); L.forEach((f, i) => { if (f.hits > n[i]) onLanded('slash', f); }); };
   W.on.strike = (a, w) => { const v = hv(a.h), px = a.x + v[0] * 16, pz = a.z + v[1] * 16;
     if (SK.shield && Math.hypot(hero.a.x - px, hero.a.z - pz) < 26) { SK.absorbed++; C.log('foe:blocked'); BREATH.block(C, a); return; }
-    const t0 = hero.taken; strike0(a, w); if (hero.taken > t0) SK.hp = Math.max(.05, SK.hp - .12); };
+    const t0 = hero.taken; strike0(a, w); if (hero.taken > t0 && !SK.hpExt) SK.hp = Math.max(.05, SK.hp - .12); };   // hpExt: today's HUD (port.js) takes the hurt and bridges it here
 
   // a world step's worth of the skills (they run inside the world's step, so a hit-stop holds them): the playing skill's
   // beats, the moons, the mirror images, the storm, timers, the effects
@@ -156,7 +156,7 @@ export function makeSkills({ hero, foe, foes: liveFoes = () => [foe], scene, loo
       for (const o of [SK.pop, SK.deny]) for (const k in o) o[k] = Math.max(0, o[k] - dt); },
     // each render: the echoes' looks, then the effects and the HUD on the effects layer
     render() { echoes.render(W.t); },
-    draw(g) { BREATH.back(C, g); fxDraw(g); breathDraw(C, g); echoes.stamp(g); drawHud(g, C); },
+    draw(g, o = {}) { BREATH.back(C, g); fxDraw(g); breathDraw(C, g); echoes.stamp(g); if (!o.noHud) drawHud(g, C); },   // noHud: today's HUD (port.js) shows them
     setLook(kind) { echoes.setLook(kind); },
     get armed() { const c = SK.cur; return !!(c && c.armed && c.armed(hero.a.ct)); },
     get iframes() { const c = SK.cur; return !!(c && c.inv && c.inv(hero.a.ct)); },

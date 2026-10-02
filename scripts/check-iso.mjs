@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import { enemySteps } from './check-iso-enemies.mjs';
 import { skillSteps } from './check-iso-skills.mjs';
 import { squadSteps } from './check-iso-squad.mjs';
+import { portSteps } from './check-iso-port.mjs';
 
 const OUT = 'test-output/iso'; fs.mkdirSync(OUT, { recursive: true });
 let step = '';
@@ -50,21 +51,24 @@ async function shot(name, who = ['hero'], then) {
 
 try {
   step = 'boot';
-  await page.goto(new URL('?iso&test&calm&tick=8&foes=1', base).href);
+  await page.goto(new URL('?iso&test&solo&combo=free&calm&tick=8&foes=1', base).href);
   await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 });
-  await page.locator('canvas').click();
+  await page.evaluate(() => document.querySelector('canvas').focus());   // a click would be a click to move (port.js)
   // what he has been through, recorded every frame in the page (a poll from here can miss a state that lasts 2 frames)
   await page.evaluate(() => { window.__seen = new Set(); window.__seq = []; const f = () => { const h = window.__iso.hero; window.__seen.add(h.state); if (h.iframes) window.__seen.add('iframes'); if (window.__iso.cine) window.__seen.add('cine'); if (window.__iso.impact) window.__seen.add('impact');
     const s = window.__iso.skills; if (s && s.images >= 3) window.__seen.add('images');
     if (window.__seq.at(-1) !== h.state) window.__seq.push(h.state); requestAnimationFrame(f); }; f(); });
   const seen = (what, timeout) => until(what, w => window.__seen.has(w), what, timeout), forget = () => page.evaluate(() => { window.__seen.clear(); window.__seq = []; });
   errorsCheck(); ok(`look ${(await G()).look}`); await shot('00-start', ['hero', 'foe']);
+  const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
+  const walkTo = async (tx, tz, r) => { for (let i = 0; i < 40; i++) { const g = (await G()).hero; const dx = tx - g.x, dz = tz - g.z; if (Math.hypot(dx, dz) < r) break;
+    const keys = [Math.abs(dx) > 4 ? (dx > 0 ? 'ArrowRight' : 'ArrowLeft') : null, Math.abs(dz) > 4 ? (dz > 0 ? 'ArrowDown' : 'ArrowUp') : null].filter(Boolean);
+    for (const k of keys) await page.keyboard.down(k); await gameWait(.08); for (const k of keys) await page.keyboard.up(k); } };
   if (process.env.ISO_ONLY !== 'enemies') {
 
     // ---- the run in 8 directions: hold the keys until he has covered ground, check where he went and which way he faces
     const DIRS = [['N', ['ArrowUp'], Math.PI], ['NE', ['ArrowUp', 'ArrowRight'], 3 * Math.PI / 4], ['E', ['ArrowRight'], Math.PI / 2], ['SE', ['ArrowDown', 'ArrowRight'], Math.PI / 4],
       ['S', ['ArrowDown'], 0], ['SW', ['ArrowDown', 'ArrowLeft'], -Math.PI / 4], ['W', ['ArrowLeft'], -Math.PI / 2], ['NW', ['ArrowUp', 'ArrowLeft'], -3 * Math.PI / 4]];
-    const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
     for (const [name, keys, h] of DIRS) {
       step = `run ${name}`; await settle(); const a0 = (await G()).hero;
       for (const k of keys) await page.keyboard.down(k);
@@ -89,9 +93,6 @@ try {
 
     // ---- J1 → J2 → J3 on the samurai: walk up to him, three presses, three hits, three reactions
     step = 'approach'; await settle();
-    const walkTo = async (tx, tz, r) => { for (let i = 0; i < 40; i++) { const g = (await G()).hero; const dx = tx - g.x, dz = tz - g.z; if (Math.hypot(dx, dz) < r) break;
-      const keys = [Math.abs(dx) > 4 ? (dx > 0 ? 'ArrowRight' : 'ArrowLeft') : null, Math.abs(dz) > 4 ? (dz > 0 ? 'ArrowDown' : 'ArrowUp') : null].filter(Boolean);
-      for (const k of keys) await page.keyboard.down(k); await gameWait(.08); for (const k of keys) await page.keyboard.up(k); } };
     { const f = (await G()).foe; await walkTo(f.x - 22, f.z, 6); } await settle(); ok();
     // the presses come as a player's would, each as the last cut lands (a screenshot here outlasts the chain's window)
     step = 'J1 → J2 → J3'; { const f0 = (await G()).foe, n0 = (await G()).log.length;
@@ -212,9 +213,9 @@ try {
     // ---- the 15 weapons in play: picked with =, each walks up to the samurai from one of the eight sides (so the cuts come
     //   in every facing), J1 → J2 → J3 all land at the weapon's reach with its hit-stops, and he stows it after the calm
     step = 'weapons: in play';
-    await page.goto(new URL('?iso&test&calm&tick=8&foehp=999&foes=1', base).href);
+    await page.goto(new URL('?iso&test&solo&combo=free&calm&tick=8&foehp=999&foes=1', base).href);
     await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 });
-    await page.locator('canvas').click();
+    await page.evaluate(() => document.querySelector('canvas').focus());   // a click would be a click to move (port.js)
     await page.evaluate(() => { window.__yaw = []; let n = 0; const f = () => { const L = window.__iso.STATS.log.length; if (L > n) { n = L; window.__yaw.push(window.__iso.hero.yaw); } requestAnimationFrame(f); }; f(); });
     const W8 = await page.evaluate(() => window.__iso.weapons), facings = new Set(), FA = [0, 1, 2, 3, 4, 5, 6, 7].map(k => wrap(k * Math.PI / 4));
     for (let i = 0; i < W8.length; i++) { const w = W8[i];
@@ -243,9 +244,13 @@ try {
   await squadSteps({ page, base, until, gameWait, ok, fail, errorsCheck, setStep: s => { step = s; }, shotPage: name => page.locator('canvas').screenshot({ path: `${OUT}/${name}.png` }) });
   errorsCheck();
 
+  // ---- the rest of today's game in 3D (scripts/check-iso-port.mjs)
+  await portSteps({ page, base, fail, ok, setStep: s => { step = s; }, shot, OUT });
+  errorsCheck();
+
   // ==== the new skills (src/iso/skills/): F counter, R Blade Recall, Q Lightning Chain, X Time Slice ====
   const boot = async q => { await page.goto(new URL(q, base).href); await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 });
-    await page.locator('canvas').click();
+    await page.evaluate(() => document.querySelector('canvas').focus());   // a click would be a click to move (port.js)
     await page.evaluate(() => { window.__seen = new Set(); window.__seq = []; const f = () => { const h = window.__iso.hero; window.__seen.add(h.state); if (window.__iso.cine) window.__seen.add('cine'); if (window.__iso.gray > .9) window.__seen.add('gray');
       if (window.__seq.at(-1) !== h.state) window.__seq.push(h.state); requestAnimationFrame(f); }; f(); }); };
   const logHas = (what, from, timeout = 60000) => until(what, ([w, n]) => window.__iso.STATS.log.slice(n).some(l => l.startsWith(w)), [what, from], timeout);
@@ -255,7 +260,7 @@ try {
     if (['fcut', 'thrust'].includes(s.state) && s.ct >= lo && s.ct < hi) { dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyF', key: 'f' })); dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyF', key: 'f' })); r(s.state); } else requestAnimationFrame(f); }; f(); }), [lo, hi]);
 
   // ---- F: the samurai attacks (no &calm); a press within 0.2 s of the blow counters, an earlier one only blocks
-  step = 'F counter'; await boot('?iso&test&tick=8&foes=1'); await settle();
+  step = 'F counter'; await boot('?iso&test&solo&combo=free&tick=8&foes=1'); await settle();
   { const f = (await G()).foe; await walkTo(f.x - 16, f.z, 4); }
   { const n = await logLen(), atk = await pressAt(.33, .46); await logHas('F:counter', n); await shot('counter-clash', ['hero', 'foe']);
     await logHas('F:cut', n); const g = await G(); if (!g.foe.reacts.slice(-1)[0].match(/knock|die/)) fail(`the answer's cut: ${g.foe.reacts.slice(-2).join(' ')}`);
@@ -269,7 +274,7 @@ try {
     await seen('cine'); ok('a killing counter, the close-up played'); }
 
   // ---- the rest on a calm squad of three
-  step = 'Q Lightning Chain'; await boot('?iso&test&calm&tick=8&foes=3'); await settle();
+  step = 'Q Lightning Chain'; await boot('?iso&test&solo&combo=free&calm&tick=8&foes=3'); await settle();
   await until('the squad gathering', () => window.__iso.foes.filter(f => Math.hypot(f.x - window.__iso.hero.x, f.z - window.__iso.hero.z) < 60).length === 3, undefined, 60000);
   { const n = await logLen(); await page.keyboard.press('KeyQ'); await logHas('Q:link', n); const cd = await page.evaluate(() => window.__iso.reserved.cd.chain); await shot('chain-links', ['hero', 'near']);
     await logHas('Q:yank', n); await logHas('Q:cut', n); await shot('chain-cut', ['hero', 'near']); const log = (await G()).log.slice(n), links = log.filter(l => l.startsWith('Q:link')).length;
@@ -309,7 +314,7 @@ try {
   step = 'growth'; { const s = await page.evaluate(() => window.__iso.reserved); if (!(s.pts.chain >= 1 && s.pts.slice >= 1)) fail(`landed casts not counted: ${JSON.stringify(s.pts)}`); ok(JSON.stringify(s.pts)); }
   // ---- personalities and the twenty idles (persona/, anim/idles.js): measured on actors of their own (never steering the game)
   // on a fresh page (after the skills: the ronin's pick is remembered in localStorage, and the old master runs slower)
-  step = 'personalities: boot'; await boot('?iso&test&calm&tick=8&foes=1'); await settle(); ok();
+  step = 'personalities: boot'; await boot('?iso&test&solo&combo=free&calm&tick=8&foes=1'); await settle(); ok();
   const PS = fn => page.evaluate(fn);
   step = 'each idle plays'; { const r = await PS(() => window.__iso.persona.idleReport()), ids = Object.keys(r);
     if (ids.length !== 20) fail(`${ids.length} idles`);

@@ -87,7 +87,7 @@ export function wireOverlay(root, onLook) {
   const cycle = (el, fire) => { el.selectedIndex = (el.selectedIndex + 1) % el.options.length; fire(el); };
   addEventListener('keydown', e => {
     if (e.target.tagName === 'SELECT' || e.repeat || e.ctrlKey || e.metaKey) return;
-    // the pipeline's number keys are Alt + the number (1–9 recall the squad's groups, docs/squad-ai.md); the letters stay bare
+    // the pipeline's number keys are Alt + the number (bare, 1–4 are the quick slots, port.js, and 1–9 the squad battle's groups, docs/squad-ai.md); the letters stay bare
     const k = Object.keys(boxes).find(b => /\d/.test(boxes[b]) ? e.altKey && 'Digit' + boxes[b] === e.code : !e.altKey && 'Key' + boxes[b] === e.code);
     if (k) { e.preventDefault(); const el = $('o-' + k); el.checked = !el.checked; el.onchange(); return; }
     if (e.altKey) return;

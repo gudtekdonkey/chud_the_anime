@@ -136,5 +136,7 @@ export function installGore({ hero, foe, all = [foe], live = () => all, scene })
     return { ...s, drops: B.BL.drops.length, decals: B.BL.decals.length, splashHero: h.splashes.length, splashFoe: f.splashes.length, blade: h.blade, cut: f.cut.slice(),
       pieces: SV.pieces.length, foePieces: piecesOf(foe).length, resting: SV.pieces.filter(p => p.rest).length, ...SV.stats,
       lowest: Math.min(99, ...SV.pieces.map(p => p.c.y)), exec: EX.st ? EX.st.ex.name : null, execOn: EX.on, execs: EX.done, execLog: EX.log.slice(), kpick: !!KM.pick, alone: KM.alone.size }; };
-  return { sync, draw, view };
+  // an execution on f now, if none is playing (port.js: K's finisher on a combo)
+  const exec = f => { if (!f || f.dead || EX.on) return false; startExec(hero, f, api); return true; };
+  return { sync, draw, view, exec };
 }
