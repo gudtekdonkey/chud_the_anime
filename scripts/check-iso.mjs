@@ -2,7 +2,8 @@
 // Chromium: no page errors; the run in all 8 directions (the stick maps straight to the screen, he faces where he
 // runs); the roll (its i-frames, its distance); J1 → J2 → J3 on the samurai with every hit landing and the samurai
 // reacting; a cut cancelled into the roll; a kill and the respawn; the same loop with the pixel look; one shot per
-// pipeline toggle; the personalities (each idle plays, no traits = the plain ronin, two personalities differ, [ / ]
+// pipeline toggle; the 15 weapons (drawn, J1 → J3, stowed in all 8 facings, then in play with their reach and hit-stops);
+// the personalities (each idle plays, no traits = the plain ronin, two personalities differ, [ / ]
 // give the ronin and the samurai one, the townsfolk idle and wander) and the idle gallery (?iso&idles). Screenshots land in test-output/iso/. Chromium comes from PLAYWRIGHT_BROWSERS_PATH (never downloaded),
 // with WebGL on SwiftShader, which draws a few frames a second: the page runs with &tick=N (N game steps a frame), and
 // every wait here is on the game's own clock or state, never the wall clock.
@@ -144,6 +145,55 @@ try {
     errorsCheck();
     // ---- the skills (I O P N U C, Storm Chain): scripts/check-iso-skills.mjs
     await skillSteps({ page, G, until, gameWait, settle, walkTo, shot, seen, forget, ok, fail, errorsCheck, base, setStep: v => { step = v; } });
+
+    // ---- the 15 weapons (src/iso/weapons/): off screen through the 3D look, every weapon draws, cuts J1 → J2 → J3 and
+    //   stows in all 8 facings with no errors, its events on the katana's beats; then their contact sheets (?iso&arsenal)
+    step = 'weapons: the sweep, 15 × 8 facings';
+    await page.goto(new URL('?iso&arsenal&sweep&k=1&w=0-4', base).href);
+    await page.waitForFunction(() => window.__arsenal, undefined, { timeout: 600000, polling: 500 });
+    { const r = await page.evaluate(() => window.__arsenal), ids = await page.evaluate(() => [...new Set(window.__arsenal.results.map(x => x.id))]);
+      if (ids.length !== 15 || r.results.length !== 120) fail(`swept ${ids.length} weapons, ${r.results.length} runs`);
+      const ref = Object.fromEntries(r.results.filter(x => x.id === 'katana').map(x => [x.facing, x.events]));
+      const home = m => m === 'stow' || m === 'katana';
+      for (const x of r.results) { const at = `${x.id} facing ${x.facing}`;
+        if (x.errors.length) fail(`${at}: ${x.errors[0]}`);
+        if (x.drawFrom.out || !home(x.drawFrom.main)) fail(`${at}: not drawn from home (${JSON.stringify(x.drawFrom)})`);
+        if (!x.atHit.out || !(x.atHit.main === 'hand' || x.atHit.main === 'katana')) fail(`${at}: not in his hand at J1's hit (${JSON.stringify(x.atHit)})`);
+        if (!x.atImpact.out) fail(`${at}: not out at J3's impact`);
+        if (x.end.out || !home(x.end.main)) fail(`${at}: not stowed after the sheathe (${JSON.stringify(x.end)})`);
+        if (x.events !== ref[x.facing]) fail(`${at}: events ${x.events}, the katana's ${ref[x.facing]}`); }
+      for (const [n, list] of Object.entries(r.beats)) { const k = list[0]; for (const b of list) if (b.dur !== k.dur || b.ev !== k.ev || b.loop !== k.loop) fail(`${b.id} ${n}: ${b.dur}s ${b.ev}, the katana's ${k.dur}s ${k.ev}`); }
+      ok(`${ids.length} weapons × 8 facings: drawn from home, in hand at the hits, home after the stow; every move on the katana's length and beats (${ref[0]})`); }
+    step = 'weapons: contact sheets';
+    for (const [q, name] of [['w=0-4', 'moments-0'], ['w=5-9', 'moments-1'], ['w=10-14', 'moments-2'], ['w=0-7&m=J1', 'facings-J1-0'], ['w=8-14&m=J1', 'facings-J1-1'], ['w=0-7&m=stowed', 'facings-stowed-0'], ['w=8-14&m=stowed', 'facings-stowed-1']]) {
+      await page.goto(new URL(`?iso&arsenal&k=1&${q}`, base).href); await page.waitForFunction(() => window.__iso && window.__iso.ready, undefined, { timeout: 60000 });
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))); await page.locator('canvas').screenshot({ path: `${OUT}/arsenal-${name}.png` }); }
+    errorsCheck(); ok();
+
+    // ---- the 15 weapons in play: picked with =, each walks up to the samurai from one of the eight sides (so the cuts come
+    //   in every facing), J1 → J2 → J3 all land at the weapon's reach with its hit-stops, and he stows it after the calm
+    step = 'weapons: in play';
+    await page.goto(new URL('?iso&test&calm&tick=8&foehp=999&foes=1', base).href);
+    await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 });
+    await page.locator('canvas').click();
+    await page.evaluate(() => { window.__yaw = []; let n = 0; const f = () => { const L = window.__iso.STATS.log.length; if (L > n) { n = L; window.__yaw.push(window.__iso.hero.yaw); } requestAnimationFrame(f); }; f(); });
+    const W8 = await page.evaluate(() => window.__iso.weapons), facings = new Set(), FA = [0, 1, 2, 3, 4, 5, 6, 7].map(k => wrap(k * Math.PI / 4));
+    for (let i = 0; i < W8.length; i++) { const w = W8[i];
+      if (i) await page.keyboard.press('Equal');
+      step = `weapon ${w.id}`; await until(`the ${w.id} in hand`, id => window.__iso.hero.weapon === id, w.id); await settle();
+      const k = i % 8, a = k * Math.PI / 4; { const f = (await G()).foe; await walkTo(f.x + Math.sin(a) * 22, f.z + Math.cos(a) * 22, 5); } await settle();
+      const n0 = (await G()).log.length, s0 = await page.evaluate(() => window.__iso.STATS.stops.length), y0 = await page.evaluate(() => window.__yaw.length);
+      const landed = (cut, n) => until(`${cut} landing`, ([c, n]) => window.__iso.STATS.log.length > n && window.__iso.STATS.log.at(-1).startsWith(c), [cut, n]);
+      await page.keyboard.press('KeyJ'); await landed('J1', n0); await page.keyboard.press('KeyJ'); await landed('J2', n0 + 1); await page.keyboard.press('KeyJ'); await landed('J3', n0 + 2);
+      await shot(`weapon-${String(i).padStart(2, '0')}-${w.id}`, ['hero', 'foe']);
+      const g = await G(), log = g.log.slice(n0).join(), stops = await page.evaluate(s => window.__iso.STATS.stops.slice(s), s0), yaw = await page.evaluate(y => window.__yaw[y], y0);
+      if (log !== 'J1:hit,J2:hit,J3:hit') fail(`the chain landed ${log}`);
+      const want = [3, 3, 5].map(f => +(f / 60 * w.stop).toFixed(4)); if (stops.join() !== want.join()) fail(`hit-stops ${stops.join()} s, wanted ${want.join()} (weight ×${w.stop})`);
+      const fk = FA.findIndex(v => Math.abs(wrap(v - yaw)) < .05), want8 = (k + 4) % 8; if (fk !== want8) fail(`cut facing ${yaw.toFixed(2)} rad (facing ${fk}), wanted facing ${want8}`); facings.add(fk);
+      await until(`the ${w.id} stowed`, () => { const h = window.__iso.hero; return h.state === 'idle' && !h.out && h.held && (h.held.main === 'stow' || h.held.main === 'katana'); }, undefined, 120000);
+      ok(`${log} from the ${['S', 'SE', 'E', 'NE', 'N', 'NW', 'W', 'SW'][k]} side, cut facing ${fk}, hit-stops ${stops.join(' ')} s, stowed`); }
+    step = 'weapons: facings'; if (facings.size !== 8) fail(`cuts in ${facings.size} facings`); ok('cuts landed in all 8 facings');
+    errorsCheck();
   }
 
   // ---- the enemy types: each telegraphs, strikes and dies; a group takes turns

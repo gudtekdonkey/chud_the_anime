@@ -8,6 +8,7 @@ import { applyPose } from './rig.js';
 import { SH } from '../../gfx/shade.js';
 import { toScreen } from '../../gfx/view.js';
 import { STYLE } from '../../gfx/style.js';
+import { equipModel } from '../../weapons/wield.js';
 
 export const LOOK3D = { hatTilt: 14, brim: 1, glint: 1 };   // the overlay's hat tunables (faces page: 14° tilt, the wide brim as drawn)
 const _v = new THREE.Vector3(), _q = new THREE.Quaternion();
@@ -18,6 +19,7 @@ export function threeLook({ foe = false, pal = null } = {}) {
     kind: '3d',
     mount(s) { scene = s; s.add(rig.root); },
     show(f) {
+      if (rig.wid !== (f.weapon || 'katana')) equipModel(rig, f.weapon || 'katana');   // the frame's weapon (weapons/), built on a change
       last = f; rig.root.position.set(Math.round(f.x * 2) / 2, f.y, Math.round(f.z * 2) / 2);
       rig.updateShear(); rig.body.rotation.y = f.yaw;
       if (rig.hat) { rig.hatTilt = LOOK3D.hatTilt * Math.PI / 180; rig.hat.scale.set(LOOK3D.brim, 1, LOOK3D.brim); }

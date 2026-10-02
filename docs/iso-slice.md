@@ -20,6 +20,8 @@ All of it lives in `src/iso/`. It is a test bed for the owner's picks, not the g
 | `/?iso&idles` | the twenty idles looping side by side (`&who=p:Old%20master` one persona for all, `&folk` townsfolk, `&only=kneelRest,leanSword`, `&yaw=0..7`, `&body=39.5`, `&zoom=3`) |
 | `/?iso&folk=0` | the courtyard without its townsfolk |
 | `/?iso&style=1` | start on a style (0 Toon + dither, 1 Pixel-render, 2 Anime limited, 3 Painterly) |
+| `/?iso&weapon=yari` | start with a weapon (any of the 15 ids below; `=` steps through them in play, `-` back) |
+| `/?iso&arsenal` | the weapons' contact sheet: weapons down (`&w=0-4`, `&w=yari,bo`), the loop's moments across in one facing (`&face=0..7`, `&mo=J1,J3`), or the eight facings of one moment (`&m=J1`); `&sweep` also plays every weapon through the loop in all 8 facings off screen and leaves the result in `window.__arsenal` |
 | `/?iso&sheet` | a frozen contact sheet: four moments of the loop × the eight facings (`&rows=4,5,6,7` the other four, `&look=pixel`, `&foe`, `&zoom=1.9`) |
 | `npm run check:iso` | builds, then `scripts/check-iso.mjs` plays the loop in Chromium and asserts it (below); screenshots in `test-output/iso/` |
 
@@ -33,10 +35,11 @@ it has struck. Presses are remembered 0.2 s. The skills, as today's game keys th
 hold Thousand Cuts · `O` hold Crescent Moon · `P` Cross Rift (hold to charge) · `N` Mirror Meditation · `U` Sky Drop ·
 `C` tap sit, hold Breath of Qi (with `↓` Seiza, by the tōrō Lotus, in the storm Storm breath) · Storm Chain passive.
 The reserved keys: `F` counters (tap as the blow comes), `R` throws the blade (tap again to call it back, hold to go to
-it), `Q` casts Lightning Chain, `X` Time Slice on a full Qi meter (below).
+it), `Q` casts Lightning Chain, `X` Time Slice on a full Qi meter (below). `=` the next weapon (`-` back).
 
 **The overlay** (beside the game, every choice also a key): the frame time; `M` the model (3D / Pixel); `V` the style
-(Painterly, Pixel-render, Anime limited, Toon + dither); `Y` clashes (it was C: C is Breath of Qi now); `Z` the finisher's
+(Painterly, Pixel-render, Anime limited, Toon + dither); `=` / `-` the weapon (the 15, with its line; it was T and
+Shift+T: T is the facings, Shift the roll); `Y` clashes (it was C: C is Breath of Qi now); `Z` the finisher's
 close-up (it was X: X is Time Slice now); the pipeline
 steps `1` low-res target, `2` toon bands, `3` dither, `4` palette, `5` outline, `6` pixel upscale, `7` rim light,
 `8` keep the glints, and the number of bands; `B` the bodies' camera (picked 39.5°, upright 20°, true 54°), the hat's
@@ -178,6 +181,65 @@ in front of it; `onStrike` / `onLanded` hooks), `play/foe.js` (a squad keeps a s
 `gfx/post.js` (`MOMENT.gray`), `look/pixel/lookpix.js` (the vendored engine has no empty saya: the hand keeps only the
 hilt while the blade is thrown), `ui/overlay.js` (Z, T, the assist box), `main.js` (the squad, the seam).
 
+## The weapons (`weapons/`)
+
+Every weapon of today's game (`src/weapons/`) is here (owner 2026-10-02: "The 15 weapons in 3D. Only the katana exists
+there."), in the same order and with the same reach and weight, picked in the overlay (`=` / `-`, `&weapon=<id>`), live mid-fight.
+The slice never imports today's game: the numbers are copied into `weapons/arsenal.js`.
+
+| `arsenal.js` | `ARSENAL`: id, name, line, reach, weight `{ stop, shake }`, carry, the model's length either side of the grip (`ext`), one or two hands; `equip(char, id)` |
+| `models.js` | `MODELS`: the 15 procedural models (origin at the right hand's grip, +z to the business end) and their saya, slings and coils |
+| `stow.js` | `STOW`: where each rides when home, in a bone's frame; `mountOf` (the same place in the side pose's plane, for the poses' draw and stow) |
+| `wield.js` | `equipModel(rig, id)`: builds a weapon onto a 3D look's rig and installs `rig.wield`, which places it each frame (in the right hand, home, the left hand's weapon, the fan, the free stick, the chain) and hides the built-in katana |
+| `poses.js` | Each weapon's take on every move, `CLIPS['J1@yari']` (flow.js plays it for an actor whose `wid` is the weapon), and the `post` every pose of it passes |
+| `cuts.js` | `CUTS`: the weapons' grips on the katana's keys, mapped from today's per-weapon poses |
+| `picker.js` | The overlay's weapon row and `=` / `-` |
+| `sheet.js` | `?iso&arsenal` (the contact sheet) and the sweep the check reads |
+
+| Weapon | Carried | Its moves (J1 · J2 · J3) | Reach · weight |
+|---|---|---|---|
+| Katana | saya at the left hip (the ronin's own model) | the Animation Flow page's: iai draw · falling diagonal · the heavy chop | 1 · 1 |
+| Yari | slung across the back, head over the right shoulder | drawn over the shoulder, the draw-back and the thrust (the back fist driven to the front one) · whipped overhead and beaten down · raised and driven into the floor | 1.5 · 1 |
+| Nodachi | down the back, hilt over the right shoulder, the long saya always there | drawn up over the shoulder as the wind-up, down through the front, followed through low · swung back up through the front and over · the chop | 1.35 · 1.6 (shake 2) |
+| Twin tanto | two saya at the front of the obi | a backhand across the front · the back hand's reverse-grip hook · both blades down from overhead | 0.8 · 0.7 |
+| Naginata | slung | wound high behind, swept low at the shins · spun, raised, chopped · raised and chopped | 1.4 · 1.1 |
+| Kanabo | down the back, grip over the shoulder | drawn straight up, dropped onto the floor · swung back up and over · raised and dropped | 1.15 · 2 (shake 2.5) |
+| Kusarigama | the sickle through the obi, the chain coiled at his back | the chain arm cocked, flung, the chain thrown straight out and yanked home · the sickle hooked in · the weight whirled overhead and slammed | 1.6 · 0.8 |
+| Tessen | shut, through the obi | snapped shut and driven down · flicked open and swept across · shut, overhead | 0.7 · 0.6 |
+| Bo staff | slung | the front end cracked down · spun so the back end leads and rises · the crack | 1.35 · 0.9 |
+| Tetsubo | slung | the bo's, both fists near the butt so the iron end lands | 1.3 · 1.8 (shake 2.2) |
+| Kama pair | two through the obi, handles up | the twin tanto's, the back hand's kama in a forward grip | 0.85 · 0.8 |
+| Jitte | through the obi | the katana's, one-handed | 0.75 · 0.8 |
+| Daisho | both saya at the left hip | the katana's, one-handed, the wakizashi in the back hand · the answer cut is the wakizashi's | 1 · 1.1 |
+| Nunchaku | folded in the obi | the katana's, one-handed, the free stick a beat behind | 0.95 · 0.7 |
+| Wakizashi | saya at the left hip | the katana's, shorter | 0.85 · 0.8 |
+
+**The timing is the katana's.** A weapon's take on a keyed move is the katana's clip with the same key times, easings,
+events (`hit`, `impact`, `click`) and root travel, and its legs and body; only the arms, grips and the weapon's angle are
+laid on its keys (`cuts.js`: one grip per key, `null` keeps the katana's). Loops (the guard, the armed run, the roll,
+the hit reactions) are the katana's procedures with the weapon's grip on top, moved as the katana's blade moves (its
+breathing, the run's swing). The stow of a weapon not at the hip is its own procedure on the sheathe's beats (a flick,
+a beat, up and round to where it hangs, home on the click at 1.02 s, the hand let go); a hip weapon slides home as the
+katana does. So the hit beats, the chain windows, the cancels and the trail's timing are shared by all 15. A weapon's
+grips are mapped from today's (`src/weapons/*.js` GUARD, WIND, THRUST, BEAT, SWEEP, HOOK...) by eye onto the Animation
+Flow rig's reach, in its units (rig px, forward of the pelvis and up from the floor).
+
+**On the skeleton** (`rig.js applyPose`, four fields added to the pose's `blade`, each optional): `bh` how far apart the two
+hands are along a haft (the katana's 3.4 rig px; a yari's guard 12), `x` the right hand's sideways place and `lat` the
+weapon's sideways lean (a draw from over the right shoulder), and `slide` how far down the weapon from the hand its own
+grip is (the hand takes a slung haft high, then slides to its grip). Then `rig.wield` places the weapon. Every pose of
+a weapon's move also passes its `post`: the haft's hands; a one-handed weapon's free fist where the katana's keys put
+both hands on the hilt, or its off-hand weapon (`off`: the second tanto reversed along the forearm, the kama and the
+daisho's wakizashi at an angle, the kusarigama's chain hanging or thrown to `chain` rig px); the tessen's `spread`; and
+the floor: a long weapon's ends stop on it (as today's art plants them) by turning it about the grip, never through it.
+
+**Reach and weight** (`play/rules.js`, `play/hero.js`): a cut lands within 46 rig px × the reach, the cut's step stops
+`28 + (reach − 1) × 30` rig px short of the samurai (a spear stops further off), the hit-stop is the owner's 3 / 5 / 8
+frames × the weapon's stop weight (kept in `STATS.stops`), and a heavy hit's shake × its shake weight.
+
+**Not yet:** the samurai keeps the katana; the pixel look draws the katana for every weapon (the pages' 2D engine has
+only it); the trail runs along the main weapon's length (the kusarigama's sickle, not its thrown chain).
+
 ## Placeholder, and what a 3D artist replaces
 
 - **The model** (`look/three/ronin.js`): boxes, cones and rings placed in code. A modelled Iron Ash (a real head and
@@ -189,6 +251,7 @@ hilt while the blade is thrown), `ui/overlay.js` (Z, T, the assist box), `main.j
 - **The room** (`world/room.js`): boxes and a shader floor. Modelled set pieces, a real tile roof, trees and props
   replace it; the light uniforms and the cut-away rule stay.
 - **The effects**: the trail, sparks and the black slash are the pages' pixel effects in world space; they stay.
+- **The weapons** (`weapons/models.js`): boxes and cylinders on the same grip origin and axis; a modelled weapon keeps them.
 
 ## Personalities and the twenty idles (`persona/`, `anim/idles.js`)
 
@@ -312,6 +375,11 @@ hits and chaining; Storm breath (the heal, the storm spent, the samurai thrown);
 direction); the kata (a heal for a notch, let go); a double slash in each style; the images and Sky Drop in the pixel
 look; power III's twin moon and rift echo; the Seiza dome taking a real cut (the samurai off his leash); Lotus by the
 tōrō (the meter into health). SwiftShader draws a few frames a second, so the page runs with
+one screenshot per pipeline step flipped. Then the weapons: the sweep (`?iso&arsenal&sweep`: every weapon drawn from
+home, in hand at J1's hit and out at J3's impact, home after the stow, in all 8 facings, no errors, every event on
+the katana's beat and every move the katana's length), seven contact sheets (`arsenal-*.png`), and all 15 in play
+(`&foehp=999&foes=1`): picked with `=`, each walks up to the samurai from one of the eight sides, J1 → J2 → J3 all land with
+the weapon's hit-stops, the cut faces him (all 8 facings across the round), and he stows it after the calm. SwiftShader draws a few frames a second, so the page runs with
 `&tick=8` (8 game steps a frame) and every wait is on the game's clock.
 
 ## Performance

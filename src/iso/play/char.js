@@ -13,7 +13,7 @@ const _v = new THREE.Vector3();
 export class Char {
   constructor({ foe = false, x, z, h = 0, look = '3d' }) {
     this.foe = foe; this.a = new Actor(W, { x: x / AF, z: z / AF, h, foe: foe ? 1 : 0 }); this.a.char = this;
-    this.lookKind = look; this.look = makeLook(look, { foe }); this.gy = 0; this.trail = []; this.r = 4.5; this.a.after = dt => this.after(dt);
+    this.lookKind = look; this.look = makeLook(look, { foe }); this.gy = 0; this.trail = []; this.r = 4.5; this.weapon = 'katana'; this.wlen = 23; this.a.after = dt => this.after(dt);
     W.actors.push(this.a);
   }
   get x() { return this.a.x * AF; } get z() { return this.a.z * AF; }
@@ -26,10 +26,10 @@ export class Char {
   frame(hero = false) { const o = this.a.out; if (!o) return null;
     // the blade thrown (skills/recall.js): whatever the move, his hands are empty and the saya too
     const pose = this.bladeAway && !(o.pose.blade && o.pose.blade.away) ? { ...o.pose, blade: { ...o.pose.blade, out: 0, away: 1 } } : o.pose;
-    return { pose, x: o.x * AF, y: this.gy, z: o.z * AF, yaw: o.yaw, flash: o.flash, tint: o.tint ? hexRGB(o.tint) : null, tintA: o.tintA, alpha: o.alpha ?? 1, hero }; }
+    return { pose, x: o.x * AF, y: this.gy, z: o.z * AF, yaw: o.yaw, flash: o.flash, tint: o.tint ? hexRGB(o.tint) : null, tintA: o.tintA, alpha: o.alpha ?? 1, hero, weapon: this.weapon }; }
   // the blade's mid and tip in the world, from the side pose (the trail is the controller's, never a look's)
   bladeWorld() { const o = this.a.out, b = o && o.pose.blade; if (!b || !b.out) return null;
-    const L = Math.min(23, b.vis ?? 99), d = [Math.cos(b.ang), Math.sin(b.ang)], cy = Math.cos(o.yaw), sy = Math.sin(o.yaw), rx = o.x * AF, rz = o.z * AF;
+    const L = Math.min(this.wlen, b.vis ?? 99), d = [Math.cos(b.ang), Math.sin(b.ang)], cy = Math.cos(o.yaw), sy = Math.sin(o.yaw), rx = o.x * AF, rz = o.z * AF;
     const pt = (f, u) => { _v.set(-1, u * AF, f * AF); _v.set(_v.x * cy + _v.z * sy, _v.y, -_v.x * sy + _v.z * cy).applyMatrix4(BODY_SHEAR); return [rx + _v.x, this.gy + _v.y, rz + _v.z]; };
     const m = 6 + (L - 6) * .5; return { mid: pt(b.g[0] + d[0] * m, b.g[1] + d[1] * m), tip: pt(b.g[0] + d[0] * L, b.g[1] + d[1] * L) }; }
 }

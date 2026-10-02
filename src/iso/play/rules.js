@@ -9,20 +9,21 @@ import { sparks, dust, crack, tear, focus } from '../fx/fx.js';
 import { shake } from '../gfx/view.js';
 import { CUT } from './hero.js';
 
-export const STATS = { hits: 0, swings: 0, log: [] };
+export const STATS = { hits: 0, swings: 0, log: [], stops: [] };
 const DMG = { J1: 1, J2: 1, J3: 2, lunge: 1 };
 
 export function hitRules(game) {
   W.on.hit = a => {
     const hero = game.hero; if (a !== hero.a) return; const name = a.clip.name, c = CUT[name]; if (!c) return; STATS.swings++;
+    const wp = hero.wpn || { reach: 1, weight: { stop: 1, shake: 1 } };   // the weapon's reach and weight (weapons/arsenal.js)
     let any = false;
     for (const foe of game.foes) {
       const dx = foe.a.x - a.x, dz = foe.a.z - a.z, d = Math.hypot(dx, dz), hd = hOf(dx, dz);
-      if (foe.dead || foe.frozen || d > 46 || Math.abs(wrapA(hd - a.h)) > 1.35) continue;
+      if (foe.dead || foe.frozen || d > 46 * wp.reach || Math.abs(wrapA(hd - a.h)) > 1.35) continue;
       const r = foe.react(c.w, hd, DMG[name]); if (!r) continue; STATS.hits++; hero.hits++; any = true; if (game.onLanded) game.onLanded(name, foe, r);
       const kill = r === 'kill', heavy = c.w > 1;
-      W.hitstop(kill ? STOP.kill : heavy ? STOP.heavy : STOP.light);
-      if (kill) shake(1.5, 4 / 60); else if (heavy) shake(1, 2 / 60);
+      const stop = (kill ? STOP.kill : heavy ? STOP.heavy : STOP.light) * wp.weight.stop; W.hitstop(stop); STATS.stops.push(+stop.toFixed(4));
+      if (kill) shake(1.5 * wp.weight.shake, 4 / 60); else if (heavy) shake(wp.weight.shake, 2 / 60);
       const fx = foe.a.x - Math.sin(hd) * 4, fz = foe.a.z - Math.cos(hd) * 4;
       sparks(W, fx, 22, fz, 5 + c.w * 2, { dir: hd, spd: 120 }); focus(W, fx, 22, fz); foe.a.hitAt = W.t;
       if (c.w >= 2 || kill) dust(W, foe.a.x, foe.a.z, 6 + c.w * 2, { spd: 30, dir: hd, spread: 2, life: .5 });

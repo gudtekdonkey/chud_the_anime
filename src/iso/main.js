@@ -31,13 +31,17 @@ import { personaPanel } from './persona/panel.js';
 import { runGallery } from './persona/gallery.js';
 import * as PROBE from './persona/probe.js';
 import { makeSkills } from './skills/skills.js';                  // I O P N U C and Storm Chain (skills/skills.js)
+import './weapons/poses.js';
+import { equip, ARSENAL } from './weapons/arsenal.js';
+import { wirePicker } from './weapons/picker.js';
+import { runArsenal } from './weapons/sheet.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
 const pipe = makePipeline(canvas);
 SETTINGS.fpsFor = fpsFor; setStyle(Q.has('style') ? +Q.get('style') : 3);   // the owner's pick: Painterly (gfx/style.js)
 const scene = new THREE.Scene(), cam = new THREE.Camera(); cam.matrixAutoUpdate = false;
-if (Q.has('sheet')) runSheet(); else if (Q.has('idles')) runGallery({ scene, cam, pipe, Q }); else runGame(Q.has('reel') ? REELS[Q.get('reel')] || REELS.chain : null);
+if (Q.has('arsenal')) runArsenal({ scene, cam, pipe, Q }); else if (Q.has('sheet')) runSheet(); else if (Q.has('idles')) runGallery({ scene, cam, pipe, Q }); else runGame(Q.has('reel') ? REELS[Q.get('reel')] || REELS.chain : null);
 
 // ?iso&sheet: the contact sheet (sheet.js), frozen
 function runSheet() {
@@ -66,6 +70,7 @@ function runGame(reel) {
       c.a.feet.N.lock = c.a.feet.F.lock = 0; c.a.feet.N.off = c.a.feet.F.off = 0; c.a.prev = null; c.a.update(W.dt); c.a.sample(true); return c.a; };   // moved: let go of the planted feet
     reel.build({ hero: (x, z, h) => place(hero, x, z, h), foe: (x, z, h) => { foe.a.alpha = 1; return place(foe, x, z, h); }, at: (t, fn) => script.push([t, fn]), M: REEL_M });
     script.sort((a, b) => a[0] - b[0]); PIPE.cine = Q.has('cine') ? 1 : 0; PIPE.clash = Q.has('clash') ? 1 : 0; }
+  if (Q.has('foehp')) for (const f of foes) f.maxHp = f.hp = +Q.get('foehp');   // &foehp=N: tougher samurai (the check's weapon round; &hp is the hero's health, skills/)
   const live = () => foes.filter(f => !f.parked), game = { hero, foe, get foes() { return live(); } }; hitRules(game);
   const skills = reel ? null : makeSkills({ hero, foe, foes: live, scene, look: lookKind, Q, root }); hero.skills = skills;   // the skills (skills/): I O P N U C, Storm Chain, the skill bar
   initInput(canvas);
@@ -78,6 +83,7 @@ function runGame(reel) {
   const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } if (skills) skills.setLook(kind); root.querySelector('#o-look').value = kind; };
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
   personaPanel(root, { hero, foe });
+  wirePicker(root, id => equip(hero, id), Q.get('weapon') || 'katana');   // the 15 weapons (weapons/)
 
   // the canvas fills the stage (16:9, under the window's height). With the low-res target on it shows the 960×540
   // pixels at a whole multiple when one fits (nearest-neighbour); off, the target is drawn at the canvas's own size
@@ -149,7 +155,9 @@ function runGame(reel) {
   if (import.meta.env.DEV || Q.has('test')) {
     const who = c => ({ x: c.x, z: c.z, h: c.a.h, yaw: c.a.out ? c.a.out.yaw : 0, state: c.state, ct: c.a.ct, v: c.a.v });
     window.__iso = { ready: true, STATS, PIPE, SETTINGS,
-      get hero() { return { ...who(hero), armed: hero.armed, iframes: hero.iframes, hits: hero.hits, taken: hero.taken }; },
+      get hero() { const o = hero.a.out, b = o && o.pose.blade; return { ...who(hero), armed: hero.armed, iframes: hero.iframes, hits: hero.hits, taken: hero.taken,
+        weapon: hero.weapon, out: !!(b && b.out), held: hero.look.rig && hero.look.rig.wstate ? { ...hero.look.rig.wstate } : null }; },
+      weapons: ARSENAL.map(w => ({ id: w.id, reach: w.reach, stop: w.weight.stop, shake: w.weight.shake })),
       get foe() { return { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) }; },
       get foes() { return foes.map(f => ({ ...who(f), hp: f.hp, dead: f.dead, frozen: f.frozen, hits: f.hits, deaths: f.deaths, reacts: f.reacts.slice(-6) })); },
       get reserved() { return skillState(); }, get gray() { return MOMENT.gray; }, get away() { return !!hero.bladeAway; },
