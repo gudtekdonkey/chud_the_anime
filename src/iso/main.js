@@ -23,6 +23,7 @@ import { REELS, M as REEL_M, reelPos } from './reel.js';
 import { piece } from './gfx/build.js';
 import { shadeMat } from './gfx/shade.js';
 import { RAMP } from './gfx/palette.js';
+import { initPort } from './port.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
@@ -55,8 +56,10 @@ function runGame(reel) {
   hitRules({ hero, foe });
   initInput(canvas);
   // the model switch: every character's look is swapped; nothing else is told
-  const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } root.querySelector('#o-look').value = kind; };
+  const setLook = kind => { lookKind = kind; if (port) port.setLook(kind); for (const c of chars) { c.setLook(kind, scene); c.shown = null; } root.querySelector('#o-look').value = kind; };
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
+  // the rest of today's game in 3D (port.js): the party, items and Harvest, the HUD, the combo prompts, click to move
+  const port = reel ? null : initPort({ scene, hero, foes: [foe], chars, canvas, root, pipe, lookKind, Q });
 
   // the canvas fills the stage (16:9, under the window's height). With the low-res target on it shows the 960×540
   // pixels at a whole multiple when one fits (nearest-neighbour); off, the target is drawn at the canvas's own size
@@ -75,8 +78,9 @@ function runGame(reel) {
   function presentation(dt) { if (hero.state === 'J3' && hero.prevState !== 'J3' && !foe.dead && Math.hypot(foe.x - hero.x, foe.z - hero.z) < 40) startCine(hero, foe);
     hero.prevState = hero.state; cineStep(W.stop > 0 ? 0 : dt); }
   function tick() {
-    if (W.stop <= 0 && !reel) { hero.control(readInput(), foe, W.t); foe.control(hero, W.t, 1 / 60); }   // a hit-stop holds the presses (they outlive it)
-    presentation(1 / 60);
+    if (W.stop <= 0 && !reel) { const inp = port.input(readInput()); if (!port.busy) hero.control(inp, foe, W.t);   // a hit-stop holds the presses (they outlive it)
+      if (!port.held(foe)) foe.control(port.targetFor(foe), W.t, 1 / 60); }
+    presentation(1 / 60); if (port) port.tick(1 / 60);
     for (let i = 0; i < 2; i++) if (W.step(reel ? runScript : null)) for (const c of chars) if (c.a.out !== c.sampled) { c.sampled = c.a.out; trailOf(c); }
   }
   function render(dt) {
@@ -96,6 +100,7 @@ function runGame(reel) {
     if (PIPE.clash) { drawFocus(g, W);   // focus lines on a hit; speed lines behind a roll, a lunge or a skid
       for (const c of chars) if (['roll', 'lunge', 'skid', 'knock'].includes(c.state)) { const [x, y] = toPx([c.x, 10, c.z]), v = [Math.sin(c.a.h), Math.cos(c.a.h) * OBL.a]; speedLines(g, x, y, v[0], v[1], W.t); } }
     for (const c of chars) c.look.stamp(g);
+    if (port) { port.drawFx(g); port.drawHud(); }
     pipe.render(scene, cam);
   }
   const toPx = p => toScreen(p[0], p[1], p[2]);
@@ -125,6 +130,7 @@ function runGame(reel) {
       get foe() { return { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) }; },
       // where each one's feet are on the canvas, 0..1 (for the check's close-up shots)
       get px() { return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)) }; },
+      get port() { return port && port.debug(); }, screenOf: (x, z, y = 0) => toPx([x, y, z]).map((v, i) => v / (i ? 540 : VW)),
       get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }
