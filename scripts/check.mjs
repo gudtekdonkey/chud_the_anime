@@ -815,12 +815,18 @@ try {
   await run('the companions fight: someone in the party earns EXP from the samurai', async () => {
     // they take on samurai within 130 px of him (party/companions.js pickTarget), and a new squad comes only once the room is
     // empty: stand among the samurai, and walk on toward whoever is left standing out of their reach
+    // EXP comes from a samurai's death (40 to the one who killed him, 10 to any within 60 px), and a companion idles when
+    // nobody is within 130 px of him or the party holds: so they follow (G, as a player would), and when none has earned
+    // any after a few seconds he joins the fight beside them, cutting the nearest, so a samurai falls among them
+    if (await page.evaluate(() => window.__game.party.order) === 'hold') { await page.keyboard.press('KeyG'); await page.waitForFunction(() => window.__game.party.order === 'follow', undefined, { timeout: 5000 }); }
     await walkTo(300, 180); let got = false;
-    for (let t0 = Date.now(); !got && Date.now() - t0 < 30000; ) {
+    for (let t0 = Date.now(), round = 0; !got && Date.now() - t0 < 45000; round++) {
       got = await page.waitForFunction(() => window.__game.allies.some(a => a.c.exp > 0 || a.c.lv > 1), undefined, { timeout: 4000 }).then(() => true, () => false);
       const e = !got && await page.evaluate(() => { const { P, E } = window.__game, L = E.filter(e => e.alive && !e.held).sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y));
-        return L[0] && Math.hypot(L[0].x - P.x, (L[0].y - P.y) * 1.4) > 90 && [Math.round(L[0].x), Math.round(L[0].y)]; });
-      if (e) await walkTo(Math.max(30, Math.min(450, e[0] + (e[0] > 240 ? -40 : 40))), e[1], 8000, true).catch(() => {}); }
+        return L[0] && [Math.round(L[0].x), Math.round(L[0].y), Math.hypot(L[0].x - P.x, (L[0].y - P.y) * 1.4)]; });
+      if (e && e[2] > 90) await walkTo(Math.max(30, Math.min(450, e[0] + (e[0] > 240 ? -40 : 40))), e[1], 8000, true).catch(() => {});
+      else if (e && round >= 1) { await walkTo(Math.max(30, Math.min(450, e[0] + (e[0] > 240 ? -20 : 20))), e[1], 6000, true).catch(() => {});
+        for (let i = 0; i < 6; i++) { await page.keyboard.press('KeyJ'); await page.waitForTimeout(250); } } }
     if (!got)
       fail(`no companion EXP: ${JSON.stringify(await page.evaluate(() => { const { P, E, allies, party } = window.__game; return { P: [P.x, P.y, P.state], order: party.order,
         A: allies.map(a => [a.c.id, a.state, Math.round(a.x), Math.round(a.y)]), E: E.map(e => [Math.round(e.x), Math.round(e.y), e.hp, e.state, e.held]) }; }))}`);
