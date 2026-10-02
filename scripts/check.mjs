@@ -48,7 +48,9 @@ try {
   const FREE = /^(idle|run|walk|idleGlitch|ready\d|runArmed|sheathe)$/;   // states that take a new command
   const shot = name => page.locator('#game').screenshot({ path: `${OUT}/${name}.png` });
   // walk him somewhere with the arrow keys: the vertical leg first, then the horizontal, so the route is predictable round the pillars
-  const walkTo = async (x, y, timeout = 10000) => {
+  const walkTo = async (x, y, timeout = 10000, soft = false) => {
+    // soft: a walk that may fall short (chasing a moving samurai) gives up quietly instead of failing the check
+    const fail_ = soft ? m => { throw new Error(m); } : fail;
     const t0 = Date.now(), Y = ['y', y, 'ArrowUp', 'ArrowDown'], X = ['x', x, 'ArrowLeft', 'ArrowRight'];
     // y first, then x; a pillar in the way (a step that gets him nowhere) and he tries the other axis first
     for (let order = [Y, X], turns = 0; ; order = order.slice().reverse(), turns++) {
@@ -56,12 +58,12 @@ try {
       for (const [axis, goal, neg, pos] of order) {
         for (let stuck = 0; ;) { const v = await page.evaluate(a => window.__game.P[a], axis), d = goal - v;
           if (Math.abs(d) <= 2) break;
-          if (Date.now() - t0 > timeout) fail(`could not walk to ${x},${y} (${axis} ${v.toFixed(1)})`);
+          if (Date.now() - t0 > timeout) fail_(`could not walk to ${x},${y} (${axis} ${v.toFixed(1)})`);
           const k = d < 0 ? neg : pos; await kb.down(k); await sleep(Math.min(120, Math.abs(d) / 78 * 1000)); await kb.up(k);
           const v2 = await page.evaluate(a => window.__game.P[a], axis);
           if (Math.abs(v2 - v) < .5 && ++stuck > 8) { blocked = true; break; } }
         if (blocked) break; }
-      if (!blocked) break; if (turns > 6) fail(`could not walk to ${x},${y}: blocked both ways`); }
+      if (!blocked) break; if (turns > 6) fail_(`could not walk to ${x},${y}: blocked both ways`); }
     await reach(FREE); };
   const inv = () => page.evaluate(() => JSON.parse(JSON.stringify(window.__game.INV)));
   const run = async (name, fn) => { step = name; await fn(); console.log(`  ok  ${name}`); };
@@ -365,7 +367,7 @@ try {
       if (Date.now() - t0 > 25000) fail('no paired execution');
       if (await page.evaluate(() => window.__game.pairReady())) { await kb.press('k'); await sleep(300); await shot('12-paired'); await sleep(1400); continue; }
       const e = await page.evaluate(() => { const { P, E } = window.__game, l = E.filter(e => e.alive).sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y))[0]; return l && [l.x, l.y]; });
-      if (e) await walkTo(Math.max(30, e[0] - 24), e[1], 4000).catch(() => {}); else await sleep(300); }
+      if (e) await walkTo(Math.max(30, e[0] - 24), e[1], 4000, true).catch(() => {}); else await sleep(300); }
     await reach(FREE); });
   await run('the paired K waits 5 s for the whole party, then any of them plays (the test picker forces Batter Up)', async () => {
     if (!(await page.evaluate(() => window.__game.PAIRS.cd > 3 && !window.__game.pairReady()))) fail('a paired execution is ready again at once');
@@ -376,7 +378,7 @@ try {
       if (Date.now() - t0 > 25000) fail('no second paired execution');
       if (await page.evaluate(() => window.__game.pairReady())) { await kb.press('k'); await sleep(500); await shot('12b-paired-batter'); await sleep(1500); continue; }
       const e = await page.evaluate(() => { const { P, E } = window.__game, l = E.filter(e => e.alive).sort((a, b) => Math.hypot(a.x - P.x, a.y - P.y) - Math.hypot(b.x - P.x, b.y - P.y))[0]; return l && [l.x, l.y]; });
-      if (e) await walkTo(Math.max(30, e[0] - 24), e[1], 4000).catch(() => {}); else await sleep(300); }
+      if (e) await walkTo(Math.max(30, e[0] - 24), e[1], 4000, true).catch(() => {}); else await sleep(300); }
     const last = await page.evaluate(() => window.__game.PAIRS.ran.at(-1)); if (last !== 'batter') fail(`the picker asked for Batter Up, ${last} played`);
     await page.selectOption('#pair', ''); await page.locator('#game').click(); await reach(FREE); });
   await run('H: a companion is cut down, then held E lifts them', async () => {
