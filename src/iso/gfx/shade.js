@@ -13,7 +13,7 @@ const v3 = h => new THREE.Vector3(...hex(h));
 // and the lanterns add warm pools (The Last Night).
 export const SH = {
   uKey: { value: new THREE.Vector3(-.55, .85, .8).normalize() }, uFill: { value: new THREE.Vector3(0, -.45, 1).normalize() },
-  uRimDir: { value: new THREE.Vector3(.75, .35, -.8).normalize() }, uRimCol: { value: v3('#97a3ae') }, uMoon: { value: v3('#a9b3cf') },
+  uRimDir: { value: new THREE.Vector3(.75, .35, -.8).normalize() }, uRimCol: { value: v3('#97a3ae') }, uMoon: { value: v3('#97a1c0') },
   uView: { value: VD.clone() }, uVD: { value: VD.clone() },
   uLampPos: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, -999, 0, 1)) },
   uLampCol: { value: Array.from({ length: 4 }, () => new THREE.Vector4(0, 0, 0, 0)) },
@@ -73,7 +73,7 @@ void main() {
   else {
     float sh = 1.;                                     // the brim's shadow: the key ray from here meets the hat's disc
     if (uHatOn > .5 && uSelf < .5) { vec3 p = (uHatInv * vec4(vW, 1.)).xyz;
-      if (p.y < -.1 && uKeyHat.y > .01) { float t = -p.y / uKeyHat.y; vec2 q = p.xz + uKeyHat.xz * t; if (dot(q, q) < uHatR * uHatR) sh = 0.; } }
+      if (p.y < -.1 && uKeyHat.y > .01) { float t = -p.y / uKeyHat.y; vec2 q = p.xz + uKeyHat.xz * t; if (dot(q, q) < uHatR * uHatR) sh = .3; } }
     float d = max(dot(n, uKey), 0.) * sh, f = max(dot(n, uFill), 0.);
     float s = band(clamp(.08 + .64 * d + .3 * f, 0., 1.), bz);
     vec3 warm = vec3(0.); float wi = 0.;
@@ -83,14 +83,14 @@ void main() {
     float wq = band(min(wi, 1.), fract(bz + .37)); vec3 wc = wi > 0. ? warm / wi : vec3(0.);
     float rim = pow(1. - max(dot(n, uView), 0.), 1.5) * max(dot(n, uRimDir), 0.) * uRimOn * uRim * 1.6;
     rim = uToon > .5 ? (rim > .45 ? 1. : (uDither > .5 && rim > .3 && bz < .5 ? 1. : 0.)) : clamp(rim, 0., 1.);
-    col = base * uMoon * (.35 + 1.05 * s) + base * wc * wq * 1.8 + uRimCol * rim * .45;
+    col = base * uMoon * (.35 + 1.05 * s) + base * wc * wq * 2.1 + uRimCol * rim * .45;
     if (wet > .5) col += wc * wq * .35 + uRimCol * .04;   // a puddle catches the lanterns and the sky
   }
   // ground mist: drifting banks low over the floor, lit warm where a lantern reaches it
   if (uFog > .5) { float h = clamp(1. - vW.y / 14., 0., 1.); float m = noise(vW.xz * vec2(.018, .03) + vec2(uTime * .05, uTime * .02)) * .8 + noise(vW.xz * .07 - uTime * .04) * .2;
-    float a = h * h * smoothstep(.4, .85, m) * .38; vec3 fc = uFogCol;
+    float a = h * h * smoothstep(.45, .95, m) * .26; vec3 fc = uFogCol;
     for (int i = 0; i < 4; i++) { float dd = length(uLampPos[i].xz - vW.xz); fc += uLampCol[i].rgb * clamp(1. - dd / (uLampPos[i].w * .8), 0., 1.) * uLampCol[i].w * .4; }
-    if (uDither > .5) a = step(bz, a * 1.3) * .7; col = mix(col, fc, a); }
+    a = uDither > .5 && uPx < 1.5 ? floor(a * 4. + bz) / 4. : a; col = mix(col, fc, a); }   // dithered on the low-res target, smooth over a hi-res one
   col = mix(col, uTintCol, uTint);
   if (uFlash > .5) col = vec3(1.);
   oC = vec4(col, 1.);

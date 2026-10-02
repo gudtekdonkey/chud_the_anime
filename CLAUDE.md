@@ -11,16 +11,19 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `npm run preview` | Serves `dist/` |
 | `npm run check` | Builds, then `scripts/check.mjs` plays a key sequence in Chromium and asserts the states and no page errors. Screenshots and the state log go to `test-output/` |
 | `npm run check:hd` | The same check at 2× (`?hd`), screenshots in `test-output/hd/` |
+| `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle. Screenshots in `test-output/iso/` |
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
+- `?iso` opens the new direction's vertical slice instead (`src/iso/`, `docs/iso-slice.md`): `src/main.js` only picks, today's game boots from `src/game.js` untouched. It needs `three` (pinned; `npm install`); where `node_modules` is shared and lacks it, `ISO_DEPS=<dir with node_modules/three>` makes `vite.config.js` alias it. Its read-only hook is `window.__iso` (dev or `?test`); `&tick=N` runs N game steps a frame for the check.
 - The check reads the player, the facing he is drawn in, the enemies, what he wears, the inventory, `S` and the K markers and the black slashes through `window.__game = { P, PF, E, V, wear, INV, S, K }`, plus growth's read-only helpers `tv(skill, key)` (a tree's value now), `known(skill)`, `stat(k)` and `ST` (his stats' effects), and the animation flow's: `FEEL` (its tuning), `stops` (the last hit pauses, by weight and frames), `PB` (the drawn pose: its move, draws since it began, its distance from the move's own frame, where the blade is), `B` (the input buffer), `CAM` (the camera offset) and `stride(anim)` (a gait's measured stride). That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
 
 ## Module map (`src/`)
 
 | File | Owns |
 |---|---|
-| `main.js` | Boot, the fixed 60 Hz update loop under `requestAnimationFrame`, the debug hook |
+| `main.js` | Boot: picks today's game (`game.js`) or, with `?iso`, the slice (`iso/main.js`) |
+| `game.js` | Today's game: builds everything, the fixed 60 Hz update loop under `requestAnimationFrame`, the debug hook |
 | `config.js` | `W`/`H`, `PX` (screen pixels per world pixel: 2 with `?hd`, the owner's 2× ronin; else 1) and `snap`, `COL` (effect palette), `RC` (rig palette), rig frame size `FW`/`FH`/`OX`/`OY` (96×64 × `PX`; the rig draws in its old 48×48 box, `RX`/`RY`, scaled by `PX` and shifted by whole pixels), `SQ` (floor squash) |
 | `state.js` | ALL shared mutable state: the player `P`, what he wears (`wear`), `S` (`shake`, `hitstop`, `scr` screen flash, `roomClear`, `banner`, `smoke`: while the static bomb's smoke is up every enemy counts as isolated, `powerTest`: the page's power picker, `skillTest`: the skills picker), the inventory `INV` (`INV.sk`: each skill's wild casts, known, tree points and fork pick) (the HUD reads only this), `parts`, `pops` and every effect list |
 | `screen.js` | The `#game` canvas, its 2D context `g`, the `#hud` line |
@@ -138,6 +141,32 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - Effects are drawn in world space, never baked into sheets, so they survive real art replacing a placeholder.
 - The animation flow (owner picks 2026-10-02, `docs/design-notes.md`): every tuning number is in `player/feel.js` `FEEL`. A press goes through the buffer (`player/buffer.js`): a new key must say which state it starts (`STARTS`) so the buffer knows when it was used. A hit pause goes through `hitStop('light' | 'heavy' | 'exec')`, never a raw `S.hitstop`, for the player's own hits. Blending, tweening and springs are draw time only (`player/blend.js`): they never move a hit. A move that must snap goes in `blend.js` `SNAP`.
 - Effects take their colours from `COL` (never a literal cyan) and throw bolts, sparks and slivers through `zap`/`spark`/`residue`, so every element re-skins them. A new element is a row in `ELEMENTS` plus a kit in `fx/matter.js`.
+
+## The iso slice (`src/iso/`, `?iso`, `docs/iso-slice.md`)
+
+Phase 0 of the new direction: Iron Ash V3 in a night courtyard, the Sea of Stars camera (pitch 54 oblique), the Animation Flow page's moves, one samurai. Nothing here is imported by today's game.
+
+| File | Owns |
+|---|---|
+| `iso/main.js` | Boot of the slice: the page, the pipeline, the room, the hero and the samurai, the 60 Hz loop (the flow steps twice at 1/120 s), the model switch, `window.__iso`; `?iso&sheet` hands over to `sheet.js` |
+| `iso/gfx/view.js` | The camera: `VW`/`VH` (960×540) and `U` (2 render px a world unit), the oblique projection (`OBL`, `projMatrix`, `toScreen`), the bodies' camera (`BODY`, `setBody`, `BODY_SHEAR`: picked 39.5°, upright 20°, true 54°), the follow with lag, look-ahead and shake |
+| `iso/gfx/shade.js` | The scene material (toon bands, the world-anchored dither, key / bounce / rim, the brim's shadow, the lanterns, the ground and its mist) writing colour, data and normal; `SH` (shared light and toggle uniforms); the silhouette material |
+| `iso/gfx/post.js` | The pipeline: the 3-attachment target at k× (`PIPE` holds every toggle, the owner's faces-page defaults), the silhouette pass, the post pass (outline, palette, effects layer, rain), the effects canvas |
+| `iso/gfx/palette.js`, `iso/gfx/build.js` | The slice's palette ramps; low-poly pieces (flat-shaded, colour and part per vertex, merged per bone) |
+| `iso/anim/flow.js` | The Animation Flow page's engine, ported: `AF` (rig px → world units), easing, pose mixing, keyed and procedural clips (`CLIPS`), the springs, planted feet, the 30 fps sample, the 8 stepped facings (`SETTINGS`) |
+| `iso/anim/moves.js` | The page's moves verbatim (idle, guard, start, run, stop, skid, roll, J1–J3, lunge, recoil, knock, die, fcut, sheathe); `moves-extra.js` the additions (`runArmed`) |
+| `iso/play/` | The controller: `sim.js` (the world clock, hit-stop, events, `STOP` 3/5/8 frames), `input.js` (keys, the 0.2 s buffer on the game's clock), `char.js` (an actor and its look, collisions, the frame a look draws, the blade's world points), `hero.js` (the core loop's rules: chains, cancels, the lunge, the cut tracking its target, the sheathe), `foe.js` (the samurai), `rules.js` (what hits do) |
+| `iso/look/look.js` | THE LOOK interface (`mount`, `show(frame)`, `stamp`, `dispose`) and `makeLook`: nothing outside `look/` knows which is active |
+| `iso/look/three/` | The 3D look: `ronin.js` (procedural Iron Ash V3 and the samurai), `rig.js` (the skeleton in the pages' proportions, the side pose stood up in 3D by two-bone IK, the springs' pieces), `look3d.js` (the look, `LOOK3D` hat tunables, the glint rule) |
+| `iso/look/pixel/` | The pixel look: `engine.js` and `styles.js` (the pages' 2D Iron Ash engine and FC.RF1, vendored verbatim), `lookpix.js` (the sprite as a card in the scene) |
+| `iso/world/room.js` | The courtyard: geometry, the four lanterns, colliders (`SOLID`, `collide`), the raised engawa (`groundAt`), the eave that dissolves over him |
+| `iso/fx/fx.js` | Effects on the effects layer: dust, sparks, rings, cracks, the black slash (fx/void.js's tear, ported), the blade's trail |
+| `iso/ui/overlay.js` | The ?iso page and its overlay: frame time, the model switch, the pipeline toggles, camera and hat, controls; every choice a key |
+| `iso/sheet.js` | `?iso&sheet`: a frozen contact sheet of the loop's moments in the 8 facings, either look |
+
+- Everything in `src/iso/` keeps to the slice: never import it from today's game, and never import today's game modules (`screen.js` grabs `#game`) into it.
+- A character's look is swapped through `look/look.js` only. The controller hands it the flow's side pose; a new look (a modelled character, a baked sprite sheet) implements the same four calls.
+- The moves are the Animation Flow page's data: change them there first (or mark an addition in `moves-extra.js`), so the slice keeps matching what the owner approved.
 
 ## Design rules (from `docs/design-notes.md`)
 

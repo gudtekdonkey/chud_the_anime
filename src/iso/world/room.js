@@ -28,12 +28,14 @@ export function buildRoom(scene) {
   const solid = (x0, x1, z0, z1) => SOLID.push({ x0, x1, z0, z1 });
 
   // the floor: the flags are drawn by the shader (shade.js flags) on one big quad; a dark band of earth past the walls
-  add(piece().box(760, 2, 560, R.n[4], { p: [300, -1, 170] }), floorM);
+  add(piece().box(760, 2, 560, R.n[3], { p: [300, -1, 170] }), floorM);
   // the north wall, plastered, a tiled cap; the gate in its middle
   const wall = piece();
-  for (const [x0, x1] of [[-20, 262], [338, 620]]) { box(wall, x0, x1, 0, 40, -16, 0, R.n[4]); box(wall, x0, x1, 0, 5, -1, 1, R.n[2]); solid(x0, x1, -30, 2); }
-  box(wall, -24, 266, 40, 46, -20, 4, R.k[3]); box(wall, 334, 624, 40, 46, -20, 4, R.k[3]);
-  for (let x = -20; x < 620; x += 6) if (x < 262 || x > 336) box(wall, x, x + 1, 40.5, 46.2, 3.6, 4.4, R.k[2]);
+  // plaster panels between dark timber posts over a stone footing, under a tiled cap whose front edge catches the moon
+  for (const [x0, x1] of [[-20, 262], [338, 620]]) { box(wall, x0, x1, 8, 40, -16, -1, R.c[5]); box(wall, x0, x1, 0, 8, -16, 0, R.n[3]); box(wall, x0, x1, 7.5, 9, -16, -.4, R.w[0]); solid(x0, x1, -30, 2);
+    for (let x = x0 + 4; x < x1 - 2; x += 32) box(wall, x, x + 3, 8, 40, -16, -.5, R.w[0]); }
+  box(wall, -24, 266, 40, 45, -20, 3, R.k[3]); box(wall, 334, 624, 40, 45, -20, 3, R.k[3]); box(wall, -24, 266, 44, 45.6, 2.2, 4.2, R.i[3]); box(wall, 334, 624, 44, 45.6, 2.2, 4.2, R.i[3]);
+  for (let x = -20; x < 620; x += 6) if (x < 262 || x > 336) box(wall, x, x + 1, 45, 46.2, -18, 3, R.k[2]);
   add(wall);
   // the gate: two posts, a lintel, its own roof, the doors ajar and black beyond
   const gate = piece();
@@ -75,9 +77,9 @@ export function buildRoom(scene) {
   add(piece().box(5, 9, 5, '#ff9a48', { p: [430, 34, 286], glow: true }).box(3.6, 9.2, 3.6, '#ffd29a', { p: [430, 34, 286.8], glow: true }), glow);
   solid(-40, 640, 300, 420);
   // the light shafts: sparse dithered cones from the gate's lantern and the walkway's, light only (never outlined, never solid)
-  const shaftM = shadeMat({ obj: 3 }); shaftM.uniforms.uFade.value = .88; shaftM.depthWrite = false;
+  const shaftM = shadeMat({ obj: 3 }); shaftM.uniforms.uFade.value = .94; shaftM.depthWrite = false;
   const shaft = (x, y, z, r0, r1, h) => { const m = new THREE.Mesh(piece().cyl(r0, r1, h, 12, '#ffb36a', { glow: true }).merged(), shaftM); m.position.set(x, y - h / 2, z); m.scale.z = .8; m.frustumCulled = false; scene.add(m); };
-  shaft(300, 35, 12, 3, 22, 35); shaft(430, 29, 288, 2.5, 16, 29);
+  shaft(300, 35, 12, 2.5, 15, 35); shaft(430, 29, 288, 2, 12, 29);
 
   // the lanterns: positions and colours into the shared light uniforms; they breathe a little
   const lamps = LAMPS.map((L, i) => { const c = new THREE.Color(L.col); SH.uLampPos.value[i].set(...L.p, L.r); SH.uLampCol.value[i].set(c.r, c.g, c.b, L.k); return L; });

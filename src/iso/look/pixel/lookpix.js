@@ -22,7 +22,7 @@ float bayer(vec2 p) { ivec2 q = ivec2(mod(p, 4.)); int i = q.x + q.y * 4; int b[
 void main() { vec4 t = texture(tFig, vUv); if (t.a < .5) discard;
   if (uFade > 0. && bayer(floor((gl_FragCoord.xy + uDOff) / uPx)) < uFade) discard;
   vec3 warm = vec3(0.); for (int i = 0; i < 4; i++) { float d = length(uLampPos[i].xyz - vW), a = clamp(1. - d / uLampPos[i].w, 0., 1.); warm += uLampCol[i].rgb * a * a * uLampCol[i].w; }
-  vec3 c = t.rgb * (uMoon * .92 + warm * .9);
+  vec3 c = t.rgb * (vec3(.8, .84, .96) + warm * .9);   // the drawing keeps its own shading; the night cools it a little, the lanterns warm it
   c = mix(c, uTintCol, uTint); if (uFlash > .5) c = vec3(1.);
   oC = vec4(c, 1.); oD = vec4(dot(uVD, vW), uObj, 1., 1.); oN = vec4(.5, 1., .5, 1.); }`;
 

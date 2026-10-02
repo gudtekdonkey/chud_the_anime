@@ -28,8 +28,9 @@ export function setBody(mode) {
 setBody('39.5');
 
 // the camera: a target T in the world; the projection maps the world straight to clip space (the camera object stays at the origin)
-export const CAM = { x: 240, z: 150, tx: 240, tz: 150, lx: 0, lz: 0, shake: 0, shT: 0, sx: 0, sy: 0, px: 0, py: 0 };
+export const CAM = { x: 240, z: 150, tx: 240, tz: 150, lx: 0, lz: 0, shake: 0, shT: 0, sx: 0, sy: 0, px: 0, py: 0, zoom: 1 };
 export function projMatrix(m4, tx, tz, zoom = 1) {
+  CAM.zoom = zoom;
   const sx = U * zoom / (VW / 2), sy = U * zoom / (VH / 2), { a, b } = OBL;
   m4.set(sx, 0, 0, -tx * sx,
     0, b * sy, -a * sy, a * tz * sy,
@@ -38,7 +39,7 @@ export function projMatrix(m4, tx, tz, zoom = 1) {
   return m4;
 }
 // world → render pixels (the fx layer draws with this); the same numbers as the projection
-export const toScreen = (x, y, z) => [VW / 2 + U * (x - CAM.px), VH / 2 + U * (OBL.a * (z - CAM.py) - OBL.b * y)];
+export const toScreen = (x, y, z) => [VW / 2 + U * CAM.zoom * (x - CAM.px), VH / 2 + U * CAM.zoom * (OBL.a * (z - CAM.py) - OBL.b * y)];
 
 // follow with a little lag and look-ahead, shake on top, then snapped to whole render pixels so nothing shimmers
 export function follow(cam3, hero, room, dt) {

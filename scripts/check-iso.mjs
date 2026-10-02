@@ -31,9 +31,10 @@ const gameWait = sec => page.evaluate(s => new Promise(r => { const t0 = window.
 const settle = () => until('a standstill', () => ['idle', 'guard'].includes(window.__iso.hero.state) && Math.abs(window.__iso.hero.v) < 1);
 const errorsCheck = () => { if (errors.length) fail(errors.join('\n')); };
 // a close-up of the hero (and the samurai) at 4×, from the canvas's own pixels
-async function shot(name, who = ['hero']) {
-  await page.locator('canvas').screenshot({ path: `${OUT}/${name}.png` });
-  const buf = await page.locator('canvas').screenshot(), px = await page.evaluate(() => window.__iso.px), z = await browser.newPage({ viewport: { width: 500 * who.length, height: 400 } });
+async function shot(name, who = ['hero'], then) {
+  const buf = await page.locator('canvas').screenshot({ path: `${OUT}/${name}.png` }), px = await page.evaluate(() => window.__iso.px);
+  if (then) await then();   // e.g. let go of the keys: the game runs on while the close-up is composed
+  const z = await browser.newPage({ viewport: { width: 500 * who.length, height: 400 } });
   await z.setContent(`<body style="margin:0;background:#111"><canvas id=c width=${500 * who.length} height=400></canvas></body>`);
   await z.evaluate(async ({ src, px, who }) => { const im = new Image(); im.src = src; await im.decode(); const g = document.getElementById('c').getContext('2d'); g.imageSmoothingEnabled = false;
     who.forEach((w, i) => { const [u, v] = px[w]; g.drawImage(im, u * im.width - 60, v * im.height - 85, 120, 100, i * 500 + 10, 0, 480, 400); }); },
@@ -46,6 +47,10 @@ try {
   await page.goto(new URL('?iso&test&calm&tick=8', base).href);
   await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .2, undefined, { timeout: 60000 });
   await page.locator('canvas').click();
+  // what he has been through, recorded every frame in the page (a poll from here can miss a state that lasts 2 frames)
+  await page.evaluate(() => { window.__seen = new Set(); window.__seq = []; const f = () => { const h = window.__iso.hero; window.__seen.add(h.state); if (h.iframes) window.__seen.add('iframes');
+    if (window.__seq.at(-1) !== h.state) window.__seq.push(h.state); requestAnimationFrame(f); }; f(); });
+  const seen = (what, timeout) => until(what, w => window.__seen.has(w), what, timeout), forget = () => page.evaluate(() => { window.__seen.clear(); window.__seq = []; });
   errorsCheck(); ok(`look ${(await G()).look}`); await shot('00-start', ['hero', 'foe']);
 
   // ---- the run in 8 directions: hold the keys until he has covered ground, check where he went and which way he faces
@@ -53,22 +58,24 @@ try {
     ['S', ['ArrowDown'], 0], ['SW', ['ArrowDown', 'ArrowLeft'], -Math.PI / 4], ['W', ['ArrowLeft'], -Math.PI / 2], ['NW', ['ArrowUp', 'ArrowLeft'], -3 * Math.PI / 4]];
   const wrap = a => Math.atan2(Math.sin(a), Math.cos(a));
   for (const [name, keys, h] of DIRS) {
-    step = `run ${name}`; await settle(); const a = (await G()).hero;
+    step = `run ${name}`; await settle(); const a0 = (await G()).hero;
     for (const k of keys) await page.keyboard.down(k);
-    await until('18 units of running', ([x, z]) => Math.hypot(window.__iso.hero.x - x, window.__iso.hero.z - z) > 18 && window.__iso.hero.state === 'run', [a.x, a.z]);
-    await gameWait(.12); const b = (await G()).hero; await shot(`run-${name}`);
-    for (const k of keys) await page.keyboard.up(k);
+    await until('the run', ([x, z]) => Math.hypot(window.__iso.hero.x - x, window.__iso.hero.z - z) > 6 && window.__iso.hero.state === 'run', [a0.x, a0.z]);
+    const a = (await G()).hero;   // measured once he is running, so the start's first steps do not count
+    await until('14 units of running', ([x, z]) => Math.hypot(window.__iso.hero.x - x, window.__iso.hero.z - z) > 14, [a.x, a.z]);
+    const b = (await G()).hero; for (const k of keys) await page.keyboard.up(k);
+    await shot(`run-${name}`);   // the frame he lets go: the run's last pose as the stop takes over (a screenshot outlasts a whole stride here)
     const moved = Math.atan2(b.x - a.x, b.z - a.z);
-    if (Math.abs(wrap(moved - h)) > .3) fail(`ran toward ${moved.toFixed(2)} rad, wanted ${h.toFixed(2)}`);
+    if (Math.abs(wrap(moved - h)) > .3) fail(`ran toward ${moved.toFixed(2)} rad (from ${a.x.toFixed(1)},${a.z.toFixed(1)} to ${b.x.toFixed(1)},${b.z.toFixed(1)}), wanted ${h.toFixed(2)}`);
     if (Math.abs(wrap(b.yaw - h)) > .05) fail(`drawn facing ${b.yaw.toFixed(2)}, wanted the ${name} facing ${h.toFixed(2)}`);
     ok(`moved ${Math.hypot(b.x - a.x, b.z - a.z).toFixed(0)} units at ${moved.toFixed(2)} rad, facing ${b.yaw.toFixed(2)}`);
   }
   step = 'stop'; await until('the stop', () => ['stop', 'idle'].includes(window.__iso.hero.state)); ok();
 
   // ---- the roll: i-frames in the middle, about 25 units covered, back to rest
-  step = 'roll'; await settle(); { const a = (await G()).hero; await page.keyboard.down('ArrowLeft'); await page.keyboard.press('Shift');
-    await until('the roll', () => window.__iso.hero.state === 'roll'); await page.keyboard.up('ArrowLeft');
-    await until('i-frames', () => window.__iso.hero.iframes); await shot('roll');
+  step = 'roll'; await settle(); await forget(); { const a = (await G()).hero; await page.keyboard.down('ArrowLeft'); await page.keyboard.press('Shift');
+    await seen('roll'); await page.keyboard.up('ArrowLeft'); await shot('roll');
+    await seen('iframes');
     await until('the roll ending', () => window.__iso.hero.state !== 'roll'); const b = (await G()).hero;
     const d = Math.hypot(b.x - a.x, b.z - a.z); if (d < 18) fail(`the roll covered only ${d.toFixed(1)} units`); ok(`${d.toFixed(1)} units`); }
 
@@ -78,12 +85,12 @@ try {
     const keys = [Math.abs(dx) > 4 ? (dx > 0 ? 'ArrowRight' : 'ArrowLeft') : null, Math.abs(dz) > 4 ? (dz > 0 ? 'ArrowDown' : 'ArrowUp') : null].filter(Boolean);
     for (const k of keys) await page.keyboard.down(k); await gameWait(.08); for (const k of keys) await page.keyboard.up(k); } };
   { const f = (await G()).foe; await walkTo(f.x - 22, f.z, 6); } await settle(); ok();
+  // the presses come as a player's would, each as the last cut lands (a screenshot here outlasts the chain's window)
   step = 'J1 → J2 → J3'; { const f0 = (await G()).foe, n0 = (await G()).log.length;
-    await page.keyboard.press('KeyJ'); await until('J1', () => window.__iso.hero.state === 'J1'); await until('J1 landing', () => window.__iso.STATS.log.length > 0 && /J1/.test(window.__iso.STATS.log.at(-1)));
-    await shot('cut-J1', ['hero', 'foe']); await gameWait(.1);
-    await page.keyboard.press('KeyJ'); await until('J2', () => window.__iso.hero.state === 'J2'); await until('J2 landing', () => /J2/.test(window.__iso.STATS.log.at(-1)));
-    await shot('cut-J2', ['hero', 'foe']); await gameWait(.1);
-    await page.keyboard.press('KeyJ'); await until('J3', () => window.__iso.hero.state === 'J3'); await until('J3 landing', () => /J3/.test(window.__iso.STATS.log.at(-1)));
+    const landed = (cut, n) => until(`${cut} landing`, ([c, n]) => window.__iso.STATS.log.length > n && window.__iso.STATS.log.at(-1).startsWith(c), [cut, n]);
+    await page.keyboard.press('KeyJ'); await landed('J1', n0);
+    await page.keyboard.press('KeyJ'); await landed('J2', n0 + 1);
+    await page.keyboard.press('KeyJ'); await landed('J3', n0 + 2);
     await shot('cut-J3', ['hero', 'foe']);
     const g = await G(), log = g.log.slice(n0);
     if (log.join() !== 'J1:hit,J2:hit,J3:hit') fail(`the chain landed ${log.join(' ') || 'nothing'}`);
@@ -92,8 +99,9 @@ try {
     ok(`${log.join(' ')}; he reacted ${g.foe.reacts.slice(-3).join(', ')}`); }
 
   // ---- a cut cancelled into the roll: J, then Shift as soon as it has struck
-  step = 'cancel into the roll'; await settle(); { await page.keyboard.press('KeyJ'); await until('a cut', () => /J\d|lunge/.test(window.__iso.hero.state));
-    await page.keyboard.press('Shift'); await until('the roll', () => window.__iso.hero.state === 'roll'); await shot('cancel-roll'); ok(); }
+  step = 'cancel into the roll'; await settle(); await forget(); { await page.keyboard.press('KeyJ'); await seen('J1');
+    await page.keyboard.press('Shift'); await seen('roll'); await shot('cancel-roll');
+    const seq = await page.evaluate(() => window.__seq.join(' > ')); if (!/J1 > roll/.test(seq)) fail(`the roll did not cut the cut short: ${seq}`); ok(seq); }
 
   // ---- the kill and the respawn
   step = 'kill'; await settle(); { for (let i = 0; i < 12 && !(await G()).foe.dead; i++) { const f = (await G()).foe, h = (await G()).hero;
@@ -101,6 +109,10 @@ try {
       await page.keyboard.press('KeyJ'); await gameWait(.32); }
     await until('the samurai dying', () => window.__iso.foe.dead); await gameWait(.6); await shot('death', ['hero', 'foe']);
     await until('the respawn', () => !window.__iso.foe.dead && window.__iso.foe.hp === 5, undefined, 90000); ok(`deaths ${(await G()).foe.deaths}`); }
+  step = 'close-ups of J1 and J2'; await settle(); { const f = (await G()).foe; await walkTo(f.x - 22, f.z, 6); await settle();
+    let n = (await G()).log.length; await page.keyboard.press('KeyJ'); await until('J1 landing', n => window.__iso.STATS.log.length > n, n); await shot('cut-J1', ['hero', 'foe']);
+    await settle(); n = (await G()).log.length; await page.keyboard.press('KeyJ'); await until('J1 landing', n => window.__iso.STATS.log.length > n, n);
+    await page.keyboard.press('KeyJ'); await until('J2 landing', n => window.__iso.STATS.log.length > n + 1, n); await shot('cut-J2', ['hero', 'foe']); ok(); }
 
   // ---- the pixel look: the same controller, the same loop
   step = 'pixel look'; await page.keyboard.press('KeyM'); await until('the pixel look', () => window.__iso.look === 'pixel'); await settle();
