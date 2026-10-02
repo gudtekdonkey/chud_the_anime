@@ -22,7 +22,7 @@ export function initSkills(ctx) {
   C = ctx; for (const s of SKILLS) bindKey(s.code, s.id);
   const names = new Set(); for (const sk of ALL) for (const n in sk.events || {}) names.add(n);
   for (const n of names) { const prev = W.on[n]; W.on[n] = (a, w) => { if (prev) prev(a, w); for (const sk of ALL) if (sk.events && sk.events[n]) sk.events[n](C, a); }; }
-  ctx.game.onStrike = (a, reach) => counter.onStrike(C, a, reach);
+  ctx.game.onStrike = (a, d) => counter.onStrike(C, a, d);
   ctx.game.onLanded = () => qiAdd(.1);                             // a landed J fills a tenth of the meter (a counter a fifth)
   const as = document.getElementById('o-assist'); if (as) { as.checked = KIT.assist; as.onchange = () => { KIT.assist = as.checked; }; }
 }

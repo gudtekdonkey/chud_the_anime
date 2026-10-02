@@ -37,20 +37,21 @@ export const counter = {
     return true;
   },
   step(C) { if (st.phase && !OWN.has(C.hero.state)) { if (st.phase === 'stance') startCd('counter'); st.phase = null; } },
-  // a samurai's blow lands (rules.js W.on.strike): countered, blocked, or not ours
-  onStrike(C, a, reach) {
-    if (!st.phase || !reach) return false; const hero = C.hero, foe = a.char;
+  // a samurai's blow lands (rules.js W.on.strike, d: how far from him, rig px): countered, blocked, or not ours
+  onStrike(C, a, d) {
+    if (!st.phase || d > 26) return false;   // the stance reads a blow landing within a step of him (16 rig px is a hit)
+    const hero = C.hero, foe = a.char;
     if (st.phase !== 'stance') { sparks(W, hero.a.x, 26, hero.a.z, 4, { spd: 60 }); return true; }   // mid-answer: his blade is already there
-    const dt = W.t - st.pressT; face(hero, foe);
+    const dt = W.t - st.pressT, atk = a.clip.name; face(hero, foe);
     if (dt <= win() + 1e-6) {   // ---- the counter
       st.phase = 'answer'; st.foe = foe; st.dmg = Math.round(3 * tv('counter', 'dmg'));
-      hero.a.play(ANSWER[a.clip.name] || 'cFlow', { next: x => { st.phase = null; x.play('guard'); } });
+      hero.a.play(ANSWER[atk] || 'cFlow', { next: x => { st.phase = null; x.play('guard'); } });
       hero.a.flash = 1 / 60; W.hitstop(STOP.heavy); shake(1, 2 / 60);
       const mx = (hero.a.x + foe.a.x) / 2, mz = (hero.a.z + foe.a.z) / 2;
       sparks(W, mx, 28, mz, 12, { spd: 140, spread: 3 }); focus(W, mx, 26, mz); hero.a.hitAt = foe.a.hitAt = W.t;
       foe.a.play('recoil', { rs: .3 }); foe.guardT = 0;
       if (foe.hp <= st.dmg) startCine(hero, foe);   // a counter that kills gets the close-up
-      KIT.cd.counter = 0; pop('COUNTER', hero.a.x, hero.a.z, W.t); STATS.log.push(`F:counter:${a.clip.name}`);
+      KIT.cd.counter = 0; pop('COUNTER', hero.a.x, hero.a.z, W.t); STATS.log.push(`F:counter:${atk}`);
     } else {                    // ---- too early: only a block
       st.phase = 'block'; hero.a.play('cBlock', { next: x => { st.phase = null; startCd('counter'); x.play('guard'); } });
       W.hitstop(STOP.light); shake(.6, 2 / 60);

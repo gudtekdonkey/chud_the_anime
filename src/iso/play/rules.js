@@ -36,8 +36,8 @@ export function hitRules(game) {
   W.on.strike = a => { const hero = game.hero, v = hv(a.h), R = a.clip.reach ?? 16, px = a.x + v[0] * R, pz = a.z + v[1] * R;
     dust(W, px, pz, 5, { spd: 24, life: .35 });
     if (hero.iframes) { STATS.log.push('foe:dodged'); return; }
-    const reach = Math.hypot(hero.a.x - px, hero.a.z - pz) < 16;
-    if (game.onStrike && game.onStrike(a, reach)) return;   // countered or blocked (skills/counter.js)
+    const d = Math.hypot(hero.a.x - px, hero.a.z - pz), reach = d < 16;
+    if (game.onStrike && game.onStrike(a, d)) return;   // countered or blocked (skills/counter.js)
     if (reach) { hero.taken++; STATS.log.push('foe:hit'); hero.a.flash = .034; hero.a.h = hero.a.ht = hOf(a.x - hero.a.x, a.z - hero.a.z);
       if (game.onHurt) game.onHurt(a);
       hero.a.play('recoil', { rs: .55 }); W.hitstop(STOP.light); sparks(W, hero.a.x, 22, hero.a.z, 8, { dir: a.h }); focus(W, hero.a.x, 22, hero.a.z); hero.a.hitAt = W.t; } };

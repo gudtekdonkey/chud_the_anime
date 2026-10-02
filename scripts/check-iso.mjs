@@ -151,25 +151,25 @@ try {
 
   // ---- F: the samurai attacks (no &calm); a press within 0.2 s of the blow counters, an earlier one only blocks
   step = 'F counter'; await boot('?iso&test&tick=8&foes=1'); await settle();
-  { const f = (await G()).foe; await walkTo(f.x - 20, f.z, 5); }
+  { const f = (await G()).foe; await walkTo(f.x - 16, f.z, 4); }
   { const n = await logLen(), atk = await pressAt(.33, .46); await logHas('F:counter', n); await shot('counter-clash', ['hero', 'foe']);
     await logHas('F:cut', n); const g = await G(); if (!g.foe.reacts.slice(-1)[0].match(/knock|die/)) fail(`the answer's cut: ${g.foe.reacts.slice(-2).join(' ')}`);
     ok(`${atk} countered: ${g.log.slice(n).join(' ')}`); }
-  step = 'F too early: a block'; await settle(); { const f = (await G()).foe; await walkTo(f.x - 20, f.z, 5); }
+  step = 'F too early: a block'; await settle(); { const f = (await G()).foe; await walkTo(f.x - 16, f.z, 4); }
   { const n = await logLen(), atk = await pressAt(.02, .2); await logHas('F:block', n); await shot('counter-block', ['hero', 'foe']);
     const log = (await G()).log.slice(n); if (log.some(l => l.startsWith('F:counter'))) fail(`an early press countered: ${log.join(' ')}`); ok(`${atk} blocked: ${log.join(' ')}`); }
   step = 'F counter that kills: the close-up'; { await page.evaluate(() => window.__seen.clear());
     for (let i = 0; i < 40 && !(await G()).log.some(l => l === 'F:cut:kill'); i++) { await settle(); const f = (await G()).foe; if (f.dead) { await until('the respawn', () => !window.__iso.foe.dead, undefined, 90000); continue; }
-      await walkTo(f.x - 20, f.z, 5); const n = await logLen(); await pressAt(.33, .46); await logHas('F:cut', n); }
+      await walkTo(f.x - 16, f.z, 4); const n = await logLen(); await pressAt(.33, .46); await logHas('F:cut', n); }
     await seen('cine'); ok('a killing counter, the close-up played'); }
 
   // ---- the rest on a calm squad of three
   step = 'Q Lightning Chain'; await boot('?iso&test&calm&tick=8&foes=3'); await settle();
   await until('the squad gathering', () => window.__iso.foes.filter(f => Math.hypot(f.x - window.__iso.hero.x, f.z - window.__iso.hero.z) < 60).length === 3, undefined, 60000);
-  { const n = await logLen(); await page.keyboard.press('KeyQ'); await logHas('Q:link', n); await shot('chain-links', ['hero', 'near']);
+  { const n = await logLen(); await page.keyboard.press('KeyQ'); await logHas('Q:link', n); const cd = await page.evaluate(() => window.__iso.skills.cd.chain); await shot('chain-links', ['hero', 'near']);
     await logHas('Q:yank', n); await logHas('Q:cut', n); await shot('chain-cut', ['hero', 'near']); const log = (await G()).log.slice(n), links = log.filter(l => l.startsWith('Q:link')).length;
     if (links < 2) fail(`the chain leapt to ${links}: ${log.join(' ')}`); if (log.includes('Q:cut:miss')) fail(`the draw-cut missed the dragged man: ${log.join(' ')}`);
-    const cd = (await page.evaluate(() => window.__iso.skills.cd.chain)); if (!(cd > 5)) fail(`Q cooldown ${cd}`);
+    if (!(cd > 5)) fail(`Q cooldown ${cd}`);
     ok(`${links} links; ${log.join(' ')}; cooldown ${cd.toFixed(1)} s`); }
   step = 'Q on cooldown: refused'; { const n = await logLen(); await page.keyboard.press('KeyQ'); await gameWait(.3); if ((await G()).log.slice(n).some(l => l.startsWith('Q:'))) fail('Q cast on cooldown'); ok(); }
 
