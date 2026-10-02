@@ -24,7 +24,7 @@ html, body { margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.45
 .cat h1 { font-size: 16px; margin: 0; color: var(--cyan); font-weight: 600; }
 .cat header { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
 .cat header p { margin: 0; color: var(--dim); flex: 1 1 320px; }
-.cat .bar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; position: sticky; top: 0; background: var(--bg); padding: 6px 0; z-index: 2; border-bottom: 1px solid var(--rule); }
+.cat .bar { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; position: sticky; top: env(safe-area-inset-top, 0px); background: var(--bg); padding: 6px 0; z-index: 2; border-bottom: 1px solid var(--rule); }
 .cat label { display: inline-flex; align-items: center; gap: 5px; color: var(--dim); }
 .cat select, .cat input, .cat button { background: #0d1013; color: var(--fg); border: 1px solid var(--rule); font: inherit; padding: 2px 6px; border-radius: 3px; }
 .cat button { cursor: pointer; } .cat button:hover, .cat button:focus-visible { border-color: var(--cyan); outline: none; }
