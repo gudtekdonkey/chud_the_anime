@@ -6,6 +6,7 @@ import { HEADS } from './head.js';
 import { HAIR, HAIR_ID } from './styles.js';
 import { HATS, HAT } from './hats.js';
 import { resolve } from './contract.js';
+import { params, go } from './nav.js';
 
 const opts = list => { const groups = {}; for (const h of list) (groups[h.group || ''] ||= []).push(h);
   return Object.entries(groups).map(([g, hs]) => { const o = hs.map(h => `<option value="${h.id}">${h.name}</option>`).join(''); return g ? `<optgroup label="${g}">${o}</optgroup>` : o; }).join(''); };
@@ -31,7 +32,7 @@ export function mountHairPanel(root, { grid = false } = {}) {
   const step = (list, cur, d = 1) => list[(list.findIndex(h => h.id === cur) + d + list.length) % list.length].id;
   const pick = a => a[Math.floor(Math.random() * a.length)].id;
   const randomise = () => { for (const w of ['hero', 'foe']) { let hair, hat; do { hair = pick(HAIR); hat = pick(HATS); } while (!fits(hair, hat)); HEADS[w].hair = hair; HEADS[w].hat = hat; } note.textContent = ''; sync(); };
-  const toGrid = () => { const q = new URLSearchParams(location.search); if (grid) q.delete('hairgrid'); else q.set('hairgrid', ''); q.delete('tick'); location.search = q.toString().replace(/=(&|$)/g, '$1'); };
+  const toGrid = () => { const q = params(); if (grid) q.delete('hairgrid'); else q.set('hairgrid', ''); q.delete('tick'); go(q); };
   for (const w of ['hero', 'foe']) { $('o-hair-' + w).onchange = e => setHair(w, e.target.value); $('o-hat-' + w).onchange = e => setHat(w, e.target.value); }
   $('o-rand').onclick = randomise; $('o-grid').onclick = e => { e.preventDefault(); toGrid(); };
   if (!grid) addEventListener('keydown', e => {

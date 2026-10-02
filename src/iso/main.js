@@ -26,8 +26,9 @@ import { RAMP } from './gfx/palette.js';
 import { runHairGrid } from './hair/grid.js';
 import { mountHairPanel } from './hair/panel.js';
 import { HEADS } from './hair/head.js';
+import { params } from './hair/nav.js';
 
-const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
+const Q = params(), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
 const pipe = makePipeline(canvas);
 SETTINGS.fpsFor = fpsFor; setStyle(Q.has('style') ? +Q.get('style') : 3);   // the owner's pick: Painterly (gfx/style.js)

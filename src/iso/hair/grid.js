@@ -13,6 +13,7 @@ import { shadeMat } from '../gfx/shade.js';
 import { RAMP } from '../gfx/palette.js';
 import { HAIR, HATS } from './head.js';
 import { resolve } from './contract.js';
+import { params, go } from './nav.js';
 import { audit } from './audit.js';
 
 const POSES = { idle: ['idle', .6], run: ['run', .45], J1: ['J1', .185], J3: ['J3', .265], roll: ['roll', .2], guard: ['guard', .5] };
@@ -49,11 +50,11 @@ export function runHairGrid({ scene, pipe, cam, root, Q, wireOverlay }) {
   aside.insertBefore(sec, aside.querySelector('h2'));
   const face = sec.querySelector('#g-face'), ps = sec.querySelector('#g-pose');
   face.value = String(facing); ps.value = poseName; sec.querySelector('#g-page').value = String(page);
-  sec.querySelector('#g-page').onchange = e => { const q = new URLSearchParams(location.search); q.set('page', e.target.value); q.set('facing', facing); q.set('pose', poseName); location.search = q.toString().replace(/=(&|$)/g, '$1'); };
+  sec.querySelector('#g-page').onchange = e => { const q = params(); q.set('page', e.target.value); q.set('facing', facing); q.set('pose', poseName); go(q); };
   const setFacing = k => { facing = (k + 8) % 8; face.value = String(facing); show(); };
   face.onchange = () => setFacing(+face.value); ps.onchange = () => { poseName = ps.value; pose = poseOf(poseName); show(); };
   addEventListener('keydown', e => { if (e.code === 'BracketRight') setFacing(facing + 1); if (e.code === 'BracketLeft') setFacing(facing - 1); });
-  sec.querySelector('#g-back').onclick = e => { e.preventDefault(); const q = new URLSearchParams(location.search); q.delete('hairgrid'); location.search = q.toString().replace(/=(&|$)/g, '$1'); };
+  sec.querySelector('#g-back').onclick = e => { e.preventDefault(); const q = params(); q.delete('hairgrid'); go(q); };
   root.querySelector('h1').textContent = 'Iron Ash · hair × hats';
 
   const at = Q.get('cell') && Q.get('cell').split(',').map(Number);   // &cell=c,r&zoom=6: a close look at a few pairs
