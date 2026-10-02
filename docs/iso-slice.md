@@ -257,6 +257,12 @@ CTX.held                     a Set: a companion in it is moved by a system (a pa
 Mouse: `input/click.js` moves the hero on a left click unless `CLICK.blocked(event)` returns true: the squad AI sets it
 to "something is selected". Right click is never read here.
 
+Where the two branches meet (seen on `claude/3d-squad-ai` while this was built; for whoever merges): it has its own
+companion agents (`squad/npc.js`), its own left-click move for the hero, E held to lift, and 1–9 to recall groups. One of
+each should stay: the bodies, health, down / lift and EXP here (`PARTY`, `Ally`) under its minds and orders (`brain` /
+`order` above); one left-click handler (its selection rule, this file's picking of items, the fallen and prompts);
+and the digits: 1–4 are today's quick slots (prototype 20), so groups would want another modifier.
+
 ### Paired executions
 
 K on a lone samurai within 70 units, with a standing companion within 90 who meets one of today's PAIRED rules
