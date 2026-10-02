@@ -65,6 +65,10 @@ export function gaitFrames(m) {
       fa: [-swing * s + m.fa0, m.faEl], ba: [swing * s + m.ba0, m.baEl], flutter: m.flutter * (i % 4) / 2 });
     hands(q, m); out.push(q);
   }
+  // plant (the walk): the hips settle so the lower foot stays on the floor through the stride, in whole pixels; a long walking
+  // stride would otherwise lift both feet off it where the legs split. 0 keeps a gait as it was (the run, which has a flight phase)
+  if (m.plant) { const low = q => Math.max(reach(q.fl), reach(q.bl)), top = Math.max(...out.map(low));
+    for (const q of out) q.hy += Math.round(m.plant * (top - low(q))); }
   return out;
 }
 

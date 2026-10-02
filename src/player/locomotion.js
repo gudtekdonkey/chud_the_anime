@@ -25,11 +25,18 @@ export const speed = () => Math.hypot(P.vx, P.vy);
 // a gait's stride, measured from its poses (side on, rig px = world px): how far the planted foot sweeps back under the hips per
 // frame while it is on the floor. The body has to cover that much per frame or the feet skate. Cached per baked sheet
 const STRIDE = new WeakMap();
+// A walk always has a foot down, so its stance foot is simply the lower one each frame (feet measured from the hips); a run has
+// a flight phase, so only frames where a foot is on the floor (within .6 px of the lowest) count
 const foot = ([th, kn], hy) => [5 * Math.sin(th) + 6 * Math.sin(th - kn), (hy || 0) + 5 * Math.cos(th) + 6 * Math.cos(th - kn)];
 export function strideOf(name) {
   const sh = SHEETS[name]; if (!sh || sh.custom || !sh.poses) return null;
   if (STRIDE.has(sh)) return STRIDE.get(sh);
-  const ps = sh.poses.filter(Boolean), n = ps.length, F = ps.map(p => [foot(p.fl, p.hy), foot(p.bl, p.hy)]);
+  const ps = sh.poses.filter(Boolean), n = ps.length;
+  if (name === 'walk') { const F = ps.map(p => [foot(p.fl), foot(p.bl)]), low = f => f[0][1] >= f[1][1] ? 0 : 1; let sweep = 0, steps = 0;
+    for (let i = 0; i < n; i++) { const a = F[i], b = F[(i + 1) % n], k = low(a);
+      if (low(b) === k && b[k][0] < a[k][0]) { sweep += a[k][0] - b[k][0]; steps++; } }
+    const s = steps ? sweep / steps : null; STRIDE.set(sh, s); return s; }
+  const F = ps.map(p => [foot(p.fl, p.hy), foot(p.bl, p.hy)]);
   const floor = Math.max(...F.flat().map(f => f[1]));
   let sweep = 0, steps = 0;
   for (let i = 0; i < n; i++) for (const k of [0, 1]) { const a = F[i][k], b = F[(i + 1) % n][k];

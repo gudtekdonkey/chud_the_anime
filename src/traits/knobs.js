@@ -22,9 +22,12 @@ export const BASE = {
     f: {}, b: {},     // front and back hand targets (see ARMS), by weight
   },
   // one stride cycle is 8 frames; fps sets the cadence and speed how fast he covers ground, px/s
+  // stride: the owner lengthened it on purpose (2026-10-02, N2A, was .5): the gait is clocked by the ground covered
+  // (player/locomotion.js), and the short stride made his legs cycle at ~15 frames a second at 40 px/s; this one is ~8 again
+  // plant: the hips settle so the lower foot stays on the floor (bake.js); the run has none
   walk: {
-    lean: .08, chest: 0, hx: 0, hy: 0, bow: 0, hat: 0, dim: 0,
-    stride: .5, knee0: .12, lift: .55, swing: .25, fa0: .1, faEl: .3, ba0: -.1, baEl: .25,
+    lean: .08, chest: 0, hx: 0, hy: 0, bow: 0, hat: 0, dim: 0, plant: 1,
+    stride: 1, knee0: .12, lift: .55, swing: .25, fa0: .1, faEl: .3, ba0: -.1, baEl: .25,
     bounce: .6,       // the hips dip on each footfall
     heavy: 0,         // a harder drop on each footfall
     rock: 0,          // the body rocks back and forth with each step (swagger)
@@ -34,7 +37,7 @@ export const BASE = {
     f: { hilt: .6 }, b: {},
   },
   run: {
-    lean: .32, chest: 0, hx: 0, hy: 0, bow: 0, hat: 0, dim: 0,
+    lean: .32, chest: 0, hx: 0, hy: 0, bow: 0, hat: 0, dim: 0, plant: 0,
     stride: .95, knee0: .3, lift: 1.1, swing: .7, fa0: .3, faEl: .9, ba0: -.5, baEl: .5,
     bounce: 1, heavy: 0, rock: 0, limp: 0, wobble: 0,
     fps: 14, speed: 78, flutter: 1,

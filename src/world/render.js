@@ -27,6 +27,8 @@ import { drawPartyHud, drawPartyPrompts } from '../ui/party-hud.js';
 import { KIT, drawKit } from '../ui/kit-screen.js';
 import { drawBreathBack, drawBreathFront } from '../player/breath.js';
 import { drawLine } from '../player/wild.js';
+import { drawPrompt as drawCombo, drawGrade, drawCounter } from '../ui/prompt-draw.js';
+import { drawTouch, drawClickMark } from '../ui/pointer-draw.js';
 
 export function render() {
   g.setTransform(PX, 0, 0, PX, 0, 0); g.imageSmoothingEnabled = false;   // everything draws in world units; figures carry PX pixels
@@ -36,7 +38,7 @@ export function render() {
   g.drawImage(bgX, -MARGIN, -MARGIN);
   const fade = ENEMIES[0].alpha;   // the fallen, their swords and their blood fade together before a new squad
   drawBloodFloor(fade); drawFloorFx(); drawStagesFloor(); drawSmoke(false); drawBreathBack();
-  const t = performance.now() / 1000; drawMarkers(t);
+  const t = performance.now() / 1000; drawMarkers(t); drawClickMark();
   // depth-sort the pillars, the enemies, their dropped swords, the player and any execution by their feet
   const items = [...PILLARS.map(p => ({ y: p.y + p.h, d: () => drawPillar(g, p) })), ...ENEMIES.map(e => ({ y: e.y - (e.alive ? 0 : .5), d: () => drawEnemy(e) })),
     ...blades.map(b => ({ y: b.y - .2, d: () => drawBlade(b, fade) })), ...(P.state === 'exec' ? [] : [{ y: P.y, d: drawPlayer }]), ...stageItems(), ...itemDrawables(),
@@ -53,11 +55,12 @@ export function render() {
   g.globalAlpha = 1;
   drawNums();   // over the effects, so a number is never lost in the flash of the hit it counts
   g.restore();
-  g.save(); g.translate(-CAM.ox, -CAM.oy); drawItemsOver(); g.restore();   // unshaken: the lock-on and prompt stay put while the world shakes, but go with the camera
+  g.save(); g.translate(-CAM.ox, -CAM.oy); drawItemsOver(); drawCombo(); drawGrade(); g.restore();   // unshaken: the lock-on and prompt stay put while the world shakes, but go with the camera
   if (S.scr.t > 0) { g.globalAlpha = S.scr.a * S.scr.t / S.scr.max; g.fillStyle = COL.flash; g.fillRect(0, 0, W, H); g.globalAlpha = 1; }
   if (S.impact > 0) impactFrame(S.impact === 1);
-  drawHud(); drawPartyHud();
+  drawHud(); drawPartyHud(); drawCounter();
   if (KIT.open) drawKit();
+  drawTouch();   // a finger's trail and the stick, over everything
   const chg = P.charge != null && !P.cv ? ` · charge <b>${Math.round(P.charge * 100)}%</b>` : P.cv ? ` · ${P.cv.name} at <b>${Math.round(P.pow * 100)}%</b>` : '';
   const qi = P.storm > 0 ? ` · <b>STORM CHAIN ${P.storm.toFixed(1)} s</b>` : ` · qi <b>${Math.round(P.qi * 100)}%</b>`;
   const inv = ` · hp <b>${Math.round(INV.hp * 100)}%</b> · mon ${INV.mon} · shards ${INV.shards} · LV ${INV.lv} (${Math.round(INV.exp)} exp) · power ${INV.power}`;

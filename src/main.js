@@ -12,6 +12,11 @@ import { initPersonality } from './ui/personality.js';
 import { initElementPicker } from './ui/element-picker.js';
 import { initWeaponPicker } from './ui/weapon-picker.js';
 import { initWardrobe } from './ui/wardrobe.js';
+import { initComboSettings } from './ui/combo-settings.js';
+import { C as CP, PT } from './player/prompts.js';
+import { CLICK } from './player/click.js';
+import { TOUCH } from './player/touch.js';
+import { FALLEN } from './items/harvest.js';
 import { KIT } from './ui/kit-screen.js';
 import { ROSTER, party } from './party/kit.js';
 import { allies } from './party/companions.js';
@@ -41,10 +46,14 @@ initPersonality();
 initElementPicker();
 initWeaponPicker();
 initWardrobe();
+initComboSettings();
 
 // a read-only debug hook for `npm run check`: in dev, or in any build opened with ?test
 if (import.meta.env.DEV || new URLSearchParams(location.search).has('test')) window.__game = { P, PF, E: ENEMIES, N: NUMS, V: voids, wear, INV, S, K, ROSTER, party, allies, KIT, PAIRS, pairReady: () => !!pairCandidate(),
   // growth, read-only: a tree's value now, whether a key works, his stats in full and what they do
   tv, known, stat: k => statOf(ROSTER[0], k), get ST() { return Object.fromEntries(Object.entries(ST).map(([k, f]) => [k, f()])); },
   // the animation flow, read-only: its tuning, the last hit pauses, the drawn pose's blend, the input buffer, the camera, a gait's stride
-  FEEL, stops, PB, B, CAM, stride: strideOf };
+  FEEL, stops, PB, B, CAM, stride: strideOf,
+  // the combo prompts (CP: the chain, the open prompt, the recovery, the grades so far; PT: their settings), the click goal, the touch stick
+  CP, PT, CLICK, TOUCH,
+  FALLEN };   // the bodies Harvest can take (where each fell, EXP left)

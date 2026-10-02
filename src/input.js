@@ -22,7 +22,10 @@ export function readInput() {
     slash: taps.has('slash'), jump: taps.has('jump'), slide: taps.has('slide'), tele: taps.has('tele'),
     double: taps.has('double'), sweep: taps.has('sweep'), sit: taps.has('sit'), die: taps.has('die'),
     moon: taps.has('moon'), rift: taps.has('rift'), mirror: taps.has('mirror'),
-    act: taps.has('act'), order: taps.has('order'), hurt: taps.has('hurt'), quick: [1, 2, 3, 4].map(i => taps.has('q' + i)) };
+    act: taps.has('act'), order: taps.has('order'), hurt: taps.has('hurt'), quick: [1, 2, 3, 4].map(i => taps.has('q' + i)),
+    // a direction newly pressed this step (it finishes a J chord on a combo prompt); ax/ay: an exact heading from the stick or a
+    // click goal (mx/my stay the nearest of the 8, his facing); walk: the stick barely pushed
+    dirTap: ['left', 'right', 'up', 'down'].some(k => taps.has(k)), ax: null, ay: null, walk: false };
   taps.clear();
   return inp;
 }

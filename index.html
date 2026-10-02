@@ -21,7 +21,9 @@
     <div class="keys">
       <span><kbd>WASD</kbd> / <kbd>←↑↓→</kbd> move</span>
       <span>Hold <kbd>V</kbd> to walk</span>
-      <span><kbd>J</kbd> slash (press twice to combo)</span>
+      <span><kbd>J</kbd> slash; a cut that lands shows the next link over the enemy: its direction + <kbd>J</kbd> (→ is toward him), <kbd>J</kbd> alone, <kbd>I</kbd> or <kbd>K</kbd>, as it shows</span>
+      <span>Click the floor: run there (hold to follow the cursor) · click a samurai: cut him</span>
+      <span>Touch: left side a stick · tap slash · swipe dash or lunge · swipe up jump · hold charge · double tap K · flick parry · two fingers a skill</span>
       <span><kbd>Space</kbd> jump</span>
       <span><kbd>Shift</kbd> / <kbd>L</kbd> ground slide</span>
       <span><kbd>K</kbd> glitch teleport; on a lone enemy, execute</span>
@@ -40,18 +42,15 @@
     </div>
     <label class="clear" for="weapon">Weapon (for testing; in the game you pick them up) <select id="weapon"></select></label>
     <label class="clear" for="basic">Basic skill (for testing; in the game landed cuts grow it) <select id="basic"></select></label>
+    <label class="clear" for="combo">Combo prompts: <select id="combo"><option value="prompts">answer them (J, direction + J, a swipe)</option><option value="hold">hold J (or a finger) to continue</option><option value="auto">auto: each link plays by itself</option></select></label>
+    <label class="clear" for="two">Two-finger tap: <select id="two"><option value="last">the last skill used</option><option value="double">I, double slash</option><option value="sweep">U, Sky Drop</option><option value="rift">P, Cross Rift</option><option value="mirror">N, Mirror Meditation</option><option value="moon">O, Crescent Moon</option></select></label>
     <label class="clear" for="clear"><input type="checkbox" id="clear"> Room is clear: the samurai don't count as a threat, so after an attack he sheathes at once</label>
     <label class="clear" for="pair">Paired execution (to test): <select id="pair"></select> K with a companion near a lone enemy; one every 5 s for the whole party</label>
     <label class="clear" for="skills">Skills (to test): <select id="skills"><option value="played">as played: he starts with J, slide, jump and K; a full meter casts a skill he has not mastered</option><option value="mastered">all mastered</option><option value="trees">all mastered, every tree full</option></select> three wild casts of a skill and its key works; landed casts grow each skill's tree (Tab)</label>
     <label class="clear" for="power">Power (to test): <select id="power"><option value="0">as earned</option><option value="1">I</option><option value="2">II</option><option value="3">III</option></select> I is quiet; II lifts stone off the floor and scales the stats; III adds ribbons of light and each skill's biggest version</label>
-    <div class="pad" aria-label="Touch controls">
-      <button data-k="left" aria-label="Move left">←</button><button data-k="up" aria-label="Move up">↑</button>
-      <button data-k="down" aria-label="Move down">↓</button><button data-k="right" aria-label="Move right">→</button>
-      <button data-k="walk" class="act">Walk (hold)</button><button data-k="slash" class="act">Slash</button><button data-k="jump" class="act">Jump</button>
-      <button data-k="slide" class="act">Slide</button><button data-k="tele" class="act">Glitch</button>
-      <button data-k="double" class="act">Double (hold)</button><button data-k="sweep" class="act">Sweep</button>
-      <button data-k="moon" class="act">Moon (hold)</button><button data-k="rift" class="act">Rift (hold)</button>
-      <button data-k="mirror" class="act">Mirror</button><button data-k="act" class="act">E (hold)</button>
+    <div class="pad" aria-label="Touch controls: the keys the gestures do not cover">
+      <button data-k="sweep" class="act">Sky Drop</button><button data-k="moon" class="act">Moon (hold)</button><button data-k="rift" class="act">Rift (hold)</button>
+      <button data-k="mirror" class="act">Mirror</button><button data-k="sit" class="act">C (hold)</button><button data-k="act" class="act">E (hold)</button>
       <button data-k="q1" class="act">1</button><button data-k="q2" class="act">2</button><button data-k="q3" class="act">3</button><button data-k="q4" class="act">4</button>
     </div>
   </section>

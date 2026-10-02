@@ -31,4 +31,6 @@ export function frameOf() {
   const a = ANIMS[P.state], n = SHEETS[P.state].n, f = Math.floor(P.t * a.fps);
   return a.loop ? f % n : Math.min(n - 1, f);
 }
-export function inputDir(inp) { const m = Math.hypot(inp.mx, inp.my); return m ? [inp.mx / m, inp.my / m] : [P.face, 0]; }
+// the way he moves: the stick's or a click goal's exact heading when there is one, else the keys' 8 directions
+export function inputDir(inp) { if (inp.ax != null && (inp.mx || inp.my)) return [inp.ax, inp.ay];
+  const m = Math.hypot(inp.mx, inp.my); return m ? [inp.mx / m, inp.my / m] : [P.face, 0]; }

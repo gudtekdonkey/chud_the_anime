@@ -17,7 +17,7 @@ import { TAP, chargeUp, TC, RIFT, release, charged } from './skills.js';
 import { startCd, updateCds, canBlink, spendBlink } from './cooldowns.js';
 import { bufferIn, bufferOut, cancelOf, only } from './buffer.js';
 import { updateCamera } from '../world/camera.js';
-import { CUTS, GO, nextCut, updateFlow, aimCut, trackStep } from './combo.js';
+import { CUTS, updateFlow, aimCut, trackStep } from './combo.js';
 import { updateEnemies } from '../world/enemies.js';
 import { assassinate, tickStages, updateStages } from '../assassin/assassinate.js';
 import { K, updateMarkers } from '../assassin/markers.js';
@@ -36,6 +36,9 @@ import { ST } from './stats.js';
 import { hitStop, FEEL } from './feel.js';
 import { drive, speed, gaitClock } from './locomotion.js';
 import { stepSprings } from './blend.js';
+import { promptIn, promptTick } from './prompts.js';
+import { touchIn, TOUCH } from './touch.js';
+import { clickIn } from './click.js';
 
 const DIAG_GRACE = .1;   // s a diagonal survives one of its two keys lifting
 
@@ -43,7 +46,10 @@ const DIAG_GRACE = .1;   // s a diagonal survives one of its two keys lifting
 export function update(dt, inp) {
   updateCds(dt); updateFlow(dt);   // cooldowns run in real time, through hit pauses too
   const frozen = S.hitstop > 0;
-  bufferIn(inp, dt); step(dt, inp); bufferOut(inp); updateCamera(dt);
+  // the touch gestures, a click goal and the combo prompts take their presses before the buffer sees them (an answer never fires twice)
+  touchIn(inp); clickIn(inp, dt); promptIn(inp, dt);
+  bufferIn(inp, dt); step(dt, inp); bufferOut(inp);
+  promptTick(dt, held.has('slash') || TOUCH.holdOn); updateCamera(dt);
   if (!frozen) stepSprings(dt);   // the mantle, hat and lean springs (player/blend.js) hold still in a hit pause
 }
 function step(dt, inp) {
@@ -115,7 +121,7 @@ function step(dt, inp) {
     case 'idle': case 'run': case 'walk': case 'idleGlitch': case 'sit': case 'sitDown': {
       // hold V to walk; both speeds come from his personality. Speed ramps up and down (player/locomotion.js), and the
       // gait's frames are driven by the ground covered, so the stride matches the speed and the feet never skate
-      const gait = moving ? held.has('walk') ? 'walk' : 'run' : s === 'walk' ? 'walk' : 'run', v = P.gait[gait] * ST.speed();   // SPD: 4% a point
+      const gait = moving ? held.has('walk') || inp.walk ? 'walk' : 'run' : s === 'walk' ? 'walk' : 'run', v = P.gait[gait] * ST.speed();   // SPD: 4% a point
       const [dx, dy] = moving ? inputDir(inp) : [0, 0], d = drive(dx * v, dy * v, v, dt);
       if (moving) {
         if (s !== gait) setState(gait); else P.t += gaitClock(s, d, dt) - dt;
@@ -151,7 +157,7 @@ function step(dt, inp) {
     case 'slash1': case 'slash1r': case 'slash2': case 'slash3': case 'slash4': case 'slash5': case 'slash6': {
       // one fluid motion: the lunge travels with the hips through the cut, the strike lands as the blade passes level.
       // J again during a cut's follow-through flows into the next, as far as his basic skill reaches (player/combo.js)
-      const c = CUTS[s], SK = c.sk, nx = nextCut(s);
+      const c = CUTS[s], SK = c.sk;
       if (once('go', true)) { P.cutFace = P.face; aimCut(s); }   // the step in toward whoever he is cutting (player/combo.js)
       const fd = P.cutFace; trackStep(T, dt);
       if (c.spin) P.face = T >= c.spin[0] && T < c.spin[1] ? -fd : fd;   // the whirl: his back to the enemy for a beat
@@ -175,8 +181,7 @@ function step(dt, inp) {
       if (T >= SK && T < SK + .1) { const kind = s === 'slash1r' ? 'slash1' : s;
         if (c.around) hit(kind, P.x + fd * 4, P.y - 12, reach(14, 26)[1]);   // the spin cuts all the way round
         else { const [d, r] = reach(c.big ? 18 : c.kick ? 12 : 14, c.big ? 28 : c.kick ? 18 : 22); hit(kind, P.x + fd * d, P.y - 12, r); } }
-      if (nx && inp.slash && T > .15) P.combo = true;
-      if (nx && P.combo && T >= GO) { P.z = 0; P.face = fd; P.inv = false; setState(nx); break; }   // flow straight out of the follow-through
+      // the next link is the combo prompts' (player/prompts.js): a landed cut opens one, its answer plays from this cut's chain beat (GO)
       if (T >= D) { P.z = 0; P.face = fd; P.inv = false; P.armed = true; P.still = 0; setState(afterAttack(moving)); }
       break;
     }
@@ -287,8 +292,9 @@ function step(dt, inp) {
   }
 }
 // a new command from a state that takes one (or a cancel window's keys); true when something started
-const ACTS = ['jump', 'slide', 'tele', 'double', 'rift', 'moon', 'mirror', 'sweep'];
+const ACTS = ['jump', 'slide', 'tele', 'double', 'rift', 'moon', 'mirror', 'sweep'], LAST = ['double', 'rift', 'moon', 'mirror', 'sweep'];
 function act(inp) {
+  for (const k of LAST) if (inp[k]) P.lastSkill = k;   // the two-finger tap's "last skill used" (player/touch.js)
   if (inp.slash) { setState(P.armed ? 'slash1r' : 'slash1'); return true; }
   if (inp.jump) { setState('jump'); P.vz = 150; return true; }
   if (inp.slide) { setState('slide'); P.slideDir = inputDir(inp); dust(6, P.slideDir[0]); startCd('slide'); return true; }

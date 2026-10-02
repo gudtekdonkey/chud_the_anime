@@ -16,7 +16,7 @@ h1 { font: 700 clamp(28px, 5vw, 40px)/1.05 "Pixelify Sans", monospace; margin: 0
 h1 span { color: var(--cyan); }
 h2 { font: 700 20px/1.1 "Pixelify Sans", monospace; margin: 0; }
 p { margin: 0; color: var(--muted); }
-#game { width: 100%; max-width: 960px; aspect-ratio: 16 / 9; image-rendering: pixelated; display: block; outline: 1px solid var(--rule); cursor: pointer; background: #474c4a; }
+#game { width: 100%; max-width: 960px; aspect-ratio: 16 / 9; image-rendering: pixelated; display: block; outline: 1px solid var(--rule); cursor: pointer; background: #474c4a; touch-action: none; user-select: none; -webkit-user-select: none; }   /* fingers are the game's (src/gestures.js), never the page's scroll */
 #game:focus-visible { outline: 2px solid var(--cyan); }
 .hud { display: flex; flex-wrap: wrap; gap: 6px 18px; font: 500 14px/1.3 "Pixelify Sans", monospace; color: var(--muted); }
 .hud b { color: var(--cyan); font-weight: 500; }
