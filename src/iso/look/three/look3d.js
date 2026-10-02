@@ -12,8 +12,8 @@ import { STYLE } from '../../gfx/style.js';
 export const LOOK3D = { hatTilt: 14, brim: 1, glint: 1 };   // the overlay's hat tunables (faces page: 14° tilt, the wide brim as drawn)
 const _v = new THREE.Vector3(), _q = new THREE.Quaternion();
 
-export function threeLook({ foe = false } = {}) {
-  const rig = makeRonin({ foe }); let scene = null, last = null, prevU = null, squash = 0, lastPose = null;
+export function threeLook({ foe = false, pal = null } = {}) {
+  const rig = makeRonin({ foe, pal }); let scene = null, last = null, prevU = null, squash = 0, lastPose = null;
   return {
     kind: '3d',
     mount(s) { scene = s; s.add(rig.root); },

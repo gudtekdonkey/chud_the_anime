@@ -16,6 +16,7 @@ All of it lives in `src/iso/`. It is a test bed for the owner's picks, not the g
 | `/?iso&reel=chain` | one of the Animation Flow page's scenarios (idle, start, turn, stop, roll, chain, lunge, sheathe) on its script and clock; `node scripts/iso-reel.mjs chain 3` lays it out as the page's contact sheets do (with `AF_DIR` at the page's source, the page's own sheet above it) into `test-output/iso/reel-chain-vs.png` |
 | `/?iso&foes=1` | one samurai (3 by default, up to 5); `&calm` keeps them all from attacking |
 | `/?iso&power=3&pick=chain:b&trees&qi=0&assist` | the new skills' setup the Tab screen would hold: the power tier, a tree's fork, every tree full, the Qi meter at start, the counter's assist ring |
+| `/?iso&group=mixed` | enemy types instead of the lone samurai (`docs/enemies.md`): the overlay's Enemies picker, `,` steps through the groups, `.` brings one back (moved off G and R: the party's hold / follow and Blade Recall) |
 | `/?iso&style=1` | start on a style (0 Toon + dither, 1 Pixel-render, 2 Anime limited, 3 Painterly) |
 | `/?iso&sheet` | a frozen contact sheet: four moments of the loop × the eight facings (`&rows=4,5,6,7` the other four, `&look=pixel`, `&foe`, `&zoom=1.9`) |
 | `npm run check:iso` | builds, then `scripts/check-iso.mjs` plays the loop in Chromium and asserts it (below); screenshots in `test-output/iso/` |
