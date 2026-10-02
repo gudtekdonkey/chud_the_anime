@@ -12,11 +12,11 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `npm run check` | Builds, then `scripts/check.mjs` plays a key sequence in Chromium and asserts the states and no page errors. Screenshots and the state log go to `test-output/` |
 | `npm run check:hd` | The same check at 2× (`?hd`), screenshots in `test-output/hd/` |
 | `node scripts/iso-reel.mjs chain 3` | After a build: one of the Animation Flow page's scenarios as the slice plays it, laid out as the page's contact sheets (`AF_DIR` at the page's source draws the page's sheet above it), into `test-output/iso/reel-<name>[-vs].png` |
-| `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle. Screenshots in `test-output/iso/` |
+| `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle, then the 15 weapons (drawn, J1 → J3 and stowed in all 8 facings; each in play with its reach and hit-stops). Screenshots in `test-output/iso/` |
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
-- `?iso` opens the new direction's vertical slice instead (`src/iso/`, `docs/iso-slice.md`): `src/main.js` only picks, today's game boots from `src/game.js` untouched. It needs `three` (pinned; `npm install`); where `node_modules` is shared and lacks it, `ISO_DEPS=<dir with node_modules/three>` makes `vite.config.js` alias it. Its read-only hook is `window.__iso` (dev or `?test`); `&tick=N` runs N game steps a frame for the check.
+- `?iso` opens the new direction's vertical slice instead (`src/iso/`, `docs/iso-slice.md`): `src/main.js` only picks, today's game boots from `src/game.js` untouched. It needs `three` (pinned; `npm install`); where `node_modules` is shared and lacks it, `ISO_DEPS=<dir with node_modules/three>` makes `vite.config.js` alias it. Its read-only hook is `window.__iso` (dev or `?test`); `&tick=N` runs N game steps a frame for the check; `&weapon=<id>` starts on a weapon, `&hp=N` a tougher samurai, `?iso&arsenal` the weapons' contact sheet.
 - The check reads the player, the facing he is drawn in, the enemies, what he wears, the inventory, `S` and the K markers and the black slashes through `window.__game = { P, PF, E, V, wear, INV, S, K }`, plus growth's read-only helpers `tv(skill, key)` (a tree's value now), `known(skill)`, `stat(k)` and `ST` (his stats' effects), and the animation flow's: `FEEL` (its tuning), `stops` (the last hit pauses, by weight and frames), `PB` (the drawn pose: its move, draws since it began, its distance from the move's own frame, where the blade is), `B` (the input buffer), `CAM` (the camera offset) and `stride(anim)` (a gait's measured stride). That hook exists only in dev, or in a build opened with `?test`. Read it; never steer the game through it.
 
 ## Module map (`src/`)
@@ -166,11 +166,13 @@ Phase 0 of the new direction: Iron Ash V3 in a night courtyard, the Sea of Stars
 | `iso/fx/cine.js` | The finisher's close-up: J3 on a samurai in reach punches the camera in, letterboxed, ink and speed lines, then back (~0.8 s, any key skips); presentation only |
 | `iso/ui/overlay.js` | The ?iso page and its overlay: frame time, the model switch, the pipeline toggles, camera and hat, controls; every choice a key |
 | `iso/sheet.js` | `?iso&sheet`: a frozen contact sheet of the loop's moments in the 8 facings, either look |
+| `iso/weapons/` | The 15 weapons in 3D (`docs/iso-slice.md` "The weapons"): `arsenal.js` (`ARSENAL`: reach, weight, carry, length; `equip`), `models.js` (the procedural models, saya, slings), `stow.js` (`STOW`: where each rides; `mountOf` for the poses), `wield.js` (`equipModel`: placed on the 3D rig each frame, the left hand's weapon, fan, free stick, chain), `poses.js` + `cuts.js` (each weapon's take on every move, `CLIPS['J1@yari']`, on the katana's keys and beats), `picker.js` (the overlay row, `T`), `sheet.js` (`?iso&arsenal`, the check's sweep) |
 | `iso/reel.js` | `?iso&reel=<name>`: the Animation Flow page's demo scenarios on its script and clock (`window.__reel.steps(n)`), for `scripts/iso-reel.mjs`'s side-by-side sheets against the page's own |
 
 - Everything in `src/iso/` keeps to the slice: never import it from today's game, and never import today's game modules (`screen.js` grabs `#game`) into it.
 - A character's look is swapped through `look/look.js` only. The controller hands it the flow's side pose; a new look (a modelled character, a baked sprite sheet) implements the same four calls.
 - The moves are the Animation Flow page's data: change them there first (or mark an addition in `moves-extra.js`), so the slice keeps matching what the owner approved.
+- A weapon's take on a move keeps the katana's keys, times and events (`weapons/poses.js` builds it from the katana's clip); only its grips go in `weapons/cuts.js`. A new move gets a row there per weapon, or keeps the katana's key (`null`) through the weapon's `post`.
 
 ## Design rules (from `docs/design-notes.md`)
 

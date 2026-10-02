@@ -61,7 +61,7 @@ export class Actor {
     sp: { hatF: spr(17, .32), hatU: spr(17, .35), kz: spr(12, .28), kzU: spr(12, .4), sodeF: spr(15, .35), sodeU: spr(15, .35), coat: spr(8, .32), swing: spr(14, .4), head: spr(13, .42), roll: spr(10, .75), lean: spr(11, .45) },
     feet: { N: { lock: 0, w: null, off: 0 }, F: { lock: 0, w: null, off: 0 } }, out: null, tick: 0, flash: 0, tint: null, tintA: 0, trail: [], prev: null, alpha: 1 }, o);
     this.fk = faceK(this.h); this.ht = this.h; this.flow = true; }
-  play(name, o = {}) { const c = CLIPS[name]; if (!c) throw new Error('no clip ' + name);
+  play(name, o = {}) { const c = (this.wid && CLIPS[name + '@' + this.wid]) || CLIPS[name]; if (!c) throw new Error('no clip ' + name);   // wid: his weapon's own take on the move (weapons/)
     if (this.pose && (o.blend ?? c.blend ?? .06) > 0 && SETTINGS.blend) { this.snapP = clone(this.pose); this.bd = (o.blend ?? c.blend ?? .06); this.bt = 0; } else this.bd = 0;
     this.clip = c; this.ct = o.at || 0; this.lastR = null; this.co = o; this.fired = new Set(); this.ended = 0; if (c.enter) c.enter(this, o); }
   ev(name) { this.W.event(this, name); }
@@ -76,6 +76,7 @@ export class Actor {
     else { const e = c.fn(this, this.ct, dt); pose = e.p; r = e.r ?? null; if (e.move) this.move(e.move); }
     if (r != null) { if (this.lastR != null) this.move(r - this.lastR); this.lastR = r; }
     pose = clone(pose); if (!pose.hF) pose.hF = [pose.pel[0] + 3, pose.pel[1] + 2]; if (!pose.hN) pose.hN = [pose.pel[0] + 4, pose.pel[1] + 2];
+    if (c.post) c.post(pose, this);                          // a weapon's own grips on the katana's keys (weapons/poses.js)
     if (this.bd > 0 && this.bt < this.bd) { this.bt += dt; pose = mixP(this.snapP, pose, EZ.s(clamp(this.bt / this.bd, 0, 1)), 'b'); }
     this.secondary(pose, dt);
     this.lockFeet(pose, dt);

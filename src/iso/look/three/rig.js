@@ -47,7 +47,7 @@ function ik(a, t, l1, l2, pole) {
   const pn = pole.clone().addScaledVector(dir, -pole.dot(dir)); if (pn.lengthSq() < 1e-6) pn.set(0, 0, 1); pn.normalize();
   return { mid: a.clone().addScaledVector(dir, l1 * ca).addScaledVector(pn, l1 * sa), end: a.clone().addScaledVector(dir, dist) };
 }
-const worldOf = (o, stop) => { const m = new THREE.Matrix4(), chain = []; for (let n = o; n && n !== stop; n = n.parent) chain.push(n);
+export const worldOf = (o, stop) => { const m = new THREE.Matrix4(), chain = []; for (let n = o; n && n !== stop; n = n.parent) chain.push(n);
   for (let i = chain.length - 1; i >= 0; i--) { chain[i].updateMatrix(); m.multiply(chain[i].matrix); } return m; };
 const qOf = m => new THREE.Quaternion().setFromRotationMatrix(_m.extractRotation(m));
 const pOf = m => new THREE.Vector3().setFromMatrixPosition(m);
@@ -74,7 +74,7 @@ export function applyPose(rig, P) {
   const bl = P.blade, K = rig.katana, out = bl && bl.out;
   let grip = null, bd = null;
   if (out) { const back = (1 - (bl.two ? 1 : 0)) * sm(cl(-Math.cos(bl.ang) / .8, 0, 1));   // drawn from (or going into) the saya: on the left side
-    grip = at(bl.g, -1.0 + 1.9 * back); bd = V(.12 * back, Math.sin(bl.ang), Math.cos(bl.ang)).normalize(); }
+    grip = at(bl.g, bl.x ?? -1.0 + 1.9 * back); bd = V(bl.lat ?? .12 * back, Math.sin(bl.ang), Math.cos(bl.ang)).normalize(); }   // x, lat: a weapon's own (weapons/)
   rig.saya.rotation.set(-.32 + (P.sayaTilt || 0), .1, 0);
   // arms: the near (right) hand to its target, or the grip; the far (left) hand joins the hilt two-handed
   const pel = P.pel, hiltNear = 1 - cl(Math.hypot(P.hN[0] - pel[0] - 4.8, P.hN[1] - pel[1] - 2.6) / 6, 0, 1);
@@ -82,7 +82,7 @@ export function applyPose(rig, P) {
     const shP = pOf(worldOf(B['arm' + sd], R));
     let t = sd === 'R' ? at(P.hN, -SK.handX + (SK.handX + 1.3) * (out ? 0 : hiltNear)) : at(P.hF, SK.handX * .9);
     if (grip && sd === 'R') t = grip.clone();
-    if (grip && sd === 'L' && bl.two) t = grip.clone().addScaledVector(bd, -3.4 * s);
+    if (grip && sd === 'L' && bl.two) t = grip.clone().addScaledVector(bd, -(bl.bh ?? 3.4) * s);   // bh: how far apart the hands are on a haft
     const pole = P.elb === 'down' ? V(sx * .4, -1, .2) : V(sx * .55, -.25, -1);
     const { mid, end } = ik(shP, t, SK.upper, SK.fore, pole);
     const outV = V(sx, 0, 0).applyQuaternion(spineQ), qA = aim(shP, mid, outV, true), qF = aim(mid, end, outV, true);
@@ -94,6 +94,7 @@ export function applyPose(rig, P) {
   else { rig.saya.updateMatrix(); const m = hipsM.clone().multiply(rig.saya.matrix); K.position.setFromMatrixPosition(m);
     K.quaternion.setFromRotationMatrix(_m.extractRotation(m)).multiply(new THREE.Quaternion().setFromEuler(_e.set(0, Math.PI, 0))); rig.blade.scale.z = 1; }
   rig.saya.visible = true;
+  if (rig.wield) rig.wield(P, grip, bd);                     // any other weapon (weapons/wield.js) places itself and hides the katana
   // the hat keeps its own angle (the page's hatTilt, absolute), lags on its spring (hatLag), tipped back by the overlay's tilt
   if (rig.hatPivot) { const lag = P.hatLag || [0, 0];
     rig.hatPivot.position.set(0, SK.headR + 1.1 * s + lag[1] * s * .5, lag[0] * s * .5);
