@@ -213,7 +213,8 @@ clock, the combo prompts, today's damage numbers.
 `Alt`+`1`…`0`, since 1-4 are the quick slots. Left click moves him (below); touch swipes.
 
 **Flags:** `&solo` no companions; `&combo=free` the plain J ladder (the core loop's check runs with both); `&swipe` the
-mouse acts as a finger.
+mouse acts as a finger; `&pair=cross` (or batter, skewer, vault, switch) K plays that paired execution when a partner
+fits it.
 
 ### Companions
 

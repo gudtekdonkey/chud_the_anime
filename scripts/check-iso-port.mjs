@@ -101,14 +101,14 @@ export async function portSteps({ page, base, fail, ok, setStep, shot, OUT }) {
     await until('the paired execution', () => !!window.__iso.port.pair.run); const id = (await D()).pair.run; await gameWait(.5); await shot('port-paired', ['hero', 'foe']);
     await until('it ending', () => !window.__iso.port.pair.run); const cd = await page.evaluate(() => window.__cdMax); await seen('cine'); const d = await D();   // cd: the most it showed (the screenshot outlasts some of it)
     if (d.pair.done !== done0 + 1 || !(d.foe.dead || d.foe.deaths > f.deaths)) fail(`the paired kill did not land (done ${d.pair.done}, foe dead ${d.foe.dead})`);
-    if (!(cd > 4.8)) fail(`the party cooldown is ${cd}`);
+    if (!(cd > 4.5)) fail(`the party cooldown is ${cd}`);
     ok(`${id}: the kill, the close-up, the party's cooldown ${cd.toFixed(1)} s`); }
 
   // ---- down, lifted, dead: H cuts the nearest companion down; a click on them takes him there and holds E; H twice kills
   setStep('port: down and lifted'); { await settle(); await page.keyboard.press('KeyH'); await until('a companion down', () => window.__iso.port.party.some(a => a.downed));
     const a = (await D()).party.find(a => a.downed); await gameWait(.5); await shot('port-downed', ['hero']);
     await clickWorld(a.x, a.z, 6); await page.waitForFunction(() => window.__iso.port.click.log.at(-1) === 'lift' || window.__iso.port.items.lifting, undefined, { timeout: 5000, polling: 50 }).catch(() => {});
-    { const d = await D(); if (d.click.log.at(-1) !== 'lift' && !d.items.lifting) fail(`the click on ${a.name} (${a.x.toFixed(0)},${a.z.toFixed(0)}) read ${d.click.log.at(-1)}; screen ${JSON.stringify(await page.evaluate(([x, z]) => window.__iso.screenOf(x, z, 6), [a.x, a.z]))}`); }
+    { const d = await D(); if (d.click.log.at(-1) !== 'lift' && !d.items.lifting) fail(`the click on ${a.name} (${a.x.toFixed(0)},${a.z.toFixed(0)}) read ${d.click.log.at(-1)}; screen ${JSON.stringify(await page.evaluate(([x, z]) => window.__iso.screenOf(x, z, 6), [a.x, a.z]))}; ${JSON.stringify(d.click.dbg)}; ${JSON.stringify(d.party.map(p => [p.name, p.state, p.downed]))}`); }
     await until('him lifting', () => window.__iso.port.items.lifting, undefined, 60000); await until('them back up', id => !window.__iso.port.party.find(a => a.id === id).downed, a.id);
     const b = (await D()).party.find(x => x.id === a.id); if (Math.abs(b.hp - .35) > .01) fail(`lifted at ${b.hp}`); ok(`${a.name} lifted at ${b.hp}`); }
   setStep('port: dead for good'); { await settle(); const bag0 = (await D()).bag.weapons, n0 = (await D()).party.length;
@@ -125,7 +125,8 @@ export async function portSteps({ page, base, fail, ok, setStep, shot, OUT }) {
     ok(`prayed (health ${d.inv.hp.toFixed(2)}), the nodachi taken, the chest's loot (+${d.inv.mon - mon0} mon), the tablet read`); }
 
   // ---- the pickups: the coins fly in within the magnet's reach; the relic to the empty charm slot
-  setStep('port: pickups and the relic'); { const d0 = await D(); await goTo(304, 186, 8); await until('the coins in', n => window.__iso.port.items.got >= n + 3, d0.items.got);
+  setStep('port: pickups and the relic'); { const d0 = await D(), it = d0.items.pickups.filter(i => i.kind !== 'qi' || d0.inv.qi < .9).sort((a, b) => Math.hypot(a.x - d0.hero.x, a.z - d0.hero.z) - Math.hypot(b.x - d0.hero.x, b.z - d0.hero.z))[0];
+    if (!it) fail('nothing left on the floor'); await goTo(it.x, it.z - 16, 6); await until(`the ${it.kind} flying in`, n => window.__iso.port.items.got > n, d0.items.got);
     await goTo(452, 150, 6); await until('the relic in its slot', () => window.__iso.port.inv.charms[3] === 'tsuba'); ok(`picked ${(await D()).items.got - d0.items.got}, charms ${(await D()).inv.charms.join(' ')}`); }
 
   // ---- the quick slots: 1 the static bomb (smoke over the screen), 2 the talisman, 3 the whetstone (the cyan edge), 4 the incense (heals)

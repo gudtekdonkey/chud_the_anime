@@ -75,9 +75,9 @@ export function initPort({ scene, hero, foes, chars, canvas, root, pipe, lookKin
   port.debug = () => ({ bag: { wear: BAG.wear.length, weapons: BAG.weapons.length, charms: BAG.charms.length }, party: PARTY.allies.map(a => ({ id: a.c.id, name: a.c.name, x: a.x, z: a.z, state: a.state, hp: a.hp, downed: a.downed, dead: a.dead, lv: a.c.lv, exp: a.c.exp, hits: a.hits, weapon: a.c.kit.weapon })),
     pair: { cd: PAIR.cd, run: PAIR.run && PAIR.run.ex.id, done: PAIR.done, solo: PAIR.solo || 0, log: PAIR.log.slice(), candidate: !!pairCandidate() }, busy: CTX.busy,
     inv: { hp: INV.hp, qi: P.qi, storm: P.storm, mon: INV.mon, shards: INV.shards, exp: INV.exp, lv: INV.lv, weapon: P.weapon, quick: INV.quick.map(q => q && { ...q }), charms: INV.charms.slice(), edge: INV.edge, power: INV.power, upgrades: INV.upgrades, banner: S.banner && S.banner.big, rift: !!(INV.sk && INV.sk.rift && INV.sk.rift.known), smoke: S.smoke, useSlot: USE.slot, using: USE.id },
-    items: { locked: IT.locked && IT.locked.id, used: Object.fromEntries(BIG.map(i => [i.id, i.used])), fallen: FALLEN.map(f => ({ x: f.x, z: f.z, left: f.left })), harvesting: !!IT.harvesting, lifting: !!IT.lifting, harvested: IT.harvested, pickups: PICKUPS.length, got: GOT.n },
+    items: { locked: IT.locked && IT.locked.id, used: Object.fromEntries(BIG.map(i => [i.id, i.used])), fallen: FALLEN.map(f => ({ x: f.x, z: f.z, left: f.left })), harvesting: !!IT.harvesting, lifting: !!IT.lifting, harvested: IT.harvested, pickups: PICKUPS.filter(i => !i.relic && !i.pull).map(i => ({ kind: i.kind, x: i.x, z: i.z })), got: GOT.n },
     combo: { on: CP.on, chain: CP.chain, prompt: CP.prompt && { ans: CP.prompt.ans, kind: CP.prompt.kind, beat: CP.prompt.beat }, grades: CP.grades.slice(-12), answers: CP.answers.slice(), log: CP.log.slice(-12), recover: CP.recover, queued: CP.queued && CP.queued.clip },
-    click: { goal: CLICK.goal && CLICK.goal.kind, log: CLICK.log.slice(-8) }, touch: { log: TOUCH.log.slice(-12), dir: TOUCH.dir }, lone: foes.map(f => lone(f)), stats: STATS.log.length });
+    click: { goal: CLICK.goal && CLICK.goal.kind, log: CLICK.log.slice(-8), dbg: CLICK.dbg }, touch: { log: TOUCH.log.slice(-12), dir: TOUCH.dir }, lone: foes.map(f => lone(f)), stats: STATS.log.length });
   port.clickAt = (cx, cy) => clickAt(floorAt(canvas, cx, cy));
   return port;
 }

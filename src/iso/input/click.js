@@ -26,7 +26,8 @@ export function floorAt(canvas, cx, cy) { const r = canvas.getBoundingClientRect
 function pick(p) {
   // every body or marker whose box holds the point; the one whose middle is nearest the click wins
   let best = null, d0 = 1e9;
-  const over = (x, z, w, h, g) => { const [fx, fy] = toScreen(x, 0, z), [, hy] = toScreen(x, h, z); if (Math.abs(p.sx - fx) < w && p.sy < fy + 6 && p.sy > hy - 4) {
+  CLICK.dbg = { sx: Math.round(p.sx), sy: Math.round(p.sy), x: Math.round(p.x), z: Math.round(p.z), boxes: [] };
+  const over = (x, z, w, h, g) => { const [fx, fy] = toScreen(x, 0, z), [, hy] = toScreen(x, h, z); CLICK.dbg.boxes.push([g.kind, Math.round(fx), Math.round(hy), Math.round(fy)]); if (Math.abs(p.sx - fx) < w && p.sy < fy + 6 && p.sy > hy - 4) {
     const d = Math.hypot(p.sx - fx, p.sy - (fy + hy) / 2); if (d < d0) { d0 = d; best = g; } } };
   for (const f of living()) over(f.x, f.z, 14, 26, { kind: 'foe', foe: f });
   for (const it of BIG) if (usable(it)) over(it.x, it.z, it.w + 4, it.h, { kind: 'item', it, x: it.x, z: it.z });
