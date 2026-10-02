@@ -13,12 +13,13 @@ import { BODY_SHEAR } from '../../gfx/view.js';
 const node = (parent, p = [0, 0, 0], r = [0, 0, 0]) => { const o = new THREE.Object3D(); o.position.set(...p); o.rotation.set(...r); parent.add(o); return o; };
 export const HAT_R = 9.5;                 // the brim as drawn (KASA R 19 rig px): wider than he is tall
 
-export function makeRonin({ foe = false } = {}) {
+export function makeRonin({ foe = false, pal = null } = {}) {   // pal: an enemy type's colours over the samurai's (enemies/model.js)
   const obj = foe ? 2 : 1, mat = shadeMat({ obj, stencil: true }), cloth = shadeMat({ obj, stencil: true, side: THREE.DoubleSide });
   const meshes = [], put = (bone, pc, m = mat) => { const me = pc.mesh(m); bone.add(me); meshes.push(me); return me; };
   const C = foe
     ? { p1: R.l[0], p2: R.l[1], p3: R.l[2], hi: R.l[3], lace: R.b[3], cloth: R.b[4], clothD: R.b[3], cloth2: R.b[2], skin: '#5a463a', hair: R.k[1] }
     : { p1: R.i[4], p2: R.i[5], p3: R.i[6], hi: R.i[8], lace: R.v[5], cloth: R.c[4], clothD: R.c[3], cloth2: R.c[2] };
+  if (pal) Object.assign(C, pal);
 
   const root = new THREE.Object3D();                        // on the floor at his feet; the controller's frame moves it
   const shear = node(root); shear.matrixAutoUpdate = false;  // the bodies' camera (view.js BODY_SHEAR)

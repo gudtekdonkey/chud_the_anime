@@ -23,6 +23,8 @@ import { REELS, M as REEL_M, reelPos } from './reel.js';
 import { piece } from './gfx/build.js';
 import { shadeMat } from './gfx/shade.js';
 import { RAMP } from './gfx/palette.js';
+import { makeSquad } from './enemies/squad.js';
+import { buildPicker } from './enemies/ui.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
@@ -54,6 +56,10 @@ function runGame(reel) {
     script.sort((a, b) => a[0] - b[0]); PIPE.cine = Q.has('cine') ? 1 : 0; PIPE.clash = Q.has('clash') ? 1 : 0; }
   hitRules({ hero, foe });
   initInput(canvas);
+  // the enemy types (enemies/, docs/enemies.md): &group=<name> or the overlay's picker; the lone samurai is the default
+  const squad = makeSquad({ scene, hero, foe, chars, look: () => lookKind, hpK: +(Q.get('ehp') || 1) });
+  if (!reel) { buildPicker(root, squad, Q.get('group') || 'samurai'); squad.spawn(Q.get('group') || 'samurai'); }
+  const target = () => squad.on ? null : foe;
   // the model switch: every character's look is swapped; nothing else is told
   const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } root.querySelector('#o-look').value = kind; };
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
@@ -72,10 +78,12 @@ function runGame(reel) {
   const trailOf = c => { const b = c.bladeWorld(); c.trail.push(b ? { t: W.t, mid: b.mid, tip: b.tip } : { t: W.t, gap: 1 }); while (c.trail.length && W.t - c.trail[0].t > .2) c.trail.shift(); };
   const runScript = () => { while (script.length && script[0][0] <= W.t) script.shift()[1](); };
   // the finisher's close-up (fx/cine.js): J3 starting on a samurai within reach
-  function presentation(dt) { if (hero.state === 'J3' && hero.prevState !== 'J3' && !foe.dead && Math.hypot(foe.x - hero.x, foe.z - hero.z) < 40) startCine(hero, foe);
+  function presentation(dt) { const f = squad.on ? squad.near(hero, 40) : foe;
+    if (hero.state === 'J3' && hero.prevState !== 'J3' && f && !f.dead && Math.hypot(f.x - hero.x, f.z - hero.z) < 40) startCine(hero, f);
     hero.prevState = hero.state; cineStep(W.stop > 0 ? 0 : dt); }
   function tick() {
-    if (W.stop <= 0 && !reel) { hero.control(readInput(), foe, W.t); foe.control(hero, W.t, 1 / 60); }   // a hit-stop holds the presses (they outlive it)
+    if (W.stop <= 0 && !reel) { const inp = readInput(); hero.control(inp, target() || squad.aim(hero, inp.dir), W.t);   // a hit-stop holds the presses (they outlive it)
+      if (!foe.parked) foe.control(hero, W.t, 1 / 60); squad.control(1 / 60); }
     presentation(1 / 60);
     for (let i = 0; i < 2; i++) if (W.step(reel ? runScript : null)) for (const c of chars) if (c.a.out !== c.sampled) { c.sampled = c.a.out; trailOf(c); }
   }
@@ -92,7 +100,7 @@ function runGame(reel) {
     for (const c of chars) { if (c.shown !== c.a.out || c.lookKind === '3d') { const f = c.frame(c === hero); if (f) c.look.show(f); c.shown = c.a.out; } }
     const g = pipe.fx; g.clearRect(0, 0, pipe.fxCanvas.width, pipe.fxCanvas.height);
     for (const c of chars) drawTrail(g, c.trail.map(s => s.gap ? s : { t: s.t, a: toPx(s.mid), b: toPx(s.tip) }), c.a.out ? c.a.out.t : W.t, STYLE.s.trail);
-    drawFx(g, W);
+    drawFx(g, W); squad.draw(g);
     if (PIPE.clash) { drawFocus(g, W);   // focus lines on a hit; speed lines behind a roll, a lunge or a skid
       for (const c of chars) if (['roll', 'lunge', 'skid', 'knock'].includes(c.state)) { const [x, y] = toPx([c.x, 10, c.z]), v = [Math.sin(c.a.h), Math.cos(c.a.h) * OBL.a]; speedLines(g, x, y, v[0], v[1], W.t); } }
     for (const c of chars) c.look.stamp(g);
@@ -125,6 +133,7 @@ function runGame(reel) {
       get foe() { return { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) }; },
       // where each one's feet are on the canvas, 0..1 (for the check's close-up shots)
       get px() { return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)) }; },
+      get enemies() { return squad.debug(); },
       get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }
