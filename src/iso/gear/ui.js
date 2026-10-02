@@ -34,7 +34,7 @@ export function wireGear(root, outfit, onDress) {
   const opt = (v, t) => `<option value="${v}">${t}</option>`;
   sec.innerHTML = `<h2>Outfit</h2>
     <label>Preset <select id="g-preset">${opt('built', 'Iron Ash V3, as built')}${PRESETS.map(p => opt(p.id, p.name)).join('')}${opt('custom', 'Custom')}</select></label>
-    <div class="gear-row"><button id="g-rand" type="button">Randomise</button><select id="g-fam" aria-label="Randomise from">${opt('', 'any family')}${FAMILIES.map(f => opt(f, f)).join('')}</select><kbd>`</kbd></div>
+    <div class="gear-row"><button id="g-rand" type="button">Randomise</button><select id="g-fam" aria-label="Randomise from">${opt('', 'any family')}${FAMILIES.map(f => opt(f, f)).join('')}</select><kbd>\`</kbd></div>
     <div class="gear-stats" id="g-stats" aria-live="polite"></div>
     <details><summary>Every slot</summary><div class="gear-slots">${SLOTS.map(s => LAYERS.map(l => `<span>${SLOT_NAME[s]} · ${LAYER_NAME[l].toLowerCase()}</span>
       <select id="g-${s}-${l}" aria-label="${SLOT_NAME[s]}, ${LAYER_NAME[l]}">${opt('', 'nothing')}${BY_CELL[s][l].map(p => opt(p.id, `${p.name.replace(/, (left|right)$/, '')} · ${p.family[0].toUpperCase()}`)).join('')}</select>`).join('')).join('')}</div></details>`;
