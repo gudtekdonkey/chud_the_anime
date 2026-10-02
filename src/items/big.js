@@ -29,7 +29,7 @@ export const BIG = [
 // ---- the acts, one step each; return true when done ----
 const ACT = {
   pray(it, T, dt) {   // kneel; the flame's light pours into him, health and Qi fill to full
-    if (it.offering) {   // a shrine already prayed at takes an offering of glitch shards instead: an upgrade, one step of power
+    if (it.offering) {   // a shrine already prayed at takes an offering of lantern ash instead: an upgrade, one step of power
       if (once('lit', true)) it.relit = true;
       if (T > .25 && T < 1.1 && (it.acc = (it.acc || 0) + dt) > .05) { it.acc -= .05; arc(it.x + rr(-2, 2), it.y - 8, { h: rr(8, 16), col: CY2, col2: WH }); }
       if (once('amen', T >= 1.15)) { const [x, y] = chest(); if (offer()) { ring(P.x + P.face, P.y - 1, 4, 2, .3, 4, CY); burst(x, y, 10, 100); } }

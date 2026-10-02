@@ -78,7 +78,7 @@ The measure of power in this world is land and what it grows, the way feudal Jap
 | **Silver** (by weight, *monme*) | merchants' money | trade in bulk, buying goods between regions |
 | **Gold ryō** | an oval gold coin, rare; 1 ryō = 1,000 mon to keep the sums simple | the big things: land, a master's blade, blood money, paying off a large bounty |
 | **Koku** | a measure of rice: what one person eats in a year | the worth of land and the rank of a lord (a lord "of 10,000 koku"). Plots yield it, taxes are paid in it, armies eat it |
-| **Glitch shards** | not money: the power currency already in the game (name and lore pending a home in the premise: docs/design-notes.md) | his skills and Qi, never traded with ordinary people |
+| **Lantern ash** (was glitch shards) | not money: the power currency already in the game, what is left in a lantern lit for the war dead (owner 2026-10-02) | his skills and Qi, never traded with ordinary people |
 
 ### Where it comes from, and where it goes
 - **In:** loot from the dead, bounties he collects, harvests and crafts from his plots, trade, contracts (escort, hunt, kill), tolls and taxes once he holds land, gambling.

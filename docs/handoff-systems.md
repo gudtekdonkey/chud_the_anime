@@ -11,14 +11,14 @@ Copy the geometry from `heroHud()`:
 | Piece | Where | What |
 |---|---|---|
 | Health + Qi | `panel(5, 5, 80, 18)`; health `meter(10, 9, 70, 4)` white; Qi `meter(10, 16, 70, 3)` cyan, **notched in thirds** | Qi flashes white for about 0.06 s on a gain. The fill edge is a 1px white line |
-| Currency | `panel(W-69, 5, 64, 13)`; coin sprite + 4-digit mon (zero-padded), shard sprite + 2-digit shards | The number flashes pale cyan (`#b8fff6`) for 0.08 s on a gain |
+| Currency | `panel(W-69, 5, 64, 13)`; coin sprite + 4-digit mon (zero-padded), lantern ash sprite (`WS.shard`) + 2-digit lantern ash | The number flashes pale cyan (`#b8fff6`) for 0.08 s on a gain |
 | Bottom bar | `panel(133, 235, 214, 33)` centred at the bottom | weapon slot 22px at x=138; then quick slots 1–4 (20px, x = 166 + i·22, key digit top-left, count bottom-right); then 4 charm slots (20px, x = 260 + i·22, small diamond ticks on each side) |
 
 - Slot frames: weapon `#7d868e`, quick `#565e66`, charm `#3b424c`. The fill is `rgba(12,13,17,.88)`.
 - Slot options: `flash` (white on change), `cd` (a cooldown shade that drains upward), `dim` (35% icon), `count`.
 - The pixel font is 3×5 (`FONT` in the prototype). It replaces the old `ui/qi-meter.js` glyphs. **Delete `ui/qi-meter.js`** and move its STORM behaviour onto the new Qi meter. When the meter is full and Storm Chain is running, the meter glows and crackles and shows `STORM`, as it does today.
 - **Banners:** `banner(cx, y, small, big, c, dur, sc=2)` shows a small cyan label over a big white name, with rules drawing out to each side. It fades in over 0.1 s and out over the last 0.25 s. Used for `NEW WEAPON / GRAVE NODACHI` and `SKILL LEARNED / CROSS RIFT`.
-- **Pops:** `+1` rising text for coins and shards; white plus marks for health.
+- **Pops:** `+1` rising text for coins and lantern ash; white plus marks for health.
 - Keep the text line under the canvas (`#hud`) for debugging.
 
 ## 2. The inventory model (one object in `state.js`)
@@ -29,7 +29,7 @@ Suggested shape. The HUD reads only this, and every system writes to it:
 export const INV = { hp: 1, mon: 0, shards: 0, exp: 0, lv: 1,
   weapon: 'katana',                          // 'katana' | 'nodachi' | …
   quick: [{ id: 'bomb', n: 3 }, { id: 'talisman', n: 2 }, { id: 'whetstone', n: 2 }, { id: 'incense', n: 3 }],   // null = empty
-  charms: ['bead', 'mirror', 'knot', null],  // 4 slots; locked slots open with glitch shards
+  charms: ['bead', 'mirror', 'knot', null],  // 4 slots; locked slots open with lantern ash
   fx: { qi: 0, mon: 0, weapon: 0, quick: [0, 0, 0, 0] } }   // flash timers the HUD counts down
 ```
 
@@ -50,7 +50,7 @@ Qi already lives on `P.qi` (0..1). Keep it there.
 - Qi Mote: +10% Qi, with a cyan ring and sparks.
 - Rice Ball: +20% health, with white plus marks.
 - Old Mon: +1 mon, with a `+1` and a glint.
-- Glitch Shard: +1 shard (rare currency); he glitches for 0.12 s.
+- Lantern Ash (was Glitch Shard; id `shard`): +1 lantern ash (rare currency); he glitches for 0.12 s.
 
 **Consumables** are picked up like small items, then used from quick slots with keys 1–4. Each use takes under a second, so it never breaks a fight.
 - Static Bomb (×3): a cloud of black static at his feet; enemies lose him and he glitches a few steps back.

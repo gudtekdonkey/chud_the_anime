@@ -65,7 +65,7 @@ From one year (`node scripts/travel-year.mjs 12345 1`): 268 encounters in 4,956 
 - **In a void nobody travels:** the chance of meeting people is ×0.15, and it is only ever a lost wounded man, the weather or a runaway horse. Outlaw bands never step into a void.
 - **The creatures** (`beasts.js`, `BEASTS`): each void zone crossed rolls 0.7% by day and 3.5% at night, +25% for every zone deeper into the void (up to 4 zones), at most 9%. A roll is either a sign (`beastSign`: tracks, a sound, eyes, a felled tree; *Turn back* moves him out of the void) or the creature itself:
   - **below level 11** (`BEASTS.FIGHT`): 35% of night rolls and 40% of day rolls are the creature. The first 2 meetings are `beastScare` (it shows itself and he runs: 1–2 hours, a little hurt, moved out of the void). Every later one is `beastKO` (it knocks him out and he wakes in the nearest town or village 6–12 hours later, badly hurt). Both are cut scenes: the scene carries `cut` and its one choice only closes it.
-  - **from level 11**: 80% of night rolls and 50% of day rolls are the creature (`beast`: *Fight it* or *Run*). Without a live fight result, a win is rolled at 20% + 1.2% a level past 11, +35% from level 30 (`BEASTS.SPIKE`, his first power spike). **A lost fight kills him** (owner, 2026-09-26: "it can kill you"): the resolution's `dead` names him, and his heir goes on (the people lane's death). A failed *Run* is still a knockout. A kill gives a part of it and 20–40 shards, and a `slewCreature` deed.
+  - **from level 11**: 80% of night rolls and 50% of day rolls are the creature (`beast`: *Fight it* or *Run*). Without a live fight result, a win is rolled at 20% + 1.2% a level past 11, +35% from level 30 (`BEASTS.SPIKE`, his first power spike). **A lost fight kills him** (owner, 2026-09-26: "it can kill you"): the resolution's `dead` names him, and his heir goes on (the people lane's death). A failed *Run* is still a knockout. A kill gives a part of it and 20–40 lantern ash (`shards`), and a `slewCreature` deed.
   - **The first 3 knockouts end with a warning** from whoever carried him in (owner, 2026-09-26): he should really train before heading out of town like that; things aren't like they used to be.
 - **The creatures are the war dead** (owner, 2026-09-26: "abominations, spirits, ghouls of the wars"). Each race is one kind of war dead and keeps to its own ground: the Hollow King (mountains), the Thousand-Step (hills, mountains), the Veiled Weaver (forest, hills), the Lantern Beast (bamboo, plains, paddy, forest), the Drowned Serpent (marsh, coast, paddy). Design: `prototypes/45-void-kings.html`.
 - **The API:** `enterZone(L, x, y, { level })`. The live game passes his level (`INV.lv`), which is kept on his record as `level`. A resolution's `move: [x, y]` is where he ran to or woke up: the game puts him there (the ledger sets `actor.at`).
@@ -95,7 +95,7 @@ Every event carries `zone` and `region` where they apply, and scene events carry
 
 **Story (`story.*`, `event.*`)**: `openScene` is theirs to use. The notice board can listen to `travel.unsafe`, `travel.bandOut`.
 
-**Items / the game**: `travel.loot { item, n }` items: `rice`, `horse`, a slain duelist's weapon id, and a void creature's part and `shards` (the game's power currency; their name and lore are pending, docs/design-notes.md).
+**Items / the game**: `travel.loot { item, n }` items: `rice`, `horse`, a slain duelist's weapon id, and a void creature's part and `shards` (lantern ash, the game's power currency; the id stays `shards`).
 
 ## Questions for the owner
 
