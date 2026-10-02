@@ -13,6 +13,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `npm run check:hd` | The same check at 2× (`?hd`), screenshots in `test-output/hd/` |
 | `node scripts/iso-reel.mjs chain 3` | After a build: one of the Animation Flow page's scenarios as the slice plays it, laid out as the page's contact sheets (`AF_DIR` at the page's source draws the page's sheet above it), into `test-output/iso/reel-<name>[-vs].png` |
 | `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle. Screenshots in `test-output/iso/` |
+| `npm run check:hair` | Builds, then `scripts/check-hair.mjs` renders every hairstyle under every hat (`?iso&hairgrid`) in all 8 facings, audits all 240 pairs through the core moves on both bodies (no hair outside a hat, no tail through the body), and plays the hair and hat pickers in the courtyard. Screenshots in `test-output/hair/` |
 
 - Dependencies are pinned to exact versions. Keep them exact.
 - `npm run check` uses the Chromium already at `PLAYWRIGHT_BROWSERS_PATH`. Never run `playwright install`; the `playwright` package must match the installed browser build.
@@ -167,10 +168,16 @@ Phase 0 of the new direction: Iron Ash V3 in a night courtyard, the Sea of Stars
 | `iso/ui/overlay.js` | The ?iso page and its overlay: frame time, the model switch, the pipeline toggles, camera and hat, controls; every choice a key |
 | `iso/sheet.js` | `?iso&sheet`: a frozen contact sheet of the loop's moments in the 8 facings, either look |
 | `iso/reel.js` | `?iso&reel=<name>`: the Animation Flow page's demo scenarios on its script and clock (`window.__reel.steps(n)`), for `scripts/iso-reel.mjs`'s side-by-side sheets against the page's own |
+| `iso/hair/contract.js` | THE HEAD-SLOT CONTRACT (`docs/hair.md`, shared with the armour work): centre space (`HC`, `SCALP`), regions, crown-item modes, `resolve(hair, hat)`, the shells (`cone`, `dome`, `wall`: `inside`, `clampPt`), the body hair hangs clear of (`BODY`, `pushOut`), `validate` |
+| `iso/hair/styles.js`, `iso/hair/parts.js` | `HAIR`: the 24 hairstyles as data (parts in regions, chains, crown item, colours `COLS`, `DEFAULT_HAIR`); the low-poly pieces they are built from |
+| `iso/hair/hats.js` | `HATS`: the ten head-slot hats, each declaring the contract (mount, brim, shells, hidden regions, crown modes, its own chains) and its geometry |
+| `iso/hair/head.js` | `headSlot(rig)`: puts a hair and a hat on a ronin.js rig (the 3D look calls `update(pose)` each frame: the brim pivot, the chains on the flow's springs, the clamp into the shells), `HEADS` (the live picks), `audit()` |
+| `iso/hair/panel.js`, `grid.js`, `audit.js` | The overlay's Hair and hat section (`H` `T` `Y` `G`); `?iso&hairgrid` (every pair, the 8 facings, `window.__iso.hairgrid`, `hairAudit`); the check's audit |
 
 - Everything in `src/iso/` keeps to the slice: never import it from today's game, and never import today's game modules (`screen.js` grabs `#game`) into it.
 - A character's look is swapped through `look/look.js` only. The controller hands it the flow's side pose; a new look (a modelled character, a baked sprite sheet) implements the same four calls.
 - The moves are the Animation Flow page's data: change them there first (or mark an addition in `moves-extra.js`), so the slice keeps matching what the owner approved.
+- Hair and hats go through the head-slot contract (`docs/hair.md`): a new hairstyle is a `HAIR` row, a new hat (or helmet) a `HATS` row declaring its mount, shells, hidden regions and crown modes; never a special case in `head.js`. `npm run check:hair` must stay at zero hair outside a hat and zero chains through the body.
 
 ## Design rules (from `docs/design-notes.md`)
 

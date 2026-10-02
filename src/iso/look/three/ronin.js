@@ -59,10 +59,10 @@ export function makeRonin({ foe = false } = {}) {
   // ---- neck, head, the menpō (F1) and the eyes ----
   newPart(); put(B.neck, piece().cyl(.75, .85, 1.1, 6, C.cloth2, { p: [0, .3, 0] }));
   const hc = SK.headR;
-  newPart(); put(B.head, piece().ball(1.95, foe ? C.hair : R.k[3], { p: [0, hc, 0], s: [1, 1.05, 1] }, 1));
+  newPart(); rig.scalp = put(B.head, piece().ball(1.95, foe ? C.hair : R.k[3], { p: [0, hc, 0], s: [1, 1.05, 1] }, 1));   // hair/head.js recolours it
   if (foe) {
     newPart(); put(B.head, piece().box(2.1, 1.8, .8, C.skin, { p: [0, hc - .3, 1.05] }).box(.45, .45, .35, '#6a5446', { p: [0, hc - .25, 1.5] }));
-    newPart(); put(B.head, piece().cyl(.38, .45, 1.5, 6, C.hair, { p: [0, hc + 1.75, -.35], r: [-1.2, 0, 0] }).box(1.1, .45, 2.4, C.hair, { p: [0, hc + 1.3, -.2] }));
+    newPart(); rig.knot = put(B.head, piece().cyl(.38, .45, 1.5, 6, C.hair, { p: [0, hc + 1.75, -.35], r: [-1.2, 0, 0] }).box(1.1, .45, 2.4, C.hair, { p: [0, hc + 1.3, -.2] }));   // replaced by hair/ when it dresses the head
     newPart(); put(B.head, piece().cyl(1.35, 1.95, .9, 8, C.p1, { p: [0, hc - 1.85, .2] }));
   } else {
     newPart(); put(B.head, piece().box(2.05, 1.5, .8, R.i[6], { p: [0, hc - .55, 1.12] }).box(.4, .62, .62, R.i[8], { p: [0, hc - .25, 1.6] }).box(.9, .14, .1, R.k[0], { p: [0, hc - .92, 1.53] }));

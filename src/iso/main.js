@@ -23,13 +23,16 @@ import { REELS, M as REEL_M, reelPos } from './reel.js';
 import { piece } from './gfx/build.js';
 import { shadeMat } from './gfx/shade.js';
 import { RAMP } from './gfx/palette.js';
+import { runHairGrid } from './hair/grid.js';
+import { mountHairPanel } from './hair/panel.js';
+import { HEADS } from './hair/head.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
 const pipe = makePipeline(canvas);
 SETTINGS.fpsFor = fpsFor; setStyle(Q.has('style') ? +Q.get('style') : 3);   // the owner's pick: Painterly (gfx/style.js)
 const scene = new THREE.Scene(), cam = new THREE.Camera(); cam.matrixAutoUpdate = false;
-if (Q.has('sheet')) runSheet(); else runGame(Q.has('reel') ? REELS[Q.get('reel')] || REELS.chain : null);
+if (Q.has('sheet')) runSheet(); else if (Q.has('hairgrid')) runHairGrid({ scene, pipe, cam, root, Q, wireOverlay }); else runGame(Q.has('reel') ? REELS[Q.get('reel')] || REELS.chain : null);
 
 // ?iso&sheet: the contact sheet (sheet.js), frozen
 function runSheet() {
@@ -57,6 +60,7 @@ function runGame(reel) {
   // the model switch: every character's look is swapped; nothing else is told
   const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } root.querySelector('#o-look').value = kind; };
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
+  mountHairPanel(root);   // hair and hat pickers (hair/panel.js)
 
   // the canvas fills the stage (16:9, under the window's height). With the low-res target on it shows the 960×540
   // pixels at a whole multiple when one fits (nearest-neighbour); off, the target is drawn at the canvas's own size
@@ -125,6 +129,6 @@ function runGame(reel) {
       get foe() { return { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) }; },
       // where each one's feet are on the canvas, 0..1 (for the check's close-up shots)
       get px() { return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)) }; },
-      get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
+      get look() { return lookKind; }, get heads() { return { hero: { ...HEADS.hero, drawn: hero.look.rig?.headSlot?.key }, foe: { ...HEADS.foe, drawn: foe.look.rig?.headSlot?.key } }; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }

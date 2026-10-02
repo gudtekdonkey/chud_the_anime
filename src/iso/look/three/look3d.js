@@ -8,12 +8,14 @@ import { applyPose } from './rig.js';
 import { SH } from '../../gfx/shade.js';
 import { toScreen } from '../../gfx/view.js';
 import { STYLE } from '../../gfx/style.js';
+import { headSlot } from '../../hair/head.js';
 
 export const LOOK3D = { hatTilt: 14, brim: 1, glint: 1 };   // the overlay's hat tunables (faces page: 14° tilt, the wide brim as drawn)
 const _v = new THREE.Vector3(), _q = new THREE.Quaternion();
 
-export function threeLook({ foe = false } = {}) {
+export function threeLook({ foe = false, head = null } = {}) {
   const rig = makeRonin({ foe }); let scene = null, last = null, prevU = null, squash = 0, lastPose = null;
+  rig.headSlot = headSlot(rig, { foe, head });   // hair and hat (hair/, docs/hair.md); `head` pins a pair, else the live picks
   return {
     kind: '3d',
     mount(s) { scene = s; s.add(rig.root); },
@@ -25,6 +27,7 @@ export function threeLook({ foe = false } = {}) {
       const st = STYLE.s, P = st.exag ? exaggerate(f.pose, st.exag) : f.pose; applyPose(rig, P);
       if (f.pose !== lastPose) { lastPose = f.pose; const u = f.pose.pel[1], dv = prevU == null ? 0 : u - prevU; prevU = u; squash += ((st.squash ? Math.max(-.12, Math.min(.16, -dv * .05)) : 0) - squash) * .5; }
       rig.body.scale.set(1 + squash * .5, 1 - squash, 1 + squash * .5);
+      rig.headSlot.update(P);
       for (const m of rig.mats) { const u = m.uniforms; u.uFlash.value = f.flash ? 1 : 0; u.uFade.value = 1 - (f.alpha ?? 1);
         u.uTint.value = f.tint ? f.tintA : 0; if (f.tint) u.uTintCol.value.set(...f.tint); }
       rig.shadow.visible = (f.alpha ?? 1) > .3;
@@ -42,7 +45,7 @@ export function threeLook({ foe = false } = {}) {
       if (rig.hat) { const pts = []; for (let i = 0; i < 32; i++) { const a = i / 32 * Math.PI * 2; _v.set(Math.sin(a) * rig.hatR, -.05, Math.cos(a) * rig.hatR).applyMatrix4(rig.hat.matrixWorld); pts.push(toScreen(_v.x, _v.y, _v.z)); } rimY = pts; }
       for (const e of rig.eyes) { e.getWorldPosition(_v); const [x, y] = toScreen(_v.x, _v.y, _v.z); let gy = y;
         if (rimY) { let best = -1e9; for (const p of rimY) if (Math.abs(p[0] - x) < 2) best = Math.max(best, p[1]); if (best > gy - 1) gy = Math.max(gy, best + 1); }
-        g.fillStyle = '#6ff3e4'; g.fillRect(x | 0, gy | 0, 1, 1); }
+        g.fillStyle = rig.glint || '#6ff3e4'; g.fillRect(x | 0, gy | 0, 1, 1); }
     },
     dispose() { if (scene) scene.remove(rig.root); },
     rig,
