@@ -136,6 +136,54 @@ try {
   for (const [key, name] of [['Digit1', 'lowres'], ['Digit2', 'toon'], ['Digit3', 'dither'], ['Digit4', 'palette'], ['Digit5', 'outline'], ['Digit7', 'rim'], ['Digit8', 'glint']]) {
     await page.keyboard.press(key); await gameWait(.1); await shot(`pipe-${name}-flipped`); await page.keyboard.press(key); }
   ok();
+
+  // ---- personalities and the twenty idles (persona/, anim/idles.js): measured on actors of their own (never steering the game)
+  const PS = fn => page.evaluate(fn);
+  step = 'each idle plays'; { const r = await PS(() => window.__iso.persona.idleReport()), ids = Object.keys(r);
+    if (ids.length !== 20) fail(`${ids.length} idles`);
+    for (const id of ids) { const v = r[id], p = await page.evaluate(i => window.__iso.persona.playOne(i), id);
+      if (!p.seen || !p.finite) fail(`${id} never played on an actor (${JSON.stringify(p)})`);
+      if (v.dev < .3) fail(`${id} barely moves him (${v.dev.toFixed(2)})`); if (v.jump > 2) fail(`${id} jumps ${v.jump.toFixed(2)} rig px in one step`);
+      if (v.end > 1e-6) fail(`${id} ends ${v.end} away from the breath`); }
+    ok(ids.map(id => `${id} ${r[id].dev.toFixed(1)}`).join(', ')); }
+  step = 'no traits = the plain ronin'; { const s = await PS(() => window.__iso.persona.plainSame()), c = await PS(() => window.__iso.persona.idleChoices([], 120));
+    for (const [k, v] of Object.entries(s)) if (v !== 0) fail(`${k} differs from the page's by ${v}`);
+    if (c.n) fail(`the plain ronin drifted into ${c.n} idles`);
+    const h = await PS(() => window.__iso.persona); if (h.hero.length || h.heroIdles.length) fail(`he starts with ${JSON.stringify(h.hero)}, idles ${h.heroIdles}`);
+    ok(`idle, guard, run, runArmed identical (${Object.values(s).join(', ')}); no idles`); }
+  step = 'two personalities differ'; { const c = await PS(() => { const P = window.__iso.persona; return P.compare([['elder', 1], ['serene', .6], ['hatTipper', 1]], [['eager', 1], ['cocky', .6], ['footTapper', 1]], 240); });
+    const { a, b } = c, d = (x, y) => Math.abs(x - y) / Math.max(x, y);
+    if (d(a.run.cadence, b.run.cadence) < .15) fail(`cadence ${a.run.cadence} vs ${b.run.cadence}`);
+    if (d(a.run.speed, b.run.speed) < .15) fail(`run speed ${a.run.speed} vs ${b.run.speed}`);
+    if (d(a.breath, b.breath) < .15) fail(`breath ${a.breath} vs ${b.breath}`);
+    if (b.choices.n < a.choices.n * 1.5) fail(`idles in 240 s: ${a.choices.n} vs ${b.choices.n}`);
+    const top = o => Object.entries(o.choices.count).sort((x, y) => y[1] - x[1])[0][0]; if (top(a) === top(b)) fail(`both favour ${top(a)}`);
+    if (d(a.behave.patience, b.behave.patience) < .3) fail(`patience ${a.behave.patience} vs ${b.behave.patience}`);
+    ok(`old master: run ${a.run.speed.toFixed(0)} px/s at ${a.run.cadence.toFixed(2)}/s, breath ${a.breath.toFixed(1)} s, ${a.choices.n} idles (mostly ${top(a)}), waits ${a.behave.patience.toFixed(1)} s; ` +
+      `hothead: ${b.run.speed.toFixed(0)} at ${b.run.cadence.toFixed(2)}/s, ${b.breath.toFixed(1)} s, ${b.choices.n} idles (mostly ${top(b)}), waits ${b.behave.patience.toFixed(1)} s`); }
+  step = 'the ronin takes a personality (P)'; await settle(); { await page.keyboard.press('KeyP');
+    const h = await PS(() => window.__iso.persona.hero); if (!h.length) fail('P gave him no traits');
+    await until('an idle of his', () => window.__iso.persona.heroIdles.length > 0, undefined, 120000); await shot('persona-hero');
+    const a0 = (await G()).hero; await page.keyboard.down('ArrowLeft'); await until('the run', () => window.__iso.hero.state === 'run' && window.__iso.hero.v > 80);
+    await gameWait(.4); const v = (await G()).hero.v; await page.keyboard.up('ArrowLeft');
+    if (Math.abs(v - 88) > 2) fail(`the old master runs at ${v.toFixed(1)} (wanted 88)`);
+    ok(`${h.map(x => x.join(' ')).join(', ')}: idles ${(await PS(() => window.__iso.persona.heroIdles)).join(', ')}; runs ${v.toFixed(0)} px/s (plain 110); from ${a0.state}`); }
+  step = 'the samurai takes a personality (O)'; { const b0 = await PS(() => window.__iso.persona.behave); await page.keyboard.press('KeyO');
+    const b1 = await PS(() => window.__iso.persona.behave); if (b0.patience !== 1.6 || b1.patience <= 1.6) fail(`patience ${b0.patience} → ${b1.patience}`);
+    ok(`patience ${b0.patience} → ${b1.patience.toFixed(2)} s, reach ${b0.reach} → ${b1.reach.toFixed(0)}, recoil ×${b1.recoil.toFixed(2)}`); }
+  step = 'the townsfolk'; { await PS(() => { window.__walked = new Set(); const f = () => { for (const n of window.__iso.folk) if (n.state === 'walk') window.__walked.add(n.culture + n.kind); requestAnimationFrame(f); }; f(); });
+    await gameWait(20); const f = await PS(() => window.__iso.folk), walked = await PS(() => window.__walked.size);
+    if (f.length < 6) fail(`${f.length} townsfolk`); const lists = new Set(f.map(n => JSON.stringify(n.list))); if (lists.size !== f.length) fail('two of them are the same person');
+    const idled = f.filter(n => n.idles > 0); if (idled.length < 4) fail(`only ${idled.length} drifted into an idle`); if (walked < 3) fail(`only ${walked} wandered`);
+    await shot('townsfolk', ['hero', 'foe']);
+    ok(f.map(n => `${n.culture} ${n.kind} (${n.list.slice(-1)[0].join(' ')}): ${n.played.join('/') || '-'}`).join('; ') + `; ${walked} wandered`); }
+  errorsCheck();
+
+  // ---- the gallery: all twenty side by side, each looping
+  step = 'the idle gallery'; await page.goto(new URL('?iso&idles&test&tick=4', base).href);
+  await page.waitForFunction(() => window.__iso && window.__iso.gallery && window.__iso.t > 8, undefined, { timeout: 120000 });
+  { const g = await page.evaluate(() => window.__iso.idles); const none = g.filter(i => !i.n); if (g.length !== 20 || none.length) fail(`not played: ${none.map(i => i.id)}`);
+    await page.locator('canvas').screenshot({ path: `${OUT}/idles-gallery.png` }); ok(`${g.length} looping`); }
   errorsCheck();
   console.log('\ncheck:iso passed');
 } catch (e) { if (!process.exitCode) { console.error(e); process.exitCode = 1; } }

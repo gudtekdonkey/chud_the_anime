@@ -59,7 +59,8 @@ export function applyPose(rig, P) {
   const B = rig.B, R = B.root, lean = P.lean || 0;
   rig.body.rotation.z = -(P.roll || 0);                      // he leans into a turn (the page's roll spring)
   B.hips.position.set(0, P.pel[1] * s, P.pel[0] * s); B.hips.rotation.set(lean * .25, 0, 0);
-  B.spine.rotation.set(lean * .75, 0, 0); B.chest.rotation.set(0, 0, 0); B.neck.rotation.set(0, 0, 0); B.head.rotation.set(P.head || 0, 0, 0);
+  B.spine.rotation.set(lean * .75, (P.tw || 0) * .5, 0); B.chest.rotation.set(0, (P.tw || 0) * .5, 0); B.neck.rotation.set(0, 0, 0);
+  B.head.rotation.set(P.head || 0, P.hy || 0, P.hr || 0);                 // hy / hr / tw: the idles' head yaw and roll and chest twist (anim/idles.js)
   const hipsM = worldOf(B.hips, R), spineM = worldOf(B.spine, R), hipQ = qOf(hipsM), spineQ = qOf(spineM);
   // legs: near = his right
   for (const [sd, sx, f] of [['R', -1, P.fN], ['L', 1, P.fF]]) {
@@ -97,7 +98,8 @@ export function applyPose(rig, P) {
   // the hat keeps its own angle (the page's hatTilt, absolute), lags on its spring (hatLag), tipped back by the overlay's tilt
   if (rig.hatPivot) { const lag = P.hatLag || [0, 0];
     rig.hatPivot.position.set(0, SK.headR + 1.1 * s + lag[1] * s * .5, lag[0] * s * .5);
-    rig.hatPivot.rotation.x = (P.hatTilt || 0) - lean - (P.head || 0) - rig.hatTilt; }
+    rig.hatPivot.rotation.order = 'ZYX';                    // undo the head's yaw (the brim is round) and half its roll, so a turned head keeps the hat on
+    rig.hatPivot.rotation.set((P.hatTilt || 0) - lean - (P.head || 0) - rig.hatTilt, -(P.hy || 0), -(P.hr || 0) * .5); }
   // the secondary pieces: kusazuri swing back and lift (kzLag, kzLift), the sode lag (sodeLag), the jinbaori streams with speed
   for (const sp of rig.springs) {
     if (sp.kind === 'plate') sp.node.rotation.x = sp.rest + ((P.kzLag || 0) * Math.cos(sp.ang) * .09) - (P.kzLift || 0) * .12;

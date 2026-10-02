@@ -23,13 +23,17 @@ import { REELS, M as REEL_M, reelPos } from './reel.js';
 import { piece } from './gfx/build.js';
 import { shadeMat } from './gfx/shade.js';
 import { RAMP } from './gfx/palette.js';
+import { addFolk, drawLabels } from './persona/npcs.js';     // personalities on the 3D body, the townsfolk, the idles (persona/, anim/idles.js)
+import { personaPanel } from './persona/panel.js';
+import { runGallery } from './persona/gallery.js';
+import * as PROBE from './persona/probe.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
 const { root, canvas, ms } = buildPage();
 const pipe = makePipeline(canvas);
 SETTINGS.fpsFor = fpsFor; setStyle(Q.has('style') ? +Q.get('style') : 3);   // the owner's pick: Painterly (gfx/style.js)
 const scene = new THREE.Scene(), cam = new THREE.Camera(); cam.matrixAutoUpdate = false;
-if (Q.has('sheet')) runSheet(); else runGame(Q.has('reel') ? REELS[Q.get('reel')] || REELS.chain : null);
+if (Q.has('sheet')) runSheet(); else if (Q.has('idles')) runGallery({ scene, cam, pipe, Q }); else runGame(Q.has('reel') ? REELS[Q.get('reel')] || REELS.chain : null);
 
 // ?iso&sheet: the contact sheet (sheet.js), frozen
 function runSheet() {
@@ -45,7 +49,8 @@ function runGame(reel) {
   const room = buildRoom(scene);
   let lookKind = Q.get('look') === 'pixel' ? 'pixel' : '3d';
   const hero = new Hero({ x: 250, z: 120, h: 0, look: lookKind }), foe = new Foe({ x: 330, z: 110, h: -Math.PI / 2, look: lookKind }, Q.has('calm') || !!reel);
-  const chars = [hero, foe]; for (const c of chars) c.look.mount(scene);
+  const folk = reel || Q.get('folk') === '0' ? [] : addFolk(scene);   // the courtyard's people (&folk=0: none)
+  const chars = [hero, foe, ...folk]; for (const c of [hero, foe]) c.look.mount(scene);
   const script = [];
   if (reel) {   // place them as the page does, hide the samurai unless the scenario has one, and queue its commands
     foe.a.alpha = 0; foe.reel = true; const place = (c, x, z, h) => { const [wx, wz] = reelPos(x, z); c.a.x = wx / AF; c.a.z = wz / AF; c.a.h = c.a.ht = h;
@@ -57,6 +62,7 @@ function runGame(reel) {
   // the model switch: every character's look is swapped; nothing else is told
   const setLook = kind => { lookKind = kind; for (const c of chars) { c.setLook(kind, scene); c.shown = null; } root.querySelector('#o-look').value = kind; };
   wireOverlay(root, setLook); root.querySelector('#o-look').value = lookKind;
+  personaPanel(root, { hero, foe });
 
   // the canvas fills the stage (16:9, under the window's height). With the low-res target on it shows the 960×540
   // pixels at a whole multiple when one fits (nearest-neighbour); off, the target is drawn at the canvas's own size
@@ -75,7 +81,7 @@ function runGame(reel) {
   function presentation(dt) { if (hero.state === 'J3' && hero.prevState !== 'J3' && !foe.dead && Math.hypot(foe.x - hero.x, foe.z - hero.z) < 40) startCine(hero, foe);
     hero.prevState = hero.state; cineStep(W.stop > 0 ? 0 : dt); }
   function tick() {
-    if (W.stop <= 0 && !reel) { hero.control(readInput(), foe, W.t); foe.control(hero, W.t, 1 / 60); }   // a hit-stop holds the presses (they outlive it)
+    if (W.stop <= 0 && !reel) { hero.control(readInput(), foe, W.t); foe.control(hero, W.t, 1 / 60); for (const n of folk) n.control(hero, [foe, ...folk], W.t); }   // a hit-stop holds the presses (they outlive it)
     presentation(1 / 60);
     for (let i = 0; i < 2; i++) if (W.step(reel ? runScript : null)) for (const c of chars) if (c.a.out !== c.sampled) { c.sampled = c.a.out; trailOf(c); }
   }
@@ -92,7 +98,7 @@ function runGame(reel) {
     for (const c of chars) { if (c.shown !== c.a.out || c.lookKind === '3d') { const f = c.frame(c === hero); if (f) c.look.show(f); c.shown = c.a.out; } }
     const g = pipe.fx; g.clearRect(0, 0, pipe.fxCanvas.width, pipe.fxCanvas.height);
     for (const c of chars) drawTrail(g, c.trail.map(s => s.gap ? s : { t: s.t, a: toPx(s.mid), b: toPx(s.tip) }), c.a.out ? c.a.out.t : W.t, STYLE.s.trail);
-    drawFx(g, W);
+    drawFx(g, W); drawLabels(g, folk, toPx);
     if (PIPE.clash) { drawFocus(g, W);   // focus lines on a hit; speed lines behind a roll, a lunge or a skid
       for (const c of chars) if (['roll', 'lunge', 'skid', 'knock'].includes(c.state)) { const [x, y] = toPx([c.x, 10, c.z]), v = [Math.sin(c.a.h), Math.cos(c.a.h) * OBL.a]; speedLines(g, x, y, v[0], v[1], W.t); } }
     for (const c of chars) c.look.stamp(g);
@@ -125,6 +131,8 @@ function runGame(reel) {
       get foe() { return { ...who(foe), hp: foe.hp, dead: foe.dead, hits: foe.hits, deaths: foe.deaths, reacts: foe.reacts.slice(-12) }; },
       // where each one's feet are on the canvas, 0..1 (for the check's close-up shots)
       get px() { return { hero: toPx([hero.x, 0, hero.z]).map((v, i) => v / (i ? 540 : VW)), foe: toPx([foe.x, 0, foe.z]).map((v, i) => v / (i ? 540 : VW)) }; },
+      get folk() { return folk.map(n => ({ ...who(n), kind: n.kind, culture: n.culture, list: n.list, idles: n.a.idler ? n.a.idler.n : 0, played: n.a.idler ? n.a.idler.played.slice() : [] })); },
+      get persona() { return { hero: hero.list || [], heroIdles: hero.a.idler ? hero.a.idler.played.slice() : [], heroCur: hero.a.idler ? hero.a.idler.cur : null, foe: foe.list || [], behave: foe.bh, ...PROBE }; },
       get look() { return lookKind; }, get style() { return STYLE.s.name; }, get cine() { return CINE.on; }, get impact() { return MOMENT.impact; }, get fps() { return fps; }, get frameMs() { return frameMs; }, get t() { return W.t; } };
   }
 }

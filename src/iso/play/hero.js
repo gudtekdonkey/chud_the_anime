@@ -46,7 +46,7 @@ export class Hero extends Char {
     // ---- calm with the blade out: after 2 s of stillness, the sheathe (the flick, the slide home, the click)
     if (n === 'guard' && dir == null) { this.calm += 1 / 60; if (this.calm > 2) { a.play('sheathe'); this.calm = 0; } } else this.calm = 0;
   }
-  runTo(h, armed) { const a = this.a, n = a.clip.name, clip = armed ? 'runArmed' : 'run'; a.ht = h; a.vt = 110;
+  runTo(h, armed) { const a = this.a, n = a.clip.name, clip = armed ? 'runArmed' : 'run'; a.ht = h; a.vt = 110 * (a.persona ? a.persona.run.speed : 1);   // his personality's pace (persona/)
     if (n !== clip && n !== 'start') { if (a.v < 40) { a.h = h; a.turnSnap = true; }   // from a standstill he turns at once; a run arcs round
       if (a.v > 40 || armed) a.play(clip, { blend: .06 }); else a.play('start'); } }
   // a cut turns to the samurai in front of him (snapped to the 8 facings) and steps in to reach him, never through him
