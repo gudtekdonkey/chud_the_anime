@@ -38,7 +38,7 @@ export function buildPage() {
     <h2>Model</h2>
     <label>Look <select id="o-look"><option value="3d">3D model</option><option value="pixel">Pixel (2D drawing)</option></select><kbd>M</kbd></label>
     <label>Style <select id="o-style"><option value="3">Painterly</option><option value="1">Pixel-render</option><option value="2">Anime limited</option><option value="0">Toon + dither</option></select><kbd>V</kbd></label>
-    <label><input type="checkbox" id="o-clash">Clashes (impact frames, lines)<kbd>C</kbd></label>
+    <label><input type="checkbox" id="o-clash">Clashes (impact frames, lines)<kbd>Z</kbd></label>
     <label><input type="checkbox" id="o-cine">Finisher close-up<kbd>X</kbd></label>
     <h2>Pipeline</h2>
     <label><input type="checkbox" id="o-lowres">Low-res target<kbd>1</kbd></label>
@@ -69,7 +69,7 @@ export function buildPage() {
 
 // wire the controls to the settings; `onLook(kind)` swaps the model
 export function wireOverlay(root, onLook) {
-  const $ = id => root.querySelector('#' + id), boxes = { lowres: '1', toon: '2', dither: '3', palette: '4', outline: '5', nearest: '6', rim: '7', glint: '8', fog: '9', rain: '0', clash: 'C', cine: 'X' };
+  const $ = id => root.querySelector('#' + id), boxes = { lowres: '1', toon: '2', dither: '3', palette: '4', outline: '5', nearest: '6', rim: '7', glint: '8', fog: '9', rain: '0', clash: 'Z', cine: 'X' };   // C is Breath of Qi (skills/)
   const set = (k, v) => { if (k === 'glint') LOOK3D.glint = v; else PIPE[k] = v; if (PIPE.onChange) PIPE.onChange(); };
   const get = k => k === 'glint' ? LOOK3D.glint : PIPE[k];
   for (const k of Object.keys(boxes)) { const el = $('o-' + k); el.checked = !!get(k); el.onchange = () => set(k, el.checked ? 1 : 0); }

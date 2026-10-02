@@ -20,8 +20,8 @@ const ARMED = new Set(['guard', 'J1', 'J2', 'J3', 'lunge', 'runArmed', 'recoil',
 export class Hero extends Char {
   constructor(o) { super(o); this.calm = 0; this.lastCut = null; this.lastCutEnd = -9; this.hits = 0; this.taken = 0; const a = this.a; a.play('idle'); a.update(1 / 120); a.sample(true); }
   get state() { return this.a.clip.name; }
-  get armed() { const n = this.state, a = this.a; return ARMED.has(n) || (n === 'roll' && !!a.co.blade) || (n === 'sheathe' && a.ct < 1.02); }
-  get iframes() { return this.state === 'roll' && this.a.ct > .03 && this.a.ct < .34; }
+  get armed() { const n = this.state, a = this.a; return ARMED.has(n) || (n === 'roll' && !!a.co.blade) || (n === 'sheathe' && a.ct < 1.02) || !!(this.skills && this.skills.armed); }   // skills/: a skill with the blade out
+  get iframes() { return (this.state === 'roll' && this.a.ct > .03 && this.a.ct < .34) || !!(this.skills && this.skills.iframes); }
   control(inp, foe, t) {
     const a = this.a, n = this.state, ct = a.ct, dir = inp.dir, cut = CUT[n];
     if (this.step) { const s = this.step; s.t += 1 / 60; const u = EZ.o(Math.min(1, s.t / s.dur)); a.move((u - s.u) * s.left); s.u = u; if (u >= 1 || !cut) this.step = null; }
