@@ -146,7 +146,10 @@ export async function squadSteps({ page, base, until, gameWait, ok, fail, setSte
     const a1 = await S(), c1 = foeC(a1) || c0, h = a1.find(x => x.name === 'you'), d = n => { const a = a1.find(x => x.name === n), b = a0.find(x => x.name === n); return [Math.hypot(b.x - c0.x, b.z - c0.z), Math.hypot(a.x - c1.x, a.z - c1.z)]; };
     const moved = chosen.map(n => [n, ...d(n), a1.find(x => x.name === n)]);
     if (!moved.every(([, , , a]) => a.order.k === 'fallback')) fail('the order did not take');
-    const fwd = moved.filter(([, b, a, ag]) => ag.alive && !ag.downed && a < b - 4 && a < 60); if (fwd.length) fail(`still pressing in: ${fwd.map(m => m[0]).join(', ')}`);
+    // pressing in = closer to where the foes stood when the order was given (c0) and still among them now; measured
+    // against the foes' centre alone it read a retreat as an advance whenever the foes chased him
+    const toC0 = n => { const a = a1.find(x => x.name === n), b = a0.find(x => x.name === n); return Math.hypot(a.x - c0.x, a.z - c0.z) - Math.hypot(b.x - c0.x, b.z - c0.z); };
+    const fwd = moved.filter(([n, , a, ag]) => ag.alive && !ag.downed && toC0(n) < -4 && a < 60); if (fwd.length) fail(`still pressing in: ${fwd.map(m => `${m[0]} (${toC0(m[0]).toFixed(0)} toward where they stood, ${m[2].toFixed(0)} from them)`).join(', ')}`);
     ok(moved.map(([n, b, a]) => `${n} ${b.toFixed(0)}→${a.toFixed(0)}`).join(', ') + ' from the foes'); }
 
   setStep('squad: the assassin finds the isolated target'); {
