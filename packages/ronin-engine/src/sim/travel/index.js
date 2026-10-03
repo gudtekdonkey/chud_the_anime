@@ -1,3 +1,6 @@
+import { packTables } from '../pack.js';
+import { ENCOUNTERS } from './encounters.js';
+import { CREATURES, BEASTS } from './beasts.js';
 import { system, on, emit, newId } from '../ledger.js';
 import { rngFor } from '../rng.js';
 import { initRoads, countCamps, roadsDay } from './roads.js';
@@ -22,6 +25,7 @@ export const SCENES = { ...ROAD_SCENES, ...MEET_SCENES, ...BEAST_SCENES,
     return { title: 'Arrived', who: [], data: { pay: e.pay, who: e.who }, choices: [{ id: 'ok', label: 'Take the pay' }], text: `${e.name} counts out ${e.pay} mon at the gate of ${e.toName}, and means every one of them.` }; },
     resolve: (L, sc) => (L.sys.travel.escort = null, { text: 'The merchant goes in to sell his goods.', mon: sc.data.pay, events: [['travel.escorted', { merchant: sc.data.who, mon: sc.data.pay }]] }) },
 };
+packTables('travel', { SCENES, ENCOUNTERS, CREATURES, BEASTS });   // a pack (pack.js) can bring its own
 
 system({ id: 'travel', order: 60,
   init(L) { const st = L.sys.travel;

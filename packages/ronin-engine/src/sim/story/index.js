@@ -1,4 +1,7 @@
 import { system, on } from '../ledger.js';
+import { packTables } from '../pack.js';
+import { KINDS } from './quests.js';
+import { CHAPTERS } from './frame.js';
 import { initState } from './state.js';
 import { initNature, natureDay, natureSeason, onEconFamine } from './nature.js';
 import { politicsDay, politicsSeason, politicsYear, onPeopleDied } from './politics.js';
@@ -36,6 +39,7 @@ when('story.questResolved', onQuestOver); when('story.questEnded', onQuestOver);
 when('people.died', onPeopleDied);
 for (const t of ['crime.raid', 'crime.robbery', 'crime.murder', 'crime.bounty']) when(t, onCrime);
 
+packTables('story', { CHAPTERS, KINDS });   // a pack (pack.js) can bring its own
 export { takeQuest, resolveQuest, waysOf, openQuests, quest, KINDS, WAYS } from './quests.js';
 export { boardOf, newsSince } from './board.js';
 export { taleOf, chapterOf, rivalName, CHAPTERS } from './frame.js';
