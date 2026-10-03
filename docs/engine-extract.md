@@ -4,4 +4,4 @@ The owner asked for it on 2026-10-03: "We should actually export all this shared
 
 The design page is https://claude.ai/artifact/KdSDZk4UbMtxx4hbfpgtaS. It covers what goes into the engine and what stays, the package shape, guns as weapons with a `fire` block and one projectile module, how this game keeps every number (a golden snapshot plus all the checks), and what fits dealer_solana. Recommended picks: `Engine: 1A 2A 3B 4A 5A 6A`.
 
-**Status:** waiting for the owner's picks. No code has moved yet. Until `gudtekdonkey/ronin-engine` exists, the engine is staged under `packages/ronin-engine/` on `claude/engine-extract`.
+**Picks (owner 2026-10-03):** `3C 4B 5A 6C`, the rest as recommended, so `1A 2A 3C 4B 5A 6C`. See `design-notes.md` "The shared engine". Until `gudtekdonkey/ronin-engine` exists, the engine is staged under `packages/ronin-engine/` on `claude/engine-extract`.
