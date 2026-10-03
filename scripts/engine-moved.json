@@ -128,5 +128,14 @@
  "iso/exec/poses.js": "ronin-engine/iso/exec/poses.js",
  "iso/gore.js": "ronin-engine/iso/gore.js",
  "iso/fx/blood.js": "ronin-engine/iso/blood.js",
- "iso/sever.js": "ronin-engine/iso/sever.js"
+ "iso/sever.js": "ronin-engine/iso/sever.js",
+ "iso/gear/schema.js": "ronin-engine/iso/gear/schema.js",
+ "iso/gear/palette.js": "ronin-engine/iso/gear/palette.js",
+ "iso/gear/kit.js": "ronin-engine/iso/gear/kit.js",
+ "iso/gear/parts.js": "ronin-engine/iso/gear/parts.js",
+ "iso/gear/dress.js": "ronin-engine/iso/gear/dress.js",
+ "iso/gear/pixel.js": "ronin-engine/iso/gear/pixel.js",
+ "iso/hair/contract.js": "ronin-engine/iso/hair/contract.js",
+ "iso/hair/parts.js": "ronin-engine/iso/hair/parts.js",
+ "iso/weapons/wield.js": "ronin-engine/iso/weapons/wield.js"
 }

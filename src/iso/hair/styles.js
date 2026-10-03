@@ -4,7 +4,7 @@
 // a shaved pate; 'hair': the hair's own colour). Original designs: period ones from the Sengoku and Edo eras, a few
 // stylised. A new style is a new row; a part is { r: region, g: shell | rod | spike | lump | loop | box, c: colour }.
 import { RAMP as R } from 'ronin-engine/iso/gfx/palette.js';
-import { onScalp } from './parts.js';
+import { onScalp } from 'ronin-engine/iso/hair/parts.js';
 
 const PI = Math.PI;
 export const COLS = {

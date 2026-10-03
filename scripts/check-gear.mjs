@@ -6,9 +6,9 @@
 // over it hides it by rule, which the check names); finite, bounded geometry; the shells nesting outward; presets that
 // fill every slot; the outfit string round-tripping.
 import { GEAR, BY_ID, BY_CELL } from '../src/iso/gear/items.js';
-import { SLOTS, LAYERS, FAMILIES, STAT_KEYS, STAT_SHORT, statSum } from '../src/iso/gear/schema.js';
-import { makeDressed, resolve } from '../src/iso/gear/dress.js';
-import { pixStyle } from '../src/iso/gear/pixel.js';
+import { SLOTS, LAYERS, FAMILIES, STAT_KEYS, STAT_SHORT, statSum } from 'ronin-engine/iso/gear/schema.js';
+import { makeDressed, resolve } from 'ronin-engine/iso/gear/dress.js';
+import { pixStyle } from 'ronin-engine/iso/gear/pixel.js';
 import { PRESETS, randomOutfit, empty, encode, decode, outfitStats } from '../src/iso/gear/outfits.js';
 import { applyPose } from 'ronin-engine/iso/rig3d.js';
 import { Actor, FA } from 'ronin-engine/flow/flow.js';

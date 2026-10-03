@@ -5,8 +5,8 @@
 import * as THREE from 'three';
 import { piece, newPart } from 'ronin-engine/iso/gfx/build.js';
 import { RAMP as R } from 'ronin-engine/iso/gfx/palette.js';
-import { SCALP } from './contract.js';
-import { shell, loop } from './parts.js';
+import { SCALP } from 'ronin-engine/iso/hair/contract.js';
+import { shell, loop } from 'ronin-engine/iso/hair/parts.js';
 
 const PI = Math.PI;
 // open cylinder `ring` round the back by `half` radians either side (CylinderGeometry's theta: 0 at +z)

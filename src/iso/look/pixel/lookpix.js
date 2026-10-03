@@ -11,7 +11,7 @@ import { piece } from 'ronin-engine/iso/gfx/build.js';
 import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
 import { RAMP } from 'ronin-engine/iso/gfx/palette.js';
 import { BODY, OBL, U } from 'ronin-engine/iso/gfx/view.js';
-import { pixStyle } from '../../gear/pixel.js';
+import { pixStyle } from 'ronin-engine/iso/gear/pixel.js';
 
 const BW = 96, BH = 100, BX0 = 48, BY0 = 72, CLOTH0 = { chains: [] };
 const VERT = `precision highp float; uniform mat4 modelMatrix, viewMatrix, projectionMatrix; in vec3 position; in vec2 uv; out vec2 vUv; out vec3 vW;

@@ -1,6 +1,6 @@
 // ---- Torso: 18 shirts (the base layer) and 22 body armours (the armour layer), samurai / villager / ninja.
 // A shirt carries its sleeves and hem; the armour layer's dō hides the shirt's chest and belly (never its sleeves).
-import { G, S, tube, lames, band, wrap, plates, skirt, panel, collar, box, tail, TUCK, ROLL } from './kit.js';
+import { G, S, tube, lames, band, wrap, plates, skirt, panel, collar, box, tail, TUCK, ROLL } from 'ronin-engine/iso/gear/kit.js';
 
 // a shirt: body, hem (tucked in, out over the trousers, long to the knee, or split tails), sleeves, crossed collar
 function shirt({ c = 'A2', th = .12, sleeve = 'long', hem = 'in', co = 'A4', under, obi } = {}) {

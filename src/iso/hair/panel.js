@@ -5,7 +5,7 @@
 import { HEADS } from './head.js';
 import { HAIR, HAIR_ID } from './styles.js';
 import { HATS, HAT } from './hats.js';
-import { resolve } from './contract.js';
+import { resolve } from 'ronin-engine/iso/hair/contract.js';
 
 const opts = list => { const groups = {}; for (const h of list) (groups[h.group || ''] ||= []).push(h);
   return Object.entries(groups).map(([g, hs]) => { const o = hs.map(h => `<option value="${h.id}">${h.name}</option>`).join(''); return g ? `<optgroup label="${g}">${o}</optgroup>` : o; }).join(''); };

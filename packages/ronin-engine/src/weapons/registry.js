@@ -7,13 +7,14 @@
 //   carry   hip (a saya at the left hip) · obi (through the sash) · slung (across his back) · shoulder (down his back, grip over the right shoulder)
 //   ext     [behind the right hand's grip, ahead of it] in world units: the model's length, the trail's and the floor's reach
 //   hands   two (both hands on it, bh rig px apart along it) or one (the left hand free, or holding its `off` weapon)
-// A game hands in its rows with their grips (cuts: per move, a spec per key; null keeps the base key) and where each
-// rides (stow: STOW's rows, stow.js).
+// A game hands in its rows with their grips (cuts: per move, a spec per key; null keeps the base key), where each
+// rides (stow: STOW's rows, stow.js) and how each is built in 3D (models: id → put → { main, blade?, sheaths, ... },
+// placed on the rig by iso/weapons/wield.js).
 import { buildWeapon } from './poses.js';
 
-export const ARSENAL = [], WEAPON = {}, STOW = {};
-export function defineWeapons(rows, { cuts = {}, stow = {} } = {}) {
-  Object.assign(STOW, stow);
+export const ARSENAL = [], WEAPON = {}, STOW = {}, MODELS = {};
+export function defineWeapons(rows, { cuts = {}, stow = {}, models = {} } = {}) {
+  Object.assign(STOW, stow); Object.assign(MODELS, models);
   for (const w of rows) { w.len = w.ext[1] * 2;   // grip to tip in rig px (the trail's length)
     ARSENAL.push(w); WEAPON[w.id] = w; }
   for (const w of rows) buildWeapon(w, cuts[w.id]);

@@ -1,8 +1,8 @@
 // ---- Head: 12 base pieces (hair, headbands, hoods, wraps) and 20 armour pieces (kabuto, hats, chain hoods, masks).
 // The crown builds up inside out: hair, then a band or hood, then a helmet's bowl or a hat lifted over all of it. A
 // helmet hides the hair and band under it; a mask stands on whatever the face already wears.
-import { HC } from './parts.js';
-import { G, S, cap, shikoro, crest, mask, hat, box, tail, tube } from './kit.js';
+import { HC } from 'ronin-engine/iso/gear/parts.js';
+import { G, S, cap, shikoro, crest, mask, hat, box, tail, tube } from 'ronin-engine/iso/gear/kit.js';
 
 const H = (layer, fam, id, name, pal, s, about, parts, x) => G('head', layer, fam, id, name, pal, s, about, parts, x);
 const headband = (c, sh = S.tight) => cap(sh, { c, from: 1.12, theta: .32, th: .1, cloth: true, open: 0 });

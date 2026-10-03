@@ -1,7 +1,7 @@
 // ---- Outfits: a piece (or nothing) per slot and layer. Presets (a samurai, a villager, a ninja, and mixes of the
 // three), a seeded random outfit that fills every slot, the stats an outfit adds up to, and a compact string form for
 // the URL and the browser's storage.
-import { SLOTS, LAYERS, STAT_KEYS } from './schema.js';
+import { SLOTS, LAYERS, STAT_KEYS } from 'ronin-engine/iso/gear/schema.js';
 import { BY_ID, BY_CELL } from './items.js';
 
 export const empty = () => Object.fromEntries(SLOTS.map(s => [s, { base: null, armour: null }]));

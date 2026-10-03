@@ -7,7 +7,7 @@
 import { Actor } from 'ronin-engine/flow/flow.js';
 import { threeLook } from '../look/three/look3d.js';
 import { HAIR, HATS } from './head.js';
-import { resolve } from './contract.js';
+import { resolve } from 'ronin-engine/iso/hair/contract.js';
 
 export function auditPoses(every = 6) {
   const W = { t: 0, dt: 1 / 120, fx: [], event() {} }, a = new Actor(W, { x: 0, z: 0, h: 0 }), out = [];

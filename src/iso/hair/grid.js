@@ -12,7 +12,7 @@ import { piece } from 'ronin-engine/iso/gfx/build.js';
 import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
 import { RAMP } from 'ronin-engine/iso/gfx/palette.js';
 import { HAIR, HATS } from './head.js';
-import { resolve } from './contract.js';
+import { resolve } from 'ronin-engine/iso/hair/contract.js';
 import { audit } from './audit.js';
 
 const POSES = { idle: ['idle', .6], run: ['run', .45], J1: ['J1', .185], J3: ['J3', .265], roll: ['roll', .2], guard: ['guard', .5] };

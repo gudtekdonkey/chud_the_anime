@@ -11,6 +11,7 @@
 import { defineWeapons, WEAPON, equip } from 'ronin-engine/weapons/registry.js';
 import { CUTS } from './cuts.js';
 import { STOW } from './stow.js';
+import { MODELS } from './models.js';
 
 export const ARSENAL = defineWeapons([
   { id: 'katana', name: 'Katana', reach: 1, weight: { stop: 1, shake: 1 }, carry: 'hip', ext: [2.6, 11.7], hands: 'two',
@@ -43,5 +44,5 @@ export const ARSENAL = defineWeapons([
     about: 'Two short sticks on a cord, tucked in the obi: fast whipping swings, the free stick a beat behind the one in his fist.' },
   { id: 'wakizashi', name: 'Wakizashi', reach: .85, weight: { stop: .8, shake: 1 }, carry: 'hip', ext: [1.9, 8.6], hands: 'two',
     about: "The short sword alone at the hip: the katana's cuts, quicker and closer in, the lightest blade he carries." },
-], { cuts: CUTS, stow: STOW });
+], { cuts: CUTS, stow: STOW, models: MODELS });
 export { WEAPON, equip };

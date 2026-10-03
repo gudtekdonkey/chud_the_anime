@@ -13,10 +13,10 @@ import { Actor } from 'ronin-engine/flow/flow.js';
 import 'ronin-engine/flow/moves.js';
 import { threeLook, LOOK3D } from '../look/three/look3d.js';
 import { GEAR, BY_ID } from './items.js';
-import { SLOTS, SLOT_NAME, LAYERS, LAYER_NAME, FAMILIES, STAT_SHORT, STAT_KEYS, RARITY } from './schema.js';
-import { DYES, KIND_NAME } from './palette.js';
+import { SLOTS, SLOT_NAME, LAYERS, LAYER_NAME, FAMILIES, STAT_SHORT, STAT_KEYS, RARITY } from 'ronin-engine/iso/gear/schema.js';
+import { DYES, KIND_NAME } from 'ronin-engine/iso/gear/palette.js';
 import { empty, PRESETS, randomOutfit, outfitStats, encode, decode } from './outfits.js';
-import { resolve } from './dress.js';
+import { resolve } from 'ronin-engine/iso/gear/dress.js';
 
 const CSS = `:root { color-scheme: dark; --bg: #0b0d10; --panel: #13161a; --card: #101317; --rule: #262b31; --fg: #d9dfdd; --dim: #8b9592; --cyan: #6ff3e4; }
 html, body { margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.45 system-ui, sans-serif; }

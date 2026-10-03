@@ -4,12 +4,13 @@
 // under the brim's edge whenever he faces the camera (LOOK3D.glint).
 import * as THREE from 'three';
 import { makeRonin } from './ronin.js';
-import { makeDressed } from '../../gear/dress.js';
+import { makeDressed } from 'ronin-engine/iso/gear/dress.js';
 import { applyPose } from 'ronin-engine/iso/rig3d.js';
 import { SH } from 'ronin-engine/iso/gfx/shade.js';
 import { toScreen } from 'ronin-engine/iso/gfx/view.js';
 import { STYLE } from 'ronin-engine/iso/gfx/style.js';
-import { equipModel } from '../../weapons/wield.js';
+import { equipModel } from 'ronin-engine/iso/weapons/wield.js';
+import '../../weapons/arsenal.js';   // the game's weapons (rows, models) into the engine's registry, wherever he is drawn
 import { headSlot } from '../../hair/head.js';
 
 export const LOOK3D = { hatTilt: 14, brim: 1, glint: 1 };   // the overlay's hat tunables (faces page: 14° tilt, the wide brim as drawn)

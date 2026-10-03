@@ -4,14 +4,14 @@
 // The outfit is resolved first (who hides or shapes what), then every part is built inside out by shell, each sitting on
 // what the shells under it have built up (gear/parts.js), and merged into one mesh per bone and material.
 import * as THREE from 'three';
-import { Piece, newPart, piece } from 'ronin-engine/iso/gfx/build.js';
-import { RAMP as R } from 'ronin-engine/iso/gfx/palette.js';
-import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
-import { BODY_SHEAR } from 'ronin-engine/iso/gfx/view.js';
-import { makeSkeleton, SK } from 'ronin-engine/iso/rig3d.js';
+import { Piece, newPart, piece } from '../gfx/build.js';
+import { RAMP as R } from '../gfx/palette.js';
+import { shadeMat } from '../gfx/shade.js';
+import { BODY_SHEAR } from '../gfx/view.js';
+import { makeSkeleton, SK } from '../rig3d.js';
 import { KINDS, makeCtx, keyOf, BODY, HC, HEAD_R, FACE_Z } from './parts.js';
 import { SLOTS, LAYERS, LIMB } from './schema.js';
-import { BY_ID } from './items.js';
+import { BY_ID } from './registry.js';
 
 class GPiece extends Piece {   // an open tube with two radii (a hanging sleeve, a veil)
   ring2(rt, rb, h, seg, col, o) { return this.add(new THREE.CylinderGeometry(rt, rb, h, seg, 1, true), col, o); }

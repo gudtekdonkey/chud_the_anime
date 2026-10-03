@@ -2,7 +2,7 @@
 // sandals, tabi, boots and wraps; feet armour: 16 suneate, kogake and greaves. Anything worn round the shin (leg wraps,
 // shin guards) tucks the trouser leg in, as V3's hakama is tied in at the shin; a skirt of plates hangs clear of
 // whatever the hips and thighs already wear.
-import { G, S, tube, lames, band, wrap, plates, skirt, boot, sole, box, TUCK } from './kit.js';
+import { G, S, tube, lames, band, wrap, plates, skirt, boot, sole, box, TUCK } from 'ronin-engine/iso/gear/kit.js';
 
 const L = (layer, fam, id, name, pal, s, about, parts, x) => G('legs', layer, fam, id, name, pal, s, about, parts, x);
 const F = (layer, fam, id, name, pal, s, about, parts, x) => G('feet', layer, fam, id, name, pal, s, about, parts, x);

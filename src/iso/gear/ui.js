@@ -1,7 +1,7 @@
 // ---- The outfit picker in the ?iso overlay: a preset (Iron Ash as built, a samurai, a villager, a ninja, mixes),
 // randomise (`; from one family or any: G is the party's hold / follow), and every slot's base and armour piece by hand. The pick is remembered in the
 // browser and can be opened from the URL (&outfit=<preset> | random | random-ninja | the encoded outfit).
-import { SLOTS, SLOT_NAME, LAYERS, LAYER_NAME, FAMILIES, STAT_KEYS, STAT_SHORT } from './schema.js';
+import { SLOTS, SLOT_NAME, LAYERS, LAYER_NAME, FAMILIES, STAT_KEYS, STAT_SHORT } from 'ronin-engine/iso/gear/schema.js';
 import { BY_CELL } from './items.js';
 import { PRESETS, PRESET, randomOutfit, outfitStats, encode, decode } from './outfits.js';
 

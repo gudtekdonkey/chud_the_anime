@@ -5,11 +5,11 @@
 // nunchaku's free stick trails the one in his fist a beat behind, the chain is thrown out to the pose's `chain` length.
 // The katana keeps the ronin's own built-in model (ronin.js); every other weapon hides it.
 import * as THREE from 'three';
-import { MODELS } from './models.js';
-import { worldOf } from 'ronin-engine/iso/rig3d.js';
-import { AF } from 'ronin-engine/flow/flow.js';
-import { WEAPON } from './arsenal.js';
-import { STOW, stowAt } from './stow.js';
+import { MODELS } from '../../weapons/registry.js';
+import { worldOf } from '../rig3d.js';
+import { AF } from '../../flow/flow.js';
+import { WEAPON } from '../../weapons/registry.js';
+import { STOW, stowAt } from '../../weapons/stow.js';
 
 const V = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z), _m = new THREE.Matrix4();
 // a frame with +z along d and +y as near `up` as it can be

@@ -2,7 +2,7 @@
 // Arm base: what is done to the shirt's sleeve (tied back, rolled, wrapped, bound over). Arm armour: shoulder guards
 // (sode, on their spring hinge), kote, bracers. Hand base: gloves and wraps; hand armour: tekkō, gauntlets, claws.
 // A wrap or a guard tucks the sleeve under it; a rolled sleeve is gone from the forearm.
-import { G2, S, tube, band, wrap, plates, sode, glove, box } from './kit.js';
+import { G2, S, tube, band, wrap, plates, sode, glove, box } from 'ronin-engine/iso/gear/kit.js';
 
 const ARM = (layer, fam, id, name, pal, s, about, parts, x) => G2('arm', layer, fam, id, name, pal, s, about, parts, x);
 const HAND = (layer, fam, id, name, pal, s, about, parts, x) => G2('hand', layer, fam, id, name, pal, s, about, parts, x);
