@@ -1,13 +1,18 @@
 // ---- The 15 weapons in the iso slice (owner 2026-10-02: "The 15 weapons in 3D. Only the katana exists there."): today's
 // game's arsenal (src/weapons/), the same order, names, reach and weight (copied: the slice never imports today's game).
-// Each weapon brings a 3D model (models.js), where it rides when stowed and how it is drawn (wield.js), and its own poses
-// for every move on the katana's keys and beats (poses-*.js), so hit timing never moves.
+// Each weapon brings a 3D model (models.js), where it rides when stowed (stow.js) and how it is drawn (wield.js), and its
+// own grips for every move (cuts.js), laid by the engine on the katana's keys and beats (ronin-engine/weapons/), so hit
+// timing never moves.
 //   reach   × the cut's reach (46 rig px) and how far short of the samurai the cut's step stops
 //   weight  { stop: × the hit-stop, shake: × the heavy hit's shake }
 //   carry   hip (a saya at the left hip) · obi (through the sash) · slung (across his back) · shoulder (down his back, grip over the right shoulder)
 //   ext     [behind the right hand's grip, ahead of it] in world units: the model's length, the trail's and the floor's reach
 //   hands   two (both hands on it, bh rig px apart along it) or one (the left hand free, or holding its `off` weapon)
-export const ARSENAL = [
+import { defineWeapons, WEAPON, equip } from 'ronin-engine/weapons/registry.js';
+import { CUTS } from './cuts.js';
+import { STOW } from './stow.js';
+
+export const ARSENAL = defineWeapons([
   { id: 'katana', name: 'Katana', reach: 1, weight: { stop: 1, shake: 1 }, carry: 'hip', ext: [2.6, 11.7], hands: 'two',
     about: 'The sheathed blade at his hip: quick draw, clean arcs, the slow resheathe.' },
   { id: 'yari', name: 'Yari', reach: 1.5, weight: { stop: 1, shake: 1 }, carry: 'slung', ext: [12, 21.5], hands: 'two', bh: 12,
@@ -38,14 +43,5 @@ export const ARSENAL = [
     about: 'Two short sticks on a cord, tucked in the obi: fast whipping swings, the free stick a beat behind the one in his fist.' },
   { id: 'wakizashi', name: 'Wakizashi', reach: .85, weight: { stop: .8, shake: 1 }, carry: 'hip', ext: [1.9, 8.6], hands: 'two',
     about: "The short sword alone at the hip: the katana's cuts, quicker and closer in, the lightest blade he carries." },
-];
-export const WEAPON = Object.fromEntries(ARSENAL.map(w => [w.id, w]));
-for (const w of ARSENAL) w.len = w.ext[1] * 2;   // grip to tip in rig px (the trail's length)
-
-// equip a character (play/char.js): the controller's side (its clips, reach, weight, trail) and the frame's `weapon`, which the
-// look builds a model for. Mid-move is fine; a looping stance picks up the new weapon's pose at once
-export function equip(c, id) {
-  const w = WEAPON[id] || WEAPON.katana, a = c.a; c.wpn = w; c.weapon = w.id; c.wlen = w.len; a.wid = w.id === 'katana' ? null : w.id;
-  const n = a.clip && a.clip.name; if (n === 'guard' || n === 'runArmed') a.play(n, { blend: .1 });
-  return w;
-}
+], { cuts: CUTS, stow: STOW });
+export { WEAPON, equip };

@@ -2,13 +2,13 @@
 // same timing and hits, but each weapon has its own poses"). A weapon's take on a move is registered as CLIPS['J1@yari']
 // (anim/flow.js plays it for an actor whose `wid` is the weapon): the katana's clip with the same key times, easings,
 // events ('hit', 'impact', 'click'), root travel, legs and body, and the weapon's own arms, grips and angles laid on its
-// keys (cuts.js). Loops (guard, the armed run) and the stow are the katana's procedures with the weapon's grip laid on
+// keys (the game's cuts: chud_the_anime's iso/weapons/cuts.js). Loops (guard, the armed run) and the stow are the katana's procedures with the weapon's grip laid on
 // top. Every pose then passes the weapon's `post`: the haft's two hands, a one-handed weapon's free fist or off-hand
 // weapon, and the floor (a long weapon stops on it, as today's art plants it, never through it).
-import { CLIPS, H, EZ, clamp, lerp, mixP, clone } from 'ronin-engine/flow/flow.js';
-import { ARSENAL } from './arsenal.js';
+import { CLIPS, H, EZ, clamp, lerp, mixP, clone } from '../flow/flow.js';
+import '../flow/moves.js';
+import '../flow/moves-extra.js';   // runArmed: every weapon takes it
 import { STOW, mountOf } from './stow.js';
-import { CUTS } from './cuts.js';
 
 const h = n => H + n;
 // a grip spec onto a pose: forward counts from the pose's pelvis (abs: from his feet), up from the floor
@@ -68,9 +68,9 @@ function stowFor(w, guard, flick, lift) { const base = CLIPS.sheathe, E = EZ.io;
 
 const FLICK = { slung: { g: [6, h(8)], ang: 1.62, two: 0 }, shoulder: { g: [9, h(3)], ang: -1.25, two: 0 }, obi: { g: [9, h(2)], ang: -1.3, two: 0 } };
 const LIFT = { slung: { g: [1, h(16)], ang: 1.7, x: -2, two: 0 }, shoulder: { g: [2, h(17)], ang: 1.4, two: 0 }, obi: { g: [6, h(5)], ang: -.6, two: 0 } };
-for (const w of ARSENAL) {
-  if (w.id === 'katana') continue;
-  const c = CUTS[w.id] || {};
+// one weapon's every move (registry.js calls it as a game defines its weapons); the katana is the moves themselves
+export function buildWeapon(w, c = {}) {
+  if (w.id === 'katana') return;
   for (const n of ['J1', 'J2', 'J3', 'lunge', 'recoil', 'knock']) keyedFor(w, n, c[n]);
   procFor(w, 'guard', c.guard, [8.8, h(4), .55]);
   procFor(w, 'runArmed', c.run, [-1.5, h(.8), -2.72]);

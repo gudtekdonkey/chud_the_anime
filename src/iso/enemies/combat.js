@@ -12,6 +12,7 @@ import { STATS } from '../play/rules.js';
 import { SOLID, ROOM } from '../world/room.js';
 import { CTX } from './ctx.js';
 import { emit } from './events.js';
+import { fire, stepShots as stepShotList } from 'ronin-engine/weapons/shots.js';
 
 const DMG = { J1: 1, J2: 1, J3: 2, lunge: 1 }, REACH = 46;
 export const ESTATS = { hits: 0, blocked: 0, parried: 0, broken: 0, armor: 0, dodged: 0, kills: 0, deflected: 0, taken: 0 };
@@ -54,21 +55,20 @@ export function hurtHero(e, H, what) {
   return 'hit';
 }
 
-// ---- shots: arrows (straight and fast, along his aim) and shuriken (three in a fan), in rig px like the actors
+// ---- shots: arrows (straight and fast, along his aim) and shuriken (three in a fan), in rig px like the actors, flown by
+// the engine's shots (ronin-engine/weapons/shots.js): a point test, 9 rig px round the hero
 export function shoot(e, k, n) {
   const a = e.a, spd = k === 'arrow' ? 560 : 400;
   for (let i = 0; i < n; i++) { const h = a.h + (i - (n - 1) / 2) * .2, v = hv(h);
-    CTX.shots.push({ k, from: e, x: a.x + v[0] * 10, z: a.z + v[1] * 10, y: k === 'arrow' ? 36 : 30, vx: v[0] * spd, vz: v[1] * spd, h, age: 0, life: 1.6 }); }
+    fire(CTX.shots, { k, from: e, x: a.x + v[0] * 10, z: a.z + v[1] * 10, y: k === 'arrow' ? 36 : 30, h, v: spd, life: 1.6, r: 9, test: 'point' }); }
   emit('shoot', e, { shot: k, n });
 }
 const inSolid = (x, z) => { const wx = x * AF, wz = z * AF; if (wx < ROOM.x0 || wx > ROOM.x1 || wz < ROOM.z0 || wz > ROOM.z1) return true;
   for (const b of SOLID) if (wx > b.x0 && wx < b.x1 && wz > b.z0 && wz < b.z1) return true; return false; };
 export function stepShots(dt) {
   const hero = CTX.hero;
-  for (const s of CTX.shots) { if (s.dead) continue; s.age += dt; s.x += s.vx * dt; s.z += s.vz * dt;
-    if (s.age > s.life || inSolid(s.x, s.z)) { s.dead = 1; dust(W, s.x, s.z, 2, { spd: 10, life: .3 }); continue; }
-    if (hero && Math.hypot(hero.a.x - s.x, hero.a.z - s.z) < 9) { const r = hurtHero(s.from, { w: 1, dmg: 1 }, s.k); if (r === 'hit') s.dead = 1; else if (r === 'dodged') s.passed = 1; } }
-  CTX.shots = CTX.shots.filter(s => !s.dead);
+  stepShotList(CTX.shots, dt, { solid: inSolid, targets: () => hero ? [hero.a] : [], expire: s => dust(W, s.x, s.z, 2, { spd: 10, life: .3 }),
+    hit: s => { const r = hurtHero(s.from, { w: 1, dmg: 1 }, s.k); if (r === 'dodged') s.passed = 1; return r === 'hit'; } });
   for (const p of CTX.puffs) p.age += dt; CTX.puffs = CTX.puffs.filter(p => p.age < p.life);
 }
 // smoke: a few dithered grey balls that swell and thin out (the shinobi's vanish and return)

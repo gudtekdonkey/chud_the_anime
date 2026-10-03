@@ -31,7 +31,6 @@ import { personaPanel } from './persona/panel.js';
 import { runGallery } from './persona/gallery.js';
 import * as PROBE from './persona/probe.js';
 import { makeSkills } from './skills/skills.js';                  // I O P N U C and Storm Chain (skills/skills.js)
-import './weapons/poses.js';
 import { equip, ARSENAL } from './weapons/arsenal.js';
 import { wirePicker } from './weapons/picker.js';
 import { runArsenal } from './weapons/sheet.js';

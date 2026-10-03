@@ -12,6 +12,7 @@ import { sparks, dust, crack, tear, focus, ring } from 'ronin-engine/render/fx.j
 import { shake } from 'ronin-engine/render/gfx/view.js';
 import { SOLID } from '../world/room.js';
 import { addThreat } from 'ronin-engine/ai/senses.js';
+import { fire, stepShots } from 'ronin-engine/weapons/shots.js';
 
 const DMG = { J1: 1, J2: 1, J3: 2, lunge: 1 };
 export const ARROWS = [];
@@ -67,15 +68,12 @@ export function squadRules(G) {
   // the bow: the arrow leaves toward where the target will be (a sharp archer leads him further)
   FW.on.loose = a => { const c = a.char, s = c && c.swing; if (!s) return; const T = s.target, d = Math.hypot(T.x - c.x, T.z - c.z), fl = d / 230, lead = .4 + .6 * c.temper.wit;
     const tx = T.x + (T.vx || 0) * fl * lead, tz = T.z + (T.vz || 0) * fl * lead, h = hOf(tx - c.x, tz - c.z);
-    ARROWS.push({ x: c.x + Math.sin(h) * 6, z: c.z + Math.cos(h) * 6, y: 15, h, v: 230, t: 0, from: c, team: c.team }); noise(c.x, c.z, c.team, 'bow', 60); A.log(`loose:${c.name}>${T.name}`); };
+    fire(ARROWS, { x: c.x + Math.sin(h) * 6, z: c.z + Math.cos(h) * 6, y: 15, h, v: 230, life: 1.3, r: 4.5, test: 'swept', from: c, team: c.team }); noise(c.x, c.z, c.team, 'bow', 60); A.log(`loose:${c.name}>${T.name}`); };
   // the taunt: everyone on the other side within 85 wants the tank now (less if sharp)
   FW.on.taunt = a => { const c = a.char; let n = 0; for (const o of opp(c)) { if (!o.mind || Math.hypot(o.x - c.x, o.z - c.z) > 85) continue; addThreat(o, c, 45 * (1 - .5 * o.temper.wit)); o.mind.alert = Math.max(o.mind.alert, 1.1); o.mind.seen.set(c.id, { x: c.x, z: c.z, t: A.t, a: c }); n++; }
     ring(FW, c.a.x, c.a.z, { r: 30, life: .35 }); dust(FW, c.a.x, c.a.z, 8, { spd: 40, life: .4 }); A.log(`taunted:${c.name}:${n}`); };
-  // arrows in flight: the first body on the line (a protector standing in it takes it), or the first wall
-  G.arrowStep = dt => { for (const r of ARROWS) { const sx = Math.sin(r.h) * r.v * dt, sz = Math.cos(r.h) * r.v * dt; r.t += dt;
-      for (const o of opp(r.from)) { const t = ((o.x - r.x) * sx + (o.z - r.z) * sz) / (sx * sx + sz * sz); if (t < 0 || t > 1) continue;
-        if (Math.hypot(r.x + sx * t - o.x, r.z + sz * t - o.z) < 4.5) { r.dead = 1; land(r.from, o, 1, 1.5 * r.from.dmg); A.log(`arrow:${r.from.name}>${o.name}`); break; } }
-      r.x += sx; r.z += sz; if (r.t > 1.3 || SOLID.some(b => r.x > b.x0 && r.x < b.x1 && r.z > b.z0 && r.z < b.z1)) r.dead = 1; }
-    for (let i = ARROWS.length - 1; i >= 0; i--) if (ARROWS[i].dead) ARROWS.splice(i, 1); };
+  // arrows in flight (the engine's shots, a swept test 4.5 wide): the first body on the line (a protector standing in it takes it), or the first wall
+  G.arrowStep = dt => stepShots(ARROWS, dt, { targets: r => opp(r.from), solid: (x, z) => SOLID.some(b => x > b.x0 && x < b.x1 && z > b.z0 && z < b.z1),
+    hit: (r, o) => { land(r.from, o, 1, 1.5 * r.from.dmg); A.log(`arrow:${r.from.name}>${o.name}`); return true; } });
   return G;
 }

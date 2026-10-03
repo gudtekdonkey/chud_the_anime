@@ -20,7 +20,7 @@ const put = (name, v) => { const s = typeof v === 'string' ? v : json(v); got[na
 
 // ---- the clips: every module that registers one, in the order the slice loads them ----
 const flow = await src('iso/anim/flow.js');
-for (const p of ['iso/fx/fx.js', 'iso/anim/moves.js', 'iso/anim/moves-extra.js', 'iso/anim/idles.js', 'iso/anim/moves-squad.js', 'iso/weapons/poses.js',
+for (const p of ['iso/fx/fx.js', 'iso/anim/moves.js', 'iso/anim/moves-extra.js', 'iso/anim/idles.js', 'iso/anim/moves-squad.js', 'iso/weapons/arsenal.js',
   'iso/enemies/moves.js', 'iso/skills/moves.js', 'iso/skills/reserved-moves.js', 'iso/exec/poses.js', 'iso/persona/gait.js']) await src(p);
 const { CLIPS, Actor, SETTINGS } = flow;
 put('flow.settings', SETTINGS);
