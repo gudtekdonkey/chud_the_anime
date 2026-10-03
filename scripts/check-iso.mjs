@@ -233,7 +233,7 @@ try {
     step = 'weapons: contact sheets';
     for (const [q, name] of [['w=0-4', 'moments-0'], ['w=5-9', 'moments-1'], ['w=10-14', 'moments-2'], ['w=0-7&m=J1', 'facings-J1-0'], ['w=8-14&m=J1', 'facings-J1-1'], ['w=0-7&m=stowed', 'facings-stowed-0'], ['w=8-14&m=stowed', 'facings-stowed-1']]) {
       await page.goto(new URL(`?iso&arsenal&k=1&${q}`, base).href); await page.waitForFunction(() => window.__iso && window.__iso.ready, undefined, { timeout: 60000 });
-      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))); await page.locator('canvas').screenshot({ path: `${OUT}/arsenal-${name}.png` }); }
+      await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))); await page.screenshot({ path: `${OUT}/arsenal-${name}.png`, clip: await page.locator('canvas').boundingBox() }); }   // a frame of 40-56 figures on SwiftShader is too slow for the element's two-frame stability wait
     errorsCheck(); ok();
 
     // ---- the 15 weapons in play: picked with =, each walks up to the samurai from one of the eight sides (so the cuts come
