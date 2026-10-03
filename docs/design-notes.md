@@ -332,3 +332,15 @@ The owner said the deaths still don't feel like someone dying, and the execution
 - Claude's calls, open to the owner: **a TORSO slot added** (shirts are the base layer's torso; a dō hangs from no limb, so no listed slot could carry it); **any piece goes with any other**: parts are built inside out by shell (tight, shirt, pants, over, mail, plate, outer), each sitting on what is under it, and clashes are settled by a piece hiding the zones under it (a dō hides the shirt's body, a kabuto the hair) or shaping them (shin guards tuck the hakama in, a sleeve tie or a rolled sleeve takes the shirt's forearm away), never by refusing a pairing; cloth colour follows the rarity rule (black and dark grey common; earth brown, moss and indigo uncommon; grey and ash white rare; hemp beige rarer; persimmon and royal red very rare, red only on a lord's lacing), armour takes the dark dyes; stats on the party's VIG / EDG / SPD / FOC, 1–4 a piece.
 - Open: a full outfit is 16 pieces and sums to ~20–33 stat points (Iron Ash in gear: VIG +16, 23 in all) against today's 7-slot wardrobe's ~8; before gear reaches the game, base pieces giving nothing, smaller per-point effects, or armour-only stats. Also the owner's: which pieces stay, and whether Iron Ash's default is rebuilt from gear (the preset "Iron Ash V3, in gear") or stays the procedural model as built (the default, unchanged).
 - In the slice: the overlay's Outfit section (presets: Iron Ash in gear, the general, a foot soldier, a farmer at the levy, a mountain hunter, a wandering monk, a night runner, the crow, and three mixes; Randomise on `G`, from one family or any; every slot by hand), `&outfit=` in the URL; `?iso&gear` the catalogue (every piece on the model, filtered by slot, layer, family, a word; a try-on figure). The pixel look dresses too, coarser (the engine's feature flags: one armour colour, one hat per kind, no sleeves or mantle without the cloth it does not simulate).
+
+## Open questions answered (owner 2026-10-03, the "Ronin Open Questions" page)
+
+- Owner: "Picks: 1aA 1bB 1cB 2aC 2bC 3? 3b? 4B 5redo:1,2,3,4,5"
+- **1a A: keep the Torso slot** (shirts in the base layer; dō, lamellar and capes in armour).
+- **1b B: every gear piece counts, each point worth ¼** of `player/stats.js`'s per-point effect, so a full 16-piece outfit lands near today's wardrobe (~8 points). Not built yet.
+- **1c B: his default look is built from gear**: he starts in "Iron Ash V3, in gear", so taking off a piece swaps only that piece. Not built yet.
+- **2a C: the owner lists which hairstyles and hats go in the game.** The list is still owed; all 24 and 10 stay until then.
+- **2b C: his hair under the jingasa is "Long and loose"** (was Claude's pick, the ronin's tied-back hair). Not built yet.
+- **3 and 3b: still open** (the lantern ash pickup's look, and whether taking it still glitches him).
+- **4 B: the upright body view everywhere** (full height from a low 20°), in play too; 39.5° is no longer the default. Not built yet.
+- **5: redo all five executions** (Behind the back, Through and past, Whirlwind, Far behind, Peek-a-boo). The direction for the redo is still to be asked.
