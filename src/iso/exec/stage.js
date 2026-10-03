@@ -73,9 +73,12 @@ export function startExec(hero, foe, api) {
     }
     S.Rp = lift(R.pose, R.z); S.Ep = lift(E.pose, E.z);
     if (!S.handed) put(hero.a, R); put(foe.a, E);
-    if (!S.handed && s >= S.free) { S.handed = true; EX.on = false; hero.a.alpha = 1; hero.a.prev = null; hero.a.play('idle', { blend: .1 }); }
-    if (!S.over && s >= ex.dur + .25) { S.over = true; EX.st = null; EX.done++; api.over(foe); }
+    if (!S.handed && s >= S.free) S.hand();
+    if (!S.over && s >= ex.dur + .25) S.end();
   };
+  // handing him back, and the stage's end: only its own (he may already be on the next execution in this one's tail)
+  S.hand = () => { S.handed = true; if (EX.st === S) EX.on = false; hero.a.alpha = 1; hero.a.prev = null; hero.a.play('idle', { blend: .1 }); };
+  S.end = () => { S.over = true; if (EX.st === S) EX.st = null; EX.done++; api.over(foe); };
   // a body to its stage place: a jump of more than a few units is a teleport (the springs forget their speed)
   function put(a, B) { const [x, z] = wp(B.x, B.y);
     if (Math.hypot(x - a.x * AF, z - a.z * AF) > 4) { a.prev = null; a.feet.N.lock = a.feet.F.lock = 0; }
@@ -86,6 +89,10 @@ export function startExec(hero, foe, api) {
   return S;
 }
 let PIPE_CINE = () => 1; export const cineGate = f => { PIPE_CINE = f; };
+// the stage runs on the samurai's clip: anything that replays it cuts the performance short, so it finishes here, he
+// dies, and the ronin is handed back (never left holding the stage's last pose)
+export function execWatch() { const S = EX.st; if (!S || S.over || (S.foe.a.clip && S.foe.a.clip.name === 'xE')) return;
+  if (!S.handed) S.hand(); if (!S.foe.dead) S.api.kill(S.foe); S.end(); }
 
 // ---- the stage's own effects (stepped on the world's clock, drawn on the effects layer) ----
 export const XF = [];

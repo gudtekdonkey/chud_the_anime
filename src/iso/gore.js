@@ -15,7 +15,7 @@ import { PIPE } from './gfx/post.js';
 import * as B from './fx/blood.js';
 import { sever, initSever, severStep, severSync, severWorld, hidePart, addStump, fadePieces, piecesOf, nearestPart, SV, PARTS } from './sever.js';
 import { shadeMat } from './gfx/shade.js';
-import { EX, startExec, xfStep, xfDraw, ghostScene, ghostStep, ghostSync, cineGate } from './exec/stage.js';
+import { EX, startExec, execWatch, xfStep, xfDraw, ghostScene, ghostStep, ghostSync, cineGate } from './exec/stage.js';
 import { KM, updateMarkers, drawMarkers, drawPrompt } from './exec/markers.js';
 
 const BLADE = { light: .22, heavy: .35, kill: .5 };    // how much a hit leaves on the blade (0..1)
@@ -87,7 +87,8 @@ export function installGore({ hero, foe, all = [foe], live = () => all, scene })
   const canExec = () => { const n = hero.state, c = CUT[n]; return !!KM.pick && !EX.on && (free.includes(n) || (c && hero.a.ct >= c.hit + 2 / 60)); };
   const baseHero = hero.control.bind(hero);
   hero.control = (inp, f, t) => { if (EX.on) return; if (consume('exec', canExec)) { startExec(hero, KM.pick, api); return; } baseHero(inp, f, t); };   // K takes the one the markers picked
-  for (const foe of all) { const baseFoe = foe.control.bind(foe); foe.control = (h, t, dt) => { if (EX.st && EX.st.foe === foe) return; baseFoe(h, t, dt); }; }
+  for (const foe of all) { const baseFoe = foe.control.bind(foe); foe.control = (h, t, dt) => { if (EX.st && EX.st.foe === foe) return; baseFoe(h, t, dt); };
+    const baseReact = foe.react.bind(foe); foe.react = (...r) => EX.st && EX.st.foe === foe ? false : baseReact(...r); }   // the stage's: a companion's cut finds nothing
 
   // the blade's blood thrown off by the flick: a line of drops on the floor ahead of him
   function flick(c) { const r = rec(c); if (r.blade < .03) return; const b = c.bladeWorld(), v = hv(c.a.h), p = b ? b.tip : chest(c, 8);
@@ -96,7 +97,7 @@ export function installGore({ hero, foe, all = [foe], live = () => all, scene })
   // ---- every world step (1/120 s; a hit-stop holds it) ----
   let prev = ''; const wasDead = new Map();
   W.post.push((w, dt) => {
-    B.bloodStep(dt); severStep(dt); xfStep(dt); ghostStep(dt);
+    B.bloodStep(dt); severStep(dt); xfStep(dt); ghostStep(dt); execWatch();
     const h = rec(hero), n = hero.state;
     if (n === 'sheathe' && hero.a.ct > .08 && hero.a.ct < .4) flick(hero);   // the sheathe's chiburi
     if (h.blade > .2 && hero.armed && n !== 'sheathe' && rnd() < dt * 2.4 * h.blade) { const b = hero.bladeWorld(); if (b) { B.drip(...b.tip); h.blade -= .006; } }
