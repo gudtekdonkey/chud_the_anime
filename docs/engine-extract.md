@@ -35,6 +35,6 @@ The engine is staged in `packages/ronin-engine/` until the repo exists. Its READ
   - check:iso passed 127/127 twice in a row.
   - check, check:hd, check:hair, check:gear, sim-smoke, golden and the engine's tests all passed.
 - **2A done: chud takes the engine as a git submodule at `engine/`** (`gudtekdonkey/ronin-engine`, branch `claude/engine-extract`), with `"ronin-engine": "file:engine"`. `packages/ronin-engine/` is gone; its history lives on in the repo (`git filter-repo`). A fresh clone runs `git submodule update --init`, then `npm ci`.
-- **The submodule is pinned at 2009d52.** That commit includes the dealer_solana session's additions: the ledger's log cap and the save slot as settings, the body rig and the gait-lab bake, a game's own trait tables (`useTraits`), moods and voices. Golden is unchanged on it: chud plays exactly as before.
+- **The submodule is pinned at 2009d52.** That commit includes the dealer_solana session's additions: the ledger's log cap and the save slot as settings, the body rig and the gait-lab bake, a game's own trait tables (`useTraits`), moods and voices. Golden is unchanged on it: chud plays exactly as before. On the submodule build check passed and check:iso passed 127/127.
 - **The dealer_solana port (6C)** goes on in its own session: session_01Ftnm78gH2YzLyDZQdDDtXF, branch `claude/engine-port`, design page https://claude.ai/artifact/FzRxAu5Gy8AgeQR3xSP29h.
 - **For main:** the check session's branch `claude/iso-check-validation-zm4byh` goes in first. This branch contains it, so it then fast-forwards on top.
