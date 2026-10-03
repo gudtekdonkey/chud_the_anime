@@ -7,10 +7,13 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
+globalThis.addEventListener ??= () => {};   // a module that listens for keys at load (the close-up's skip) loads in Node
 const ROOT = fileURLToPath(new URL('..', import.meta.url)), OUT = ROOT + 'scripts/golden.json', DUMP = ROOT + 'test-output/golden/';
 // a game file by its old path; once moved into the engine (scripts/engine-moved.json) the same file from the package
 const MOVED = existsSync(ROOT + 'scripts/engine-moved.json') ? JSON.parse(readFileSync(ROOT + 'scripts/engine-moved.json', 'utf8')) : {};
 const src = p => import(MOVED[p] || ROOT + 'src/' + p);
+// a module of the list that one side of the split no longer has (the weapons' clips: built by poses.js before, by arsenal.js after)
+const opt = p => MOVED[p] || existsSync(ROOT + 'src/' + p) ? src(p) : null;
 // functions become their source, so a table's behaviour is fingerprinted too; Sets and Maps as arrays
 const replacer = (k, v) => typeof v === 'function' ? 'fn:' + v.toString() : v instanceof Set ? [...v] : v instanceof Map ? [...v.entries()] : v;
 const json = v => JSON.stringify(v, replacer);
@@ -20,8 +23,8 @@ const put = (name, v) => { const s = typeof v === 'string' ? v : json(v); got[na
 
 // ---- the clips: every module that registers one, in the order the slice loads them ----
 const flow = await src('iso/anim/flow.js');
-for (const p of ['iso/fx/fx.js', 'iso/anim/moves.js', 'iso/anim/moves-extra.js', 'iso/anim/idles.js', 'iso/anim/moves-squad.js', 'iso/weapons/arsenal.js',
-  'iso/enemies/moves.js', 'iso/skills/moves.js', 'iso/skills/reserved-moves.js', 'iso/exec/poses.js', 'iso/persona/gait.js']) await src(p);
+for (const p of ['iso/fx/fx.js', 'iso/anim/moves.js', 'iso/anim/moves-extra.js', 'iso/anim/idles.js', 'iso/anim/moves-squad.js', 'iso/anim/moves-port.js', 'iso/exec/stage.js', 'iso/weapons/poses.js', 'iso/weapons/arsenal.js',
+  'iso/enemies/moves.js', 'iso/skills/moves.js', 'iso/skills/reserved-moves.js', 'iso/exec/poses.js', 'iso/persona/gait.js']) await opt(p);
 const { CLIPS, Actor, SETTINGS } = flow;
 put('flow.settings', SETTINGS);
 put('clips.data', Object.fromEntries(Object.keys(CLIPS).sort().map(k => [k, CLIPS[k]])));
