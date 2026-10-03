@@ -3,8 +3,8 @@
 // the enemy types, not the page's: each attack has its wind-up (the 'e:tele' key: the red flash), a held read, the
 // blow ('e:strike', 'e:slam', 'e:loose', 'e:throw') and a recovery that is the punish window. HITS says what each blow
 // covers, measured from his root at the blow, and when he stops tracking the hero (the commit, before the blow).
-import { proc, keyed, H, TAU, clamp } from '../anim/flow.js';
-import { blade } from '../anim/moves.js';
+import { proc, keyed, H, TAU, clamp } from 'ronin-engine/flow/flow.js';
+import { blade } from 'ronin-engine/flow/moves.js';
 
 const G0 = { pel: [0, H - 2.3], lean: .14, head: .03, fN: [5.5, 1.5], fF: [-4.6, 1.5], elb: 'back', blade: blade([8.8, H + 4], .55, 1) };
 const k = (t, e, p, o = {}) => ({ t, e, ...p, ...o });

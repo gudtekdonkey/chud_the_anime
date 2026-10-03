@@ -1,4 +1,4 @@
-import { pz, HILT, lin, keyed } from '../rig/pose.js';
+import { pz, HILT, lin, keyed } from 'ronin-engine/rig/pose.js';
 
 // ---- Poses for the item interactions and the quick-slot uses (lifted from prototypes/20-items.html) ----
 const hold = () => 0;   // stays on the first pose until the next key: a hard cut, no in-betweens

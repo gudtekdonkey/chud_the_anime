@@ -1,8 +1,8 @@
 // node scripts/dominion-sim.mjs [seed] [years]: make a world, let dominion live it (100 region lords building, taxing, recruiting, going
 // to war), and print how land concentrated, the biggest domains by koku, the wars and how they ended, settlements that grew or fell,
 // and what a game day costs. No browser needed.
-import { generateWorld, advance, hoursFromYears, calendar, on, serialize, deserialize, nameOf } from '../src/sim/index.js';
-import { dominion as D, TIERS, tierName, lordName, holdingsOf, menOf, top } from '../src/sim/dominion/index.js';
+import { generateWorld, advance, hoursFromYears, calendar, on, serialize, deserialize, nameOf } from 'ronin-engine/sim/index.js';
+import { dominion as D, TIERS, tierName, lordName, holdingsOf, menOf, top } from 'ronin-engine/sim/dominion/index.js';
 
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 20);
 const count = {}; on('*', e => { if (e.type.startsWith('dom.') || e.type.startsWith('war.')) count[e.type] = (count[e.type] || 0) + 1; });

@@ -6,9 +6,9 @@
 import { Ally } from './ally.js';
 import { ROSTER, party as KIT, byId, gainExp, bury, stat } from '../../party/kit.js';
 import { CTX, nearestFoe } from '../ctx.js';
-import { W } from '../play/sim.js';
-import { hOf, wrapA, hv, AF } from '../anim/flow.js';
-import { sparks, focus } from '../fx/fx.js';
+import { W } from 'ronin-engine/clock/world.js';
+import { hOf, wrapA, hv, AF } from 'ronin-engine/flow/flow.js';
+import { sparks, focus } from 'ronin-engine/render/fx.js';
 import { qiAdd, QI_HIT, showBanner, HURT_HOOKS } from '../items/inv.js';
 import { say, numAt } from '../hud/world-ui.js';
 

@@ -4,7 +4,7 @@
 // [ / ] the next pick for the ronin / the samurai, \ a new person of the same culture, ; the names over the townsfolk
 // (not P / O / R / T: those are Cross Rift, Crescent Moon, Blade Recall and the facings).
 // The ronin's pick is remembered (localStorage); he starts as drawn (owner: "the ronin keeps the personality he has").
-import { PICKS, pickOf, personaOf, describe, summary, PLAIN } from './persona.js';
+import { PICKS, pickOf, personaOf, describe, summary, PLAIN } from './picks.js';
 import { LABELS } from './npcs.js';
 
 const CSS = `.iso .pinfo { font: 11px/1.45 ui-monospace, monospace; color: var(--dim); margin: 4px 0 0; white-space: pre-wrap; }

@@ -2,8 +2,7 @@
 // "these animations and flow style"). Poses are the page's side rig: pel / feet (fN near = his right, fF far = his left)
 // / hands [forward, up] in rig px, lean / head in radians, the blade's grip and angle. Only the imports and a few exports are new (and
 // K's blink and U's Sky Drop are left out: not in the core loop).
-import { proc, keyed, evalKeys, H, TAU, lerp, clamp, EZ, hv, wrapA, rnd } from './flow.js';
-import { dust } from '../fx/fx.js';
+import { proc, keyed, evalKeys, H, TAU, lerp, clamp, EZ, hv, wrapA, rnd, FX } from './flow.js';
 
 export const SH = { out: 0, g: [4.8, H + .4], ang: .5, two: 0 };           // the katana in the saya, the hand near the hilt
 export const blade = (g, ang, two = 1, o = {}) => ({ out: 1, g, ang, two, ...o });
@@ -29,7 +28,7 @@ function runP(s, p) { const sc = Math.min(1, Math.max(s, .05)), A = 10.5 * (.45 
 }
 export const strideOf = v => 5 * 10.5 * (.45 + .55 * Math.min(1, Math.max(v / 110, .05)));
 proc('run', (a, t, dt) => { a.phase += a.v * dt / strideOf(a.v); const p = runP(a.v / 110, a.phase);
-  if (a.out && a.flow) { const q = ((a.phase % .5) + .5) % .5; if (a.lastQ != null && a.lastQ > q && a.v > 60) { const f = hv(a.h), fo = .9 * 10.5; dust(a.W, a.x + f[0] * fo, a.z + f[1] * fo, 2, { spd: 12, life: .3, up: 5, dir: a.h + Math.PI, spread: 1.4 }); } a.lastQ = q; }
+  if (a.out && a.flow) { const q = ((a.phase % .5) + .5) % .5; if (a.lastQ != null && a.lastQ > q && a.v > 60) { const f = hv(a.h), fo = .9 * 10.5; FX.dust(a.W, a.x + f[0] * fo, a.z + f[1] * fo, 2, { spd: 12, life: .3, up: 5, dir: a.h + Math.PI, spread: 1.4 }); } a.lastQ = q; }
   return { p, move: a.v * dt }; }, { loop: true, blend: .07 });
 
 // start: dip, lean in, push off the back foot, then the run takes over at the speed he has
@@ -47,7 +46,7 @@ const STOPK = [
   { t: .46, e: 'io', pel: [.5, H - 2.7], lean: .15, head: .06, fN: [8.2, 1.5], fF: [-4.5, 1.5], hN: [1.8, H - 1.5], hF: [5.2, H + 1.6], elb: 'back', speed: 0, blade: SH },
   { t: .75, e: 'io', pel: [.3, H - 2.2], lean: .14, head: .08, fN: [8.2, 1.5], fF: [-4.5, 1.5], hN: [1.8, H - 1.5], hF: [5.2, H + 1.6], elb: 'back', speed: 0, blade: SH }];
 proc('stop', (a, t, dt) => { const o = a.co; if (o.v0 == null) o.v0 = a.v; const T = .26, vv = t < T ? o.v0 * (1 - t / T) ** 1.6 : 0; a.v = a.vt = vv;
-  if (t < .2 && a.flow && rnd() < .55) { const f = hv(a.h), fo = 9; dust(a.W, a.x + f[0] * fo, a.z + f[1] * fo, 1, { spd: 26, dir: a.h, spread: 1.2, life: .4, up: 8 }); }
+  if (t < .2 && a.flow && rnd() < .55) { const f = hv(a.h), fo = 9; FX.dust(a.W, a.x + f[0] * fo, a.z + f[1] * fo, 1, { spd: 26, dir: a.h, spread: 1.2, life: .4, up: 8 }); }
   return { p: evalKeys(STOPK, t).p, move: vv * dt }; }, { dur: .75, next: 'idle', blend: .05, noLock: a => a.ct < .2 });
 
 // the 180 skid: brake, pivot through the facings between, push off the other way
@@ -58,7 +57,7 @@ const SKIDK = [
   { t: .28, e: 'l', pel: [2, H - 3.6], lean: .55, head: -.18, fN: [9, 4.5], fF: [-6, 1.5], hN: [-2, H + 1.5], hF: [4, H - .4], elb: 'back', speed: .5, blade: SH }];
 proc('skid', (a, t, dt) => { const o = a.co; if (!o.init) { o.init = 1; o.v0 = a.v; a.mh = a.h; }
   let vv = 0; if (t < .13) vv = o.v0 * (1 - t / .13) ** 1.5; else if (a.mh != null) { a.mh = null; a.ht = o.h1; a.turn = 26; }
-  a.v = vv; if (t < .14 && a.flow && rnd() < .7) { const f = hv(a.mh ?? a.h); dust(a.W, a.x + f[0] * 8, a.z + f[1] * 8, 1, { spd: 30, dir: a.mh ?? a.h, spread: 1.3, life: .45, up: 9 }); }
+  a.v = vv; if (t < .14 && a.flow && rnd() < .7) { const f = hv(a.mh ?? a.h); FX.dust(a.W, a.x + f[0] * 8, a.z + f[1] * 8, 1, { spd: 30, dir: a.mh ?? a.h, spread: 1.3, life: .45, up: 9 }); }
   return { p: evalKeys(SKIDK, t).p, move: vv * dt }; }, { dur: .28, blend: .04, noLock: a => a.ct < .27, next: a => { a.turn = 9; a.v = 50; a.vt = a.co.v1 ?? 115; a.phase = .02; a.play('run', { blend: .05 }); } });
 
 // the roll: dive, tumble over the shoulder, come up already moving
@@ -73,7 +72,7 @@ proc('roll', (a, t, dt) => { const o = a.co, T = .44, dist = o.dist ?? 50, u = c
   else if (u < .8) { const k = (u - .14) / .66, th = 1 + (TAU - .7) * EZ.s(k) * .92 + k * (TAU - .7) * .08; p = tuck(th, 6, 9 + 2.5 * Math.sin(Math.PI * k), .3 * (1 - Math.sin(Math.PI * k)), bl); }
   else { const k = EZ.o((u - .8) / .2); p = tuck(wrapA(TAU - .7 + .25) + 0 * k, 6 - 2 * k, 10 + 3 * k, .3 + .5 * k, bl); p.lean = lerp(-.45 + TAU - TAU, .5, k); }
   p.lean = wrapA(p.lean); const v0 = a.lastRr ?? r; a.lastRr = r;
-  if (a.flow && t > .06 && t < .38 && rnd() < .35) dust(a.W, a.x, a.z, 1, { spd: 14, life: .35, up: 6 });
+  if (a.flow && t > .06 && t < .38 && rnd() < .35) FX.dust(a.W, a.x, a.z, 1, { spd: 14, life: .35, up: 6 });
   a.v = (r - v0) / dt;
   p.hatAbs = p.lean * .9;
   return { p, move: r - v0 }; }, { dur: .44, blend: .05, enter: a => { a.lastRr = null; }, noLock: a => a.ct < .4 });

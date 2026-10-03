@@ -1,7 +1,7 @@
 import { g } from '../screen.js';
 import { P, S, INV } from '../state.js';
 import { rr } from '../fx/util.js';
-import { pz, lerpP, ease } from '../rig/pose.js';
+import { pz, lerpP, ease } from 'ronin-engine/rig/pose.js';
 import { SHEETS } from '../anims/sheets.js';
 import { frameOf } from '../player/actions.js';
 import { POSES } from '../anims/poses.js';

@@ -7,7 +7,7 @@ import { tear } from '../fx/void.js';
 import { setState } from './actions.js';
 import { hitOne, burst } from './hits.js';
 import { tv } from './mastery.js';
-import { ease } from '../rig/pose.js';
+import { ease } from 'ronin-engine/rig/pose.js';
 import { ENEMIES, viewTo } from '../world/enemies.js';
 import { T, powerCast } from './power.js';
 import { turner } from '../rig/turn.js';

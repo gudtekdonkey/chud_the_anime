@@ -5,10 +5,10 @@
 // hair vertex the hat could cover is kept inside the hat's shells, so nothing is ever drawn through it: hair under a
 // brim is compressed under it, a band pinches what crosses it, a hood or basket holds what it covers.
 import * as THREE from 'three';
-import { piece, newPart } from '../gfx/build.js';
-import { RAMP as R } from '../gfx/palette.js';
-import { SK } from '../look/three/rig.js';
-import { AF } from '../anim/flow.js';
+import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
+import { SK } from 'ronin-engine/render/rig3d.js';
+import { AF } from 'ronin-engine/flow/flow.js';
 import { HC, resolve, clampPt, inside, pushOut, BODY, MARGIN, validate } from './contract.js';
 import { shell, rod, spike, lump, loop, segment } from './parts.js';
 import { HAIR, HAIR_ID, COLS, DEFAULT_HAIR } from './styles.js';

@@ -2,12 +2,12 @@
 // run in Node with no three.js and no DOM, on bodies made of plain numbers: proof that the decisions stand alone, the
 // way the 2D game would drive them. Each body does what its intent says in the crudest way (walk at the speed, a swing
 // lands after 0.3 s if the target is still in reach, a shot after 0.6 s); the brains are the slice's own.
-import { initMind } from '../src/iso/ai/senses.js';
-import { temperOf } from '../src/iso/ai/temper.js';
-import { thinkSide, thinkFoe, BOUNDS } from '../src/iso/ai/brain.js';
-import { dropToken, died, wounded } from '../src/iso/ai/director.js';
-import { thinkAlly } from '../src/iso/squad/mind.js';
-import { joinSquad, assignSlots, order } from '../src/iso/squad/squad.js';
+import { initMind } from 'ronin-engine/ai/senses.js';
+import { temperOf } from 'ronin-engine/ai/temper.js';
+import { thinkSide, thinkFoe, BOUNDS } from 'ronin-engine/ai/brain.js';
+import { dropToken, died, wounded } from 'ronin-engine/ai/director.js';
+import { thinkAlly } from 'ronin-engine/squad/mind.js';
+import { joinSquad, assignSlots, order } from 'ronin-engine/squad/squad.js';
 
 const SECS = +(process.argv[2] || 60); let seed = +(process.argv[3] || 7);
 const rng = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
@@ -39,6 +39,7 @@ for (let i = 0; i < SECS * 60; i++) {
     else if (it.k === 'revive' && Math.hypot(it.target.x - a.x, it.target.z - a.z) > 10) step(a, it.target.x, it.target.z, 60); else if (it.k === 'revive') { it.target.downed = false; it.target.hp = it.target.maxHp * .4; A.log(`revive:${a.name}>${it.target.name}`); a.intent = { k: 'idle' }; }
     else if (it.k === 'taunt') { a.busyT = .8; a.mind.tauntT = A.t; for (const f of foes) if (f.alive && Math.hypot(f.x - a.x, f.z - a.z) < 85) f.mind.threat.set(a.id, (f.mind.threat.get(a.id) || 0) + 45); A.log(`taunt:${a.name}`); a.intent = { k: 'idle' }; } }
   for (const a of allies) if (a.downed && (a.bleed -= A.dt) <= 0) { a.downed = false; a.alive = false; A.log(`dead:${a.name}`); }
+  if (process.env.SQUAD_TRACE && i % 15 === 0) console.log(A.t.toFixed(3), A.agents.map(a => `${a.name} ${a.x.toFixed(4)},${a.z.toFixed(4)} ${a.hp.toFixed(3)} ${a.intent && a.intent.k}`).join(' | '));   // golden.mjs fingerprints this
   if (foes.every(f => !f.alive)) { A.log('the yard is clear'); break; }
 }
 const kinds = {}; for (const e of A.events) { const k = e.split(' ')[1].split(':')[0]; kinds[k] = (kinds[k] || 0) + 1; }

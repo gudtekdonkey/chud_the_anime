@@ -3,9 +3,9 @@
 // Presses go through the slice's 0.2 s buffer (play/input.js): a skill's key fires on the first step he can take it
 // (from rest, a run, the guard, a cut once its hit window closes); a press refused by a cooldown or a gate (Time Slice
 // on an empty meter) blinks its slot and is never remembered. Each skill keeps its own state in its own file.
-import { W } from '../play/sim.js';
+import { W } from 'ronin-engine/clock/world.js';
 import { CUT } from '../play/hero.js';
-import { bindKey, consume, pending } from '../play/input.js';
+import { bindKey, consume, pending } from 'ronin-engine/input/keys.js';
 import './reserved-moves.js';
 import { SKILLS, KIT, ready, refuse, kitTick, qiAdd, pop } from './kit.js';
 import { counter } from './counter.js';

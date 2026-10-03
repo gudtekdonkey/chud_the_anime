@@ -1,4 +1,4 @@
-import { pz, HILT, keyed } from '../rig/pose.js';
+import { pz, HILT, keyed } from 'ronin-engine/rig/pose.js';
 
 // ---- Breath of Qi (C): the four approved takes from prototypes/18-skills-ideas.html, as poses ----
 // Each is one fixed timeline; the healing beats in player/breath.js read the same times (BT)

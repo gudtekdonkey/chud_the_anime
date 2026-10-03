@@ -1,8 +1,8 @@
 // node scripts/sim-crime.mjs [seed] [years]: live a world with the crime system for some years (10 by default) and print what happened:
 // crimes by kind, bounties, land that changed hands by force vs by title. Asserts the lane's rules and exits 1 if one breaks.
-import { systems, generateWorld, advance, hoursFromYears, serialize, deserialize, HOURS_PER_YEAR, ownerOf } from '../src/sim/index.js';
-import { findHeir } from '../src/sim/people/index.js';
-import { crimeState, commit, takePlotByMurder, bountyOf, karmaName, payOff, claimantOf, courtCase, heirOf, payBloodPrice, fadeOf, seize, buyTitle, bountiesOf } from '../src/sim/crime/index.js';
+import { systems, generateWorld, advance, hoursFromYears, serialize, deserialize, HOURS_PER_YEAR, ownerOf } from 'ronin-engine/sim/index.js';
+import { findHeir } from 'ronin-engine/sim/people/index.js';
+import { crimeState, commit, takePlotByMurder, bountyOf, karmaName, payOff, claimantOf, courtCase, heirOf, payBloodPrice, fadeOf, seize, buyTitle, bountiesOf } from 'ronin-engine/sim/crime/index.js';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 10);
 let fails = 0; const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if (!ok) fails++; };
 

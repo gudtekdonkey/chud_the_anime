@@ -3,7 +3,7 @@
 // smoke over the whole screen, the whetstone's cyan edge on his blade, small sprites of today's world art at 2×.
 // Colours from today's COL (never a literal cyan), so an element re-skins them as it does today's.
 import { COL } from '../../config.js';
-import { toScreen } from '../gfx/view.js';
+import { toScreen } from 'ronin-engine/render/gfx/view.js';
 import { CTX } from '../ctx.js';
 import { INV } from './inv.js';
 

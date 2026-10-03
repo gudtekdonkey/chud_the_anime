@@ -1,5 +1,5 @@
 // ---- Prototype 41: a stretch of the world map round him (40 × 24 zones, 12 px a zone), with the roads' dangers and the storms ----
-import { zoneAt } from '../../src/sim/ledger.js';
+import { zoneAt } from 'ronin-engine/sim/ledger.js';
 import { stormAt } from '../../src/sim/travel/storms.js';
 
 export const MW = 40, MH = 24, Z = 12;

@@ -1,18 +1,18 @@
 // ---- ?iso&idles: the twenty idles side by side, each looping on its own ronin (or townsman: &folk), named, on a
 // bare floor, at the game's clock. &who=<pick id> gives them all one persona (e.g. &who=p:Old%20master), &yaw=0..7 a
 // facing (default 1, SE), &look=pixel the pages' drawing, &zoom the camera, &body=39.5 the picked body camera (upright by default), &only=a,b a few of them. The check screenshots it.
-import { piece } from '../gfx/build.js';
-import { shadeMat } from '../gfx/shade.js';
-import { RAMP } from '../gfx/palette.js';
-import { PIPE } from '../gfx/post.js';
-import { CAM, projMatrix, toScreen, setBody } from '../gfx/view.js';
-import { W } from '../play/sim.js';
+import { piece } from 'ronin-engine/render/gfx/build.js';
+import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
+import { RAMP } from 'ronin-engine/render/gfx/palette.js';
+import { PIPE } from 'ronin-engine/render/gfx/post.js';
+import { CAM, projMatrix, toScreen, setBody } from 'ronin-engine/render/gfx/view.js';
+import { W } from 'ronin-engine/clock/world.js';
 import { Char } from '../play/char.js';
-import { FA } from '../anim/flow.js';
-import { IDLE_NAMES, IDLES, forceIdle } from '../anim/idles.js';
-import { personaOf, pickOf } from './persona.js';
+import { FA } from 'ronin-engine/flow/flow.js';
+import { IDLE_NAMES, IDLES, forceIdle } from 'ronin-engine/flow/idles.js';
+import { personaOf, pickOf } from './picks.js';
 import { folkLook } from './folk.js';
-import './gait.js';
+import 'ronin-engine/persona/gait.js';
 
 export function runGallery({ scene, cam, pipe, Q }) {
   scene.add(piece().box(900, 2, 600, RAMP.n[5], { p: [240, -1, 150] }).mesh(shadeMat({ obj: 0 })));

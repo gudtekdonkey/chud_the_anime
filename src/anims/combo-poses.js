@@ -1,4 +1,4 @@
-import { pz, lin, keyed } from '../rig/pose.js';
+import { pz, lin, keyed } from 'ronin-engine/rig/pose.js';
 
 // ---- J3 to J6: four different attacks, not four swings. The body (hips, legs, lean) is the same for every weapon;
 // each weapon brings its own arms and blade (fa, ba, sword) for each beat, so a spear kicks and launches like a spear.

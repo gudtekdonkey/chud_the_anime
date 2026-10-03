@@ -1,4 +1,4 @@
-import { generateWorld, zoneAt, tilesOf, TERRAIN, ZONE, PLOTS, PLOT, plotId, plotAt, ownerOf, nameOf, ageOf, calendar, KINDS } from '../../src/sim/index.js';
+import { generateWorld, zoneAt, tilesOf, TERRAIN, ZONE, PLOTS, PLOT, plotId, plotAt, ownerOf, nameOf, ageOf, calendar, KINDS } from 'ronin-engine/sim/index.js';
 
 // ---- the world map: every zone, drawn from the ledger; a zone opened into its tiles and plots ----
 const Z = 6;   // px per zone on the map

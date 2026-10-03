@@ -1,4 +1,4 @@
-import { pz, lerpP, ease } from '../rig/pose.js';
+import { pz, lerpP, ease } from 'ronin-engine/rig/pose.js';
 import { rr, sgn } from '../fx/util.js';
 
 // ---- The samurai's body: poses, and the deaths pass's spring joints (from the deaths pass prototypes) ----

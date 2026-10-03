@@ -4,10 +4,10 @@
 // point, a shrine's stand-in): Lotus (one long breath, the whole meter into health); C during Storm Chain: Storm breath
 // (the rest of the storm at once, a big heal, everyone near thrown off his feet). Letting go of C ends a breath early.
 // The look by power: I a quiet trickle of motes, II stone lifting off the floor, III ribbons of light; nothing on the floor.
-import { W } from '../play/sim.js';
-import { held, pending, consume } from '../play/input.js';
-import { hOf } from '../anim/flow.js';
-import { shake, toScreen, CAM } from '../gfx/view.js';
+import { W } from 'ronin-engine/clock/world.js';
+import { held, pending, consume } from 'ronin-engine/input/keys.js';
+import { hOf } from 'ronin-engine/flow/flow.js';
+import { shake, toScreen, CAM } from 'ronin-engine/render/gfx/view.js';
 import { brush } from './ink.js';
 import { ring, spark, mote, chip, bolt, flash, burstAt, rr, TAU } from './fx3d.js';
 import { BT, HEAL, DOME, QI_RATE, REST } from './beats.js';

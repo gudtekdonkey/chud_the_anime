@@ -3,10 +3,10 @@
 // (the commit), the parry window's flicker, the archer's aim line (dotted while he tracks, solid once it locks), arrows
 // and shuriken in flight, the shinobi's smoke, health bars over the hurt, the token pip over whoever has the turn, the
 // Red Ronin's bar with its phases, and the hero's health.
-import { W } from '../play/sim.js';
-import { AF, EZ, hv } from '../anim/flow.js';
-import { toScreen, VW, VH } from '../gfx/view.js';
-import { RAMP as R } from '../gfx/palette.js';
+import { W } from 'ronin-engine/clock/world.js';
+import { AF, EZ, hv } from 'ronin-engine/flow/flow.js';
+import { toScreen, VW, VH } from 'ronin-engine/render/gfx/view.js';
+import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
 import { CTX, TOKENS } from './ctx.js';
 
 const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16), bay = (x, y) => BAY[(y & 3) * 4 + (x & 3)];

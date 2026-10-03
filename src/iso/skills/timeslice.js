@@ -4,12 +4,12 @@
 // (nearest first), one cut each, a step of 0.016–0.06 s per enemy, so the pass takes as long as it needs and no
 // longer. Then he is back where he started, kneeling, sliding the blade home; on the click colour snaps back and
 // every cut fires at once: they fall (the close-up on the nearest). Those outside the zone flinch and hold.
-import { W, STOP } from '../play/sim.js';
+import { W, STOP } from 'ronin-engine/clock/world.js';
 import { STATS } from '../play/rules.js';
-import { hOf, AF, EZ, clamp } from '../anim/flow.js';
-import { sparks, dust, focus, tear } from '../fx/fx.js';
-import { shake } from '../gfx/view.js';
-import { MOMENT } from '../gfx/post.js';
+import { hOf, AF, EZ, clamp } from 'ronin-engine/flow/flow.js';
+import { sparks, dust, focus, tear } from 'ronin-engine/render/fx.js';
+import { shake } from 'ronin-engine/render/gfx/view.js';
+import { MOMENT } from 'ronin-engine/render/gfx/post.js';
 import { startCine } from '../fx/cine.js';
 import { KIT, tv, T, startCd, castStart, landed, pop } from './kit.js';
 import { scr, floorRing, streak, hairline } from './sfx.js';

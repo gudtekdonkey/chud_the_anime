@@ -6,10 +6,10 @@
 // is up, a tap answers J and a swipe answers its direction. `&swipe` makes the mouse a finger, to test on PC.
 // Presses go in as the keys' own events, so the input buffer and every controller take them as they take keys.
 import { CTX, nearestFoe } from '../ctx.js';
-import { hOf, wrapA } from '../anim/flow.js';
-import { OBL } from '../gfx/view.js';
+import { hOf, wrapA } from 'ronin-engine/flow/flow.js';
+import { OBL } from 'ronin-engine/render/gfx/view.js';
 import { CP, answer, readDir } from '../combo/prompts.js';
-import { W } from '../play/sim.js';
+import { W } from 'ronin-engine/clock/world.js';
 
 export const TOUCH = { stick: null, dir: null, inject: null, log: [], onHold: null, onParry: null, onTwo: null, hold: null };
 const TAP = { ms: 220, px: 14 }, SWIPE = 26, HOLD = 280, DOUBLE = 260, LUNGE_R = 96, LUNGE_A = 40 * Math.PI / 180, STICK = .45;

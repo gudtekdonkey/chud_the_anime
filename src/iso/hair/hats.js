@@ -3,8 +3,8 @@
 // crown item does, and its own chains (cloth ties on springs). Geometry is low-poly in the slice's ramps, built in the
 // hat node's space. The jingasa is ronin.js's, unchanged; the rest are placeholders in the same language.
 import * as THREE from 'three';
-import { piece, newPart } from '../gfx/build.js';
-import { RAMP as R } from '../gfx/palette.js';
+import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
 import { SCALP } from './contract.js';
 import { shell, loop } from './parts.js';
 

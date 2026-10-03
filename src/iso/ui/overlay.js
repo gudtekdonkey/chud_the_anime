@@ -1,11 +1,11 @@
 // ---- The ?iso page: the game canvas (scaled up by whole multiples when it fits, nearest-neighbour), and a small
 // overlay: the frame time, the model switch, one toggle per pipeline step (what each does, for the owner to see), the
 // camera's body angle and the hat's tunables, and the controls. Every choice is also a key.
-import { PIPE } from '../gfx/post.js';
+import { PIPE } from 'ronin-engine/render/gfx/post.js';
 import { LOOK3D } from '../look/three/look3d.js';
-import { SETTINGS } from '../anim/flow.js';
-import { setBody, BODY } from '../gfx/view.js';
-import { STYLE, setStyle } from '../gfx/style.js';
+import { SETTINGS } from 'ronin-engine/flow/flow.js';
+import { setBody, BODY } from 'ronin-engine/render/gfx/view.js';
+import { STYLE, setStyle } from 'ronin-engine/render/gfx/style.js';
 
 const CSS = `
 :root { color-scheme: dark; --bg: #0b0d10; --panel: #13161a; --rule: #262b31; --fg: #d9dfdd; --dim: #8b9592; --cyan: #6ff3e4; }

@@ -1,6 +1,6 @@
 import { P, wear } from '../state.js';
 import { PX } from '../config.js';
-import { ease } from '../rig/pose.js';
+import { ease } from 'ronin-engine/rig/pose.js';
 import { ANIMS } from '../anims/anims.js';
 import { FEEL } from './feel.js';
 import { TURNS } from './facing.js';

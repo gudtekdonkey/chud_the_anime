@@ -1,8 +1,8 @@
-import { generateWorld, advance, calendar, zoneAt, tilesOf, TERRAIN, ZONE, PLOTS, PLOT, plotId, plotAt, ownerOf, nameOf, on, TIME } from '../../src/sim/index.js';
+import { generateWorld, advance, calendar, zoneAt, tilesOf, TERRAIN, ZONE, PLOTS, PLOT, plotId, plotAt, ownerOf, nameOf, on, TIME } from 'ronin-engine/sim/index.js';
 import { dominion as D, key, unkey, top, lordName, lordOf, estatesOf, plotsHeld, holdingsOf, settlementAt, lordOfSettlement, nextNeeds, costOf, canPlace, prereq, plan, hire,
   setTax, setLaw, appoint, officeQ, recruit, recruitWhy, armiesOf, menOf, march, orderSquad, disband, claimPlot, plotChanged, worth, gain, activeWars,
-  BUILDINGS, TIERS, tierName, LAWS, OFFICES, UNITS, ORDERS } from '../../src/sim/dominion/index.js';
-import { usesLots, lotsOf, lotsTaken } from '../../src/sim/dominion/build.js';
+  BUILDINGS, TIERS, tierName, LAWS, OFFICES, UNITS, ORDERS } from 'ronin-engine/sim/dominion/index.js';
+import { usesLots, lotsOf, lotsTaken } from 'ronin-engine/sim/dominion/build.js';
 
 // ---- prototype 42: the ronin on the world map, holding a few plots, building, growing a settlement, raising men; the realms over years ----
 const $ = id => document.getElementById(id);

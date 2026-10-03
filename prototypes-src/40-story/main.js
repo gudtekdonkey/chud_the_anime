@@ -1,7 +1,7 @@
 // Prototype 40: a world's events over time, a region's notice board, and ledger-born quests you can resolve different ways.
 // Bundled into prototypes/40-story.html by scripts/proto-bundle.mjs. Everything shown is read from the ledger (src/sim/, src/sim/story/).
-import { generateWorld, advance, serialize, deserialize, calendar, on, nameOf } from '../../src/sim/index.js';
-import { storyOf, boardOf, openQuests, quest, waysOf, takeQuest, resolveQuest, chapterOf, rivalName, breakOath, WARNINGS } from '../../src/sim/story/index.js';
+import { generateWorld, advance, serialize, deserialize, calendar, on, nameOf } from 'ronin-engine/sim/index.js';
+import { storyOf, boardOf, openQuests, quest, waysOf, takeQuest, resolveQuest, chapterOf, rivalName, breakOath, WARNINGS } from 'ronin-engine/sim/story/index.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);

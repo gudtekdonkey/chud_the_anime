@@ -5,13 +5,13 @@
 // and, if it kills, gets the close-up. A press earlier than that is only a BLOCK: pushed back a step, no counter.
 // The window shows the recommended way (indicator A): the tell's glint runs up the samurai's blade and reaches the
 // point as the window opens; a star sits on the point while it is open. The closing ring (B) is the assist option.
-import { W, STOP } from '../play/sim.js';
+import { W, STOP } from 'ronin-engine/clock/world.js';
 import { STATS } from '../play/rules.js';
-import { hOf, clamp, lerp } from '../anim/flow.js';
-import { sparks, dust, focus, tear } from '../fx/fx.js';
-import { shake, toScreen } from '../gfx/view.js';
+import { hOf, clamp, lerp } from 'ronin-engine/flow/flow.js';
+import { sparks, dust, focus, tear } from 'ronin-engine/render/fx.js';
+import { shake, toScreen } from 'ronin-engine/render/gfx/view.js';
 import { startCine } from '../fx/cine.js';
-import { pending } from '../play/input.js';
+import { pending } from 'ronin-engine/input/keys.js';
 import { ATTACKS } from '../play/foe.js';
 import { ANSWER } from './reserved-moves.js';
 import { KIT, tv, startCd, castStart, landed, qiAdd, pop } from './kit.js';

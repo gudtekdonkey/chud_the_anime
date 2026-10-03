@@ -1,7 +1,7 @@
 import { g } from '../screen.js';
 import { P, pops, glints } from '../state.js';
 import { line } from '../fx/bolts.js';
-import { ease } from '../rig/pose.js';
+import { ease } from 'ronin-engine/rig/pose.js';
 import { glint, plusMark } from '../ui/hud-kit.js';
 import { textC } from '../ui/pixfont.js';
 

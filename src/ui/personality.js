@@ -1,6 +1,6 @@
 import { game } from '../screen.js';
-import { TRAITS, GROUPS, PRESETS } from '../traits/traits.js';
-import { FIDGETS } from '../traits/fidgets.js';
+import { TRAITS, GROUPS, PRESETS } from 'ronin-engine/traits/traits.js';
+import { FIDGETS } from 'ronin-engine/traits/fidgets.js';
 import { CULTURES, personOf } from '../traits/cultures.js';
 import { setPersonality } from '../player/personality.js';
 

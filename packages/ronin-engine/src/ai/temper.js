@@ -7,7 +7,7 @@
 // Owner's rule (dominion lane): intelligence decides how good the choices are, personality how willingly someone acts.
 // So `wit` sets reaction time, target choice (the hurt, the archer), how much a taunt fools him and how well he parries;
 // the other five weight how much he wants each option. Pure data and arithmetic: no engine, no drawing.
-import { TRAITS } from '../../traits/traits.js';
+import { TRAITS } from '../traits/traits.js';
 
 export const KNOBS = ['bold', 'aggro', 'patience', 'caution', 'discipline', 'wit'];
 export const TEMPER0 = { bold: .5, aggro: .5, patience: .5, caution: .5, discipline: .5, wit: .5 };

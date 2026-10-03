@@ -5,7 +5,7 @@
 // items/item-sprites.js, fx/numbers.js): the HUD canvas they draw on is hud/canvas.js's.
 import './hud/canvas.js';
 import { CTX, lone } from './ctx.js';
-import { W } from './play/sim.js';
+import { W } from 'ronin-engine/clock/world.js';
 import { STATS } from './play/rules.js';
 import { PARTY, initParty, tickParty, partyKill, hurtAlly } from './party/party.js';
 import { BAG } from '../party/kit.js';
@@ -22,9 +22,9 @@ import { TOUCH, initTouch, touchDir } from './input/touch.js';
 import { drawHud, hudCanvas } from './hud/hud.js';
 import { numAt, tickWorldUi } from './hud/world-ui.js';
 import { BLADE_LEN } from './party/ally-look.js';
-import { VW, VH } from './gfx/view.js';
-import { consume } from './play/input.js';
-import './anim/moves-port.js';
+import { VW, VH } from 'ronin-engine/render/gfx/view.js';
+import { consume } from 'ronin-engine/input/keys.js';
+import 'ronin-engine/flow/moves-port.js';
 
 // kit: the I O P N U C skills' state (skills/skills.js SK), when they run: then today's HUD shows their Qi, storm and
 // health (one meter each, bridged every step below) and a landed cut's Qi is theirs to give. execute(f): the real

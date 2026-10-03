@@ -1,7 +1,7 @@
 // ---- ?iso&sheet: a contact sheet for review: rows of moments from the core loop (each a clip at a time), the eight
 // facings across, in the room's light, through the same pipeline and the look picked (&look=pixel). Frozen, so a
 // screenshot shows exactly what each facing draws; &foe draws the samurai, &outfit=<preset> dresses them (gear/).
-import { Actor, CLIPS, FA } from './anim/flow.js';
+import { Actor, CLIPS, FA } from 'ronin-engine/flow/flow.js';
 import { makeLook } from './look/look.js';
 
 export const SHEET_ROWS = [['idle', .6], ['run', .1], ['run', .35], ['J1', .185], ['J2', .145], ['J3', .265], ['roll', .2], ['guard', .5]];

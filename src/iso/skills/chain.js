@@ -4,11 +4,11 @@
 // leaps from his palm, hooks that one round the chest, and jumps on from him to the next and the next (3 / 4 / 5 by
 // power), jolting each. Then he leans back and yanks: the first is torn off his feet and dragged across the floor
 // straight onto the draw-cut. Nobody in reach: the bolt fizzles into the air and the key is back sooner.
-import { W, STOP } from '../play/sim.js';
+import { W, STOP } from 'ronin-engine/clock/world.js';
 import { STATS } from '../play/rules.js';
-import { hOf, hv, EZ, clamp, lerp, wrapA } from '../anim/flow.js';
-import { sparks, dust, focus, tear, ring } from '../fx/fx.js';
-import { shake } from '../gfx/view.js';
+import { hOf, hv, EZ, clamp, lerp, wrapA } from 'ronin-engine/flow/flow.js';
+import { sparks, dust, focus, tear, ring } from 'ronin-engine/render/fx.js';
+import { shake } from 'ronin-engine/render/gfx/view.js';
 import { startCine } from '../fx/cine.js';
 import { tv, T, startCd, castStart, landed, qiAdd, pop } from './kit.js';
 import { scr, jag, bolt } from './sfx.js';

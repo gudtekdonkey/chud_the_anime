@@ -1,8 +1,8 @@
 // node scripts/travel-year.mjs [seed] [years]: the travel lane's test (docs/sim-travel.md). Lives a world for a year with a ronin who
 // walks the roads town to town by day, and prints how often each encounter came up, by region.
-import '../src/sim/travel/index.js';
-import { generateWorld, advance, calendar, zoneAt, on, rngFor, hoursFromYears } from '../src/sim/index.js';
-import { enterZone, choose, context, chanceAt, ENCOUNTERS } from '../src/sim/travel/index.js';
+import 'ronin-engine/sim/travel/index.js';
+import { generateWorld, advance, calendar, zoneAt, on, rngFor, hoursFromYears } from 'ronin-engine/sim/index.js';
+import { enterZone, choose, context, chanceAt, ENCOUNTERS } from 'ronin-engine/sim/travel/index.js';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 1);
 const L = generateWorld(seed, 0), st = L.sys.travel, p = L.actors[L.player], r = rngFor(seed, 'traveller');
 const tally = {}, count = (k, n = 1) => tally[k] = (tally[k] || 0) + n;

@@ -21,7 +21,7 @@ import { BLEED } from '../party/ally.js';
 import { pairCandidate, PAIR, PAIR_CD } from '../party/paired.js';
 import { CP, BEAT } from '../combo/prompts.js';
 import { CTX } from '../ctx.js';
-import { W } from '../play/sim.js';
+import { W } from 'ronin-engine/clock/world.js';
 import { drawSkillBar, addSkill, ICONS } from './skill-bar.js';
 import { drawWorldUi, toHud } from './world-ui.js';
 

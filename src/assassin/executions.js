@@ -1,4 +1,4 @@
-import { pz, HILT, lerpP } from '../rig/pose.js';
+import { pz, HILT, lerpP } from 'ronin-engine/rig/pose.js';
 import { rr, sgn } from '../fx/util.js';
 import { at, hold, lin, IDLE, EG, RX, whiff } from './enemy-poses.js';
 import { partOf, toPieces, splitPiece, shatter, sever, dropSword, fallScript, slideOff } from './pieces.js';

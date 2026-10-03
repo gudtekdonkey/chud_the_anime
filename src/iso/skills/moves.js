@@ -4,8 +4,8 @@
 // and its source is not in this checkout, so these are authored here from today's skill poses (src/anims/poses.js,
 // breath-poses.js) and timings (player/update.js, skills.js, mirror.js, breath.js): the same beats, new keys. Swap any
 // clip for the page's keys behind the same name.
-import { keyed, proc, evalKeys, H, TAU, EZ, clamp, lerp } from '../anim/flow.js';
-import { SH, blade } from '../anim/moves.js';
+import { keyed, proc, evalKeys, H, TAU, EZ, clamp, lerp } from 'ronin-engine/flow/flow.js';
+import { SH, blade } from 'ronin-engine/flow/moves.js';
 import { BT } from './beats.js';
 
 const sh = g => ({ out: 0, g, ang: .5, two: 0 });

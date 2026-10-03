@@ -4,13 +4,13 @@
 // and how often, how long they rest before wandering on, and how they take the hero coming close (a curious one turns
 // to look, a cautious one steps out of his way). Not in the fight: the hit rules only know the samurai.
 import { Char } from '../play/char.js';
-import { W } from '../play/sim.js';
-import { AF, hOf, wrapA } from '../anim/flow.js';
+import { W } from 'ronin-engine/clock/world.js';
+import { AF, hOf, wrapA } from 'ronin-engine/flow/flow.js';
 import { makeLook } from '../look/look.js';
-import { personaOf, personOf, describe, CULTURES } from './persona.js';
+import { personaOf, personOf, describe, CULTURES } from './picks.js';
 import { folkLook } from './folk.js';
-import { WALK } from './gait.js';
-import './gait.js';
+import { WALK } from 'ronin-engine/persona/gait.js';
+import 'ronin-engine/persona/gait.js';
 
 // who stands where: [kind, culture, seed, x, z, wander radius] (world units; the hero starts at 250,120, the samurai at 330,110)
 export const FOLK = [

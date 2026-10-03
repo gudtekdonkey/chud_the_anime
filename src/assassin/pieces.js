@@ -1,6 +1,6 @@
 import { FW, FH, OX, OY, RC, PX, snap } from '../config.js';
 import { rig } from '../rig/rig.js';
-import { pz, ease } from '../rig/pose.js';
+import { pz, ease } from 'ronin-engine/rig/pose.js';
 import { rr } from '../fx/util.js';
 import { weapon } from '../weapons/weapons.js';
 import { EL, ec } from '../fx/element.js';

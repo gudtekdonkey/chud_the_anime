@@ -2,7 +2,7 @@
 // controller pieces on the same script and clock, for side-by-side review against the page's contact sheets
 // (scripts/iso-reel.mjs). A review mode, not the game: window.__reel.seek(t) steps the world to game time t and draws.
 // Positions are the page's (rig px), moved into the open courtyard.
-import { DIR, AF } from './anim/flow.js';
+import { DIR, AF } from 'ronin-engine/flow/flow.js';
 
 const Z0 = 190, OX = 260, OZ = 0;   // the page's stage row, shifted into the open yard
 export const REELS = {

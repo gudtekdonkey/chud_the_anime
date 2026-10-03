@@ -5,7 +5,7 @@
 // keys (cuts.js). Loops (guard, the armed run) and the stow are the katana's procedures with the weapon's grip laid on
 // top. Every pose then passes the weapon's `post`: the haft's two hands, a one-handed weapon's free fist or off-hand
 // weapon, and the floor (a long weapon stops on it, as today's art plants it, never through it).
-import { CLIPS, H, EZ, clamp, lerp, mixP, clone } from '../anim/flow.js';
+import { CLIPS, H, EZ, clamp, lerp, mixP, clone } from 'ronin-engine/flow/flow.js';
 import { ARSENAL } from './arsenal.js';
 import { STOW, mountOf } from './stow.js';
 import { CUTS } from './cuts.js';

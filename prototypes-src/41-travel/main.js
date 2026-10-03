@@ -1,13 +1,13 @@
 // ---- Prototype 41: travel. Walk the ronin across a stretch of the world map; meet what the roads hold; see a glitch storm at game scale ----
 // The world is the simulation core (src/sim/) with the travel lane's system (src/sim/travel/): everything he meets comes out of the ledger.
-import '../../src/sim/travel/index.js';
-import { generateWorld, advance, calendar, zoneAt, on } from '../../src/sim/index.js';
-import { enterZone, openScene, SCENES, choose, stormAt, spawnStorm, shrineDark, takeResidue, context, chanceAt, ENCOUNTERS, STORM } from '../../src/sim/travel/index.js';
+import 'ronin-engine/sim/travel/index.js';
+import { generateWorld, advance, calendar, zoneAt, on } from 'ronin-engine/sim/index.js';
+import { enterZone, openScene, SCENES, choose, stormAt, spawnStorm, shrineDark, takeResidue, context, chanceAt, ENCOUNTERS, STORM } from 'ronin-engine/sim/travel/index.js';
 import { makeRoad } from './road.js';
 import { makeMap, route, Z } from './map.js';
 import { LAYERS, makeStorm, stormUpdate, stormDraw, glitchFigure, hold } from './storm-look.js';
 import { W, H, ROAD_Y, PALS, figure, ground, eyes, night } from './stage.js';
-import { bake } from '../../src/traits/bake.js';
+import { bake } from 'ronin-engine/traits/bake.js';
 import { personOf } from '../../src/traits/cultures.js';
 
 const $ = s => document.querySelector(s), esc = s => String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);

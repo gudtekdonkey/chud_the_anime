@@ -2,7 +2,7 @@
 // Figures are the game's own rig (src/rig/rig.js), moving by their culture's traits (src/traits/), so nothing here is a new sprite of him.
 import { rig } from '../../src/rig/rig.js';
 import { RC, FW, FH, OX, OY } from '../../src/config.js';
-import { hash, rng } from '../../src/sim/rng.js';
+import { hash, rng } from 'ronin-engine/sim/rng.js';
 
 export const W = 480, H = 270, ROAD_Y = 166;
 // palettes over the rig's letters: the samurai's red-grey (world/enemy-draw.js), earth for common folk, pale for mourners

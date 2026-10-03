@@ -1,6 +1,6 @@
-import { generateWorld, advance, calendar, zoneAt, nameOf, TIME } from '../../src/sim/index.js';
+import { generateWorld, advance, calendar, zoneAt, nameOf, TIME } from 'ronin-engine/sim/index.js';
 import { GOODS, GOOD, LOAD, MAX_CARRY_KG, worth, weightOf, burden, fmt, regionMarket, garmentPrice, caravanZone, war, atWar, give, buy, exchange,
-  deposit, withdraw, accounts, isChanger, moneySupply, economyIndex, daysToHarvest } from '../../src/sim/economy/index.js';
+  deposit, withdraw, accounts, isChanger, moneySupply, economyIndex, daysToHarvest } from 'ronin-engine/sim/economy/index.js';
 
 // ---- prototype 37: the economy living. A world from a seed, lived day by day on the economy system; the page only reads the ledger
 // (and, for the ronin's purse, calls the same API the game will) ----

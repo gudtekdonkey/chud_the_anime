@@ -4,10 +4,10 @@
 // the edge turns cyan for 20 s and his Qi builds twice as fast. The grave incense: 60% health over 1.5 s; moving or
 // a hit puts it out.
 import { CTX, nearestFoe } from '../ctx.js';
-import { W, STOP } from '../play/sim.js';
-import { hOf, AF } from '../anim/flow.js';
-import { sparks, dust, ring } from '../fx/fx.js';
-import { shake } from '../gfx/view.js';
+import { W, STOP } from 'ronin-engine/clock/world.js';
+import { hOf, AF } from 'ronin-engine/flow/flow.js';
+import { sparks, dust, ring } from 'ronin-engine/render/fx.js';
+import { shake } from 'ronin-engine/render/gfx/view.js';
 import { P, S, INV, takeQuick, heal } from './inv.js';
 import { bolt, arcBolt, smoke } from './item-fx.js';
 import { numAt } from '../hud/world-ui.js';

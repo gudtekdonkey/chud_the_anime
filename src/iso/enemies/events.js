@@ -2,7 +2,7 @@
 // death is emitted here with who, where and which move, so a sound pass (or a camera, or the squad AI) subscribes
 // instead of reaching into the enemy code. `onEnemy(fn)` returns its unsubscribe. The last 400 are kept in ELOG (the
 // check reads them through window.__iso).
-import { W } from '../play/sim.js';
+import { W } from 'ronin-engine/clock/world.js';
 
 export const ELOG = [];
 const subs = new Set();

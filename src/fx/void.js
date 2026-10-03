@@ -2,7 +2,7 @@ import { COL, SQ } from '../config.js';
 import { g } from '../screen.js';
 import { voids } from '../state.js';
 import { rr } from './util.js';
-import { ease } from '../rig/pose.js';
+import { ease } from 'ronin-engine/rig/pose.js';
 import { EL } from './element.js';
 
 // ---- The black slash: Cross Rift's tear, a cut that opens into a jagged slit of void with crawling edges and star-specks inside ----

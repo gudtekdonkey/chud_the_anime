@@ -1,6 +1,6 @@
 import { S } from '../state.js';
 import { COL } from '../config.js';
-import { pz } from '../rig/pose.js';
+import { pz } from 'ronin-engine/rig/pose.js';
 import { RX } from '../assassin/enemy-poses.js';
 import { blades } from '../world/enemies.js';
 import { residue, spark, ring, rr, sgn } from '../fx/util.js';

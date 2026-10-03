@@ -1,4 +1,4 @@
-import { pz, HILT, lin, keyed } from '../rig/pose.js';
+import { pz, HILT, lin, keyed } from 'ronin-engine/rig/pose.js';
 import { TANTO_3D } from './art3d.js';
 import { comboPoses } from '../anims/combo-poses.js';
 

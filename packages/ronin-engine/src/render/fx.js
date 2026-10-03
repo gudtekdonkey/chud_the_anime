@@ -2,8 +2,8 @@
 // page's dust, sparks, rings, floor cracks and the blade's trail (ported from af/core.js), the black slash (fx/void.js's
 // tear, ported), and the glint stamp that keeps his two cyan eyes when the brim hides them (the 3D faces page's rule).
 // Positions are the flow's rig px (×AF to world units), like the moves that throw them.
-import { AF, TAU, EZ, rnd } from '../anim/flow.js';
-import { toScreen, VW, VH } from '../gfx/view.js';
+import { AF, TAU, EZ, rnd, FX } from '../flow/flow.js';
+import { toScreen, VW, VH } from './gfx/view.js';
 
 const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16), bay = (x, y) => BAY[(y & 3) * 4 + (x & 3)];
 const FXC = { dust: ['#7d837f', '#686e6a', '#565b58'], cy: ['#52e8d6', '#6ff3e4', '#b8fff6', '#ffffff'], crack: '#1f2322' };
@@ -11,6 +11,7 @@ const P = (x, y, z) => toScreen(x * AF, y * AF, z * AF);
 
 export function dust(W, x, z, n, o = {}) { for (let i = 0; i < n; i++) { const a = (o.dir ?? rnd() * TAU) + (o.dir != null ? (rnd() - .5) * (o.spread ?? 1.6) : 0), s = (o.spd ?? 30) * (.4 + rnd() * .8);
   W.fx.push({ k: 'dust', x: x + (rnd() - .5) * (o.r ?? 4), y: 1 + rnd() * 2, z: z + (rnd() - .5) * (o.r ?? 4) * .6, vx: Math.sin(a) * s, vz: Math.cos(a) * s * .7, vy: 6 + rnd() * (o.up ?? 14), g: 30, drag: 5, age: 0, life: (o.life ?? .45) * (.6 + rnd() * .6), sz: rnd() < .3 ? 2 : 1 }); } }
+FX.dust = dust; FX.step = fxStep;   // the moves' dust and the effects' step (flow's hook)
 export function sparks(W, x, y, z, n, o = {}) { for (let i = 0; i < n; i++) { const a = (o.dir ?? 0) + (rnd() - .5) * (o.spread ?? 2.4), s = (o.spd ?? 110) * (.4 + rnd() * .9);
   W.fx.push({ k: 'spark', x, y, z, vx: Math.sin(a) * s, vz: Math.cos(a) * s * .6, vy: 20 + rnd() * 60, g: 260, drag: 3, age: 0, life: .18 + rnd() * .2 }); } }
 export function ring(W, x, z, o = {}) { W.fx.push({ k: 'ring', x, y: 0, z, age: 0, life: o.life ?? .3, r: o.r ?? 18 }); }

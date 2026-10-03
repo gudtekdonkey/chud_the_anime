@@ -5,10 +5,10 @@
 import * as THREE from 'three';
 import { makeRonin } from './ronin.js';
 import { makeDressed } from '../../gear/dress.js';
-import { applyPose } from './rig.js';
-import { SH } from '../../gfx/shade.js';
-import { toScreen } from '../../gfx/view.js';
-import { STYLE } from '../../gfx/style.js';
+import { applyPose } from 'ronin-engine/render/rig3d.js';
+import { SH } from 'ronin-engine/render/gfx/shade.js';
+import { toScreen } from 'ronin-engine/render/gfx/view.js';
+import { STYLE } from 'ronin-engine/render/gfx/style.js';
 import { equipModel } from '../../weapons/wield.js';
 import { headSlot } from '../../hair/head.js';
 

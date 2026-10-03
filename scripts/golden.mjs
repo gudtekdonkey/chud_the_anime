@@ -4,11 +4,13 @@
 // trait bakes, and a world lived a year with every lane. --write stores the hashes in scripts/golden.json; without it
 // the run compares and exits 1 on any difference. Runs in Node: no three.js scene, no DOM.
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url)), OUT = ROOT + 'scripts/golden.json', DUMP = ROOT + 'test-output/golden/';
-const src = p => import(ROOT + 'src/' + p);
+// a game file by its old path; once moved into the engine (scripts/engine-moved.json) the same file from the package
+const MOVED = existsSync(ROOT + 'scripts/engine-moved.json') ? JSON.parse(readFileSync(ROOT + 'scripts/engine-moved.json', 'utf8')) : {};
+const src = p => import(MOVED[p] || ROOT + 'src/' + p);
 // functions become their source, so a table's behaviour is fingerprinted too; Sets and Maps as arrays
 const replacer = (k, v) => typeof v === 'function' ? 'fn:' + v.toString() : v instanceof Set ? [...v] : v instanceof Map ? [...v.entries()] : v;
 const json = v => JSON.stringify(v, replacer);
@@ -18,7 +20,7 @@ const put = (name, v) => { const s = typeof v === 'string' ? v : json(v); got[na
 
 // ---- the clips: every module that registers one, in the order the slice loads them ----
 const flow = await src('iso/anim/flow.js');
-for (const p of ['iso/anim/moves.js', 'iso/anim/moves-extra.js', 'iso/anim/idles.js', 'iso/anim/moves-squad.js', 'iso/weapons/poses.js',
+for (const p of ['iso/fx/fx.js', 'iso/anim/moves.js', 'iso/anim/moves-extra.js', 'iso/anim/idles.js', 'iso/anim/moves-squad.js', 'iso/weapons/poses.js',
   'iso/enemies/moves.js', 'iso/skills/moves.js', 'iso/skills/reserved-moves.js', 'iso/exec/poses.js', 'iso/persona/gait.js']) await src(p);
 const { CLIPS, Actor, SETTINGS } = flow;
 put('flow.settings', SETTINGS);
@@ -74,6 +76,10 @@ const sim = await src('sim/index.js');
 for (const l of ['people', 'economy', 'crime', 'story', 'travel', 'dominion']) await src(`sim/${l}/index.js`);
 const L = sim.generateWorld(1, 0); put('sim.made', sim.serialize(L));
 sim.advance(L, sim.hoursFromYears(1)); put('sim.year', sim.serialize(L));
+
+// ---- the squad AI fighting a battle on plain bodies, traced four times a second ----
+const { execFileSync } = await import('node:child_process');
+for (const a of [[]]) put('squad.sim' + (a.length ? '.' + a.join('.') : ''), execFileSync('node', [ROOT + 'scripts/squad-sim.mjs', ...a], { env: { ...process.env, SQUAD_TRACE: '1' } }).toString());
 
 // ---- compare or write ----
 mkdirSync(DUMP, { recursive: true }); for (const [k, s] of Object.entries(dumps)) writeFileSync(DUMP + k + '.json', s);

@@ -1,5 +1,5 @@
 // node scripts/sim-smoke.mjs [seed] [years]: make a world, live it for some years, print what it looks like. No browser needed.
-import { generateWorld, advance, hoursFromYears, calendar, serialize, deserialize, ownerOf, tilesOf, TERRAIN } from '../src/sim/index.js';
+import { generateWorld, advance, hoursFromYears, calendar, serialize, deserialize, ownerOf, tilesOf, TERRAIN } from 'ronin-engine/sim/index.js';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 1);
 let t0 = Date.now(); const L = generateWorld(seed, 0); const gen = Date.now() - t0;
 const count = (arr, f) => arr.reduce((m, x) => (m[f(x)] = (m[f(x)] || 0) + 1, m), {});

@@ -4,13 +4,13 @@
 // &sweep also plays every weapon through the draw, J1 → J2 → J3 and the stow in all eight facings, off screen, through
 // the 3D look, and leaves what happened in window.__arsenal for scripts/check-iso.mjs.
 import * as THREE from 'three';
-import { Actor, FA, CLIPS } from '../anim/flow.js';
+import { Actor, FA, CLIPS } from 'ronin-engine/flow/flow.js';
 import { makeLook } from '../look/look.js';
-import { piece } from '../gfx/build.js';
-import { shadeMat } from '../gfx/shade.js';
-import { RAMP } from '../gfx/palette.js';
-import { PIPE } from '../gfx/post.js';
-import { CAM, projMatrix, toScreen } from '../gfx/view.js';
+import { piece } from 'ronin-engine/render/gfx/build.js';
+import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
+import { RAMP } from 'ronin-engine/render/gfx/palette.js';
+import { PIPE } from 'ronin-engine/render/gfx/post.js';
+import { CAM, projMatrix, toScreen } from 'ronin-engine/render/gfx/view.js';
 import { ARSENAL, WEAPON } from './arsenal.js';
 
 export const MOMENTS = [['stowed', 'idle', .6], ['draw', 'J1', .12], ['J1', 'J1', .185], ['J2', 'J2', .145], ['J3', 'J3', .305], ['guard', 'guard', .5], ['run', 'runArmed', .12], ['stow', 'sheathe', .8]];

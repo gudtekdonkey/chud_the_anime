@@ -1,7 +1,7 @@
 // node scripts/story-smoke.mjs [seed] [years]: make a world with the story lane, live it (10 years by default) with nobody touching
 // anything, and print the world events that happened, the quests that arose and how each ended on its own. Exits non-zero on a broken rule.
-import { generateWorld, advance, hoursFromYears, calendar, serialize, deserialize, on } from '../src/sim/index.js';
-import { storyOf, openQuests, boardOf, taleOf, chapterOf, rivalName, waysOf, resolveQuest, takeQuest, breakOath } from '../src/sim/story/index.js';
+import { generateWorld, advance, hoursFromYears, calendar, serialize, deserialize, on } from 'ronin-engine/sim/index.js';
+import { storyOf, openQuests, boardOf, taleOf, chapterOf, rivalName, waysOf, resolveQuest, takeQuest, breakOath } from 'ronin-engine/sim/story/index.js';
 
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 10);
 const L = generateWorld(seed, 0), S = storyOf(L);

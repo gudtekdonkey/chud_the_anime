@@ -5,10 +5,10 @@
 //   dither  Toon + dither: the Animation Flow page's dithered cyan, eaten away with age
 // Colours are the game's effect cyan and white (design rules); bolts are the Storm Chain's look: a white forked bolt
 // over a cyan one, jagged whole-pixel steps re-cut every two frames. Positions are rig px like fx/fx.js (×AF to world).
-import { AF, TAU } from '../anim/flow.js';
+import { AF, TAU } from 'ronin-engine/flow/flow.js';
 const rnd = Math.random;   // draw-time jitter: never the world's seeded stream
-import { toScreen } from '../gfx/view.js';
-import { STYLE } from '../gfx/style.js';
+import { toScreen } from 'ronin-engine/render/gfx/view.js';
+import { STYLE } from 'ronin-engine/render/gfx/style.js';
 
 export const CY = ['#52e8d6', '#6ff3e4', '#b8fff6', '#ffffff'], WARM = '#fff2d0', INK = '#05070a';
 const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16), bay = (x, y) => BAY[(y & 3) * 4 + (x & 3)];

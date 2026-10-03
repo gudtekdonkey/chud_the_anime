@@ -6,8 +6,8 @@
 // killing blow (he is dead from there); free: the player has the ronin back. run(S, t, R, E) poses both bodies at t;
 // S.tail(t0, from) is the batch's quick sheathe (the flick, the tip into the saya, the click at t0 + 0.34).
 // The cuts are real: S.sever takes the part off the 3D model as a piece (sever.js); blood by weight (fx/blood.js).
-import { H, rnd } from '../anim/flow.js';
-import { STOP } from '../play/sim.js';
+import { H, rnd } from 'ronin-engine/flow/flow.js';
+import { STOP } from 'ronin-engine/clock/world.js';
 import { at, pose, HR, EG, RX, WHIRL } from './poses.js';
 
 const sgn = () => rnd() < .5 ? -1 : 1;

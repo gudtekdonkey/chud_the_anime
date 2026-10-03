@@ -4,11 +4,11 @@
 // The outfit is resolved first (who hides or shapes what), then every part is built inside out by shell, each sitting on
 // what the shells under it have built up (gear/parts.js), and merged into one mesh per bone and material.
 import * as THREE from 'three';
-import { Piece, newPart, piece } from '../gfx/build.js';
-import { RAMP as R } from '../gfx/palette.js';
-import { shadeMat } from '../gfx/shade.js';
-import { BODY_SHEAR } from '../gfx/view.js';
-import { makeSkeleton, SK } from '../look/three/rig.js';
+import { Piece, newPart, piece } from 'ronin-engine/render/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
+import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
+import { BODY_SHEAR } from 'ronin-engine/render/gfx/view.js';
+import { makeSkeleton, SK } from 'ronin-engine/render/rig3d.js';
 import { KINDS, makeCtx, keyOf, BODY, HC, HEAD_R, FACE_Z } from './parts.js';
 import { SLOTS, LAYERS, LIMB } from './schema.js';
 import { BY_ID } from './items.js';

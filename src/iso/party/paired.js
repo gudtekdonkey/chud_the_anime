@@ -8,11 +8,11 @@
 import { PAIRED, fits } from '../../party/kit.js';
 import { CTX, nearestFoe, lone } from '../ctx.js';
 import { PARTY } from './party.js';
-import { W, STOP } from '../play/sim.js';
-import { hOf, AF } from '../anim/flow.js';
-import { sparks, dust, tear, focus, ring } from '../fx/fx.js';
+import { W, STOP } from 'ronin-engine/clock/world.js';
+import { hOf, AF } from 'ronin-engine/flow/flow.js';
+import { sparks, dust, tear, focus, ring } from 'ronin-engine/render/fx.js';
 import { startCine } from '../fx/cine.js';
-import { shake } from '../gfx/view.js';
+import { shake } from 'ronin-engine/render/gfx/view.js';
 import { P, qiAdd } from '../items/inv.js';
 import { numAt } from '../hud/world-ui.js';
 

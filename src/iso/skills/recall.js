@@ -6,16 +6,16 @@
 // for THE ANCHOR (he flashes along the thread to it instead, past it with the grip in hand). Whatever lies between is
 // cut on the way through (the black slash, a flinch), and falls on the click.
 import * as THREE from 'three';
-import { W, STOP } from '../play/sim.js';
+import { W, STOP } from 'ronin-engine/clock/world.js';
 import { STATS } from '../play/rules.js';
-import { hOf, hv, AF, EZ, clamp, lerp } from '../anim/flow.js';
-import { sparks, dust, focus, tear } from '../fx/fx.js';
-import { shake } from '../gfx/view.js';
+import { hOf, hv, AF, EZ, clamp, lerp } from 'ronin-engine/flow/flow.js';
+import { sparks, dust, focus, tear } from 'ronin-engine/render/fx.js';
+import { shake } from 'ronin-engine/render/gfx/view.js';
 import { startCine } from '../fx/cine.js';
-import { held } from '../play/input.js';
-import { piece, newPart } from '../gfx/build.js';
-import { RAMP as R } from '../gfx/palette.js';
-import { shadeMat } from '../gfx/shade.js';
+import { held } from 'ronin-engine/input/keys.js';
+import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
+import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
 import { ROOM } from '../world/room.js';
 import { KIT, tv, T, startCd, castStart, landed, qiAdd, pop } from './kit.js';
 import { scr, thread, star } from './sfx.js';

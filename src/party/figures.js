@@ -1,10 +1,10 @@
 import { RC, FW, FH, OX, OY, PX, snap } from '../config.js';
-import { HILT } from '../rig/pose.js';
+import { HILT } from 'ronin-engine/rig/pose.js';
 import { ANIMS } from '../anims/anims.js';
 import { Raster, packPal } from '../wardrobe/raster.js';
 import { dress, makeFigure } from '../wardrobe/dress.js';
 import { WEAPONS, framesFor } from '../weapons/weapons.js';
-import { bake } from '../traits/bake.js';
+import { bake } from 'ronin-engine/traits/bake.js';
 
 // ---- Drawing anyone in the party: the rig with their weapon's poses and art, what they wear, how their traits make them move ----
 // Frames per weapon, personality and move, cached: { poses, fps, loop }

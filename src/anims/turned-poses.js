@@ -1,4 +1,4 @@
-import { pz } from '../rig/pose.js';
+import { pz } from 'ronin-engine/rig/pose.js';
 
 // ---- Moves the side rig cannot show, posed on the rig and drawn turned (owner: "why not use our rigging system") ----
 // A pose's yaw turns the whole figure (port.js DIRS: 90° faces the camera, 270° shows his back); v2 passes rig v2 knobs through

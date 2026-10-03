@@ -2,7 +2,7 @@
 // a short line over someone's head (a companion's "DOWN", "LV 3 +EDG"), and the conversion from the world to the
 // HUD's pixels. Over the clash and the close-up, as today's HUD is.
 import './canvas.js';
-import { toScreen, VW } from '../gfx/view.js';
+import { toScreen, VW } from 'ronin-engine/render/gfx/view.js';
 import { num, updateNums, drawNums } from '../../fx/numbers.js';
 import { text, textW } from '../../ui/pixfont.js';
 import { g } from '../../screen.js';

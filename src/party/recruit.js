@@ -1,6 +1,6 @@
 import { P, INV } from '../state.js';
 import { g } from '../screen.js';
-import { pz } from '../rig/pose.js';
+import { pz } from 'ronin-engine/rig/pose.js';
 import { makeFigure } from '../wardrobe/dress.js';
 import { living } from '../world/enemies.js';
 import { addMon, showBanner } from '../items/inventory.js';

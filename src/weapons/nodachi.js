@@ -1,6 +1,6 @@
 import { RY } from '../rig/rig.js';
 import { shoulderDraw, shoulderStow } from './grip.js';
-import { pz, HILT, lin, keyed } from '../rig/pose.js';
+import { pz, HILT, lin, keyed } from 'ronin-engine/rig/pose.js';
 import { NODACHI_3D } from './art3d.js';
 import { comboPoses } from '../anims/combo-poses.js';
 

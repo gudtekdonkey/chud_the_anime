@@ -1,4 +1,4 @@
-import { TRAITS } from './traits.js';
+import { TRAITS } from 'ronin-engine/traits/traits.js';
 
 // ---- Cultures: how a people carry themselves ----
 // A culture is a shared trait mix everyone from it moves with (its mannerisms), plus a pool of personal traits:

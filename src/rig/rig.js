@@ -1,7 +1,7 @@
 import { FW, FH, OX, OY, RC, PX } from '../config.js';
 import { KATANA_ART } from '../weapons/katana.js';
 import { Raster, packPal, TWO, twoTone } from '../wardrobe/raster.js';
-import { HILT } from './pose.js';
+import { HILT } from 'ronin-engine/rig/pose.js';
 
 // ---- The ronin rig: side view, drawn pixel by pixel from joint angles, so every frame is a pose ----
 // Two outputs share one drawing:

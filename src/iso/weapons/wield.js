@@ -6,8 +6,8 @@
 // The katana keeps the ronin's own built-in model (ronin.js); every other weapon hides it.
 import * as THREE from 'three';
 import { MODELS } from './models.js';
-import { worldOf } from '../look/three/rig.js';
-import { AF } from '../anim/flow.js';
+import { worldOf } from 'ronin-engine/render/rig3d.js';
+import { AF } from 'ronin-engine/flow/flow.js';
 import { WEAPON } from './arsenal.js';
 import { STOW, stowAt } from './stow.js';
 

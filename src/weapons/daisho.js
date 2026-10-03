@@ -1,4 +1,4 @@
-import { pz, lin, keyed } from '../rig/pose.js';
+import { pz, lin, keyed } from 'ronin-engine/rig/pose.js';
 import { POSES } from '../anims/poses.js';
 import { KATANA_ART } from './katana.js';
 import { WAKI_SAYA, waki } from './wakizashi.js';

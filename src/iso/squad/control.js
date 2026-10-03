@@ -11,8 +11,8 @@
 //         E held by a downed companion lifts him; Tab the companions' settings (panel.js)
 //   touch: a long press (0.35 s) then drag selects; a tap on a companion selects him; with a selection, a tap on the
 //          ground, a foe or an ally is the right click's order; with none, the hero goes there. The order bar is the radial.
-import { CAM, U, OBL, VW, VH, toScreen } from '../gfx/view.js';
-import { SQ, select, toggle, clearSel, saveGroup, recallGroup, selectRole, order, protect, holdOrFollow } from './squad.js';
+import { CAM, U, OBL, VW, VH, toScreen } from 'ronin-engine/render/gfx/view.js';
+import { SQ, select, toggle, clearSel, saveGroup, recallGroup, selectRole, order, protect, holdOrFollow } from 'ronin-engine/squad/squad.js';
 
 export const RADIAL = [['charge', 'Charge'], ['hold', 'Hold'], ['fallback', 'Fall back'], ['follow', 'Follow me'], ['regroup', 'Regroup'], ['t:focus', 'Focus'], ['t:spread', 'Spread out'], ['t:ambush', 'Ambush']];
 

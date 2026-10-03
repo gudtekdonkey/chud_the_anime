@@ -2,8 +2,8 @@
 // 8 directions with its start, turns, 180° skid and stop; the roll (i-frames, into a run or a cut); J1 → J2 → J3, each
 // cut starting from the last's pose; a cut cancelled into the roll; run into a lunge; the blade-out guard and the
 // sheathe after calm. Presses are remembered 0.2 s and fire at the first frame that can take them.
-import { hOf, wrapA, AF, EZ } from '../anim/flow.js';
-import { consume } from './input.js';
+import { hOf, wrapA, AF, EZ } from 'ronin-engine/flow/flow.js';
+import { consume } from 'ronin-engine/input/keys.js';
 import { Char } from './char.js';
 
 const snap8 = h => Math.round(h / (Math.PI / 4)) * (Math.PI / 4);

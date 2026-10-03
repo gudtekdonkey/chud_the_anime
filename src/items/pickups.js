@@ -2,7 +2,7 @@ import { COL } from '../config.js';
 import { g } from '../screen.js';
 import { P, INV, glints } from '../state.js';
 import { residue, ring, spark, rr, sgn } from '../fx/util.js';
-import { ease } from '../rig/pose.js';
+import { ease } from 'ronin-engine/rig/pose.js';
 import { qiFill } from '../player/qi.js';
 import { drawS, tinted } from '../ui/sprites.js';
 import { glint } from '../ui/hud-kit.js';

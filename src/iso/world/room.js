@@ -4,9 +4,9 @@
 // while he is under it, and anything that hides him shows his silhouette). Warm pools, ground mist, rain in the post pass,
 // and two dithered shafts of lantern light. All of it is 3D through the same pipeline; world units (1 = a pixel of today's game).
 import * as THREE from 'three';
-import { piece, newPart } from '../gfx/build.js';
-import { RAMP as R } from '../gfx/palette.js';
-import { shadeMat, SH } from '../gfx/shade.js';
+import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
+import { shadeMat, SH } from 'ronin-engine/render/gfx/shade.js';
 
 export const ROOM = { x0: 0, x1: 600, z0: 0, z1: 300, cam: { x0: -24, x1: 624, z0: -64, z1: 312 } };
 // what he collides with (x0, x1, z0, z1), and where the ground is raised (the engawa)

@@ -5,15 +5,15 @@
 // The mouse's selection rules are the squad AI's (claude/3d-squad-ai): left click moves him only while nothing is
 // selected, so it sets CLICK.blocked; right click is theirs, never read here.
 import { CTX, living } from '../ctx.js';
-import { CAM, VW, VH, U, OBL, toScreen } from '../gfx/view.js';
+import { CAM, VW, VH, U, OBL, toScreen } from 'ronin-engine/render/gfx/view.js';
 import { findPath } from './path.js';
 import { BIG, usable } from '../items/big.js';
 import { PICKUPS } from '../items/pickups.js';
 import { IT, FALLEN, LOCK } from '../items/items.js';
 import { PARTY } from '../party/party.js';
 import { CP, answer } from '../combo/prompts.js';
-import { hOf } from '../anim/flow.js';
-import { W } from '../play/sim.js';
+import { hOf } from 'ronin-engine/flow/flow.js';
+import { W } from 'ronin-engine/clock/world.js';
 import { COL } from '../../config.js';
 
 const CUTS = new Set(['J1', 'J2', 'J3', 'lunge', 'roll']);

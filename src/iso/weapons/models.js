@@ -5,8 +5,8 @@
 // business end (the point, the head, the iron end), +y its own "up" (the katana's spine side); `ext` (arsenal.js) is how far
 // it reaches either way. Sheaths, slings and coils are separate pieces that wield.js hangs on the bones.
 import * as THREE from 'three';
-import { piece, newPart } from '../gfx/build.js';
-import { RAMP as R } from '../gfx/palette.js';
+import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
 
 const PI = Math.PI, Z = [PI / 2, 0, 0];                     // a cylinder's axis (y) turned onto +z
 const node = (parent, p = [0, 0, 0]) => { const o = new THREE.Object3D(); o.position.set(...p); if (parent) parent.add(o); return o; };

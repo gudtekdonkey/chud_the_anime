@@ -1,7 +1,7 @@
 // Prototype 38: the people lane on the simulation core. Bundled into prototypes/38-people.html by scripts/proto-bundle.mjs.
-import '../../src/sim/people/index.js';   // registers the people system before the world is made
-import { generateWorld, advance, calendar, HOURS_PER_YEAR, HOURS_PER_SEASON, on, ownerOf, zoneAt } from '../../src/sim/index.js';
-import { residents, tree, founder, brides, judge, court, propose, nameHeir, playableHeirs, killActor, lootGrave, tieValue, livingChildren, activity, PEOPLE_RULES } from '../../src/sim/people/index.js';
+import 'ronin-engine/sim/people/index.js';   // registers the people system before the world is made
+import { generateWorld, advance, calendar, HOURS_PER_YEAR, HOURS_PER_SEASON, on, ownerOf, zoneAt } from 'ronin-engine/sim/index.js';
+import { residents, tree, founder, brides, judge, court, propose, nameHeir, playableHeirs, killActor, lootGrave, tieValue, livingChildren, activity, PEOPLE_RULES } from 'ronin-engine/sim/people/index.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

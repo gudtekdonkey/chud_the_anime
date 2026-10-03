@@ -4,7 +4,7 @@
 // the armed run). Each frame counts hair outside the hat's shells, a chain through his body and a hat through his
 // body. Facing never changes these (hair, hat and chains all hang under the body's turn), so one facing is measured
 // and the check renders all eight.
-import { Actor } from '../anim/flow.js';
+import { Actor } from 'ronin-engine/flow/flow.js';
 import { threeLook } from '../look/three/look3d.js';
 import { HAIR, HATS } from './head.js';
 import { resolve } from './contract.js';

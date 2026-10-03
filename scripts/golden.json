@@ -1,6 +1,6 @@
 {
  "flow.settings": "241732e979e4023e",
- "clips.data": "69245379ce37e964",
+ "clips.data": "1aaa166276a49a08",
  "clips.played": "b521ab07935648c8",
  "sim.stop": "194d7126c6753ce0",
  "weapons": "4b514c3aa36d3f2d",
@@ -20,5 +20,6 @@
  "knobs": "1e460e82ae84f107",
  "traits.bakes": "1a6e9b022920bca0",
  "sim.made": "0f8d16fb20aa36e7",
- "sim.year": "8062725a5f2d0f71"
+ "sim.year": "8062725a5f2d0f71",
+ "squad.sim": "7c05675d7125aba9"
 }

@@ -1,4 +1,4 @@
-import { pz, HILT, lin, keyed } from '../rig/pose.js';
+import { pz, HILT, lin, keyed } from 'ronin-engine/rig/pose.js';
 import { RY } from '../rig/rig.js';
 import { grip, twoHanded, breathe, slungDraw, slungStow } from './grip.js';
 import { YARI_3D } from './art3d.js';

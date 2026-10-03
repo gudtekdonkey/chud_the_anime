@@ -9,9 +9,9 @@
 // kick when their 3D moves come (claude/3d-skills; until then J1). The finisher is J3 (for J6's flash step).
 // Free mode (T, or &combo=free) is the plain ladder: J, J, J.
 import { CTX, lone } from '../ctx.js';
-import { W } from '../play/sim.js';
-import { hOf, wrapA, DIR, CLIPS } from '../anim/flow.js';
-import { consume } from '../play/input.js';
+import { W } from 'ronin-engine/clock/world.js';
+import { hOf, wrapA, DIR, CLIPS } from 'ronin-engine/flow/flow.js';
+import { consume } from 'ronin-engine/input/keys.js';
 import { CUT } from '../play/hero.js';
 import { STATS } from '../play/rules.js';
 import { INV, qiAdd } from '../items/inv.js';

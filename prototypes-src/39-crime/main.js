@@ -1,8 +1,8 @@
 // Prototype 39: karma, standing, bounties, title and possession on the simulation core (docs/sim-crime.md).
 // The page holds only what is on screen (where people stand, what is selected); everything else is the ledger.
-import { generateWorld, advance, calendar, tilesOf, TERRAIN, ownerOf, plotId, PLOT, PLOTS, nameOf, ageOf, on, zoneAt, rngFor, HOURS_PER_SEASON, HOURS_PER_YEAR } from '../../src/sim/index.js';
+import { generateWorld, advance, calendar, tilesOf, TERRAIN, ownerOf, plotId, PLOT, PLOTS, nameOf, ageOf, on, zoneAt, rngFor, HOURS_PER_SEASON, HOURS_PER_YEAR } from 'ronin-engine/sim/index.js';
 import { K, crimeState, commit, takePlotByMurder, seize, bountiesOf, standingOf, karmaName, payOff, onSight, outlawDoors, companionVerdict, honourOf,
-  claimantOf, buyTitle, priceOf, payBloodMoney, payBloodPrice, petitionGrant, courtCase, forgeDeed, purse, isElderOrRoyal, CRIMES, LAND } from '../../src/sim/crime/index.js';
+  claimantOf, buyTitle, priceOf, payBloodMoney, payBloodPrice, petitionGrant, courtCase, forgeDeed, purse, isElderOrRoyal, CRIMES, LAND } from 'ronin-engine/sim/crime/index.js';
 
 const $ = id => document.getElementById(id);
 const L = generateWorld(12345, 0), me = L.actors[L.player];

@@ -1,7 +1,7 @@
 // ---- What the enemies share (docs/enemies.md): the hero they fight, the living list, the attack tokens, the shots in
 // the air and the smoke. One object, imported, never copied, so the enemy, the combat rules, the squad and any
 // decision layer (the placeholder brain here, the squad-AI branch's later) read the same state.
-import { W } from '../play/sim.js';
+import { W } from 'ronin-engine/clock/world.js';
 
 export const CTX = { on: false, hero: null, enemies: [], shots: [], puffs: [], heroHp: 12, heroMax: 12, downs: 0, onDeath: null };
 

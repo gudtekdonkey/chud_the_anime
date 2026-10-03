@@ -3,14 +3,14 @@
 // that wears whatever is picked (any combination works). One WebGL pipeline draws everything: each card's figure is
 // built, posed, drawn and copied into the card, then thrown away, a few a frame, as the cards scroll into view.
 import * as THREE from 'three';
-import { makePipeline, PIPE } from '../gfx/post.js';
-import { projMatrix, CAM, OBL } from '../gfx/view.js';
-import { SH, shadeMat } from '../gfx/shade.js';
-import { setStyle } from '../gfx/style.js';
-import { piece } from '../gfx/build.js';
-import { RAMP } from '../gfx/palette.js';
-import { Actor } from '../anim/flow.js';
-import '../anim/moves.js';
+import { makePipeline, PIPE } from 'ronin-engine/render/gfx/post.js';
+import { projMatrix, CAM, OBL } from 'ronin-engine/render/gfx/view.js';
+import { SH, shadeMat } from 'ronin-engine/render/gfx/shade.js';
+import { setStyle } from 'ronin-engine/render/gfx/style.js';
+import { piece } from 'ronin-engine/render/gfx/build.js';
+import { RAMP } from 'ronin-engine/render/gfx/palette.js';
+import { Actor } from 'ronin-engine/flow/flow.js';
+import 'ronin-engine/flow/moves.js';
 import { threeLook, LOOK3D } from '../look/three/look3d.js';
 import { GEAR, BY_ID } from './items.js';
 import { SLOTS, SLOT_NAME, LAYERS, LAYER_NAME, FAMILIES, STAT_SHORT, STAT_KEYS, RARITY } from './schema.js';

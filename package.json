@@ -24,6 +24,7 @@
     "node": ">=20.19"
   },
   "dependencies": {
+    "ronin-engine": "file:packages/ronin-engine",
     "three": "0.186.1"
   }
 }

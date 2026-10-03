@@ -4,7 +4,7 @@
 // forward/up plane: pel, lean, head, fN/fF, hN/hF, the blade's grip and angle) and stands it up in 3D: the near limbs
 // are his right (−x), the far his left (+x); arms and legs reach their targets by two-bone IK.
 import * as THREE from 'three';
-import { AF, H } from '../../anim/flow.js';
+import { AF, H } from '../flow/flow.js';
 
 const s = AF;
 export const SK = { thigh: 9.4 * s, shin: 9.2 * s, spineTop: 6.8 * s, torsoTop: 13.5 * s, shoulder: [4.8 * s, 11.9 * s], upper: 7 * s, fore: 7 * s,

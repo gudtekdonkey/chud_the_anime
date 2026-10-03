@@ -2,8 +2,8 @@
 // samurai with it fights (his patience before he cuts, how hard he presses, how careful he is, how a hit moves him).
 // Keyed by the traits of src/traits/traits.js (shared with today's game, pure data); a trait missing here only shapes
 // the body. Every number is per unit of the trait's strength, and a person's traits add (as mix.js adds knobs).
-import { TRAITS } from '../../traits/traits.js';
-import { IDLES } from '../anim/idles.js';
+import { TRAITS } from '../traits/traits.js';
+import { IDLES } from '../flow/idles.js';
 
 // today's fidgets (traits/fidgets.js) → the 3D idle that does the same thing
 export const FIDGET_IDLE = { hatTip: 'adjustHat', hiltCheck: 'checkBlade', hiltThumb: 'hiltRest', neckCrack: 'neckCrack', shoulderRoll: 'shoulderRoll',

@@ -6,15 +6,15 @@
 // pools blood under him, and gets the full-screen close-up (fx/cine.js) like J3. K on a lone samurai in reach plays an
 // execution (exec/). Nothing here changes timing, hitboxes or the moves.
 import * as THREE from 'three';
-import { W } from './play/sim.js';
+import { W } from 'ronin-engine/clock/world.js';
 import { CUT } from './play/hero.js';
-import { consume } from './play/input.js';
-import { hv, rnd } from './anim/flow.js';
+import { consume } from 'ronin-engine/input/keys.js';
+import { hv, rnd } from 'ronin-engine/flow/flow.js';
 import { CINE, startCine } from './fx/cine.js';
-import { PIPE } from './gfx/post.js';
+import { PIPE } from 'ronin-engine/render/gfx/post.js';
 import * as B from './fx/blood.js';
 import { sever, initSever, severStep, severSync, severWorld, hidePart, addStump, fadePieces, piecesOf, nearestPart, SV, PARTS } from './sever.js';
-import { shadeMat } from './gfx/shade.js';
+import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
 import { EX, startExec, xfStep, xfDraw, ghostScene, ghostStep, ghostSync, cineGate } from './exec/stage.js';
 import { KM, updateMarkers, drawMarkers, drawPrompt } from './exec/markers.js';
 

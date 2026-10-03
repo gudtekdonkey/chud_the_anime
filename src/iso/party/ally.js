@@ -5,11 +5,11 @@
 // Cut to nothing they go down on a knee for 15 s; lifted (hold E beside them) they stand at a third; struck again
 // while down, or left too long, they die for good (party.js buries them: their gear goes back in the bag).
 import { Char } from '../play/char.js';
-import { hOf, wrapA, hv, AF } from '../anim/flow.js';
+import { hOf, wrapA, hv, AF } from 'ronin-engine/flow/flow.js';
 import { allyLook, BLADE_LEN } from './ally-look.js';
 import { ROLES, stat } from '../../party/kit.js';
-import { mix } from '../../traits/mix.js';
-import { BASE } from '../../traits/knobs.js';
+import { mix } from 'ronin-engine/traits/mix.js';
+import { BASE } from 'ronin-engine/traits/knobs.js';
 import { findPath } from '../input/path.js';
 import { CTX } from '../ctx.js';
 

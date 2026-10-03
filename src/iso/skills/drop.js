@@ -5,10 +5,10 @@
 //      comes down into the blade at the top, the drop blade first trailing afterimages, the landing at 0.44 s: a crater
 //      of cracks, flung stone, a ring of forked bolts, everyone in it thrown, the great black X over it shut 0.42 s later;
 //      a kill gets the full-screen close-up (fx/cine.js). II widens the crater, III sends bolts up out of the cracks
-import { W, STOP } from '../play/sim.js';
-import { Actor, AF, hv, hOf } from '../anim/flow.js';
-import { dust } from '../fx/fx.js';
-import { shake } from '../gfx/view.js';
+import { W, STOP } from 'ronin-engine/clock/world.js';
+import { Actor, AF, hv, hOf } from 'ronin-engine/flow/flow.js';
+import { dust } from 'ronin-engine/render/fx.js';
+import { shake } from 'ronin-engine/render/gfx/view.js';
 import { startCine } from '../fx/cine.js';
 import { groundAt } from '../world/room.js';
 import { tear, xArm, bolt, ring, spark, chip, residue, burstAt, cracks, pool, sliver, axes, v3, rr, TAU } from './fx3d.js';

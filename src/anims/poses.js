@@ -1,6 +1,6 @@
-import { pz, HILT, lin, keyed } from '../rig/pose.js';
-import { gaitFrames } from '../traits/bake.js';
-import { BASE } from '../traits/knobs.js';
+import { pz, HILT, lin, keyed } from 'ronin-engine/rig/pose.js';
+import { gaitFrames } from 'ronin-engine/traits/bake.js';
+import { BASE } from 'ronin-engine/traits/knobs.js';
 import { ITEM_POSES } from './item-poses.js';
 import { BREATH_POSES } from './breath-poses.js';
 import { comboPoses } from './combo-poses.js';

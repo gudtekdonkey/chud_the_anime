@@ -3,7 +3,7 @@
 // sits on the crown ('knot' or 'tail'): the hat decides what becomes of it. `scalp`: what the bare head shows ('skin':
 // a shaved pate; 'hair': the hair's own colour). Original designs: period ones from the Sengoku and Edo eras, a few
 // stylised. A new style is a new row; a part is { r: region, g: shell | rod | spike | lump | loop | box, c: colour }.
-import { RAMP as R } from '../gfx/palette.js';
+import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
 import { onScalp } from './parts.js';
 
 const PI = Math.PI;

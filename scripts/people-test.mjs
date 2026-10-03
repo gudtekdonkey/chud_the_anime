@@ -1,7 +1,7 @@
 // node scripts/people-test.mjs [seed] [years]: live a world for 60 years with the people system and print what became of its people:
 // population by decade, households, marriages, deaths by cause, lands inherited, one family tree; then check the rules hold.
-import { killActor, tree, brides, judge, court, propose, tieValue, nameHeir, playableHeirs, swear, freePlot, grantPlot, lootGrave, PEOPLE_RULES } from '../src/sim/people/index.js';
-import { generateWorld, advance, hoursFromYears, serialize, deserialize, calendar, HOURS_PER_YEAR, bear, rngFor } from '../src/sim/index.js';
+import { killActor, tree, brides, judge, court, propose, tieValue, nameHeir, playableHeirs, swear, freePlot, grantPlot, lootGrave, PEOPLE_RULES } from 'ronin-engine/sim/people/index.js';
+import { generateWorld, advance, hoursFromYears, serialize, deserialize, calendar, HOURS_PER_YEAR, bear, rngFor } from 'ronin-engine/sim/index.js';
 const worth = PEOPLE_RULES.worth, nm = (W, id) => id && W.actors[id] ? W.actors[id].given : 'nobody';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 60);
 const fail = []; const check = (ok, what) => { if (!ok) fail.push(what); };

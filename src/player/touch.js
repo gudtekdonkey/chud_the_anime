@@ -6,7 +6,7 @@ import { B } from './buffer.js';
 import { PT, C, FREE, answer, kindsOf, chainOn, dropChain } from './prompts.js';
 import { living } from '../world/enemies.js';
 import { residue, spark } from '../fx/util.js';
-import { VEC } from '../gestures.js';
+import { VEC } from 'ronin-engine/input/gestures.js';
 
 // ---- What a gesture does (the approved swipe scheme, prototype 46: C7A two thumbs, C8A double tap = K, C9A hold = charge) ----
 // The recogniser (src/gestures.js, wired in src/pointer.js) queues gestures as they happen; they are decided here, inside the

@@ -1,9 +1,9 @@
 // node scripts/sim-economy.mjs [seed] [years]: make a world, live it with the economy (src/sim/economy/), and print what balance needs
 // checking: prices by season, the books each year (money in, money out, and anything unexplained), wealth by class, lords, events, speed.
 // Exits non-zero if money is made or lost unaccounted, so it doubles as a test.
-import '../src/sim/economy/index.js';
-import { generateWorld, advance, calendar, TIME, serialize, deserialize } from '../src/sim/index.js';
-import { GOODS, GOOD, moneySupply, wealthByClass, economyIndex, worth } from '../src/sim/economy/index.js';
+import 'ronin-engine/sim/economy/index.js';
+import { generateWorld, advance, calendar, TIME, serialize, deserialize } from 'ronin-engine/sim/index.js';
+import { GOODS, GOOD, moneySupply, wealthByClass, economyIndex, worth } from 'ronin-engine/sim/economy/index.js';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 10);
 let t0 = performance.now(); const L = generateWorld(seed, 0); console.log(`world ${seed}: generated in ${Math.round(performance.now() - t0)} ms`);
 const E = L.sys.economy, pad = (s, n) => String(s).padStart(n), avg = f => E.regions.reduce((s, R) => s + f(R), 0) / E.regions.length, sum = f => E.regions.reduce((s, R) => s + f(R), 0);

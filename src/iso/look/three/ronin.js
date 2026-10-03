@@ -4,11 +4,11 @@
 // sandals; the katana in a black saya at his left hip. `foe: true` builds the samurai in the same language: red lacquer,
 // bare-headed with a topknot, no hat or jinbaori. Sizes follow the Animation Flow rig (rig.js SK), in world units.
 import * as THREE from 'three';
-import { piece, newPart } from '../../gfx/build.js';
-import { RAMP as R } from '../../gfx/palette.js';
-import { shadeMat } from '../../gfx/shade.js';
-import { makeSkeleton, SK } from './rig.js';
-import { BODY_SHEAR } from '../../gfx/view.js';
+import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
+import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
+import { makeSkeleton, SK } from 'ronin-engine/render/rig3d.js';
+import { BODY_SHEAR } from 'ronin-engine/render/gfx/view.js';
 
 const node = (parent, p = [0, 0, 0], r = [0, 0, 0]) => { const o = new THREE.Object3D(); o.position.set(...p); o.rotation.set(...r); parent.add(o); return o; };
 export const HAT_R = 9.5;                 // the brim as drawn (KASA R 19 rig px): wider than he is tall

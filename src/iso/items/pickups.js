@@ -4,13 +4,13 @@
 // flies to him from anywhere. Drawn as today's world sprites (items/item-sprites.js) at 2×, on the effects layer.
 import { WS } from '../../items/item-sprites.js';
 import { CTX } from '../ctx.js';
-import { W } from '../play/sim.js';
-import { sparks, ring } from '../fx/fx.js';
+import { W } from 'ronin-engine/clock/world.js';
+import { sparks, ring } from 'ronin-engine/render/fx.js';
 import { heal, addMon, addShards, addQuick, addCharm, freeCharm, qiFill } from './inv.js';
 import { sprite, chestOf } from './item-fx.js';
 import { say } from '../hud/world-ui.js';
 import { COL } from '../../config.js';
-import { toScreen } from '../gfx/view.js';
+import { toScreen } from 'ronin-engine/render/gfx/view.js';
 
 const toS = (x, y, z) => toScreen(x, y, z).map(Math.round);
 

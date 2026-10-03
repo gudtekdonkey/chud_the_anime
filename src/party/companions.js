@@ -1,6 +1,6 @@
 import { P, S } from '../state.js';
 import { POSES } from '../anims/poses.js';
-import { pz } from '../rig/pose.js';
+import { pz } from 'ronin-engine/rig/pose.js';
 import { g } from '../screen.js';
 import { living, damage, onKill, DMG, viewTo } from '../world/enemies.js';
 import { turner, turnTo, trueView, sideOn } from '../rig/turn.js';

@@ -3,10 +3,10 @@
 // shuriken out of the air), and the enemy decides how it is taken (enemy.takeHit: dodged, parried, blocked, broken,
 // armoured, hurt, killed); an enemy's blow or shot hurts the hero unless he rolls through it. Hit-stop 3 / 5 / 8
 // frames by weight, the white flash, sparks, the clash's focus lines, shake on heavy blows only.
-import { W, STOP } from '../play/sim.js';
-import { hOf, hv, wrapA, AF, rnd } from '../anim/flow.js';
-import { sparks, dust, crack, tear, focus, ring } from '../fx/fx.js';
-import { shake } from '../gfx/view.js';
+import { W, STOP } from 'ronin-engine/clock/world.js';
+import { hOf, hv, wrapA, AF, rnd } from 'ronin-engine/flow/flow.js';
+import { sparks, dust, crack, tear, focus, ring } from 'ronin-engine/render/fx.js';
+import { shake } from 'ronin-engine/render/gfx/view.js';
 import { CUT } from '../play/hero.js';
 import { STATS } from '../play/rules.js';
 import { SOLID, ROOM } from '../world/room.js';

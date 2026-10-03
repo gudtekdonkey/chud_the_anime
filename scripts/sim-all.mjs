@@ -1,12 +1,12 @@
 // node scripts/sim-all.mjs [seed] [years]: live a world with every lane loaded (people, economy, crime, story, travel, dominion) and check they work
 // together: no errors, the population holds, and each lane hears the others (events counted by kind). Exits 1 if a check fails.
-import { generateWorld, advance, hoursFromYears, on, systems, serialize, deserialize } from '../src/sim/index.js';
-import '../src/sim/people/index.js';
-import '../src/sim/economy/index.js';
-import '../src/sim/crime/index.js';
-import '../src/sim/story/index.js';
-import '../src/sim/travel/index.js';
-import '../src/sim/dominion/index.js';
+import { generateWorld, advance, hoursFromYears, on, systems, serialize, deserialize } from 'ronin-engine/sim/index.js';
+import 'ronin-engine/sim/people/index.js';
+import 'ronin-engine/sim/economy/index.js';
+import 'ronin-engine/sim/crime/index.js';
+import 'ronin-engine/sim/story/index.js';
+import 'ronin-engine/sim/travel/index.js';
+import 'ronin-engine/sim/dominion/index.js';
 const seed = +(process.argv[2] || 12345), years = +(process.argv[3] || 5);
 let fails = 0; const check = (ok, what) => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`); if (!ok) fails++; };
 

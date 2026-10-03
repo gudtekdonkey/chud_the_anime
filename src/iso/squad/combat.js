@@ -4,14 +4,14 @@
 // the arc); the samurai's fcut on the hero is the slice's strike (rolled through, or a recoil); arrows fly as
 // projectiles and hit the first body on their line. Only the hero's own blows (dealt or taken) pause the world: a
 // companion's hit flashes and sparks without stopping the fight.
-import { W as FW, STOP } from '../play/sim.js';
+import { W as FW, STOP } from 'ronin-engine/clock/world.js';
 import { STATS } from '../play/rules.js';
 import { CUT } from '../play/hero.js';
-import { hOf, hv, wrapA, AF } from '../anim/flow.js';
-import { sparks, dust, crack, tear, focus, ring } from '../fx/fx.js';
-import { shake } from '../gfx/view.js';
+import { hOf, hv, wrapA, AF } from 'ronin-engine/flow/flow.js';
+import { sparks, dust, crack, tear, focus, ring } from 'ronin-engine/render/fx.js';
+import { shake } from 'ronin-engine/render/gfx/view.js';
 import { SOLID } from '../world/room.js';
-import { addThreat } from '../ai/senses.js';
+import { addThreat } from 'ronin-engine/ai/senses.js';
 
 const DMG = { J1: 1, J2: 1, J3: 2, lunge: 1 };
 export const ARROWS = [];

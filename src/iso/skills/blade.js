@@ -8,11 +8,11 @@
 //   O hold  Crescent Moon: charge with the blade raised, let go: one huge descending crescent sweeps round him, hangs,
 //           the black slash along its inside snaps shut and it shatters (II: the shatter cuts; III: a twin moon)
 // Positions are world units (today's pixels); he moves by C.shift / C.place, the look follows.
-import { W, STOP } from '../play/sim.js';
-import { held } from '../play/input.js';
-import { hv, AF } from '../anim/flow.js';
-import { dust } from '../fx/fx.js';
-import { shake } from '../gfx/view.js';
+import { W, STOP } from 'ronin-engine/clock/world.js';
+import { held } from 'ronin-engine/input/keys.js';
+import { hv, AF } from 'ronin-engine/flow/flow.js';
+import { dust } from 'ronin-engine/render/fx.js';
+import { shake } from 'ronin-engine/render/gfx/view.js';
 import { arc, tear, xArm, shut, bolt, ring, spark, mote, chip, residue, burstAt, slit, pool, flash, sliver, axes, v3, rr, TAU } from './fx3d.js';
 import { DOUBLE } from './moves.js';
 import { CD, TAP, CHARGE_T } from './beats.js';

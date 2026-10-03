@@ -3,7 +3,7 @@
 // grey common, grey and whitish rare, beige rarer, a real colour very rare) and rank (only royalty wears red); armour
 // takes dark dyes, each black tinted to its hue at the same lightness (oxblood, indigo, moss, plum, bronze, teal). The
 // iron, indigo and straw are Iron Ash V3's own ramps (gfx/palette.js).
-import { RAMP } from '../gfx/palette.js';
+import { RAMP } from 'ronin-engine/render/gfx/palette.js';
 
 const hx = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)), toHex = c => '#' + c.map(v => Math.round(Math.max(0, Math.min(255, v))).toString(16).padStart(2, '0')).join('');
 // a ramp of n shades through a few stops, evenly

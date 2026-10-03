@@ -4,11 +4,11 @@
 // springs), and a straw kasa, a head cloth or a bare head with a topknot. Unarmed: no katana, nothing in the saya.
 // The colours come from the slice's palette ramps (undyed, indigo, straw, a faded red-brown), picked by the seed.
 import * as THREE from 'three';
-import { piece, newPart } from '../gfx/build.js';
-import { RAMP as R } from '../gfx/palette.js';
-import { shadeMat } from '../gfx/shade.js';
-import { makeSkeleton, SK, applyPose } from '../look/three/rig.js';
-import { BODY_SHEAR } from '../gfx/view.js';
+import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
+import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
+import { makeSkeleton, SK, applyPose } from 'ronin-engine/render/rig3d.js';
+import { BODY_SHEAR } from 'ronin-engine/render/gfx/view.js';
 import { LOOKS } from '../look/look.js';
 
 const node = (parent, p = [0, 0, 0], r = [0, 0, 0]) => { const o = new THREE.Object3D(); o.position.set(...p); o.rotation.set(...r); parent.add(o); return o; };

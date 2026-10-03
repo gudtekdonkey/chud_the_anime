@@ -2,7 +2,7 @@ import { P } from '../state.js';
 import { ANIMS } from '../anims/anims.js';
 import { POSES } from '../anims/poses.js';
 import { rebake } from '../anims/sheets.js';
-import { bake } from '../traits/bake.js';
+import { bake } from 'ronin-engine/traits/bake.js';
 
 // ---- His personality: a list of [trait, strength] (traits/traits.js) that re-bakes how he stands, walks and runs ----
 // Only these three moves take it for now; attacks, skills and stances stay exactly as drawn.

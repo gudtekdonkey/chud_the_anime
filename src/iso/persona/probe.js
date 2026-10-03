@@ -2,10 +2,10 @@
 // they run in Node too): actors on a world of their own, stepped at the flow's 1/120 s, never drawn, never touching
 // the game. plainSame: no traits gives the page's moves exactly. idleReport: each idle plays, moves the body, glides
 // (no jump between steps) and comes home. compare: what two personas do differently, idle choices included.
-import { Actor, CLIPS } from '../anim/flow.js';
-import { IDLES, IDLE_NAMES, forceIdle, idlePose, lengthOf } from '../anim/idles.js';
-import { PAGE, idleOf, bear } from './gait.js';
-import { personaOf, summary } from './persona.js';
+import { Actor, CLIPS } from 'ronin-engine/flow/flow.js';
+import { IDLES, IDLE_NAMES, forceIdle, idlePose, lengthOf } from 'ronin-engine/flow/idles.js';
+import { PAGE, idleOf, bear } from 'ronin-engine/persona/gait.js';
+import { personaOf, summary } from 'ronin-engine/persona/persona.js';
 
 const world = () => ({ t: 0, dt: 1 / 120, event() {}, fx: [], on: {} });
 const body = p => [...p.pel, p.lean, p.head || 0, ...p.hN, ...p.hF, ...p.fN, ...p.fF, p.hy || 0, p.hr || 0, p.tw || 0];

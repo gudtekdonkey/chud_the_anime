@@ -1,9 +1,9 @@
 // ---- Prototype 41: the road view. He runs across the zone he is crossing; a scene puts its people on the road ahead of him ----
 // Everyone moves by the trait system: the ronin with no traits (his own idle, walk and run), everyone else as one person of their culture.
-import { bake } from '../../src/traits/bake.js';
+import { bake } from 'ronin-engine/traits/bake.js';
 import { personOf } from '../../src/traits/cultures.js';
-import { pz } from '../../src/rig/pose.js';
-import { hash } from '../../src/sim/rng.js';
+import { pz } from 'ronin-engine/rig/pose.js';
+import { hash } from 'ronin-engine/sim/rng.js';
 import { W, H, ROAD_Y, PALS, figure, eyes, sprite, ground, weather, night, horse, coffin } from './stage.js';
 import { makeStorm, stormUpdate, stormDraw, glitchFigure, hold } from './storm-look.js';
 

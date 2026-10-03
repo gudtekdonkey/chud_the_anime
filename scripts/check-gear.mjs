@@ -10,10 +10,10 @@ import { SLOTS, LAYERS, FAMILIES, STAT_KEYS, STAT_SHORT, statSum } from '../src/
 import { makeDressed, resolve } from '../src/iso/gear/dress.js';
 import { pixStyle } from '../src/iso/gear/pixel.js';
 import { PRESETS, randomOutfit, empty, encode, decode, outfitStats } from '../src/iso/gear/outfits.js';
-import { applyPose } from '../src/iso/look/three/rig.js';
-import { Actor, FA } from '../src/iso/anim/flow.js';
-import { drawFigure, toPix } from '../src/iso/look/pixel/engine.js';
-import '../src/iso/anim/moves.js';
+import { applyPose } from 'ronin-engine/render/rig3d.js';
+import { Actor, FA } from 'ronin-engine/flow/flow.js';
+import { drawFigure, toPix } from 'ronin-engine/render/pixel/engine.js';
+import 'ronin-engine/flow/moves.js';
 
 let step = '', fails = 0, checks = 0;
 const fail = m => { fails++; console.error(`FAIL ${step}: ${m}`); if (fails > 20) { console.error('too many failures'); process.exit(1); } };

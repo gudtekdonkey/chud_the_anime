@@ -1,4 +1,4 @@
-import { pz, HILT, lerpP, ease } from '../rig/pose.js';
+import { pz, HILT, lerpP, ease } from 'ronin-engine/rig/pose.js';
 import { F } from './stage-fx.js';
 
 // ---- Poses the executions share: the enemy's guard and how a man moves when things go wrong ----

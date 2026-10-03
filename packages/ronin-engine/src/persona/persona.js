@@ -5,13 +5,10 @@
 // What it shapes: the idle (lean, bow, breath depth and pace, sway, bob, jitter, stance, knees, hands), the walk and
 // the run (stride, cadence, speed, lift, arm swing, bounce, heavy feet, rock, limp, wobble, hands), which of the
 // twenty idles they drift into and how often (behave.js), and for a samurai how he fights (behave.js BEHAVE).
-import { mix } from '../../traits/mix.js';
-import { BASE } from '../../traits/knobs.js';
-import { TRAITS, PRESETS } from '../../traits/traits.js';
-import { CULTURES, personOf } from '../../traits/cultures.js';
+import { mix } from '../traits/mix.js';
+import { BASE } from '../traits/knobs.js';
 import { behaveOf, idlesOf, PLAIN } from './behave.js';
 
-export { PRESETS, CULTURES, TRAITS, personOf };
 const cl = (v, a, b) => Math.max(a, Math.min(b, v));
 
 // a mode's bearing: how the body is carried (the same in idle, walk and run where the trait says so)
@@ -37,14 +34,6 @@ export function personaOf(list = [], { armed = true } = {}) {
 export const PLAIN_PERSONA = personaOf([]);
 export { PLAIN };
 
-// the picker's choices: the ready-made characters, a person of each culture, and each trait alone
-export const PICKS = [
-  ...Object.keys(PRESETS).map(n => ({ id: 'p:' + n, group: 'Characters', name: n, list: () => PRESETS[n] })),
-  ...Object.entries(CULTURES).map(([id, c]) => ({ id: 'c:' + id, group: 'A person of a culture', name: c.name, culture: id, list: seed => personOf(id, seed) })),
-  ...Object.entries(TRAITS).map(([id, t]) => ({ id: 't:' + id, group: 'One trait', name: t.name, list: () => [[id, 1]] })),
-];
-export const pickOf = id => PICKS.find(p => p.id === id) || PICKS[0];
-export const describe = list => list.length ? list.map(([id, k]) => `${TRAITS[id].name} ${k}`).join(' · ') : 'no traits (as drawn)';
 // the numbers that show what a persona does, for the overlay and the check
 export function summary(P) { const strideRun = 52.5 * P.run.stride, strideWalk = 30 * P.walk.stride;
   return { run: { speed: 110 * P.run.speed, stride: strideRun, cadence: 110 * P.run.speed / strideRun }, walk: { speed: 36 * P.walk.speed, stride: strideWalk, cadence: 36 * P.walk.speed / strideWalk },

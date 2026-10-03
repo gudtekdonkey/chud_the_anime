@@ -3,11 +3,10 @@
 // (anim/moves.js) with the persona's numbers written in, arranged so the plain numbers give the page's move bit for
 // bit (the check compares them); an actor without a persona never leaves the page's own function. Attacks, rolls,
 // stops and the rest stay exactly as drawn, as in today's game.
-import { CLIPS, proc, H, TAU, lerp, EZ, hv } from '../anim/flow.js';
-import { SH, blade } from '../anim/moves.js';
-import '../anim/moves-extra.js';
-import { drift } from '../anim/idles.js';
-import { dust } from '../fx/fx.js';
+import { CLIPS, proc, H, TAU, lerp, EZ, hv, FX } from '../flow/flow.js';
+import { SH, blade } from '../flow/moves.js';
+import '../flow/moves-extra.js';
+import { drift } from '../flow/idles.js';
 import { PLAIN_PERSONA } from './persona.js';
 
 export const PAGE = { idle: CLIPS.idle.fn, guard: CLIPS.guard.fn, run: CLIPS.run.fn, runArmed: CLIPS.runArmed.fn };
@@ -57,7 +56,7 @@ export function runOf(s, p, K) { const sc = Math.min(1, Math.max(s, .05)), A = 1
   return o; }
 CLIPS.run.fn = (a, t, dt) => { const P = a.persona; if (!P || (P.plain && !a.generic)) return PAGE.run(a, t, dt);
   a.phase += a.v * dt / strideOf(a.v, P.run); const p = bear(runOf(a.v / 110, a.phase, P.run), P.run);
-  if (a.out && a.flow) { const q = ((a.phase % .5) + .5) % .5; if (a.lastQ != null && a.lastQ > q && a.v > 60) { const f = hv(a.h), fo = .9 * 10.5; dust(a.W, a.x + f[0] * fo, a.z + f[1] * fo, 2 + Math.round(2 * P.run.heavy), { spd: 12, life: .3, up: 5, dir: a.h + Math.PI, spread: 1.4 }); } a.lastQ = q; }
+  if (a.out && a.flow) { const q = ((a.phase % .5) + .5) % .5; if (a.lastQ != null && a.lastQ > q && a.v > 60) { const f = hv(a.h), fo = .9 * 10.5; FX.dust(a.W, a.x + f[0] * fo, a.z + f[1] * fo, 2 + Math.round(2 * P.run.heavy), { spd: 12, life: .3, up: 5, dir: a.h + Math.PI, spread: 1.4 }); } a.lastQ = q; }
   return { p, move: a.v * dt }; };
 CLIPS.runArmed.fn = (a, t, dt) => { const P = a.persona; if (!P || (P.plain && !a.generic)) return PAGE.runArmed(a, t, dt);
   a.phase += a.v * dt / strideOf(a.v, P.run); const p = runOf(a.v / 110, a.phase, P.run), ap = TAU * a.phase;

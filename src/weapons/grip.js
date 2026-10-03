@@ -1,4 +1,4 @@
-import { pz, lin, keyed } from '../rig/pose.js';
+import { pz, lin, keyed } from 'ronin-engine/rig/pose.js';
 
 // ---- Shared by the weapons: the two-handed grip, and the draw and stow for anything carried on the back ----
 // grip: say where the two fists go (px from the hip, x forward, y down); the arms reach for them and the weapon's angle

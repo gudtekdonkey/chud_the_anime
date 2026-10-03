@@ -4,7 +4,7 @@
 // drawing it. Ages run on the world's clock (sim.js), so a hit-stop freezes them with everything else. Ported from
 // today's 2D effects (src/fx/: slash.js crescents, moon.js, void.js's black slash, bolts.js, util.js sparks, rings,
 // residue, debris.js cracks and stone), lifted off the screen into the world.
-import { toScreen, CAM } from '../gfx/view.js';
+import { toScreen, CAM } from 'ronin-engine/render/gfx/view.js';
 import { brush } from './ink.js';
 
 export const FX = [];

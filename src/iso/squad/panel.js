@@ -2,9 +2,9 @@
 // selects the role; the orders, formations, tactics, the selection's role and liberty, the order slow-motion, "show
 // minds", a new wave) and the COMPANION SETTINGS panel (Tab, in the kit screen's style; it pauses the game): per
 // companion his role, liberty, whom he protects and his aggression. Every button is also the touch control.
-import { SQ, select, toggle, selectRole, order, set, chosen } from './squad.js';
-import { ROLES, ROLE_IDS, LIBERTY, LIBERTY_IDS, FORMATIONS, FORMATION_IDS, TACTICS, TACTIC_IDS, ORDERS, ORDER_IDS } from './orders.js';
-import { temperWords } from '../ai/temper.js';
+import { SQ, select, toggle, selectRole, order, set, chosen } from 'ronin-engine/squad/squad.js';
+import { ROLES, ROLE_IDS, LIBERTY, LIBERTY_IDS, FORMATIONS, FORMATION_IDS, TACTICS, TACTIC_IDS, ORDERS, ORDER_IDS } from 'ronin-engine/squad/orders.js';
+import { temperWords } from 'ronin-engine/ai/temper.js';
 
 const CSS = `
 .iso.squad .stage { flex-direction: column; align-items: center; position: relative; gap: 8px; }

@@ -1,6 +1,6 @@
 import { W, H } from './config.js';
 import { game } from './screen.js';
-import { gestures } from './gestures.js';
+import { gestures } from 'ronin-engine/input/gestures.js';
 import { TOUCH, queue } from './player/touch.js';
 import { PT } from './player/prompts.js';
 import { clickAt } from './player/click.js';

@@ -1,8 +1,8 @@
 // node scripts/wild-check.mjs [seed]: the voids and their creatures (docs/sim-travel.md "The voids"). Walks him zone to zone
 // through every void of a fresh world at levels 1, 11 and 30, by day and by night, and prints what he met; then checks determinism.
-import '../src/sim/travel/index.js';
-import { generateWorld, advance, zoneAt, wildRing, serialize, deserialize } from '../src/sim/index.js';
-import { enterZone, choose, BEASTS } from '../src/sim/travel/index.js';
+import 'ronin-engine/sim/travel/index.js';
+import { generateWorld, advance, zoneAt, wildRing, serialize, deserialize } from 'ronin-engine/sim/index.js';
+import { enterZone, choose, BEASTS } from 'ronin-engine/sim/travel/index.js';
 
 const seed = +(process.argv[2] || 12345);
 function walk(level, night, n = 4000) {
