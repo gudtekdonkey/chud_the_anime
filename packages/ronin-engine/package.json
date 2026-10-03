@@ -7,11 +7,16 @@
   "exports": {
     "./*": "./src/*"
   },
+  "scripts": {
+    "test": "node test/boundary.mjs && node test/pack.mjs && node test/shots.mjs"
+  },
   "peerDependencies": {
     "three": "0.186.1"
   },
   "peerDependenciesMeta": {
-    "three": { "optional": true }
+    "three": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=20.19"

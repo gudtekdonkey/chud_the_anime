@@ -7,6 +7,10 @@
 //   carry   hip (a saya at the left hip) · obi (through the sash) · slung (across his back) · shoulder (down his back, grip over the right shoulder)
 //   ext     [behind the right hand's grip, ahead of it] in world units: the model's length, the trail's and the floor's reach
 //   hands   two (both hands on it, bh rig px apart along it) or one (the left hand free, or holding its `off` weapon)
+//   fire    a ranged weapon (owner pick 5A: "a gun is a weapon with a ranged attack"), optional: { shot (its kind),
+//           speed, life, radius, test ('swept' by default), dmg, spread (radians either side), range (rig px: the cut
+//           turns to a target this near and never steps in), mag, reload (a clip) }; its moves fire on a 'fire' event
+//           and iso/weapons/fire.js sends the shot from the muzzle (the held item's tip) through shots.js
 // A game hands in its rows with their grips (cuts: per move, a spec per key; null keeps the base key), where each
 // rides (stow: STOW's rows, stow.js) and how each is built in 3D (models: id → put → { main, blade?, sheaths, ... },
 // placed on the rig by iso/weapons/wield.js).

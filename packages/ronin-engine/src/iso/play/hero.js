@@ -56,8 +56,10 @@ export class Hero extends Char {
       // as today's game: within reach + 36 game px (72 rig px) he steps in, up to that far, stopping short of him (28 rig px), never through
       // (the step is laid over the cut's own root motion, eased out before the strike; a close target shortens the cut's own step)
       // a weapon's reach (weapons/arsenal.js) widens both: a spear stops further short of him
-      const R = this.wpn ? this.wpn.reach : 1, short = 28 + Math.max(0, R - 1) * 30;
-      if (d < 46 * R + 72 && (dir == null || Math.abs(wrapA(hf - h)) < 1.2)) { h = snap8(hf); const tr = CUT[name].travel, extra = Math.min(72, d - short - tr);
+      const R = this.wpn ? this.wpn.reach : 1, short = 28 + Math.max(0, R - 1) * 30, fr = this.wpn && this.wpn.fire;
+      // a ranged weapon (its `fire` block, weapons/registry.js): turns to a target within its range, never steps in
+      if (fr) { if (d < fr.range && (dir == null || Math.abs(wrapA(hf - h)) < 1.2)) h = snap8(hf); }
+      else if (d < 46 * R + 72 && (dir == null || Math.abs(wrapA(hf - h)) < 1.2)) { h = snap8(hf); const tr = CUT[name].travel, extra = Math.min(72, d - short - tr);
         if (extra > 0) this.step = { left: extra, dur: CUT[name].hit * .9, t: 0, u: 0 }; else rs = Math.max(.3, (d - short) / tr); } }
     a.h = a.ht = h; a.turnSnap = true; a.vt = 0; a.v = name === 'lunge' ? a.v : 0;
     if (this.lastCut !== name) this.cutStart = this.a.W.t;
