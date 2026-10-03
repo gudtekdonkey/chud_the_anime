@@ -14,7 +14,7 @@ export const hOf = (dx, dz) => Math.atan2(dx, dz);
 export const DIR = { S: 0, SE: Math.PI / 4, E: Math.PI / 2, NE: 3 * Math.PI / 4, N: Math.PI, NW: -3 * Math.PI / 4, W: -Math.PI / 2, SW: -Math.PI / 4 };
 export const rnd = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(7);
 // the effects a move throws (the dust of a stride, a stop, a roll) and their step each tick: the render side hands them
-// in (render/fx.js), so the core never imports three.js
+// in (iso/fx.js), so the core never imports three.js
 export const FX = { dust() {}, step() {} };
 
 export const EZ = { l: t => t, i: t => t * t * t, i2: t => t * t, o: t => 1 - (1 - t) ** 3, o2: t => 1 - (1 - t) ** 2, io: t => t < .5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2, s: t => t * t * (3 - 2 * t),

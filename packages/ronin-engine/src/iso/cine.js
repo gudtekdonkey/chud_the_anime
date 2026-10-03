@@ -2,7 +2,7 @@
 // reach, the camera punches in on the two of them, the screen letterboxes, the courtyard gives way to ink and speed
 // lines, the strike lands with its impact frames, and the camera pulls back out: ~0.8 s, anime-style. Any key press
 // skips it. Presentation only: the game keeps its own clock and its hitboxes the whole time.
-import { PIPE, MOMENT } from 'ronin-engine/render/gfx/post.js';
+import { PIPE, MOMENT } from './gfx/post.js';
 
 export const CINE = { on: false, t: 0, dur: .8, zoom: 1, cx: 0, cz: 0 };
 const IN = .12, OUT = .2, PEAK = 3.2;

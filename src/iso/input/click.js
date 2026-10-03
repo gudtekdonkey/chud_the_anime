@@ -4,14 +4,14 @@
 // a pickup) he goes to it and does its verb. The keys always win: a direction pressed drops the click's path.
 // The mouse's selection rules are the squad AI's (claude/3d-squad-ai): left click moves him only while nothing is
 // selected, so it sets CLICK.blocked; right click is theirs, never read here.
-import { CTX, living } from '../ctx.js';
-import { CAM, VW, VH, U, OBL, toScreen } from 'ronin-engine/render/gfx/view.js';
-import { findPath } from './path.js';
+import { CTX, living } from 'ronin-engine/iso/ctx.js';
+import { CAM, VW, VH, U, OBL, toScreen } from 'ronin-engine/iso/gfx/view.js';
+import { findPath } from 'ronin-engine/world/path.js';
 import { BIG, usable } from '../items/big.js';
 import { PICKUPS } from '../items/pickups.js';
 import { IT, FALLEN, LOCK } from '../items/items.js';
 import { PARTY } from '../party/party.js';
-import { CP, answer } from '../combo/prompts.js';
+import { CP, answer } from '../combo/combo-game.js';
 import { hOf } from 'ronin-engine/flow/flow.js';
 import { W } from 'ronin-engine/clock/world.js';
 import { COL } from '../../config.js';

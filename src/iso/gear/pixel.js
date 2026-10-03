@@ -3,7 +3,7 @@
 // style: Iron Ash's refined F1 (FC.RF1) stripped to the body, then each worn piece's `pix` words switch its features
 // on, and its colours become the ramps of the parts they paint. Coarser than the 3D dresser (the engine has one
 // armour colour, one hat shape per kind), but every piece shows up as something, and the look seam stays four calls.
-import { FC } from 'ronin-engine/render/pixel/styles.js';
+import { FC } from 'ronin-engine/iso/pixel/styles.js';
 import { DYES } from './palette.js';
 import { worn } from './dress.js';
 

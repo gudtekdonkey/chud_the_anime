@@ -7,9 +7,9 @@
 // samurai's clip time, so a hit-stop holds the whole performance.
 import { proc, hv, hOf, AF, H, rnd, TAU, EZ, FA, faceK } from 'ronin-engine/flow/flow.js';
 import { W } from 'ronin-engine/clock/world.js';
-import { CINE, startCine } from '../fx/cine.js';
-import { sparks, dust, focus } from 'ronin-engine/render/fx.js';
-import { shake as camShake, toScreen, CAM } from 'ronin-engine/render/gfx/view.js';
+import { CINE, startCine } from 'ronin-engine/iso/cine.js';
+import { sparks, dust, focus } from 'ronin-engine/iso/fx.js';
+import { shake as camShake, toScreen, CAM } from 'ronin-engine/iso/gfx/view.js';
 import { makeLook } from '../look/look.js';
 import { lift, pose, HR, EG } from './poses.js';
 import { EXECS } from './executions.js';

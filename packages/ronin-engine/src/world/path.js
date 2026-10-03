@@ -1,7 +1,7 @@
 // ---- Paths round the courtyard's obstacles (click to move, a companion sent somewhere): A* on a grid of 6-unit cells
 // over the room, each cell blocked where a circle of radius r would touch a solid (world/room.js SOLID, items included),
 // then pulled tight (a waypoint is dropped while the straight line past it stays clear). World units.
-import { SOLID, ROOM } from '../world/room.js';
+import { SOLID, ROOM } from './room.js';
 
 const C = 6, GW = Math.ceil((ROOM.x1 - ROOM.x0) / C), GH = Math.ceil((ROOM.z1 - ROOM.z0) / C);
 const grids = new Map();   // per radius, rebuilt when the solids change

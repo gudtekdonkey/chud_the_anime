@@ -4,20 +4,20 @@
 // the flow world (main.js). The RTS controls (control.js), the order bar and the settings panel (panel.js) and the
 // markers on the effects layer (draw.js) hang off it. Nothing here touches today's game or the single-samurai slice.
 import { W as FW } from 'ronin-engine/clock/world.js';
-import { CUT } from '../play/hero.js';
+import { CUT } from 'ronin-engine/iso/play/hero.js';
 import { hOf, wrapA } from 'ronin-engine/flow/flow.js';
 import { SOLID, ROOM } from '../world/room.js';
-import { CAM, toScreen, VW, VH } from 'ronin-engine/render/gfx/view.js';
-import { Npc } from './npc.js';
-import { squadRules, ARROWS } from './combat.js';
+import { CAM, toScreen, VW, VH } from 'ronin-engine/iso/gfx/view.js';
+import { Npc } from 'ronin-engine/iso/squad/npc.js';
+import { squadRules, ARROWS } from 'ronin-engine/iso/squad/combat.js';
 import { thinkSide, thinkFoe, BOUNDS } from 'ronin-engine/ai/brain.js';
 import { thinkAlly } from 'ronin-engine/squad/mind.js';
 import { temperOf } from 'ronin-engine/ai/temper.js';
 import { died as moraleDied, wounded as moraleWounded } from 'ronin-engine/ai/director.js';
 import { SQ, assignSlots } from 'ronin-engine/squad/squad.js';
-import { initControl } from './control.js';
-import { buildPanel } from './panel.js';
-import { drawSquad } from './draw.js';
+import { initControl } from 'ronin-engine/iso/squad/control.js';
+import { buildPanel } from 'ronin-engine/iso/squad/panel.js';
+import { drawSquad } from 'ronin-engine/iso/squad/draw.js';
 import 'ronin-engine/flow/moves-squad.js';
 
 const STEEL = { c: [.62, .72, .8], a: .16 }, GOLD = { c: [.95, .72, .3], a: .13 };

@@ -2,10 +2,10 @@
 // picker (, steps through it), respawn (.), the placeholder brain on or off (with it off they stand and wait for a
 // decision layer to drive them), and a live line: the hero's health, who holds the tokens, the latest events.
 import { GROUPS } from './types.js';
-import { SQUAD } from './squad.js';
-import { BRAIN } from './brain.js';
-import { ELOG } from './events.js';
-import { CTX, TOKENS } from './ctx.js';
+import { SQUAD } from 'ronin-engine/iso/enemies/squad.js';
+import { BRAIN } from 'ronin-engine/iso/enemies/brain.js';
+import { ELOG } from 'ronin-engine/iso/enemies/events.js';
+import { CTX, TOKENS } from 'ronin-engine/iso/enemies/ctx.js';
 
 export function buildPicker(root, squad, group) {
   const aside = root.querySelector('aside'), before = [...aside.querySelectorAll('h2')].find(h => h.textContent === 'Controls');

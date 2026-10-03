@@ -4,9 +4,9 @@
 // imports as they are (state.js INV, items/inventory.js, party/kit.js, traits/, ui/hud-kit.js, ui/pixfont.js, ui/icons.js,
 // items/item-sprites.js, fx/numbers.js): the HUD canvas they draw on is hud/canvas.js's.
 import './hud/canvas.js';
-import { CTX, lone } from './ctx.js';
+import { CTX, lone } from 'ronin-engine/iso/ctx.js';
 import { W } from 'ronin-engine/clock/world.js';
-import { STATS } from './play/rules.js';
+import { STATS } from 'ronin-engine/iso/play/rules.js';
 import { PARTY, initParty, tickParty, partyKill, hurtAlly } from './party/party.js';
 import { BAG } from '../party/kit.js';
 import { startPaired, startSolo, tickPaired, swallowsHit, pairCandidate, PAIR } from './party/paired.js';
@@ -16,13 +16,13 @@ import { drawPickups, PICKUPS, GOT } from './items/pickups.js';
 import { drawItemFx, drawSmoke } from './items/item-fx.js';
 import { USE } from './items/quick.js';
 import { P, S, INV, hurt, qiAdd, QI_HIT, tickMeters } from './items/inv.js';
-import { CP, tickPrompts, onLanded, answer } from './combo/prompts.js';
+import { CP, tickPrompts, onLanded, answer } from './combo/combo-game.js';
 import { CLICK, initClick, clickDir, tickClick, drawClick, clickAt, floorAt } from './input/click.js';
-import { TOUCH, initTouch, touchDir } from './input/touch.js';
+import { TOUCH, initTouch, touchDir } from 'ronin-engine/iso/input/touch.js';
 import { drawHud, hudCanvas } from './hud/hud.js';
 import { numAt, tickWorldUi } from './hud/world-ui.js';
 import { BLADE_LEN } from './party/ally-look.js';
-import { VW, VH } from 'ronin-engine/render/gfx/view.js';
+import { VW, VH } from 'ronin-engine/iso/gfx/view.js';
 import { consume } from 'ronin-engine/input/keys.js';
 import 'ronin-engine/flow/moves-port.js';
 

@@ -3,9 +3,9 @@
 // the page's fcut). Hits make him recoil (light) or knock him down to a knee (heavy); at no health he dies (the page's
 // fall), lies a moment, dissolves, and stands up again at his post. With a squad (main.js `&foes=N`) they keep a step
 // apart; `frozen` (Time Slice, skills/timeslice.js) holds one where he stands.
-import { hOf, AF } from 'ronin-engine/flow/flow.js';
-import { Char } from './char.js';
-import { PLAIN } from 'ronin-engine/persona/behave.js';
+import { hOf, AF } from '../../flow/flow.js';
+import { Char } from '../char.js';
+import { PLAIN } from '../../persona/behave.js';
 
 // the attacks he picks from (the counter's skills/moves.js adds the thrust)
 export const ATTACKS = ['fcut'];

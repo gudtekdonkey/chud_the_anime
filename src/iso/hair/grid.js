@@ -5,12 +5,12 @@
 // window.__iso.hairAudit() runs the audit (audit.js) for the check.
 import { Actor, FA, CLIPS } from 'ronin-engine/flow/flow.js';
 import { makeLook } from '../look/look.js';
-import { CAM, projMatrix, toScreen } from 'ronin-engine/render/gfx/view.js';
-import { PIPE } from 'ronin-engine/render/gfx/post.js';
-import { STYLE } from 'ronin-engine/render/gfx/style.js';
-import { piece } from 'ronin-engine/render/gfx/build.js';
-import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
-import { RAMP } from 'ronin-engine/render/gfx/palette.js';
+import { CAM, projMatrix, toScreen } from 'ronin-engine/iso/gfx/view.js';
+import { PIPE } from 'ronin-engine/iso/gfx/post.js';
+import { STYLE } from 'ronin-engine/iso/gfx/style.js';
+import { piece } from 'ronin-engine/iso/gfx/build.js';
+import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
+import { RAMP } from 'ronin-engine/iso/gfx/palette.js';
 import { HAIR, HATS } from './head.js';
 import { resolve } from './contract.js';
 import { audit } from './audit.js';

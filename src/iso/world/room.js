@@ -4,15 +4,15 @@
 // while he is under it, and anything that hides him shows his silhouette). Warm pools, ground mist, rain in the post pass,
 // and two dithered shafts of lantern light. All of it is 3D through the same pipeline; world units (1 = a pixel of today's game).
 import * as THREE from 'three';
-import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
-import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
-import { shadeMat, SH } from 'ronin-engine/render/gfx/shade.js';
+import { piece, newPart } from 'ronin-engine/iso/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/iso/gfx/palette.js';
+import { shadeMat, SH } from 'ronin-engine/iso/gfx/shade.js';
+import { ROOM, SOLID, RAISED, groundAt, collide } from 'ronin-engine/world/room.js';
 
-export const ROOM = { x0: 0, x1: 600, z0: 0, z1: 300, cam: { x0: -24, x1: 624, z0: -64, z1: 312 } };
-// what he collides with (x0, x1, z0, z1), and where the ground is raised (the engawa)
-export const SOLID = [];
-const RAISED = [{ x0: 470, x1: 560, z0: 50, z1: 230, y: 6 }];
-export const groundAt = (x, z) => { for (const r of RAISED) if (x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1) return r.y; return 0; };
+Object.assign(ROOM, { x0: 0, x1: 600, z0: 0, z1: 300, cam: { x0: -24, x1: 624, z0: -64, z1: 312 } });
+// what he collides with (x0, x1, z0, z1; buildRoom fills it), and where the ground is raised (the engawa)
+RAISED.push({ x0: 470, x1: 560, z0: 50, z1: 230, y: 6 });
+export { ROOM, SOLID, groundAt, collide };
 
 const LAMPS = [
   { p: [300, 40, 10], col: '#ffb36a', r: 110, k: 1.25 },   // the gate's paper lantern
@@ -91,12 +91,4 @@ export function buildRoom(scene) {
       eaveMesh.visible = eaveM.uniforms.uFade.value < .98;
     },
   };
-}
-
-// keep a circle of radius r out of the solids and inside the room
-export function collide(p, r) {
-  p.x = Math.max(ROOM.x0 + r, Math.min(ROOM.x1 - r, p.x)); p.z = Math.max(ROOM.z0 + r, Math.min(ROOM.z1 - r, p.z));
-  for (const b of SOLID) { const cx = Math.max(b.x0, Math.min(b.x1, p.x)), cz = Math.max(b.z0, Math.min(b.z1, p.z)), dx = p.x - cx, dz = p.z - cz, d = Math.hypot(dx, dz);
-    if (d < r) { if (d > 1e-4) { p.x = cx + dx / d * r; p.z = cz + dz / d * r; } else { const l = p.x - b.x0, rr = b.x1 - p.x, t = p.z - b.z0, bo = b.z1 - p.z, m = Math.min(l, rr, t, bo);
-      if (m === l) p.x = b.x0 - r; else if (m === rr) p.x = b.x1 + r; else if (m === t) p.z = b.z0 - r; else p.z = b.z1 + r; } } }
 }

@@ -6,8 +6,8 @@
 //   Anime limited (white) flat white with a cyan body and an ink rim, hard edges, on twos
 //   Toon + dither         the Animation Flow page's dithered cyan ramp, 1 px, 30 fps
 // Nothing here knows which skill is drawing; nothing outside here picks an effect's colours.
-import { STYLE } from 'ronin-engine/render/gfx/style.js';
-import { VW, VH } from 'ronin-engine/render/gfx/view.js';
+import { STYLE } from '../gfx/style.js';
+import { VW, VH } from '../gfx/view.js';
 
 const BAY = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map(v => (v + .5) / 16), bay = (x, y) => BAY[(y & 3) * 4 + (x & 3)];
 const RAMP = {

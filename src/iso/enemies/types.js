@@ -10,7 +10,10 @@
 //   guard     blocks (hits before it breaks); parry: { win, cd, chance by phase }; dodge: { cd, chance }
 //   armor     super armour while attacking (a cut lands, he does not flinch, until his poise breaks)
 //   brave     0..1: how little an ally's death shakes him; breakAt: the morale under which he runs
-export const TYPES = {
+import { TYPES as T_REG, GROUPS as G_REG, setEnemyLook } from 'ronin-engine/iso/enemies/types.js';
+import { enemyLook } from './model.js';
+
+export const TYPES = Object.assign(T_REG, {
   swordsman: { name: 'Samurai swordsman', role: 'melee', weapon: 'sword', hp: 6, poise: 3, r: 4.5, turn: 7, stalk: 36, run: 84, ring: 74,
     cd: [.9, 2], aggro: .8, brave: .6, breakAt: .35, guard: { hits: 2, chance: .3 }, dodge: { cd: 3, chance: .1 },
     moves: {
@@ -59,10 +62,10 @@ export const TYPES = {
     // the pattern: patient and parrying, then faster with the flurry under 60%, then the double flash-cut under 30%
     phases: [{ at: 1, cdK: 1 }, { at: .6, cdK: .7 }, { at: .3, cdK: .5 }],
     model: { pal: 'duelist', head: 'sandogasa', coat: true } },
-};
+});
 
 // the overlay's picker: one of each, then mixed groups (the lone samurai is today's slice, `samurai`)
-export const GROUPS = {
+export const GROUPS = Object.assign(G_REG, {
   samurai: { name: 'The lone samurai (the slice)', list: [] },
   swordsman: { name: 'One swordsman', list: ['swordsman'] },
   spearman: { name: 'One spearman', list: ['spearman'] },
@@ -74,4 +77,5 @@ export const GROUPS = {
   mixed: { name: 'Mixed: swords, spear, archer, heavy', list: ['swordsman', 'swordsman', 'spearman', 'archer', 'heavy'] },
   ambush: { name: 'Ambush: shinobi in hiding', list: ['ninja!', 'ninja!', 'archer', 'swordsman'] },
   warband: { name: 'Warband: eight', list: ['swordsman', 'swordsman', 'spearman', 'spearman', 'archer', 'archer', 'heavy', 'ninja'] },
-};
+});
+setEnemyLook(enemyLook);

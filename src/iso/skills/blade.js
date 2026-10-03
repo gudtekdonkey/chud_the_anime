@@ -11,9 +11,9 @@
 import { W, STOP } from 'ronin-engine/clock/world.js';
 import { held } from 'ronin-engine/input/keys.js';
 import { hv, AF } from 'ronin-engine/flow/flow.js';
-import { dust } from 'ronin-engine/render/fx.js';
-import { shake } from 'ronin-engine/render/gfx/view.js';
-import { arc, tear, xArm, shut, bolt, ring, spark, mote, chip, residue, burstAt, slit, pool, flash, sliver, axes, v3, rr, TAU } from './fx3d.js';
+import { dust } from 'ronin-engine/iso/fx.js';
+import { shake } from 'ronin-engine/iso/gfx/view.js';
+import { arc, tear, xArm, shut, bolt, ring, spark, mote, chip, residue, burstAt, slit, pool, flash, sliver, axes, v3, rr, TAU } from 'ronin-engine/iso/skills/fx3d.js';
 import { DOUBLE } from './moves.js';
 import { CD, TAP, CHARGE_T } from './beats.js';
 

@@ -9,7 +9,7 @@ export { STOW };
 const norm = d => { const l = Math.hypot(...d); return d.map(v => v / l); };
 // the grip's place on the bone, in world units: a centred spec's grip sits half its length's difference below the middle
 export function stowAt(s, w) { const d = norm(s.dir); if (!s.c) return { at: s.at, d }; const k = (w.ext[1] - w.ext[0]) / 2; return { at: s.c.map((v, i) => v - d[i] * k), d }; }
-const TAU = Math.PI * 2, SPINE = 6.8;   // rig px, the chest bone above the hips (render/rig3d.js SK.spineTop)
+const TAU = Math.PI * 2, SPINE = 6.8;   // rig px, the chest bone above the hips (iso/rig3d.js SK.spineTop)
 // where his hand takes the weapon `id` from its stow, in a side pose's plane: g [forward, up] rig px (absolute), the
 // weapon's angle there, its sideways lean (lat), the hand's sideways place (x, world units) and how far down the weapon
 // from the hand its own grip is (slide, rig px). An angle that points down behind him is unwound past π, so a draw and

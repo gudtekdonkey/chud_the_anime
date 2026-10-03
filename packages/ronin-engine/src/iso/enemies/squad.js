@@ -4,10 +4,10 @@
 // three or more surround; ranged behind the melee, at their own range), whether one is alone, and morale (an ally's
 // death shakes those near). It also keeps them apart, steps the shots and the smoke, and brings the group back 3 s
 // after the last one falls. `SQUAD` is the handle a decision layer imports (docs/enemies.md).
-import { W } from 'ronin-engine/clock/world.js';
-import { hOf, wrapA, TAU, AF, rnd } from 'ronin-engine/flow/flow.js';
+import { W } from '../../clock/world.js';
+import { hOf, wrapA, TAU, AF, rnd } from '../../flow/flow.js';
 import { CUT } from '../play/hero.js';
-import { ROOM } from '../world/room.js';
+import { ROOM } from '../../world/room.js';
 import { TYPES, GROUPS } from './types.js';
 import { Enemy } from './enemy.js';
 import { CTX, TOKENS } from './ctx.js';
@@ -15,7 +15,7 @@ import { emit, ELOG, onEnemy } from './events.js';
 import { heroCut, stepShots, ESTATS } from './combat.js';
 import { BRAIN } from './brain.js';
 import { drawSquad } from './draw.js';
-import { toScreen, VW, VH } from 'ronin-engine/render/gfx/view.js';
+import { toScreen, VW, VH } from '../gfx/view.js';
 import './moves.js';
 
 const EVENTS = ['e:tele', 'e:strike', 'e:slam', 'e:loose', 'e:throw', 'e:smoke', 'e:appear', 'e:phase'];

@@ -9,17 +9,16 @@
 // regroup. Movement actions are intents he keeps until told otherwise; the rest are moves that play out and hand him
 // back 'ready'. Positions and distances in the interface are world units (Char.x/z); inside, the flow's rig px.
 // How he reacts to being hit, blocks, parries, staggers, armours through and dies is his own, here, whatever decides.
-import { Char } from '../play/char.js';
-import { hOf, wrapA, hv, AF, rnd } from 'ronin-engine/flow/flow.js';
-import { W } from 'ronin-engine/clock/world.js';
-import { TYPES } from './types.js';
+import { Char } from '../char.js';
+import { hOf, wrapA, hv, AF, rnd } from '../../flow/flow.js';
+import { W } from '../../clock/world.js';
+import { TYPES, enemyLook } from './types.js';
 import { HITS, hitTimes } from './moves.js';
-import { enemyLook } from './model.js';
 import { CTX, TOKENS } from './ctx.js';
 import { emit } from './events.js';
 import { hurtHero, shoot, puff, slamFx, phaseFx } from './combat.js';
-import { ROOM } from '../world/room.js';
-import { BODY_SHEAR } from 'ronin-engine/render/gfx/view.js';
+import { ROOM } from '../../world/room.js';
+import { BODY_SHEAR } from '../gfx/view.js';
 import * as THREE from 'three';
 
 let NID = 1;

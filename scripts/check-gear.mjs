@@ -10,9 +10,9 @@ import { SLOTS, LAYERS, FAMILIES, STAT_KEYS, STAT_SHORT, statSum } from '../src/
 import { makeDressed, resolve } from '../src/iso/gear/dress.js';
 import { pixStyle } from '../src/iso/gear/pixel.js';
 import { PRESETS, randomOutfit, empty, encode, decode, outfitStats } from '../src/iso/gear/outfits.js';
-import { applyPose } from 'ronin-engine/render/rig3d.js';
+import { applyPose } from 'ronin-engine/iso/rig3d.js';
 import { Actor, FA } from 'ronin-engine/flow/flow.js';
-import { drawFigure, toPix } from 'ronin-engine/render/pixel/engine.js';
+import { drawFigure, toPix } from 'ronin-engine/iso/pixel/engine.js';
 import 'ronin-engine/flow/moves.js';
 
 let step = '', fails = 0, checks = 0;

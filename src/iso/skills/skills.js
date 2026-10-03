@@ -8,13 +8,13 @@
 // him back in its cancel windows (a roll from `roll`, J or another skill from `any`, beats.js CANCEL) or as it ends.
 // Nothing here is imported by today's game; main.js only calls makeSkills and the four hooks it returns.
 import { W, STOP } from 'ronin-engine/clock/world.js';
-import { CUT } from '../play/hero.js';
+import { CUT } from 'ronin-engine/iso/play/hero.js';
 import { consume, pending, held } from 'ronin-engine/input/keys.js';
 import { hOf, hv, wrapA, AF } from 'ronin-engine/flow/flow.js';
-import { sparks, focus } from 'ronin-engine/render/fx.js';
-import { shake, BODY_SHEAR } from 'ronin-engine/render/gfx/view.js';
+import { sparks, focus } from 'ronin-engine/iso/fx.js';
+import { shake, BODY_SHEAR } from 'ronin-engine/iso/gfx/view.js';
 import * as THREE from 'three';
-import { FX, fxStep, fxDraw, bolt, ring, spark, chip, ribbon, slit, residue, burstAt, rr, TAU } from './fx3d.js';
+import { FX, fxStep, fxDraw, bolt, ring, spark, chip, ribbon, slit, residue, burstAt, rr, TAU } from 'ronin-engine/iso/skills/fx3d.js';
 import { makeEchoes } from './echo.js';
 import { CD, PW, TIERS, DMG, QI_GAIN, CANCEL } from './beats.js';
 import { BLADE, moonsStep } from './blade.js';

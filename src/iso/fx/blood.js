@@ -5,11 +5,11 @@
 // everything that lands (stains, pools, splashes, the blade's coat) is 3D through the scene material, so the style's
 // light, bands, dither, palette and outline take it as they take the courtyard. World units, positions as drawn.
 import * as THREE from 'three';
-import { piece } from 'ronin-engine/render/gfx/build.js';
-import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
-import { RAMP } from 'ronin-engine/render/gfx/palette.js';
-import { toScreen, CAM, VW, VH } from 'ronin-engine/render/gfx/view.js';
-import { STYLE } from 'ronin-engine/render/gfx/style.js';
+import { piece } from 'ronin-engine/iso/gfx/build.js';
+import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
+import { RAMP } from 'ronin-engine/iso/gfx/palette.js';
+import { toScreen, CAM, VW, VH } from 'ronin-engine/iso/gfx/view.js';
+import { STYLE } from 'ronin-engine/iso/gfx/style.js';
 import { groundAt } from '../world/room.js';
 import { rnd, TAU } from 'ronin-engine/flow/flow.js';
 

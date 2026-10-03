@@ -20,7 +20,7 @@ export function defineWeapons(rows, { cuts = {}, stow = {} } = {}) {
   return ARSENAL;
 }
 
-// equip a character (render/char.js): the controller's side (its clips, reach, weight, trail) and the frame's `weapon`,
+// equip a character (iso/char.js): the controller's side (its clips, reach, weight, trail) and the frame's `weapon`,
 // which the look builds a model for. Mid-move is fine; a looping stance picks up the new weapon's pose at once
 export function equip(c, id) {
   const w = WEAPON[id] || WEAPON.katana, a = c.a; c.wpn = w; c.weapon = w.id; c.wlen = w.len; a.wid = w.id === 'katana' ? null : w.id;

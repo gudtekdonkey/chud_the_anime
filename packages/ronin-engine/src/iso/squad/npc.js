@@ -3,15 +3,15 @@
 // fcut, and moves-squad.js's strafe, block, aim, taunt, downed, lift), fires the swings and takes the hits. The samurai,
 // the archers and the companions are all this one class; what they are is data (kind, weapon, traits, wit).
 import * as THREE from 'three';
-import { AF, hOf, wrapA } from 'ronin-engine/flow/flow.js';
-import { Char } from '../play/char.js';
-import { initMind } from 'ronin-engine/ai/senses.js';
-import { temperOf } from 'ronin-engine/ai/temper.js';
-import { dropToken } from 'ronin-engine/ai/director.js';
-import { joinSquad } from 'ronin-engine/squad/squad.js';
-import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
-import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
-import { RAMP } from 'ronin-engine/render/gfx/palette.js';
+import { AF, hOf, wrapA } from '../../flow/flow.js';
+import { Char } from '../char.js';
+import { initMind } from '../../ai/senses.js';
+import { temperOf } from '../../ai/temper.js';
+import { dropToken } from '../../ai/director.js';
+import { joinSquad } from '../../squad/squad.js';
+import { piece, newPart } from '../gfx/build.js';
+import { shadeMat } from '../gfx/shade.js';
+import { RAMP } from '../gfx/palette.js';
 
 const R2 = 1 / AF;   // world units → rig px (the flow's units)
 // each swing: its clip, when it strikes, when its chain's next link may start, when it is over (busy until then)

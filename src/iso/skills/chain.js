@@ -5,13 +5,13 @@
 // power), jolting each. Then he leans back and yanks: the first is torn off his feet and dragged across the floor
 // straight onto the draw-cut. Nobody in reach: the bolt fizzles into the air and the key is back sooner.
 import { W, STOP } from 'ronin-engine/clock/world.js';
-import { STATS } from '../play/rules.js';
+import { STATS } from 'ronin-engine/iso/play/rules.js';
 import { hOf, hv, EZ, clamp, lerp, wrapA } from 'ronin-engine/flow/flow.js';
-import { sparks, dust, focus, tear, ring } from 'ronin-engine/render/fx.js';
-import { shake } from 'ronin-engine/render/gfx/view.js';
-import { startCine } from '../fx/cine.js';
+import { sparks, dust, focus, tear, ring } from 'ronin-engine/iso/fx.js';
+import { shake } from 'ronin-engine/iso/gfx/view.js';
+import { startCine } from 'ronin-engine/iso/cine.js';
 import { tv, T, startCd, castStart, landed, qiAdd, pop } from './kit.js';
-import { scr, jag, bolt } from './sfx.js';
+import { scr, jag, bolt } from 'ronin-engine/iso/skills/sfx.js';
 
 const RANGE = 220, LEAP = 160, LIFE = .32;        // rig px: his reach for the first link (110 world units), each leap (80)
 const OWN = new Set(['qCast', 'qCastA', 'qYank', 'qCut']);

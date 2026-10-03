@@ -9,18 +9,18 @@
 // kick when their 3D moves come (claude/3d-skills; until then J1). The finisher is J3 (for J6's flash step).
 // Free mode (T, or &combo=free) is the plain ladder: J, J, J.
 import { CTX, lone } from '../ctx.js';
-import { W } from 'ronin-engine/clock/world.js';
-import { hOf, wrapA, DIR, CLIPS } from 'ronin-engine/flow/flow.js';
-import { consume } from 'ronin-engine/input/keys.js';
+import { W } from '../../clock/world.js';
+import { hOf, wrapA, DIR, CLIPS } from '../../flow/flow.js';
+import { consume } from '../../input/keys.js';
 import { CUT } from '../play/hero.js';
 import { STATS } from '../play/rules.js';
-import { INV, qiAdd } from '../items/inv.js';
-import { say } from '../hud/world-ui.js';
-import { COL } from '../../config.js';
+// what the prompts read and tell the game (chud_the_anime: combo-game.js hands in today's INV, Qi, the words over his
+// head and the effect colour): `inv.basic` counts his landed basic cuts and grows the chain (LADDER)
+export const COMBO = { inv: {}, qiAdd() {}, say() {}, perfect: '#ffffff' };
 
 export const BEAT = .18, WINDOW = .35, PERFECT = .05, LATE = .2, RECOVER = .45, CHORD = .07;
 const LADDER = [[0, 2], [40, 3], [120, 4], [250, 5], [450, 6]];   // today's comboMax: links by landed basic cuts
-export const comboMax = () => Math.max(3, LADDER.filter(([n]) => (INV.basic || 0) >= n).pop()[1]);   // the slice keeps its J1 → J2 → J3 at the least
+export const comboMax = () => Math.max(3, LADDER.filter(([n]) => (COMBO.inv.basic || 0) >= n).pop()[1]);   // the slice keeps its J1 → J2 → J3 at the least
 // each answer's cut: the first of its moves that exists in the slice
 const MOVES = { R: ['lunge'], J: ['J2'], L: ['spin', 'J1'], U: ['launch', 'J1'], D: ['kick', 'J1'] };
 const clipOf = ans => MOVES[ans].find(n => CLIPS[n] && CUT[n]) || 'J1';
@@ -34,11 +34,11 @@ export function readDir(dir, foe) { if (dir == null) return 'J'; const hero = CT
 function pool(foe) { const hero = CTX.hero, side = Math.abs(Math.sin(hOf(foe.x - hero.x, foe.z - hero.z))) > .7; return side ? ['J', 'R', 'L', 'U', 'D'] : ['J', 'R', 'L']; }
 function show(foe, ans, kind) { CP.prompt = { foe, ans, t0: W.t, beat: W.t + BEAT, end: W.t + BEAT + WINDOW, kind }; CP.last = ans; CP.log.push(ans); }
 function endChain(why, recover = 0) { CP.chain = 0; CP.prompt = null; CP.queued = null; CP.pend = null; CP.recover = recover; if (why) CP.grades.push(why); }
-function grade(s, col) { CP.grades.push(s); say(CTX.hero, s, col, .7); }
+function grade(s, col) { CP.grades.push(s); COMBO.say(CTX.hero, s, col, .7); }
 
 // a cut of his landed (port.js sees his hit count rise)
 export function onLanded(foe) {
-  INV.basic = (INV.basic || 0) + 1;
+  COMBO.inv.basic = (COMBO.inv.basic || 0) + 1;
   if (!CP.on || CTX.busy) return; CP.chain++; CP.queued = null;
   const max = comboMax();
   if (CP.chain >= max) { if (!foe.dead && lone(foe)) show(foe, 'K', 'finish'); else endChain(); return; }
@@ -51,9 +51,9 @@ export function answer(ans) {
   const p = CP.prompt; if (!p) return false;
   const t = W.t, d = t - p.beat; CP.answers.push({ want: p.ans, got: ans, d: +d.toFixed(3) }); if (CP.answers.length > 12) CP.answers.shift();
   if (ans !== p.ans) { grade('MISS', '#ff5a4a'); CP.misses++; endChain(null, RECOVER); return true; }
-  if (ans === 'K') { CP.prompt = null; CP.chain = 0; grade(Math.abs(d) <= PERFECT ? 'PERFECT' : 'GOOD', COL.fx2); if (CTX.execute) CTX.execute(p.foe); return true; }
-  const g = Math.abs(d) <= PERFECT ? 'PERFECT' : d <= LATE ? 'GOOD' : 'LATE'; grade(g, g === 'PERFECT' ? COL.fx2 : g === 'GOOD' ? '#ffffff' : '#9aa3a1'); CP.hits++;
-  if (g === 'PERFECT') qiAdd(.03);
+  if (ans === 'K') { CP.prompt = null; CP.chain = 0; grade(Math.abs(d) <= PERFECT ? 'PERFECT' : 'GOOD', COMBO.perfect); if (CTX.execute) CTX.execute(p.foe); return true; }
+  const g = Math.abs(d) <= PERFECT ? 'PERFECT' : d <= LATE ? 'GOOD' : 'LATE'; grade(g, g === 'PERFECT' ? COMBO.perfect : g === 'GOOD' ? '#ffffff' : '#9aa3a1'); CP.hits++;
+  if (g === 'PERFECT') COMBO.qiAdd(.03);
   // the next cut starts at the current one's chain beat (GO), or now if that has passed
   const a = CTX.hero.a, cut = CUT[a.clip.name], wait = cut ? Math.max(0, cut.chain - a.ct) : 0;
   CP.queued = { clip: p.kind === 'last' ? 'J3' : clipOf(ans), at: t + wait, foe: p.foe }; CP.prompt = null; return true;

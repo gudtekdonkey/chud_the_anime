@@ -1,4 +1,4 @@
-// node scripts/boot-smoke.mjs (after a build): opens every page of the built game in Chromium and fails on any page error
+// node scripts/boot-smoke.mjs (after a build; BOOT_DIST=<dir> for a build elsewhere): opens every page of the built game in Chromium and fails on any page error
 // or a page that never gets ready. A minute instead of check:iso's twenty, for the engine split (docs/engine-extract.md):
 // moving a module changes the order things load in, which only a real page shows.
 import { chromium } from 'playwright';
@@ -6,7 +6,7 @@ import { preview } from 'vite';
 
 const PAGES = ['', '?hd', '?iso&test', '?iso&test&squad', '?iso&test&sheet', '?iso&test&idles', '?iso&test&arsenal', '?iso&test&hairgrid', '?iso&test&gear',
   '?iso&test&reel=chain', '?iso&test&weapon=yari', '?iso&test&group=archers'];
-const server = await preview({ logLevel: 'silent', preview: { port: 4175, strictPort: false, open: false } }), base = server.resolvedUrls.local[0];
+const server = await preview({ logLevel: 'silent', build: { outDir: process.env.BOOT_DIST || 'dist' }, preview: { port: 4175, strictPort: false, open: false } }), base = server.resolvedUrls.local[0];
 const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
 let bad = 0;
 for (const q of PAGES) { const page = await browser.newPage(), errors = [];

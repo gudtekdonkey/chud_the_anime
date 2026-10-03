@@ -4,14 +4,14 @@
 // he plays its move (anim/moves-port.js), with today's numbers: the shrine fills health and Qi, the nodachi is his
 // weapon, the chest spills four mon and three Qi motes, the tablet teaches Cross Rift. World units.
 import * as THREE from 'three';
-import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
-import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
-import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
+import { piece, newPart } from 'ronin-engine/iso/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/iso/gfx/palette.js';
+import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
 import { SOLID } from '../world/room.js';
 import { W } from 'ronin-engine/clock/world.js';
-import { sparks, dust, crack, tear, ring } from 'ronin-engine/render/fx.js';
-import { shake } from 'ronin-engine/render/gfx/view.js';
-import { CTX } from '../ctx.js';
+import { sparks, dust, crack, tear, ring } from 'ronin-engine/iso/fx.js';
+import { shake } from 'ronin-engine/iso/gfx/view.js';
+import { CTX } from 'ronin-engine/iso/ctx.js';
 import { P, INV, heal, qiFill, showBanner, canOffer, offer } from './inv.js';
 import { stream } from './item-fx.js';
 import { spill } from './pickups.js';

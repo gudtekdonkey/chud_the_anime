@@ -7,18 +7,18 @@
 // cut on the way through (the black slash, a flinch), and falls on the click.
 import * as THREE from 'three';
 import { W, STOP } from 'ronin-engine/clock/world.js';
-import { STATS } from '../play/rules.js';
+import { STATS } from 'ronin-engine/iso/play/rules.js';
 import { hOf, hv, AF, EZ, clamp, lerp } from 'ronin-engine/flow/flow.js';
-import { sparks, dust, focus, tear } from 'ronin-engine/render/fx.js';
-import { shake } from 'ronin-engine/render/gfx/view.js';
-import { startCine } from '../fx/cine.js';
+import { sparks, dust, focus, tear } from 'ronin-engine/iso/fx.js';
+import { shake } from 'ronin-engine/iso/gfx/view.js';
+import { startCine } from 'ronin-engine/iso/cine.js';
 import { held } from 'ronin-engine/input/keys.js';
-import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
-import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
-import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
+import { piece, newPart } from 'ronin-engine/iso/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/iso/gfx/palette.js';
+import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
 import { ROOM } from '../world/room.js';
 import { KIT, tv, T, startCd, castStart, landed, qiAdd, pop } from './kit.js';
-import { scr, thread, star } from './sfx.js';
+import { scr, thread, star } from 'ronin-engine/iso/skills/sfx.js';
 
 const D = 76, Y = 26, HOLD = .25;                 // how far it flies (rig px ×AF: 38 units), the height it hangs at (rig px), a hold that anchors
 const OWN = new Set(['rThrow', 'rCall', 'rHome', 'rReach', 'rCaught', 'rAnchor']);

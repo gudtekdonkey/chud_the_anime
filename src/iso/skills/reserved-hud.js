@@ -3,9 +3,9 @@
 // press blinks the slot), and the words that pop over his head (COUNTER, BLOCK, ...). Drawn on the effects layer in
 // render pixels, in the HUD's 3×5 pixel font (copied from ui/pixfont.js: the slice never imports today's game).
 import { W } from 'ronin-engine/clock/world.js';
-import { VW, VH } from 'ronin-engine/render/gfx/view.js';
+import { VW, VH } from 'ronin-engine/iso/gfx/view.js';
 import { SKILLS, KIT, cdOf, tv } from './kit.js';
-import { scr, CY } from './sfx.js';
+import { scr, CY } from 'ronin-engine/iso/skills/sfx.js';
 
 const FONT = { A: '.#.|#.#|###|#.#|#.#', B: '##.|#.#|##.|#.#|##.', C: '.##|#..|#..|#..|.##', D: '##.|#.#|#.#|#.#|##.', E: '###|#..|##.|#..|###', F: '###|#..|##.|#..|#..',
   G: '.##|#..|#.#|#.#|.##', H: '#.#|#.#|###|#.#|#.#', I: '###|.#.|.#.|.#.|###', J: '..#|..#|..#|#.#|.#.', K: '#.#|#.#|##.|#.#|#.#', L: '#..|#..|#..|#..|###',

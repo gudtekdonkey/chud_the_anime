@@ -3,7 +3,7 @@
 // from the prototypes' key poses (prototypes/18-skills-ideas.html, 23-counters.html), as moves-extra.js adds runArmed.
 import { keyed, proc, H, TAU, lerp, clamp, EZ } from 'ronin-engine/flow/flow.js';
 import { SH, blade } from 'ronin-engine/flow/moves.js';
-import { ATTACKS } from '../play/foe.js';
+import { ATTACKS } from 'ronin-engine/iso/play/foe.js';
 
 // the katana away from him (thrown, or hanging in the air): no blade in the hand or the saya (look/three/rig.js hides it)
 export const AWAY = { out: 0, away: 1, g: [4.8, H + .4], ang: .5, two: 0 };

@@ -5,10 +5,10 @@
 // the squad AI (claude/3d-squad-ai) drives them through PARTY (docs/iso-slice.md, "The party's interface").
 import { Ally } from './ally.js';
 import { ROSTER, party as KIT, byId, gainExp, bury, stat } from '../../party/kit.js';
-import { CTX, nearestFoe } from '../ctx.js';
+import { CTX, nearestFoe } from 'ronin-engine/iso/ctx.js';
 import { W } from 'ronin-engine/clock/world.js';
 import { hOf, wrapA, hv, AF } from 'ronin-engine/flow/flow.js';
-import { sparks, focus } from 'ronin-engine/render/fx.js';
+import { sparks, focus } from 'ronin-engine/iso/fx.js';
 import { qiAdd, QI_HIT, showBanner, HURT_HOOKS } from '../items/inv.js';
 import { say, numAt } from '../hud/world-ui.js';
 

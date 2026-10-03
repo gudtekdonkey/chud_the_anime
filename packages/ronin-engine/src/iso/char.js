@@ -5,9 +5,7 @@ import { Actor, AF, hv } from '../flow/flow.js';
 import { W } from '../clock/world.js';
 import { makeLook } from './look.js';
 import { BODY_SHEAR } from './gfx/view.js';
-
-// the room a character stands in: the game hands in its walls and its floor's height (chud_the_anime: iso/world/room.js)
-export const ROOM = { collide(p, r) {}, groundAt(x, z) { return 0; } };
+import { collide, groundAt } from '../world/room.js';
 
 const hexRGB = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
 const _v = new THREE.Vector3();
@@ -24,8 +22,8 @@ export class Char {
   // what he wears (gear/outfits.js; null: Iron Ash as built): the look is rebuilt, the controller never notices
   dress(outfit, scene) { this.outfit = outfit; this.setLook(this.lookKind, scene); this.shown = null; }
   // after the world steps: walls, posts and the room's edge push him out; the ground under him eases up the engawa's step
-  after(dt) { const p = { x: this.x, z: this.z }; ROOM.collide(p, this.r); this.a.x = p.x / AF; this.a.z = p.z / AF;
-    this.gy += (ROOM.groundAt(p.x, p.z) - this.gy) * Math.min(1, dt * 18); }
+  after(dt) { const p = { x: this.x, z: this.z }; collide(p, this.r); this.a.x = p.x / AF; this.a.z = p.z / AF;
+    this.gy += (groundAt(p.x, p.z) - this.gy) * Math.min(1, dt * 18); }
   // the frame a look draws (look.js): the sampled pose and position, his facing, the flash, a tint, the dissolve
   frame(hero = false) { const o = this.a.out; if (!o) return null;
     // the blade thrown (skills/recall.js): whatever the move, his hands are empty and the saya too

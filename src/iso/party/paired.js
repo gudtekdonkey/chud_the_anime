@@ -6,13 +6,13 @@
 // here (the ones Kuro, Suzume and Tetsu can do); the rest of PAIRED waits for its weapons in 3D.
 // While one plays it holds him, the companion and the samurai (CTX.busy / CTX.held), and swallows their cuts' own hits.
 import { PAIRED, fits } from '../../party/kit.js';
-import { CTX, nearestFoe, lone } from '../ctx.js';
+import { CTX, nearestFoe, lone } from 'ronin-engine/iso/ctx.js';
 import { PARTY } from './party.js';
 import { W, STOP } from 'ronin-engine/clock/world.js';
 import { hOf, AF } from 'ronin-engine/flow/flow.js';
-import { sparks, dust, tear, focus, ring } from 'ronin-engine/render/fx.js';
-import { startCine } from '../fx/cine.js';
-import { shake } from 'ronin-engine/render/gfx/view.js';
+import { sparks, dust, tear, focus, ring } from 'ronin-engine/iso/fx.js';
+import { startCine } from 'ronin-engine/iso/cine.js';
+import { shake } from 'ronin-engine/iso/gfx/view.js';
 import { P, qiAdd } from '../items/inv.js';
 import { numAt } from '../hud/world-ui.js';
 

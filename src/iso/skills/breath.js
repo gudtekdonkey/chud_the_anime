@@ -7,9 +7,9 @@
 import { W } from 'ronin-engine/clock/world.js';
 import { held, pending, consume } from 'ronin-engine/input/keys.js';
 import { hOf } from 'ronin-engine/flow/flow.js';
-import { shake, toScreen, CAM } from 'ronin-engine/render/gfx/view.js';
-import { brush } from './ink.js';
-import { ring, spark, mote, chip, bolt, flash, burstAt, rr, TAU } from './fx3d.js';
+import { shake, toScreen, CAM } from 'ronin-engine/iso/gfx/view.js';
+import { brush } from 'ronin-engine/iso/skills/ink.js';
+import { ring, spark, mote, chip, bolt, flash, burstAt, rr, TAU } from 'ronin-engine/iso/skills/fx3d.js';
 import { BT, HEAL, DOME, QI_RATE, REST } from './beats.js';
 
 const HOLD = .2, NOTCH = 1 / 3 - 1e-6, TORO = [170, 150];   // s before a held C counts as a hold; the tōrō (world/room.js)

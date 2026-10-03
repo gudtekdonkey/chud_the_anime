@@ -4,13 +4,13 @@
 // upright (so it sorts against walls and pillars by height, as Top-Down Views' blit does), the rows under his feet
 // laid on the floor; it takes the night's light, the lanterns' warmth, the fog, the flash and the silhouette like any model.
 import * as THREE from 'three';
-import { drawFigure, toPix } from 'ronin-engine/render/pixel/engine.js';
-import { FC } from 'ronin-engine/render/pixel/styles.js';
-import { SH } from 'ronin-engine/render/gfx/shade.js';
-import { piece } from 'ronin-engine/render/gfx/build.js';
-import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
-import { RAMP } from 'ronin-engine/render/gfx/palette.js';
-import { BODY, OBL, U } from 'ronin-engine/render/gfx/view.js';
+import { drawFigure, toPix } from 'ronin-engine/iso/pixel/engine.js';
+import { FC } from 'ronin-engine/iso/pixel/styles.js';
+import { SH } from 'ronin-engine/iso/gfx/shade.js';
+import { piece } from 'ronin-engine/iso/gfx/build.js';
+import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
+import { RAMP } from 'ronin-engine/iso/gfx/palette.js';
+import { BODY, OBL, U } from 'ronin-engine/iso/gfx/view.js';
 import { pixStyle } from '../../gear/pixel.js';
 
 const BW = 96, BH = 100, BX0 = 48, BY0 = 72, CLOTH0 = { chains: [] };

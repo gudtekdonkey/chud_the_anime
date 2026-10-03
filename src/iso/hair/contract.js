@@ -13,7 +13,7 @@
 // fully covered), and what a crown item does: `show`, `under` (compressed into the hat), `through` (out of a hole in
 // its top: the kabuto's tehen), `inside` (housed by a tall crown: the eboshi), `behind` (re-tied low at the nape),
 // `hide`, or `refuse` (the pair cannot be worn: the bandana takes only hair with nothing on the crown, owner).
-import { SK } from 'ronin-engine/render/rig3d.js';
+import { SK } from 'ronin-engine/iso/rig3d.js';
 
 export const HC = SK.headR;                                  // the scalp's middle, above the head joint
 export const SCALP = [1.95, 2.05, 1.95];                     // the head ball's radii (ronin.js: ball 1.95, y ×1.05)

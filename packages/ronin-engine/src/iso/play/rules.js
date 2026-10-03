@@ -3,10 +3,10 @@
 // dust and a small shake on heavy hits only; J3's finisher cuts the black slash. A cut lands on every samurai in front of
 // it. A samurai's strike lands on the hero unless he is rolling through it, or `game.onStrike` (the counter, skills/)
 // takes it first.
-import { W, STOP } from 'ronin-engine/clock/world.js';
-import { hOf, hv, wrapA, AF } from 'ronin-engine/flow/flow.js';
-import { sparks, dust, crack, tear, focus } from 'ronin-engine/render/fx.js';
-import { shake } from 'ronin-engine/render/gfx/view.js';
+import { W, STOP } from '../../clock/world.js';
+import { hOf, hv, wrapA, AF } from '../../flow/flow.js';
+import { sparks, dust, crack, tear, focus } from '../fx.js';
+import { shake } from '../gfx/view.js';
 import { CUT } from './hero.js';
 
 export const STATS = { hits: 0, swings: 0, log: [], stops: [] };

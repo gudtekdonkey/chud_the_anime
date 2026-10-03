@@ -7,13 +7,13 @@
 // part leaves the body exactly where it was drawn and lies flat where it lands. The pixel look's drawing cannot lose a
 // limb: there the cut is remembered (and shown if the 3D model comes back) and only the blood plays.
 import * as THREE from 'three';
-import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
-import { BODY_SHEAR } from 'ronin-engine/render/gfx/view.js';
-import { piece } from 'ronin-engine/render/gfx/build.js';
-import { RAMP } from 'ronin-engine/render/gfx/palette.js';
+import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
+import { BODY_SHEAR } from 'ronin-engine/iso/gfx/view.js';
+import { piece } from 'ronin-engine/iso/gfx/build.js';
+import { RAMP } from 'ronin-engine/iso/gfx/palette.js';
 import { groundAt, collide } from './world/room.js';
 import { AF, rnd } from 'ronin-engine/flow/flow.js';
-import { sparks, dust } from 'ronin-engine/render/fx.js';
+import { sparks, dust } from 'ronin-engine/iso/fx.js';
 import * as blood from './fx/blood.js';
 
 const G = 150;

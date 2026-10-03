@@ -3,7 +3,7 @@
 // Harvest: he faces north (owner), kneels, and their remains stream into him as cyan light, 50 EXP a second (today's
 // numbers), LEVEL UP on the way. Every kill leaves a body to Harvest. 1-4 use the quick slots. Taps are remembered
 // 0.2 s (the owner's input buffer) until he can take them.
-import { CTX } from '../ctx.js';
+import { CTX } from 'ronin-engine/iso/ctx.js';
 import { W } from 'ronin-engine/clock/world.js';
 import { DIR } from 'ronin-engine/flow/flow.js';
 import { BIG, usable, startAct, tickBig, acting } from './big.js';

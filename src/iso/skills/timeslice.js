@@ -5,14 +5,14 @@
 // longer. Then he is back where he started, kneeling, sliding the blade home; on the click colour snaps back and
 // every cut fires at once: they fall (the close-up on the nearest). Those outside the zone flinch and hold.
 import { W, STOP } from 'ronin-engine/clock/world.js';
-import { STATS } from '../play/rules.js';
+import { STATS } from 'ronin-engine/iso/play/rules.js';
 import { hOf, AF, EZ, clamp } from 'ronin-engine/flow/flow.js';
-import { sparks, dust, focus, tear } from 'ronin-engine/render/fx.js';
-import { shake } from 'ronin-engine/render/gfx/view.js';
-import { MOMENT } from 'ronin-engine/render/gfx/post.js';
-import { startCine } from '../fx/cine.js';
+import { sparks, dust, focus, tear } from 'ronin-engine/iso/fx.js';
+import { shake } from 'ronin-engine/iso/gfx/view.js';
+import { MOMENT } from 'ronin-engine/iso/gfx/post.js';
+import { startCine } from 'ronin-engine/iso/cine.js';
 import { KIT, tv, T, startCd, castStart, landed, pop } from './kit.js';
-import { scr, floorRing, streak, hairline } from './sfx.js';
+import { scr, floorRing, streak, hairline } from 'ronin-engine/iso/skills/sfx.js';
 
 const st = { phase: null, t0: 0, victims: [], order: [], i: 0, next: 0, start: null, cuts: [], streaks: [], frozen: [], R: 0 };
 const zone = () => T('zone') * tv('slice', 'size') / AF;            // rig px

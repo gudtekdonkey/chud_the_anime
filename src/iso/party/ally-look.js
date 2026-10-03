@@ -3,7 +3,7 @@
 // here each also wears their own surcoat colour, and their weapon's length shows on the blade (a placeholder until the
 // weapons work gives the 3D weapons). Nothing outside look/ and this file knows which look a companion has.
 import { makeLook } from '../look/look.js';
-import { RAMP } from 'ronin-engine/render/gfx/palette.js';
+import { RAMP } from 'ronin-engine/iso/gfx/palette.js';
 
 const WHITE = [.92, .95, .94];
 const lum = c => .3 * c[0] + .59 * c[1] + .11 * c[2];

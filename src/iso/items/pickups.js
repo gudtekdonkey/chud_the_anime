@@ -3,14 +3,14 @@
 // has no room; walking onto the relic sends it to the first empty charm slot. What a chest spills arcs out, lands, then
 // flies to him from anywhere. Drawn as today's world sprites (items/item-sprites.js) at 2×, on the effects layer.
 import { WS } from '../../items/item-sprites.js';
-import { CTX } from '../ctx.js';
+import { CTX } from 'ronin-engine/iso/ctx.js';
 import { W } from 'ronin-engine/clock/world.js';
-import { sparks, ring } from 'ronin-engine/render/fx.js';
+import { sparks, ring } from 'ronin-engine/iso/fx.js';
 import { heal, addMon, addShards, addQuick, addCharm, freeCharm, qiFill } from './inv.js';
 import { sprite, chestOf } from './item-fx.js';
 import { say } from '../hud/world-ui.js';
 import { COL } from '../../config.js';
-import { toScreen } from 'ronin-engine/render/gfx/view.js';
+import { toScreen } from 'ronin-engine/iso/gfx/view.js';
 
 const toS = (x, y, z) => toScreen(x, y, z).map(Math.round);
 

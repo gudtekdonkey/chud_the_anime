@@ -4,8 +4,8 @@
 // (e.brain = theirs, or null to drive him from outside), and nothing else changes. Two calls:
 //   think(e, ctx)          every ~0.15 s while he is alive: pick what he does next
 //   threat(e, ctx, th)     the hero has just started a cut that could reach him: block, parry or hop clear?
-import { rnd } from 'ronin-engine/flow/flow.js';
-import { W } from 'ronin-engine/clock/world.js';
+import { rnd } from '../../flow/flow.js';
+import { W } from '../../clock/world.js';
 import { TOKENS } from './ctx.js';
 
 const pick = ms => { let s = 0; for (const m of ms) s += m.weight; let r = rnd() * s; for (const m of ms) if ((r -= m.weight) <= 0) return m; return ms[0]; };

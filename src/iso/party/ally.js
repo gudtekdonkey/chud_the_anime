@@ -10,8 +10,8 @@ import { allyLook, BLADE_LEN } from './ally-look.js';
 import { ROLES, stat } from '../../party/kit.js';
 import { mix } from 'ronin-engine/traits/mix.js';
 import { BASE } from 'ronin-engine/traits/knobs.js';
-import { findPath } from '../input/path.js';
-import { CTX } from '../ctx.js';
+import { findPath } from 'ronin-engine/world/path.js';
+import { CTX } from 'ronin-engine/iso/ctx.js';
 
 export const BLEED = 15, LIFT_HP = .35;   // seconds down before they die; the health a lift leaves them with
 const BUSY = new Set(['J1', 'J2', 'J3', 'lunge', 'recoil', 'knock', 'fall', 'rise', 'expire', 'skid']);

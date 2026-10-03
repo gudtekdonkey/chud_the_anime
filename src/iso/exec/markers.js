@@ -3,7 +3,7 @@
 // when another stands within ISOLATION of him); a kill line runs to the nearest one in reach, a white pulse along it
 // when K would take him; the K keycap shows over him only when he is in reach AND outside every other samurai's bubble.
 // Drawn on the effects layer at the game's pixel size (2×2 render px), hidden through an execution and the close-up.
-import { toScreen, CAM } from 'ronin-engine/render/gfx/view.js';
+import { toScreen, CAM } from 'ronin-engine/iso/gfx/view.js';
 
 export const ISOLATION = 36, K_RANGE = 120;       // world units = today's game px (enemies.js ISOLATION, markers.js K_RANGE)
 const BR = ISOLATION / 2, CY = '#6ff3e4', GREY = '#8b9290';

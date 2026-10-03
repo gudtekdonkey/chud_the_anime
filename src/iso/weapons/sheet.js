@@ -6,11 +6,11 @@
 import * as THREE from 'three';
 import { Actor, FA, CLIPS } from 'ronin-engine/flow/flow.js';
 import { makeLook } from '../look/look.js';
-import { piece } from 'ronin-engine/render/gfx/build.js';
-import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
-import { RAMP } from 'ronin-engine/render/gfx/palette.js';
-import { PIPE } from 'ronin-engine/render/gfx/post.js';
-import { CAM, projMatrix, toScreen } from 'ronin-engine/render/gfx/view.js';
+import { piece } from 'ronin-engine/iso/gfx/build.js';
+import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
+import { RAMP } from 'ronin-engine/iso/gfx/palette.js';
+import { PIPE } from 'ronin-engine/iso/gfx/post.js';
+import { CAM, projMatrix, toScreen } from 'ronin-engine/iso/gfx/view.js';
 import { ARSENAL, WEAPON } from './arsenal.js';
 
 export const MOMENTS = [['stowed', 'idle', .6], ['draw', 'J1', .12], ['J1', 'J1', .185], ['J2', 'J2', .145], ['J3', 'J3', .305], ['guard', 'guard', .5], ['run', 'runArmed', .12], ['stow', 'sheathe', .8]];

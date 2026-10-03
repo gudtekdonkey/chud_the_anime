@@ -6,10 +6,10 @@
 import * as THREE from 'three';
 import { threeLook } from '../look/three/look3d.js';
 import { pixelLook } from '../look/pixel/lookpix.js';
-import { piece, newPart } from 'ronin-engine/render/gfx/build.js';
-import { RAMP as R } from 'ronin-engine/render/gfx/palette.js';
-import { SK } from 'ronin-engine/render/rig3d.js';
-import { toScreen } from 'ronin-engine/render/gfx/view.js';
+import { piece, newPart } from 'ronin-engine/iso/gfx/build.js';
+import { RAMP as R } from 'ronin-engine/iso/gfx/palette.js';
+import { SK } from 'ronin-engine/iso/rig3d.js';
+import { toScreen } from 'ronin-engine/iso/gfx/view.js';
 
 const BONE = '#d8d2c0', WOOD = '#4a3420', STRING = '#cfc6aa';
 // colours over the samurai's (ronin.js C): earth tones and black by class, red lacquer on the armour (design notes:

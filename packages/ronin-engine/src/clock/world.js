@@ -6,7 +6,7 @@ export const W = {
   t: 0, dt: 1 / 120, actors: [], fx: [], stop: 0, stopDur: 1, on: {}, post: [],   // post: systems stepped after the effects (gore.js)
   event(a, name) { const f = this.on[name]; if (f) f(a, this); },
   hitstop(sec) { if (sec > this.stop) this.stopDur = sec; this.stop = Math.max(this.stop, sec); },
-  // one step: returns false while a hit-stop holds the world; the effects step through flow's FX hook (render/fx.js)
+  // one step: returns false while a hit-stop holds the world; the effects step through flow's FX hook (iso/fx.js)
   step(before) {
     if (this.stop > 0) { this.stop -= this.dt; return false; }
     this.t += this.dt; if (before) before(this.dt);

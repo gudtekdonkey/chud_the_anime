@@ -7,11 +7,11 @@
 //      a kill gets the full-screen close-up (fx/cine.js). II widens the crater, III sends bolts up out of the cracks
 import { W, STOP } from 'ronin-engine/clock/world.js';
 import { Actor, AF, hv, hOf } from 'ronin-engine/flow/flow.js';
-import { dust } from 'ronin-engine/render/fx.js';
-import { shake } from 'ronin-engine/render/gfx/view.js';
-import { startCine } from '../fx/cine.js';
+import { dust } from 'ronin-engine/iso/fx.js';
+import { shake } from 'ronin-engine/iso/gfx/view.js';
+import { startCine } from 'ronin-engine/iso/cine.js';
 import { groundAt } from '../world/room.js';
-import { tear, xArm, bolt, ring, spark, chip, residue, burstAt, cracks, pool, sliver, axes, v3, rr, TAU } from './fx3d.js';
+import { tear, xArm, bolt, ring, spark, chip, residue, burstAt, cracks, pool, sliver, axes, v3, rr, TAU } from 'ronin-engine/iso/skills/fx3d.js';
 import { strike } from './blade.js';
 import { DROP } from './moves.js';
 import { DMG } from './beats.js';

@@ -4,7 +4,7 @@
 // (from rest, a run, the guard, a cut once its hit window closes); a press refused by a cooldown or a gate (Time Slice
 // on an empty meter) blinks its slot and is never remembered. Each skill keeps its own state in its own file.
 import { W } from 'ronin-engine/clock/world.js';
-import { CUT } from '../play/hero.js';
+import { CUT } from 'ronin-engine/iso/play/hero.js';
 import { bindKey, consume, pending } from 'ronin-engine/input/keys.js';
 import './reserved-moves.js';
 import { SKILLS, KIT, ready, refuse, kitTick, qiAdd, pop } from './kit.js';

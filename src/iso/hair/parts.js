@@ -2,7 +2,7 @@
 // head, knots, tufts, spikes, buns, loops, and the segments a chain (a tail, a braid, a loose lock) is made of. Each
 // returns a Piece (gfx/build.js: flat-shaded, colour per vertex) the head slot puts on a bone.
 import * as THREE from 'three';
-import { piece } from 'ronin-engine/render/gfx/build.js';
+import { piece } from 'ronin-engine/iso/gfx/build.js';
 import { SCALP } from './contract.js';
 
 const TAU = Math.PI * 2;

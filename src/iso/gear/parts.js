@@ -6,9 +6,9 @@
 // Bone frames: torso and leg bones have +x his left and +z forward; arm bones +x outward (each side), +z forward on the
 // left arm and backward on the right (rig.js aims them so); `out` and `front` below hide that.
 import * as THREE from 'three';
-import { SK } from 'ronin-engine/render/rig3d.js';
+import { SK } from 'ronin-engine/iso/rig3d.js';
 import { colour } from './palette.js';
-import { newPart } from 'ronin-engine/render/gfx/build.js';
+import { newPart } from 'ronin-engine/iso/gfx/build.js';
 
 export const HC = SK.headR, HEAD_R = 1.9, FACE_Z = 1.78;    // the head's centre over its joint, its radius, the face's front
 const lerp = (a, b, t) => a + (b - a) * t;

@@ -2,29 +2,30 @@
 // the Sea of Stars camera, the Animation Flow page's moves, one samurai; the 3D model or the pixel drawing behind one
 // look interface. A fixed 60 Hz update (the flow's world steps twice, at 1/120 s, as on its page), a render per frame.
 import * as THREE from 'three';
-import { makePipeline, PIPE, MOMENT } from 'ronin-engine/render/gfx/post.js';
-import { CAM, follow, U, OBL, VW, projMatrix, toScreen } from 'ronin-engine/render/gfx/view.js';
-import { SH } from 'ronin-engine/render/gfx/shade.js';
+import { makePipeline, PIPE, MOMENT } from 'ronin-engine/iso/gfx/post.js';
+import { CAM, follow, U, OBL, VW, projMatrix, toScreen } from 'ronin-engine/iso/gfx/view.js';
+import { SH } from 'ronin-engine/iso/gfx/shade.js';
 import { buildRoom, ROOM } from './world/room.js';
 import { W } from 'ronin-engine/clock/world.js';
-import { Hero } from './play/hero.js';
-import { Foe } from './play/foe.js';
-import { hitRules, STATS } from './play/rules.js';
+import { Hero } from 'ronin-engine/iso/play/hero.js';
+import { Foe } from 'ronin-engine/iso/play/foe.js';
+import { hitRules, STATS } from 'ronin-engine/iso/play/rules.js';
 import { initInput, readInput } from 'ronin-engine/input/keys.js';
-import { drawFx, drawTrail, drawFocus, speedLines } from 'ronin-engine/render/fx.js';
-import { CINE, startCine, cineStep } from './fx/cine.js';
-import { STYLE, setStyle, fpsFor } from 'ronin-engine/render/gfx/style.js';
+import { drawFx, drawTrail, drawFocus, speedLines } from 'ronin-engine/iso/fx.js';
+import { CINE, startCine, cineStep } from 'ronin-engine/iso/cine.js';
+import { STYLE, setStyle, fpsFor } from 'ronin-engine/iso/gfx/style.js';
 import { buildPage, wireOverlay } from './ui/overlay.js';
 import { SETTINGS, AF } from 'ronin-engine/flow/flow.js';
 import 'ronin-engine/flow/moves.js';
 import 'ronin-engine/flow/moves-extra.js';
 import { buildSheet, SHEET_ROWS } from './sheet.js';
 import { REELS, M as REEL_M, reelPos } from './reel.js';
-import { piece } from 'ronin-engine/render/gfx/build.js';
-import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
-import { RAMP } from 'ronin-engine/render/gfx/palette.js';
+import { piece } from 'ronin-engine/iso/gfx/build.js';
+import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
+import { RAMP } from 'ronin-engine/iso/gfx/palette.js';
 import { initSkills, skillControl, skillsRender, drawSkills, drawSkillHud, skillState } from './skills/reserved.js';   // F R Q X (skills/reserved.js)
-import { makeSquad } from './enemies/squad.js';
+import './enemies/types.js';   // the game's enemy types and their look, into the engine's registry
+import { makeSquad } from 'ronin-engine/iso/enemies/squad.js';
 import { buildPicker } from './enemies/ui.js';
 import { addFolk, drawLabels } from './persona/npcs.js';     // personalities on the 3D body, the townsfolk, the idles (persona/, anim/idles.js)
 import { personaPanel } from './persona/panel.js';

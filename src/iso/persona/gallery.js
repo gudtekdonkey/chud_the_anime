@@ -1,11 +1,11 @@
 // ---- ?iso&idles: the twenty idles side by side, each looping on its own ronin (or townsman: &folk), named, on a
 // bare floor, at the game's clock. &who=<pick id> gives them all one persona (e.g. &who=p:Old%20master), &yaw=0..7 a
 // facing (default 1, SE), &look=pixel the pages' drawing, &zoom the camera, &body=39.5 the picked body camera (upright by default), &only=a,b a few of them. The check screenshots it.
-import { piece } from 'ronin-engine/render/gfx/build.js';
-import { shadeMat } from 'ronin-engine/render/gfx/shade.js';
-import { RAMP } from 'ronin-engine/render/gfx/palette.js';
-import { PIPE } from 'ronin-engine/render/gfx/post.js';
-import { CAM, projMatrix, toScreen, setBody } from 'ronin-engine/render/gfx/view.js';
+import { piece } from 'ronin-engine/iso/gfx/build.js';
+import { shadeMat } from 'ronin-engine/iso/gfx/shade.js';
+import { RAMP } from 'ronin-engine/iso/gfx/palette.js';
+import { PIPE } from 'ronin-engine/iso/gfx/post.js';
+import { CAM, projMatrix, toScreen, setBody } from 'ronin-engine/iso/gfx/view.js';
 import { W } from 'ronin-engine/clock/world.js';
 import { Char } from '../play/char.js';
 import { FA } from 'ronin-engine/flow/flow.js';

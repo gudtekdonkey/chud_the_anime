@@ -3,11 +3,11 @@
 // companion's bleed-out ring and the E prompt, the order marks (go there, attack, protect, hold flags), the protect
 // links, the drag box, the radial, the arrows in flight; with "show minds" on, the foes' sight cones and every man's
 // current thought. Presentation only.
-import { toScreen } from 'ronin-engine/render/gfx/view.js';
-import { SQ } from 'ronin-engine/squad/squad.js';
-import { ROLES } from 'ronin-engine/squad/orders.js';
+import { toScreen } from '../gfx/view.js';
+import { SQ } from '../../squad/squad.js';
+import { ROLES } from '../../squad/orders.js';
 import { RADIAL } from './control.js';
-import { SENSE } from 'ronin-engine/ai/senses.js';
+import { SENSE } from '../../ai/senses.js';
 
 const CY = '#6ff3e4', CYD = '#2f8f86', RED = '#ff5a4a', WHITE = '#e8f0ee', GREY = '#8b9592';
 function ellipse(g, x, y, rx, ry, col, dash = 0) { g.fillStyle = col; const n = Math.ceil(rx * 2.4);
