@@ -28,3 +28,17 @@ The engine is staged in `packages/ronin-engine/` until the repo exists. Its READ
    - swap its ledger, rng and trait mixer for the engine's
    - give it the Animation Flow engine through a third look: its SDF renderer behind the four calls, with an adapter from the flow's side pose to its skeleton
    - leave its picture as it is
+
+## Paused (owner, 2026-10-03): where it stands
+
+- The branch has every move, 4B, 5A, both of the check session's merges (the execution fix 212080f, the test fixes 3df87d4 / 7988e22 / f973bca) and the stronger golden. All of it is pushed.
+- `gudtekdonkey/ronin-engine` branch `claude/engine-extract` is the same tree with its history (`git filter-repo`). Re-export it after each engine change: the export is deterministic, so the push fast-forwards.
+- check:iso on the final tree:
+  - Run 1 passed 101 steps, then hit the downed-click race. The check session has since fixed it.
+  - Run 2 passed 106 steps, every step before "port: swipes". That step failed on the old 900 ms stick, which f973bca fixes; the run had loaded the test before that merge.
+  - The run with both fixes was stopped at the pause, 6 steps in.
+- Next:
+  1. check:iso twice.
+  2. `npm run check`, `check:hd` and `check:hair` on the final build.
+  3. Switch chud to the submodule (`engine/`, `"ronin-engine": "file:engine"`), then golden, the boot smoke and `check` again.
+- The dealer_solana port (6C) runs in its own session (session_01Ftnm78gH2YzLyDZQdDDtXF, branch `claude/engine-port`). Its first step is a design page, and then it stops for the owner's picks.
