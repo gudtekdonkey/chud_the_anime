@@ -344,3 +344,15 @@ The owner said the deaths still don't feel like someone dying, and the execution
   - **5A:** a gun is a weapon row with a `fire` block, and one projectile module carries every shot. The archer's and the squad's arrows keep their own numbers.
   - **6C:** dealer_solana gets the full flow port now, not later.
 - The rule that comes with all of it: chud_the_anime keeps every tuning number, colour and timing. A golden snapshot (clips sampled, the tables, sim-smoke) must stay byte-identical, and every check must stay green.
+
+## Open questions answered (owner 2026-10-03, the "Ronin Open Questions" page)
+
+- Owner: "Picks: 1aA 1bB 1cB 2aC 2bC 3? 3b? 4B 5redo:1,2,3,4,5"
+- **1a A: keep the Torso slot** (shirts in the base layer; dō, lamellar and capes in armour).
+- **1b B: every gear piece counts, each point worth ¼** of `player/stats.js`'s per-point effect, so a full 16-piece outfit lands near today's wardrobe (~8 points). Not built yet.
+- **1c B: his default look is built from gear**: he starts in "Iron Ash V3, in gear", so taking off a piece swaps only that piece. Not built yet.
+- **2a C: the owner lists which hairstyles and hats go in the game.** The list is still owed; all 24 and 10 stay until then.
+- **2b C: his hair under the jingasa is "Long and loose"** (was Claude's pick, the ronin's tied-back hair). Not built yet.
+- **3 and 3b: still open** (the lantern ash pickup's look, and whether taking it still glitches him).
+- **4 B: the upright body view everywhere** (full height from a low 20°), in play too; 39.5° is no longer the default. Not built yet.
+- **5: redo all five executions** (Behind the back, Through and past, Whirlwind, Far behind, Peek-a-boo). The direction for the redo is still to be asked.
