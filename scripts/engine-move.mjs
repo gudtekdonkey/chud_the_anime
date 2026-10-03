@@ -1,4 +1,4 @@
-// node scripts/engine-move.mjs <from> <to> [<from> <to> ...]: moves game files into the engine package (docs/engine-extract.md)
+// node scripts/engine-move.mjs <from> <to> [<from> <to> ...]: moves game files into the engine (the engine/ submodule; commit there too) (docs/engine-extract.md)
 // with git mv, so each keeps its history, and rewrites every import of them in the game (src/, scripts/, prototypes-src/)
 // to the package's name ('ronin-engine/<to>'). A path ending in / moves a whole folder. Inside the package imports stay
 // relative; a moved file that still imports the game is refused (the engine never imports a game), and nothing moves.
@@ -7,7 +7,7 @@ import { readFileSync, writeFileSync, readdirSync, statSync, existsSync } from '
 import { join, dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url))), PKG = join(ROOT, 'packages/ronin-engine'), SRC = join(PKG, 'src'), NAME = 'ronin-engine';
+const ROOT = resolve(fileURLToPath(new URL('..', import.meta.url))), PKG = join(ROOT, 'engine'), SRC = join(PKG, 'src'), NAME = 'ronin-engine';
 const walk = d => readdirSync(d).flatMap(f => { const p = join(d, f); return statSync(p).isDirectory() ? (f === 'node_modules' || f === 'dist' ? [] : walk(p)) : /\.m?js$/.test(f) ? [p] : []; });
 const args = process.argv.slice(2); if (!args.length || args.length % 2) { console.error('usage: engine-move.mjs <from> <to> ...'); process.exit(2); }
 

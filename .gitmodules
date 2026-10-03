@@ -1,0 +1,4 @@
+[submodule "engine"]
+	path = engine
+	url = https://github.com/gudtekdonkey/ronin-engine
+	branch = claude/engine-extract

@@ -14,7 +14,7 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 | `node scripts/iso-reel.mjs chain 3` | After a build: one of the Animation Flow page's scenarios as the slice plays it, laid out as the page's contact sheets (`AF_DIR` at the page's source draws the page's sheet above it), into `test-output/iso/reel-<name>[-vs].png` |
 | `npm run check:iso` | Builds, then `scripts/check-iso.mjs` plays the iso slice (`?iso`) in Chromium on SwiftShader: the run in 8 directions, the roll, J1 → J2 → J3 landing on the samurai, a cut cancelled into the roll, a kill and the respawn, the pixel look, each pipeline toggle; then the new skills: F's counter and block timed on the samurai's blow, Q, R's three recalls, X on a squad; then each enemy type telegraphing, striking and killed, and a patrol taking turns (`scripts/check-iso-enemies.mjs`; `ISO_ONLY=enemies` runs only that); then each of the twenty idles plays, no traits = the plain ronin, two personalities differ (gait, idle choices, patience), [ / ] give the ronin and the samurai one, the townsfolk idle and wander, the idle gallery (`?iso&idles`); then every skill (`scripts/check-iso-skills.mjs`: I, Thousand Cuts, P, O, N, U and its close-up, Storm Chain, the breaths, the sit, the styles, the pixel look, power III), then the 15 weapons (drawn, J1 → J3 and stowed in all 8 facings; each in play with its reach and hit-stops), the five executions on K; then the squad battle (`scripts/check-iso-squad.mjs`): drag-select, groups, right-click orders, formations, follow / hold, the tank's aggro, the archer's distance, the protector, charge / fall back, the assassin (on `&solo&combo=free`); then `scripts/check-iso-port.mjs` on a fresh load: the HUD, the party (following, fighting, down / lifted / dead, EXP), a paired execution, Harvest, the big items, pickups, quick slots, combo prompts, click to move, swipes. Screenshots in `test-output/iso/` |
 | `node scripts/squad-sim.mjs [s] [seed]` | The squad AI's engine side (`ronin-engine/ai/`, `squad/{orders,squad,mind}.js`) fighting a whole battle in Node on plain-number bodies: no three.js, no DOM (what the 2D game would drive) |
-| `npm run check:engine` | Node, no browser (~15 s): `scripts/golden.mjs` (the engine split's fingerprints must not change) and the engine's own tests (`packages/ronin-engine/test/`) |
+| `npm run check:engine` | Node, no browser (~15 s): `scripts/golden.mjs` (the engine split's fingerprints must not change) and the engine's own tests (`engine/test/`) |
 | `node scripts/boot-smoke.mjs` | After a build: every page opened in Chromium, fails on a page error (load order after a module moves) |
 | `npm run check:hair` | Builds, then `scripts/check-hair.mjs` renders every hairstyle under every hat (`?iso&hairgrid`) in all 8 facings, audits all 240 pairs through the core moves on both bodies (no hair outside a hat, no tail through the body), and plays the hair and hat pickers in the courtyard. Screenshots in `test-output/hair/` |
 
@@ -159,11 +159,14 @@ A top-down pixel-art action game about a dark ronin. Plain JavaScript ES modules
 - The animation flow (owner picks 2026-10-02, `docs/design-notes.md`): every tuning number is in `player/feel.js` `FEEL`. A press goes through the buffer (`player/buffer.js`): a new key must say which state it starts (`STARTS`) so the buffer knows when it was used. A hit pause goes through `hitStop('light' | 'heavy' | 'exec')`, never a raw `S.hitstop`, for the player's own hits. Blending, tweening and springs are draw time only (`player/blend.js`): they never move a hit. A move that must snap goes in `blend.js` `SNAP`.
 - Effects take their colours from `COL` (never a literal cyan) and throw bolts, sparks and slivers through `zap`/`spark`/`residue`, so every element re-skins them. A new element is a row in `ELEMENTS` plus a kit in `fx/matter.js`.
 
-## The shared engine (`packages/ronin-engine/`, `docs/engine-extract.md`)
+## The shared engine (`engine/`, the `ronin-engine` submodule, `docs/engine-extract.md`)
 
-Owner 2026-10-03, picks `1A 2A 3C 4B 5A 6C`: the engine shared by this game, dust_the_western and dealer_solana. Until `gudtekdonkey/ronin-engine` exists it is staged here. The root `package.json` has `"ronin-engine": "file:packages/ronin-engine"`, so the game imports `ronin-engine/<path>`. Its README has the module map and how a game plugs in.
+Owner 2026-10-03, picks `1A 2A 3C 4B 5A 6C`: the engine shared by this game, dust_the_western and dealer_solana. It lives in `gudtekdonkey/ronin-engine` (private), taken here as a git submodule at `engine/`, pinned to a commit, and the root `package.json` has `"ronin-engine": "file:engine"`, so the game imports `ronin-engine/<path>`. The engine's README has the module map and how a game plugs in; its CLAUDE.md its rules.
 
-- **What moved.** The files below moved there with `git mv`, so each keeps its history. Where the tables in this file name an old path, read the new one:
+- **A fresh clone first runs `git submodule update --init`, then `npm ci`.** A cloud session also needs `gudtekdonkey/ronin-engine` attached (add_repo).
+- **An engine change is two commits.** Commit and push in `engine/`, on its branch, with its own `npm test`; then commit the new submodule pointer here. golden, the boot smoke and the checks must pass on that pointer. dealer_solana pushes to the same engine and keeps chud's golden unchanged.
+
+- **What moved.** The files below moved into the engine with `git mv` (staged under `packages/ronin-engine/`, then carried to the repo by `git filter-repo`), so each keeps its history. Where the tables in this file name an old path, read the new one:
   - `src/iso/anim/*` → `flow/`
   - `iso/play/sim.js` → `clock/world.js`
   - `iso/play/input.js`, `src/gestures.js` → `input/`
@@ -298,7 +301,7 @@ Enemies that fight properly and companions with jobs, orders and RTS control, in
 | `iso/squad/control.js` | Mouse, touch and keys: left = the hero and selecting, right = orders, the radial, Ctrl + 1–9 / 1–9 groups, G, E, Esc |
 | `iso/squad/draw.js`, `iso/squad/panel.js` | The marks on the effects layer; the order bar under the game and the companion settings (Tab, pauses) |
 
-- `ai/` and the engine half of `squad/` (`orders.js`, `squad.js`, `mind.js`, now `packages/ronin-engine/src/{ai,squad}/`) import no three.js, no DOM and nothing of the slice's drawing: they read plain agents, so the 2D game can adopt them. Keep it so.
+- `ai/` and the engine half of `squad/` (`orders.js`, `squad.js`, `mind.js`, now `engine/src/{ai,squad}/`) import no three.js, no DOM and nothing of the slice's drawing: they read plain agents, so the 2D game can adopt them. Keep it so.
 - A companion never starts a fight on his own (only once a foe is fighting the party, once the hero has struck, or on Charge / Attack that); the assassin's hunt is the exception.
 - A new behaviour is a new option with a score, not a branch; a new trait's behaviour is a row in `TRAIT_TEMPER`.
 

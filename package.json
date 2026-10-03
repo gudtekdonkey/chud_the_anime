@@ -14,7 +14,7 @@
     "check:gear": "node scripts/check-gear.mjs",
     "check:hair": "vite build && node scripts/check-hair.mjs",
     "golden": "node scripts/golden.mjs",
-    "check:engine": "node scripts/golden.mjs && npm --prefix packages/ronin-engine test"
+    "check:engine": "node scripts/golden.mjs && npm --prefix engine test"
   },
   "devDependencies": {
     "playwright": "1.56.1",
@@ -25,7 +25,7 @@
     "node": ">=20.19"
   },
   "dependencies": {
-    "ronin-engine": "file:packages/ronin-engine",
+    "ronin-engine": "file:engine",
     "three": "0.186.1"
   }
 }
