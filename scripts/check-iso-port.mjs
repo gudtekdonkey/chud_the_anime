@@ -150,7 +150,13 @@ export async function portSteps({ page, base, fail, ok, setStep, shot, OUT }) {
 
   // ---- swipes: the stick on the left runs him; a tap cuts; a swipe away dashes (the roll); a swipe at the samurai is the lunge; a double tap is K
   setStep('port: swipes'); { await settle(); await forget(); const a = (await D()).hero;
-    await touch([[.2, .6], [.24, .6], [.3, .6], [.3, .6]], 900); await until('the stick running him', ([x]) => window.__iso.hero.x > x + 4, [a.x]); await settle();
+    // the stick held until he has run (or 3 s of the game's clock), then let go: a wall-clock hold is only a few frames on SwiftShader
+    await page.evaluate(async ({ x0 }) => { const c = document.querySelector('canvas'), r = c.getBoundingClientRect(), id = 4242;
+      const ev = (type, [u, v]) => c.dispatchEvent(new PointerEvent(type, { pointerId: id, pointerType: 'touch', clientX: r.left + u * r.width, clientY: r.top + v * r.height, bubbles: true, cancelable: true, isPrimary: true }));
+      const frame = () => new Promise(res => requestAnimationFrame(res));
+      ev('pointerdown', [.2, .6]); for (const u of [.24, .3]) { await frame(); ev('pointermove', [u, .6]); }
+      const t0 = window.__iso.t; while (window.__iso.hero.x <= x0 + 4 && window.__iso.t - t0 < 3) await frame(); ev('pointerup', [.3, .6]); }, { x0: a.x });
+    await until('the stick running him', ([x]) => window.__iso.hero.x > x + 4, [a.x]); await settle();
     await touch([[.7, .5], [.7, .5]], 40); await until('a tap cut', () => window.__seen.has('J1')); await settle();
     const f = (await D()).foe, h = (await D()).hero; const away = f.x > h.x ? [[.75, .5], [.6, .5]] : [[.6, .5], [.75, .5]];
     await touch(away, 80); await until('a swipe dash', () => window.__seen.has('roll')); await settle();
