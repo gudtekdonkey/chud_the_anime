@@ -3,8 +3,8 @@
 // side pose (anim/moves.js: pel, lean, head, the feet fN / fF and hands hN / hF in rig px [forward, up], the blade's grip
 // and angle), so the 3D model and the pixel look stand them up like any move. Names follow the old ones (RX.windup,
 // RX.legsKneel ...); each leans into its motion as the batch's keys do.
-import { H, mixP, EZ, clamp } from 'ronin-engine/flow/flow.js';
-import { SH, blade } from 'ronin-engine/flow/moves.js';
+import { H, mixP, EZ, clamp } from '../../flow/flow.js';
+import { SH, blade } from '../../flow/moves.js';
 
 // a pose from the standing guard's defaults
 export const pose = o => ({ pel: [0, H - 2.3], lean: .14, head: .03, fN: [5.5, 1.5], fF: [-4.6, 1.5], elb: 'back', speed: 0, blade: SH, ...o });

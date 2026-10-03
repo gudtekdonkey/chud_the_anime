@@ -40,7 +40,8 @@ import { initPort, CTX as PORT } from './port.js';
 import { SK } from './skills/skills.js';
 import { ICONS as KIT_ICONS, ICON_COL as KIT_COL } from './skills/hud.js';
 import { addSkill } from './hud/skill-bar.js';
-import { installGore } from './gore.js';
+import './exec/executions.js';   // the game's executions into the engine's registry (gore.js stages them)
+import { installGore } from 'ronin-engine/iso/gore.js';
 import { startOutfit, wireGear } from './gear/ui.js';
 import { encode } from './gear/outfits.js';
 import { runHairGrid } from './hair/grid.js';

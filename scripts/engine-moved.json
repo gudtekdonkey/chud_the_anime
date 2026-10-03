@@ -122,5 +122,11 @@
  "iso/skills/sfx.js": "ronin-engine/iso/skills/sfx.js",
  "iso/combo/prompts.js": "ronin-engine/iso/combo/prompts.js",
  "iso/input/touch.js": "ronin-engine/iso/input/touch.js",
- "iso/input/path.js": "ronin-engine/world/path.js"
+ "iso/input/path.js": "ronin-engine/world/path.js",
+ "iso/exec/markers.js": "ronin-engine/iso/exec/markers.js",
+ "iso/exec/stage.js": "ronin-engine/iso/exec/stage.js",
+ "iso/exec/poses.js": "ronin-engine/iso/exec/poses.js",
+ "iso/gore.js": "ronin-engine/iso/gore.js",
+ "iso/fx/blood.js": "ronin-engine/iso/blood.js",
+ "iso/sever.js": "ronin-engine/iso/sever.js"
 }

@@ -2,13 +2,12 @@
 // LOOK (look/look.js), so they are the 3D model or the pixel drawing, whichever he is, tinted cyan and dissolving
 // through the look's own dither. A pool, built on first use and parked off screen when idle; nothing here knows which
 // look it holds.
-import { makeLook } from '../look/look.js';
-import { IDLE0 } from './moves.js';
+import { makeLook } from '../look.js';
 
 export const CYAN = [.435, .953, .894], WHITE = [1, 1, 1];
-const PARK = { pose: { ...IDLE0, hN: IDLE0.hN, hF: IDLE0.hF }, x: -9999, y: 0, z: -9999, yaw: 0, flash: false, tint: null, tintA: 0, alpha: 0, hero: false };
-
-export function makeEchoes(scene, kind) {
+// idle: the pose a parked echo is shown in, off screen (the game's standing pose)
+export function makeEchoes(scene, kind, idle) {
+  const PARK = { pose: { ...idle, hN: idle.hN, hF: idle.hF }, x: -9999, y: 0, z: -9999, yaw: 0, flash: false, tint: null, tintA: 0, alpha: 0, hero: false };
   let K = kind; const pool = [];
   function take() { let e = pool.find(q => !q.busy); if (!e) { e = { look: makeLook(K, { foe: false }) }; e.look.mount(scene); pool.push(e); }
     Object.assign(e, { busy: true, frame: null, out: null, alpha: -1 }); return e; }

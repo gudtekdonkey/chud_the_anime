@@ -5,15 +5,15 @@
 // blows is an amazing touch"). Its own effects (cut lines, glitch slivers, crescents, speed lines, afterimages) live
 // here, drawn on the effects layer; the blood and the severing go through gore.js (`api`). The stage clock is the
 // samurai's clip time, so a hit-stop holds the whole performance.
-import { proc, hv, hOf, AF, H, rnd, TAU, EZ, FA, faceK } from 'ronin-engine/flow/flow.js';
-import { W } from 'ronin-engine/clock/world.js';
-import { CINE, startCine } from 'ronin-engine/iso/cine.js';
-import { sparks, dust, focus } from 'ronin-engine/iso/fx.js';
-import { shake as camShake, toScreen, CAM } from 'ronin-engine/iso/gfx/view.js';
-import { makeLook } from '../look/look.js';
+import { proc, hv, hOf, AF, H, rnd, TAU, EZ, FA, faceK } from '../../flow/flow.js';
+import { W } from '../../clock/world.js';
+import { CINE, startCine } from '../cine.js';
+import { sparks, dust, focus } from '../fx.js';
+import { shake as camShake, toScreen, CAM } from '../gfx/view.js';
+import { makeLook } from '../look.js';
 import { lift, pose, HR, EG } from './poses.js';
-import { EXECS } from './executions.js';
-import { SH } from 'ronin-engine/flow/moves.js';
+import { EXECS } from './registry.js';
+import { SH } from '../../flow/moves.js';
 
 export const PRE = .2;                       // the set and the vanish before he lands (today's game's PRE)
 export const EX = { st: null, on: false, last: -1, done: 0, log: [] };

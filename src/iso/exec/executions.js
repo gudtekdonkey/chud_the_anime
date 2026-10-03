@@ -8,10 +8,11 @@
 // The cuts are real: S.sever takes the part off the 3D model as a piece (sever.js); blood by weight (fx/blood.js).
 import { H, rnd } from 'ronin-engine/flow/flow.js';
 import { STOP } from 'ronin-engine/clock/world.js';
-import { at, pose, HR, EG, RX, WHIRL } from './poses.js';
+import { at, pose, HR, EG, RX, WHIRL } from 'ronin-engine/iso/exec/poses.js';
+import { EXECS as REG } from 'ronin-engine/iso/exec/registry.js';
 
 const sgn = () => rnd() < .5 ? -1 : 1;
-export const EXECS = [
+export const EXECS = REG; REG.push(
   { name: 'Behind the back', side: +1, gap: 10, dur: 2.2, kill: .5,
     run(S, t, R, E) {
       const SLICE = .5;
@@ -93,4 +94,4 @@ export const EXECS = [
         S.sever('head', v(1, 6, 0)); S.sever('armR', v(-2, 2, -3)); S.sever('armL', v(2, 2, 3)); S.sever('upper', v(-1, 0, 0)); S.sever('thighR', v(2, -2, -2)); S.sever('all', v(-2, -2, 1));
         S.shake(.8, .08); S.burst(0, 10, 12); for (const h of [17, 12, 7]) S.blood(0, h, rnd() - .5, .6, 'heavy', { k: .7 }); S.kill(); });
     } },
-];
+);
