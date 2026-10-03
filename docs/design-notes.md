@@ -345,6 +345,8 @@ The owner said the deaths still don't feel like someone dying, and the execution
   - **6C:** dealer_solana gets the full flow port now, not later.
 - The rule that comes with all of it: chud_the_anime keeps every tuning number, colour and timing. A golden snapshot (clips sampled, the tables, sim-smoke) must stay byte-identical, and every check must stay green.
 
+- **After the merge** (owner 2026-10-03, "no that's fine"): the engine repo keeps its branch `claude/engine-extract` (no rename to `main`), and dust_the_western is not started yet.
+
 ## Open questions answered (owner 2026-10-03, the "Ronin Open Questions" page)
 
 - Owner: "Picks: 1aA 1bB 1cB 2aC 2bC 3? 3b? 4B 5redo:1,2,3,4,5"
