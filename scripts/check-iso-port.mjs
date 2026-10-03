@@ -118,7 +118,9 @@ export async function portSteps({ page, base, fail, ok, setStep, shot, OUT }) {
 
   // ---- the big items, each by a click on it: PRAY fills health and Qi; TAKE the Grave Nodachi; CUT the seal and the loot; READ the tablet
   setStep('port: big items'); { const use = async (id, x, z, h, done) => { await settle(); await goTo(x + 20, z - 50, 10); await forget(); await clickWorld(x, z, h);   /* on the screen first, then a click on it */ await until(`${id}'s act`, done, undefined, 90000); await settle(); await shot('port-' + id, ['hero']); };
-    await use('shrine', 64, 70, 8, () => window.__iso.port.items.used.shrine); let d = await D(); if (d.inv.hp < .99 || d.inv.qi < .99) fail(`after praying health ${d.inv.hp}, Qi ${d.inv.qi}`); if (!(await page.evaluate(() => window.__seen.has('pray')))) fail('he never prayed');
+    // health and Qi read on the frame the prayer lands: out of a fight the meter ebbs after 3 s (skills.js), and the shot after takes game time
+    await use('shrine', 64, 70, 8, () => { const p = window.__iso.port; if (p.items.used.shrine && !window.__prayed) window.__prayed = { hp: p.inv.hp, qi: p.inv.qi }; return p.items.used.shrine; });
+    const pr = await page.evaluate(() => window.__prayed); let d = await D(); if (pr.hp < .99 || pr.qi < .99) fail(`after praying health ${pr.hp}, Qi ${pr.qi}`); if (!(await page.evaluate(() => window.__seen.has('pray')))) fail('he never prayed');
     await use('nodachi', 214, 246, 10, () => window.__iso.port.items.used.nodachi); d = await D(); if (d.inv.weapon !== 'nodachi') fail(`weapon ${d.inv.weapon}`);
     const mon0 = d.inv.mon; await use('chest', 380, 222, 6, () => window.__iso.port.items.used.chest); await until('the loot in', m => window.__iso.port.inv.mon >= m + 4, mon0);
     await use('tablet', 100, 226, 10, () => window.__iso.port.items.used.tablet); d = await D(); if (!d.inv.rift) fail('the tablet taught nothing');
