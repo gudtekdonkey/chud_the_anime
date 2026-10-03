@@ -1,15 +1,15 @@
-import { N, BUILDINGS } from './data.js';
+import { N, BUILDINGS } from '../packs/edo/dominion.js';
 import { zoneAt } from '../ledger.js';
 import { ageOf } from '../actors.js';
 import { HOURS_PER_YEAR } from '../time.js';
 import { ownerOf, tilesOf, TERRAIN, PLOTS } from '../zone.js';
-import { GOODS, GOOD } from '../economy/tune.js';
+import { GOODS, GOOD } from '../packs/edo/economy.js';
 import { worth as eWorth, pay, changeUp } from '../economy/money.js';
 import { plotKoku } from '../economy/setup.js';
 import { killActor as peopleKill, findHeir } from '../people/death.js';
 import { passTitle, heirOf as crimeHeir } from '../crime/land.js';
 import { addKarma as crimeKarma, addStanding as crimeStanding } from '../crime/law.js';
-import { LAND, K } from '../crime/rules.js';
+import { LAND, K } from '../packs/edo/crime.js';
 
 // ---- The seams: everything dominion needs from the other lanes, each behind ONE small function (docs/sim-dominion.md, "Seams") ----
 // Economy, people and crime have landed: each seam calls into its lane when that lane's system runs (L.sys.economy / people / crime),

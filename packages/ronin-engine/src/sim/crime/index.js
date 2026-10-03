@@ -7,7 +7,7 @@ import './hooks.js';   // listens to the story and travel lanes
 
 // ---- Karma, crime, bounties, title and possession: the crime lane on the simulation core (docs/sim-crime.md) ----
 // Import this once (it registers the system); everything here runs in onDay or slower, so it works the same while he is away.
-export * from './rules.js';
+export * from '../packs/edo/crime.js';
 export * from './law.js';
 export * from './land.js';
 export { huntersDay } from './world.js';

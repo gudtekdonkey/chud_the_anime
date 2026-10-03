@@ -1,5 +1,5 @@
 import { zoneAt } from '../ledger.js';
-import { BUILDINGS, TIERS, UNITS, N, TRAIT, traitSum } from './data.js';
+import { BUILDINGS, TIERS, UNITS, N, TRAIT, traitSum } from '../packs/edo/dominion.js';
 import { D, unkey, alive, top, sameSide, landOf, landOfKey } from './land.js';
 import { plan } from './build.js';
 import { setTax, setLaw, swearFealty, lordState } from './govern.js';

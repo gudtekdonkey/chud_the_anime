@@ -1,5 +1,5 @@
 import { on, emit } from '../ledger.js';
-import { CRIMES } from './rules.js';
+import { CRIMES } from '../packs/edo/crime.js';
 import { commit, addKarma, addStanding, addBounty, clearBounty, bountiesOf, spend, purse, cultureOfZone } from './law.js';
 import { plotRec, raidStore } from './land.js';
 

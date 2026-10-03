@@ -48,7 +48,7 @@ const plot = (e, L) => { if (ok(L) && e.plot) plotChanged(L, e.plot); };
 on('crime.title', plot); on('crime.seized', plot); on('crime.retaken', plot); on('econ.landSold', plot); on('land.claimed', plot); on('land.claim', plot);
 const rngish = (L, id) => rngFor(L.seed, 'dominion', 'death', id, L.hour);
 
-export * from './data.js';
+export * from '../packs/edo/dominion.js';
 export { D as dominion, key, unkey, lordOf, top, sameSide, lordName, zoneRec, setZone, checkZoneTitle, plotChanged, plotsHeld, estatesOf, canFound, foundDomain, realmOf, holdingsOf, rankOf } from './land.js';
 export { settlementAt, lordOfSettlement, nextNeeds, vassalState } from './settle.js';
 export { recipeOf, costOf, canPlace, prereq, plan, supply, work, hire, damage, repair } from './build.js';

@@ -1,5 +1,5 @@
 import { HOURS_PER_YEAR } from '../time.js';
-import { AGE } from './rules.js';
+import { AGE } from '../packs/edo/people.js';
 
 // ---- Family: who is whose, read from the actor records (parents, children, spouse). No state of its own ----
 export const act = (L, id) => id == null ? null : L.actors[id] || null;

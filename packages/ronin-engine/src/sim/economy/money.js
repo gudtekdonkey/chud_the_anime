@@ -1,4 +1,4 @@
-import { COIN, LOAD, CHANGE_UP } from './tune.js';
+import { COIN, LOAD, CHANGE_UP } from '../packs/edo/economy.js';
 
 // ---- Coin: worth, weight and paying out of a purse { mon, silver, ryo } (actor.money, a kura, a money-changer's book) ----
 export const purse = (mon = 0, silver = 0, ryo = 0) => ({ mon, silver, ryo });

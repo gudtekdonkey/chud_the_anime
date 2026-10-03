@@ -1,5 +1,5 @@
 import { zoneAt } from '../ledger.js';
-import { CLASSES, givenName, familyName } from '../cultures.js';
+import { CLASSES, givenName, familyName } from '../packs/edo/cultures.js';
 import { nameOf } from '../actors.js';
 
 // ---- What every scene shares: finding real people for it, strangers when there are none, fights, deeds ----

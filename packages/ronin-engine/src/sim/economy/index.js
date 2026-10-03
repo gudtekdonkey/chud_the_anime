@@ -1,5 +1,5 @@
 import { system, emit } from '../ledger.js';
-import { GOODS, GOOD } from './tune.js';
+import { GOODS, GOOD } from '../packs/edo/economy.js';
 import { initEconomy, index, moneySupply } from './setup.js';
 import { economyDay } from './day.js';
 import { economySeason } from './season.js';
@@ -9,7 +9,7 @@ import { landSeason } from './land.js';
 // ---- The economy lane (docs/sim-economy.md): money with weight, land in koku and taxes up the ladder, a market per region,
 // caravans on the roads, every purse earning and spending by job and class. All of it lives in L.sys.economy and runs by the day,
 // so a long absence is lived exactly as if he had stayed ----
-export * from './tune.js';
+export * from '../packs/edo/economy.js';
 export { worth, weightOf, burden, pay, coins, purse, fmt } from './money.js';
 export { plotKoku, zoneLord, moneySupply, index as economyIndex } from './setup.js';
 export { daysToHarvest } from './day.js';

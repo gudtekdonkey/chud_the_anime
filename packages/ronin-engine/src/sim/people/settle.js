@@ -1,7 +1,7 @@
 import { zoneAt, emit } from '../ledger.js';
 import { hash } from '../rng.js';
-import { CLASSES } from '../cultures.js';
-import { AGE, CAP, FEEDS, HARVEST, FAMINE_AT, KEEP, HOUSE_PLOTS, worth } from './rules.js';
+import { CLASSES } from '../packs/edo/cultures.js';
+import { AGE, CAP, FEEDS, HARVEST, FAMINE_AT, KEEP, HOUSE_PLOTS, worth } from '../packs/edo/people.js';
 import { alive, age, zk, zkey, idKey } from './kin.js';
 
 // ---- Settlements: who lives where, what the land feeds, and people moving to where there is room ----

@@ -1,6 +1,6 @@
 import { emit, zoneAt } from '../ledger.js';
 import { nameOf } from '../actors.js';
-import { UNITS, BUILDINGS, N, ORDERS, ORDER, r3 } from './data.js';
+import { UNITS, BUILDINGS, N, ORDERS, ORDER, r3 } from '../packs/edo/dominion.js';
 import { D, key, unkey, alive, lordOf, top, sameSide } from './land.js';
 import { lordOfSettlement } from './settle.js';
 import { spend } from './seams.js';

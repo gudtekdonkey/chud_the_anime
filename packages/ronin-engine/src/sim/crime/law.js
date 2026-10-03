@@ -2,7 +2,7 @@ import { emit, newId, zoneAt } from '../ledger.js';
 import { rngFor } from '../rng.js';
 import { killActor } from '../people/death.js';   // not people/index.js: importing law.js must not register the people system (dominion's seams use it)
 import { ageOf } from '../actors.js';
-import { CRIMES, K, HONOUR, COMPANION, worse } from './rules.js';
+import { CRIMES, K, HONOUR, COMPANION, worse } from '../packs/edo/crime.js';
 
 // ---- The law: one crime, anyone's (the ronin's or an NPC's), and what it does to karma, standing and bounties (docs/sim-crime.md) ----
 // Karma (actor.karma, −100..100) is who he is: every crime costs it, seen or not. Standing (actor.standing[culture], −1..1) is what a

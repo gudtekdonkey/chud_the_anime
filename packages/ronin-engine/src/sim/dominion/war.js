@@ -1,7 +1,7 @@
 import { emit, zoneAt } from '../ledger.js';
 import { marry, ageOf } from '../actors.js';
 import { plotId, ownerOf } from '../zone.js';
-import { N, TRAIT, traitSum } from './data.js';
+import { N, TRAIT, traitSum } from '../packs/edo/dominion.js';
 import { D, key, unkey, alive, lordOf, setZone, top, sameSide, fealtyChanged, landOf, landOfKey } from './land.js';
 import { damage, passBuildings } from './build.js';
 import { officeQ, swearFealty } from './govern.js';

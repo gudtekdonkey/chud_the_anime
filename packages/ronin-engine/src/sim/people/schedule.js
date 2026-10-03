@@ -1,4 +1,4 @@
-import { AGE, SCHEDULES, JOB_SCHEDULE } from './rules.js';
+import { AGE, SCHEDULES, JOB_SCHEDULE } from '../packs/edo/people.js';
 import { age } from './kin.js';
 import { residents } from './settle.js';
 

@@ -1,7 +1,7 @@
 import { emit } from '../ledger.js';
 import { TIME, HOURS_PER_YEAR } from '../time.js';
 import { GOODS, GOOD, NEED, JOBS, SPEND, GUILD_CUT, GUILD_SPEND, RICE_CREDIT, MERCH_SHARE, GUILD_FLOAT, TEMPLE_SHARE, TEMPLE_SINK, ALMS, MINT,
-  PRICE_MIN, PRICE_MAX, PRICE_EASE, WAR_RICE, WAR_ARMS, KEEP_DAYS, RICE_HOLD, HARVEST, HOARD, HOARD_OVER, CHANGE_UP, FAMINE_DAYS, FAMINE_END_DAYS, ADULT, SETTLE, CHILD } from './tune.js';
+  PRICE_MIN, PRICE_MAX, PRICE_EASE, WAR_RICE, WAR_ARMS, KEEP_DAYS, RICE_HOLD, HARVEST, HOARD, HOARD_OVER, CHANGE_UP, FAMINE_DAYS, FAMINE_END_DAYS, ADULT, SETTLE, CHILD } from '../packs/edo/economy.js';
 import { G, GI, JOB_LIST, JI, index, minStock } from './setup.js';
 import { worth, pay, changeUp } from './money.js';
 

@@ -1,6 +1,6 @@
 import { system, on } from '../ledger.js';
 import { HOURS_PER_SEASON } from '../time.js';
-import { AGE, FADE_AFTER } from './rules.js';
+import { AGE, FADE_AFTER } from '../packs/edo/people.js';
 import { age } from './kin.js';
 import { initSettlements, rebuildResidents, adoptNewcomers, feedSettlements, rollHarvests, migrate, recruit, foundHouses, starve } from './settle.js';
 import { liveBucket, yearOf } from './life.js';
@@ -53,4 +53,4 @@ export { residents, freePlot, grantPlot, starve, graveTile, moveHome } from './s
 export { activity } from './schedule.js';
 export { bond, tieOf, tieValue, setTie } from './ties.js';
 export { tree, founder, children, livingChildren, siblings, closeKin, nearKin, pickRegent } from './kin.js';
-export * as PEOPLE_RULES from './rules.js';
+export * as PEOPLE_RULES from '../packs/edo/people.js';

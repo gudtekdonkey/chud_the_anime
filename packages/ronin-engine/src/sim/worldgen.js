@@ -1,6 +1,6 @@
 import { rngFor, hash } from './rng.js';
 import { createLedger, initSystems, zoneAt } from './ledger.js';
-import { KINDS, kindRelation, placeName, familyName } from './cultures.js';
+import { KINDS, kindRelation, placeName, familyName } from './packs/edo/cultures.js';
 import { populate } from './actors.js';
 
 // ---- The world from a seed: 100 × 100 zones, terrain, 100 regions, 20 cultures, settlements, camps, shrines, roads, people ----

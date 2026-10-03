@@ -1,5 +1,5 @@
 import { emit, zoneAt } from '../ledger.js';
-import { GOOD, TAX, TAX_KIND, RESERVE, LAND_SALE } from './tune.js';
+import { GOOD, TAX, TAX_KIND, RESERVE, LAND_SALE } from '../packs/edo/economy.js';
 import { index, plotKoku } from './setup.js';
 import { worth, pay } from './money.js';
 import { freePlot, grantPlot } from '../people/settle.js';   // the people lane's free plots and the title's move (not its index: no system)

@@ -1,9 +1,9 @@
 import { emit } from '../ledger.js';
 import { bear } from '../actors.js';
-import { CLASSES, KINDS } from '../cultures.js';
+import { CLASSES, KINDS } from '../packs/edo/cultures.js';
 import { HOURS_PER_SEASON, HOURS_PER_YEAR } from '../time.js';
 import { AGE, VISITS, hazard, CLASS_HAZARD, VIOLENCE, VIOLENCE_OTHER, FAMINE, FAMINE_FROM, CHILDBIRTH, CONCEIVE, conceiveAge, conceiveKids, conceiveRoom, GESTATION,
-  PURSE_NORM, EARN, SPEND, TIES, FADE_AFTER, worth } from './rules.js';
+  PURSE_NORM, EARN, SPEND, TIES, FADE_AFTER, worth } from '../packs/edo/people.js';
 import { act, alive, age, zkey, idKey, livingChildren } from './kin.js';
 import { SETTLED, addResident } from './settle.js';
 import { killActor } from './death.js';

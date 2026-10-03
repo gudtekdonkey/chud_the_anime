@@ -1,6 +1,6 @@
 import { zoneAt } from '../ledger.js';
 import { rngFor } from '../rng.js';
-import { BUILDINGS, N, TRAIT, traitSum } from './data.js';
+import { BUILDINGS, N, TRAIT, traitSum } from '../packs/edo/dominion.js';
 import { D, key, lordOf, setZone, refreshDomains, refreshProvinces, refreshRealms, fealtyChanged } from './land.js';
 import { newSettlement, recount, tradeYear } from './settle.js';
 import { freeLot } from './build.js';

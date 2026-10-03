@@ -1,4 +1,4 @@
-import { TIES } from './rules.js';
+import { TIES } from '../packs/edo/people.js';
 
 // ---- Ties outside the family: actor.ties = [[id, kind, value], ...], at most TIES.MAX, kind 'friend' | 'rival' | 'grudge' | 'lover' ----
 // value -1..1. A small array, not an object keyed by id: it is read for everyone every season, and arrays stay fast.

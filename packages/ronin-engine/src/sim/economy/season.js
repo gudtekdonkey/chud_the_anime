@@ -1,9 +1,9 @@
 import { emit, zoneAt } from '../ledger.js';
 import { PLOTS, plotId } from '../zone.js';
 import { TIME } from '../time.js';
-import { GOOD, TAX, TAX_KIND, TENANT_SHARE, PLOTS_PER_FARMER, HARVEST, BANK, HISTORY } from './tune.js';
+import { GOOD, TAX, TAX_KIND, TENANT_SHARE, PLOTS_PER_FARMER, HARVEST, BANK, HISTORY } from '../packs/edo/economy.js';
 import { index, plotKoku, zoneLord, rankLords, JOB_LIST } from './setup.js';
-import { JOBS } from './tune.js';
+import { JOBS } from '../packs/edo/economy.js';
 const FARM_JOB = JOB_LIST.map(j => JOBS[j].kind === 'farm');
 const hands = h => h.jj.reduce((s, j, k) => s + (j >= 0 && FARM_JOB[j] && h.m[k].alive ? 1 : 0), 0);   // a household's farmers
 import { worth, pay } from './money.js';

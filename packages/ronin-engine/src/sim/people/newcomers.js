@@ -1,8 +1,8 @@
 import { emit, zoneAt } from '../ledger.js';
 import { makeActor, marry, bear } from '../actors.js';
-import { CLASSES, KINDS } from '../cultures.js';
+import { CLASSES, KINDS } from '../packs/edo/cultures.js';
 import { HOURS_PER_YEAR } from '../time.js';
-import { AGE, NEWCOMERS } from './rules.js';
+import { AGE, NEWCOMERS } from '../packs/edo/people.js';
 import { SETTLED, addResident } from './settle.js';
 
 // ---- Newcomers: a violent time (owner 2026-09-26: 30% of grown people die by the sword a year) empties villages faster than children

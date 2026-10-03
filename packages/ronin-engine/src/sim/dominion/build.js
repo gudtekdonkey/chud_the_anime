@@ -1,6 +1,6 @@
 import { emit, zoneAt } from '../ledger.js';
 import { ownerOf, plotAt, ZONE } from '../zone.js';
-import { BUILDINGS, TIERS, N } from './data.js';
+import { BUILDINGS, TIERS, N } from '../packs/edo/dominion.js';
 import { hash } from '../rng.js';
 import { D, key, unkey, alive } from './land.js';
 import { settlementAt, newSettlement, recount, lordOfSettlement } from './settle.js';

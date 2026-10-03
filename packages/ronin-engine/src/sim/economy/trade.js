@@ -1,5 +1,5 @@
 import { emit } from '../ledger.js';
-import { GOODS, GOOD, CARAVAN, GUILD_CUT } from './tune.js';
+import { GOODS, GOOD, CARAVAN, GUILD_CUT } from '../packs/edo/economy.js';
 import { G, JI, index, routeDanger } from './setup.js';
 import { target } from './day.js';
 

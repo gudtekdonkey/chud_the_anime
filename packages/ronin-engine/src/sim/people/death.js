@@ -1,5 +1,5 @@
 import { emit, zoneAt } from '../ledger.js';
-import { INHERIT } from './rules.js';
+import { INHERIT } from '../packs/edo/people.js';
 import { act, alive, age, adult, livingChildren, siblings, grandchildren, nearKin, eldest, pickRegent } from './kin.js';
 import { residents, dropResident, moveHome, graveTile } from './settle.js';
 import { handOff, layOut, recordDeed, notable, sworn } from './player.js';

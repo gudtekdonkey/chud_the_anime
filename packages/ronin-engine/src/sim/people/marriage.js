@@ -1,7 +1,7 @@
 import { emit } from '../ledger.js';
 import { marry } from '../actors.js';
-import { KINDS } from '../cultures.js';
-import { AGE, WED_STANDING, WED_CHANCE, REWED_CHANCE, WED_RANK_GAP, MUKOYOSHI, BRIDE_PRICE, SILVER_MON, RYO_MON, worth } from './rules.js';
+import { KINDS } from '../packs/edo/cultures.js';
+import { AGE, WED_STANDING, WED_CHANCE, REWED_CHANCE, WED_RANK_GAP, MUKOYOSHI, BRIDE_PRICE, SILVER_MON, RYO_MON, worth } from '../packs/edo/people.js';
 import { act, alive, age, closeKin, livingChildren, siblings, zkey } from './kin.js';
 import { SETTLED, residents, moveHome } from './settle.js';
 import { recordDeed, notable } from './player.js';

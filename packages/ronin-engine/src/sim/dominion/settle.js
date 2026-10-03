@@ -1,6 +1,6 @@
 import { emit, zoneAt } from '../ledger.js';
 import { makeActor } from '../actors.js';
-import { BUILDINGS, TIERS, LAWS, N, traitSum, tierName, r3 } from './data.js';
+import { BUILDINGS, TIERS, LAWS, N, traitSum, tierName, r3 } from '../packs/edo/dominion.js';
 import { D, key, alive, lordOf, setZone, top, isSeat } from './land.js';
 import { damage, passBuildings } from './build.js';
 import { zoneYield, ricePrice, gain, migrate } from './seams.js';

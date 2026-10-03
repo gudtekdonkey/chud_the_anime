@@ -1,5 +1,5 @@
 // ---- Cultures and classes: who people are, what they carry and wear, and whom they hate (docs/enemy-behavior.md sections 5b and 7) ----
-// Plain data. worldgen.js makes 20 cultures from these kinds and spreads them over the 100 regions.
+// Plain data, the Edo pack's (sim/pack.js). worldgen.js makes 20 cultures from these kinds and spreads them over the 100 regions.
 
 // Classes decide rank, dress and weapons (owner 2026-09-26: "retainers only really katana; peasants and rebels katanas or naginatas").
 // dress: 'royal' (colour: only very high royalty wear it, owner 2026-09-26), 'black', 'dark' (black with faint tints on armour), 'earth' (beige, brown, grey).
@@ -52,7 +52,6 @@ const REL = {
   'merchants|fishers': .3, 'merchants|miners': .3, 'fishers|miners': .2,
   'court|court': .5, 'rebels|rebels': .4, 'monastic|monastic': .5, 'bandits|bandits': -.2, 'merchants|merchants': -.1, 'shinobi|shinobi': .3, 'fishers|fishers': .5, 'miners|miners': .5,
 };
-export const kindRelation = (a, b) => REL[a + '|' + b] ?? REL[b + '|' + a] ?? 0;
 
 // ---- names: invented, Japanese in sound, never a real clan or place ----
 const ON = ['ka', 'ta', 'na', 'ma', 'sa', 'ha', 'ya', 'ra', 'wa', 'ki', 'shi', 'chi', 'ni', 'mi', 'ri', 'ku', 'tsu', 'nu', 'mu', 'yu', 'ru', 'ko', 'to', 'no', 'mo', 'yo', 'ro', 'se', 'te', 'ne', 'me', 're', 'ga', 'ji', 'zu', 'do', 'bo', 'go', 'hi', 'fu', 'ho', 'o', 'a', 'i', 'u', 'e'];
@@ -60,6 +59,12 @@ const PLACE_END = ['mura', 'hara', 'yama', 'kawa', 'zawa', 'saka', 'no', 'ta', '
 const GIVEN_M = ['rō', 'ta', 'suke', 'maru', 'zō', 'nobu', 'mune', 'hide', 'kichi', 'emon', 'bei', 'shirō', 'jirō'];
 const GIVEN_F = ['ko', 'e', 'yo', 'no', 'mi', 'ne', 'ha', 'ka', 'ri', 'sa'];
 const cap = s => s[0].toUpperCase() + s.slice(1);
-export const placeName = r => cap(r.pick(ON) + r.pick(ON) + r.pick(PLACE_END));
-export const familyName = r => cap(r.pick(ON) + r.pick(ON) + r.pick(['moto', 'da', 'yama', 'kawa', 'no', 'mura', 'saki', 'ta', 'hara', 'gawa']));
-export const givenName = (r, sex) => cap(r.pick(ON) + (sex === 'f' ? r.pick(GIVEN_F) : r.pick(ON) + r.pick(GIVEN_M)));
+// the name makers and the relation rule as one swappable object (sim/pack.js usePack: a pack brings its own)
+export const NAMES = {
+  relation: (a, b) => REL[a + '|' + b] ?? REL[b + '|' + a] ?? 0,
+  place: r => cap(r.pick(ON) + r.pick(ON) + r.pick(PLACE_END)),
+  family: r => cap(r.pick(ON) + r.pick(ON) + r.pick(['moto', 'da', 'yama', 'kawa', 'no', 'mura', 'saki', 'ta', 'hara', 'gawa'])),
+  given: (r, sex) => cap(r.pick(ON) + (sex === 'f' ? r.pick(GIVEN_F) : r.pick(ON) + r.pick(GIVEN_M))),
+};
+export const kindRelation = (a, b) => NAMES.relation(a, b);
+export const placeName = r => NAMES.place(r), familyName = r => NAMES.family(r), givenName = (r, sex) => NAMES.given(r, sex);

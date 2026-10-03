@@ -1,6 +1,6 @@
 import { emit, zoneAt } from '../ledger.js';
 import { ownerOf } from '../zone.js';
-import { GOODS, GUILD_CUT, BANK, COIN, MAX_CARRY_KG } from './tune.js';
+import { GOODS, GUILD_CUT, BANK, COIN, MAX_CARRY_KG } from '../packs/edo/economy.js';
 import { worth, pay, weightOf, takeCoins, addTo, purse, coins } from './money.js';
 import { caravanZone, rob } from './trade.js';
 

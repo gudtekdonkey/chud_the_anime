@@ -1,5 +1,5 @@
 import { emit } from '../ledger.js';
-import { AGE } from './rules.js';
+import { AGE } from '../packs/edo/people.js';
 import { alive, age, livingChildren, grandchildren, siblings, pickRegent } from './kin.js';
 
 // ---- The ronin's line: his deeds, his heir, and what happens when he dies (owner 2026-09-26: death costs everything unless he has an heir) ----

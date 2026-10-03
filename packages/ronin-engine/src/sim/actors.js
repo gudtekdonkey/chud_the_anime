@@ -1,7 +1,7 @@
 import { rngFor } from './rng.js';
 import { newId, zoneAt } from './ledger.js';
 import { HOURS_PER_YEAR } from './time.js';
-import { CLASSES, KINDS, familyName, givenName } from './cultures.js';
+import { CLASSES, KINDS, familyName, givenName } from './packs/edo/cultures.js';
 
 // ---- People: every person in the world is one record in L.actors, the ronin included (docs/foundations.md: one actor for everyone) ----
 // { id, given, family, sex, born (game hour; negative before the world began), alive, died?, culture, cls, job, rank, home: [x, y] | null,

@@ -2,7 +2,7 @@ import { emit, newId, zoneAt } from '../ledger.js';
 import { ageOf } from '../actors.js';
 import { TIME, HOURS_PER_YEAR } from '../time.js';
 const DAYS_PER_YEAR = HOURS_PER_YEAR / TIME.HOURS_PER_DAY;
-import { WORLD, K, CRIMES } from './rules.js';
+import { WORLD, K, CRIMES } from '../packs/edo/crime.js';
 import { crimeState, commit, kill, isPlayer, honourOf, bountyOf, clearBounty, spend, purse, WEEK } from './law.js';
 import { seize, takePlotByMurder } from './land.js';
 

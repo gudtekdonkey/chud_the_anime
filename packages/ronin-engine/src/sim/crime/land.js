@@ -3,7 +3,7 @@ import { ownerOf } from '../zone.js';
 import { findHeir } from '../people/death.js';
 import { raidKura } from '../economy/vault.js';
 import { HOURS_PER_YEAR } from '../time.js';
-import { LAND, K, CRIMES } from './rules.js';
+import { LAND, K, CRIMES } from '../packs/edo/crime.js';
 import { crimeState, commit, isPlayer, spend, give, purse, standingOf, bountyOf, wantedBy, cultureOfZone, addBounty, addStanding, clearBounty, fadeOf } from './law.js';
 
 // ---- Land: possession (holder) and title (owner 2026-09-26: raids take possession, never the legal title) ----

@@ -1,6 +1,6 @@
 import { emit, zoneAt } from '../ledger.js';
 import { makeActor, ageOf } from '../actors.js';
-import { LAWS, OFFICES, N, TRAIT, traitSum } from './data.js';
+import { LAWS, OFFICES, N, TRAIT, traitSum } from '../packs/edo/dominion.js';
 import { D, unkey, alive, lordOf, setZone, top, fealtyChanged } from './land.js';
 import { heirOf, addKarma, worth, mortality } from './seams.js';
 

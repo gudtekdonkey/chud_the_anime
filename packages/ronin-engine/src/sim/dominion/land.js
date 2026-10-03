@@ -2,7 +2,7 @@ import { zoneAt, emit } from '../ledger.js';
 import { ownerOf, plotId, PLOTS } from '../zone.js';
 import { nameOf } from '../actors.js';
 import { calendar } from '../time.js';
-import { N } from './data.js';
+import { N } from '../packs/edo/dominion.js';
 
 // ---- The ladder of land: plot → estate → zone → domain → province → realm (English only, owner 2026-10-01) (docs/dominion.md section 1) ----
 // Each step has a title (on paper) and a holder (who has it now); raids and conquest move the holder, only lawful transfer moves a title.

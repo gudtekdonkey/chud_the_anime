@@ -2,7 +2,7 @@ import { hash } from '../rng.js';
 import { zoneAt } from '../ledger.js';
 import { HOURS_PER_YEAR } from '../time.js';
 import { PLOTS, PLOT, ZONE, plotId, ownerOf } from '../zone.js';
-import { GOODS, GOOD, NEED, KOKU_TILE, GUILD_START, TAX, JOBS, ADULT, TASTE, RESERVE, CARAVAN, SETTLE } from './tune.js';
+import { GOODS, GOOD, NEED, KOKU_TILE, GUILD_START, TAX, JOBS, ADULT, TASTE, RESERVE, CARAVAN, SETTLE } from '../packs/edo/economy.js';
 import { worth } from './money.js';
 
 // ---- The economy's state in the ledger (L.sys.economy), made once per world, and a derived index of households (never saved) ----
