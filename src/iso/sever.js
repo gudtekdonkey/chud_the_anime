@@ -85,9 +85,9 @@ export function severStep(dt) {
     let deep = 0, touch = false; const rws = pc.corners.map(r => r.clone().applyQuaternion(pc.q));
     for (const rw of rws) { const y = pc.c.y + rw.y, gy = groundAt(pc.c.x + rw.x, pc.c.z + rw.z); if (y < gy) deep = Math.max(deep, gy - y); }
     if (deep > 0) { pc.c.y += deep; touch = true; }
-    for (const rw of rws) { const gy = groundAt(pc.c.x + rw.x, pc.c.z + rw.z); if (pc.c.y + rw.y > gy + .02) continue;
+    for (const rw of rws) { const gy = groundAt(pc.c.x + rw.x, pc.c.z + rw.z); if (pc.c.y + rw.y > gy + .02) continue; touch = true;   // a corner on the floor counts as touching, not only one sunk into it
       const vp = _v.copy(pc.w).cross(rw).add(pc.v); if (vp.y >= 0) continue;
-      const rn = rw.clone().cross(UPV), j = -(1 + (pc.sword ? .38 : .22)) * vp.y / (1 + rn.lengthSq() / pc.I);
+      const rn = rw.clone().cross(UPV), e = -vp.y > 4 ? (pc.sword ? .38 : .22) : 0, j = -(1 + e) * vp.y / (1 + rn.lengthSq() / pc.I);   // a resting contact (slower than ~3 steps of gravity) does not bounce: the micro-bounce kept a sword on its edge from ever sleeping
       if (pc.sword && -vp.y > 16 && pc.age - (pc.lastClk || -1) > .08) clatter(pc, rw, -vp.y);
       pc.v.y += j; pc.w.addScaledVector(rn, j / pc.I);
       const vt = new THREE.Vector3(vp.x, 0, vp.z), sp = vt.length();   // friction against the slide, at most µ·j
@@ -97,7 +97,8 @@ export function severStep(dt) {
       pc.w.multiplyScalar(Math.exp(-2.2 * late * dt)); pc.v.x *= Math.exp(-1.2 * late * dt); pc.v.z *= Math.exp(-1.2 * late * dt);
       if (!pc.landed) { pc.landed = 1; if (!pc.sword) { dust(W0, pc.c.x / AF, pc.c.z / AF, 5, { spd: 22, life: .4 }); blood.spray(pc.c.x, pc.c.y + .5, pc.c.z, [pc.v.x, 4, pc.v.z], 'light', { k: .4, spd: .5 }); } } }
     const p = { x: pc.c.x, z: pc.c.z }; collide(p, Math.min(2.5, pc.I)); if (p.x !== pc.c.x || p.z !== pc.c.z) { pc.v.x *= -.3; pc.v.z *= -.3; pc.c.x = p.x; pc.c.z = p.z; }
-    if (touch && pc.v.length() < 1.6 && pc.w.length() < .7) { pc.sleep += dt; if (pc.sleep > .25) { pc.rest = true; SV.stats.rest++; } } else pc.sleep = 0;
+    if (touch && pc.v.length() < 1.6 && pc.w.length() < .7) { pc.sleep += dt; if (pc.sleep > .25) { pc.rest = true; SV.stats.rest++; } }
+    else pc.sleep = pc.age > 1.2 ? Math.max(0, pc.sleep - dt) : 0;   // late, a one-step twitch (a corner's impulse) only sets the count back: a sword on its edge settles in ~2 s
   }
   const gone = SV.pieces.filter(pc => pc.fade >= 1); for (const pc of gone) { SV.scene.remove(pc.holder); SV.pieces.splice(SV.pieces.indexOf(pc), 1); }
 }
