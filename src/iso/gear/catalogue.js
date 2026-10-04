@@ -4,7 +4,7 @@
 // built, posed, drawn and copied into the card, then thrown away, a few a frame, as the cards scroll into view.
 import * as THREE from 'three';
 import { makePipeline, PIPE } from 'ronin-engine/iso/gfx/post.js';
-import { projMatrix, CAM, OBL } from 'ronin-engine/iso/gfx/view.js';
+import { projMatrix, CAM, OBL, setBody } from 'ronin-engine/iso/gfx/view.js';
 import { SH, shadeMat } from 'ronin-engine/iso/gfx/shade.js';
 import { setStyle } from 'ronin-engine/iso/gfx/style.js';
 import { piece } from 'ronin-engine/iso/gfx/build.js';
@@ -17,6 +17,7 @@ import { SLOTS, SLOT_NAME, LAYERS, LAYER_NAME, FAMILIES, STAT_SHORT, STAT_KEYS, 
 import { DYES, KIND_NAME } from 'ronin-engine/iso/gear/palette.js';
 import { empty, PRESETS, randomOutfit, outfitStats, encode, decode } from './outfits.js';
 import { resolve } from 'ronin-engine/iso/gear/dress.js';
+setBody('upright');   // owner 4B: the upright bodies everywhere
 
 const CSS = `:root { color-scheme: dark; --bg: #0b0d10; --panel: #13161a; --card: #101317; --rule: #262b31; --fg: #d9dfdd; --dim: #8b9592; --cyan: #6ff3e4; }
 html, body { margin: 0; background: var(--bg); color: var(--fg); font: 13px/1.45 system-ui, sans-serif; }
