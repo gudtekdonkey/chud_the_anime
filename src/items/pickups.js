@@ -29,7 +29,7 @@ function collect(it) {
   if (it.kind === 'qi') { qiFill(.1); ring(x, y, 2, 2, .18, 2.5, CY); for (let i = 0; i < 3; i++) spark(x, y, rr(-50, 50), rr(-60, -10), .15, i % 2 ? CY : CY2, true); }
   else if (it.kind === 'rice') { heal(.2); plusPop(x - 3, y - 2); plusPop(x + 4, y + 1, -.08); ring(x, y, 3, 3, .2, 1.3); }
   else if (it.kind === 'coin') { addMon(1); pop(x, y - 4, '+1'); glints.push({ x: Math.round(x), y: Math.round(y), t: 0 }); }
-  else if (it.kind === 'shard') { addShards(1); residue(x, P.y, 8); P.glitchNow = .12; pop(x, y - 4, '+1', CY); }
+  else if (it.kind === 'shard') { addShards(1); residue(x, P.y, 8); pop(x, y - 4, '+1', CY); }
   else if (CONS[it.kind]) { addQuick(CONS[it.kind]); pop(x, y - 4, '+1'); }
 }
 function pickupSim(it, dt, radius) {
