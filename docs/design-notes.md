@@ -358,3 +358,10 @@ The owner said the deaths still don't feel like someone dying, and the execution
 - **3 and 3b: still open** (the lantern ash pickup's look, and whether taking it still glitches him).
 - **4 B: the upright body view everywhere** (full height from a low 20°), in play too; 39.5° is no longer the default. Not built yet.
 - **5: redo all five executions** (Behind the back, Through and past, Whirlwind, Far behind, Peek-a-boo). The direction for the redo is still to be asked.
+
+## Walk the world in 3D (owner 2026-10-04, the "Ronin Open Questions II" page)
+
+- **4b A: "Walk the world in 3D: leave the courtyard; zones from the sim drawn in the iso style; travel between them; towns and domains you can see."** Its own session (`claude/world-walk`).
+- **4a B: by "dimensions" the owner meant the world's size and scale** (how big a zone is to walk, how far apart towns are, how long the world takes to cross), not other realms.
+- The design page with the open choices (scale, how a zone is built in 3D, zone edges, holdings, fast travel, where the courtyard sits), drawn from real renders of sim zones: https://claude.ai/artifact/F2dkd7Q7GHco6pdw62R3jx. Its picks line is `World: 1? 2? 3? 4? 5? 6?`; Claude recommends `World: 1B 2B 3A 4A 5B 6A`. Nothing in the game changes until the owner picks.
+- The renders come from a test bench, `scripts/proto48/` (`zone3d.js` builds a zone from `tilesOf`; `node scripts/proto48/shoot.mjs` takes every picture into `test-output/proto48/`). Nothing in the game imports it.
