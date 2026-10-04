@@ -358,3 +358,11 @@ The owner said the deaths still don't feel like someone dying, and the execution
 - **3 and 3b: still open** (the lantern ash pickup's look, and whether taking it still glitches him).
 - **4 B: the upright body view everywhere** (full height from a low 20°), in play too; 39.5° is no longer the default. Not built yet.
 - **5: redo all five executions** (Behind the back, Through and past, Whirlwind, Far behind, Peek-a-boo). The direction for the redo is still to be asked.
+
+## Open questions, round two (owner 2026-10-04, the "Ronin Open Questions II" page)
+
+- Owner: "Picks: 1hair:keep all 1hats:keep all 2A 2bA 3A 3b:Too slow to start/Same feel each time 4B 4bA"
+- **1: every hairstyle (24) and every hat (10) stays.**
+- **2A: the lantern ash pickup keeps its cyan crystal.** **2bA: taking it no longer glitches him** (the 0.12 s glitch goes; the ash rises into his chest with the +1). Not built yet.
+- **3A: the five executions are redone as the same five, sharper**: shorter (about 1 s), fewer frames, every key leaning hard into the motion, bigger pieces. What bothered the owner: "Too slow to start" and "Same feel each time". Not built yet.
+- **4B: by "dimensions" the owner meant the world's size and scale.** **4bA: next for the world is walking it in 3D**: leaving the courtyard, the sim's zones drawn in the iso style, travel between them, towns and domains you can see; its own session.
