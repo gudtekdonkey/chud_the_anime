@@ -19,8 +19,9 @@ and all eight facings, and any piece can be worn with any other.
 | `/?iso&sheet&outfit=monk` | the contact sheet (8 facings × the loop's moments) in an outfit |
 | `npm run check:gear` | Node, no browser: every piece alone and over a full outfit, every preset, 600 random outfits, built, posed and drawn in both looks (below) |
 
-The default stays **Iron Ash V3 as built** (`look/three/ronin.js`, the model the owner called perfect). The first preset,
-*Iron Ash V3, in gear*, rebuilds that look from gear pieces.
+He starts in **Iron Ash V3, in gear** (owner pick 1cB, 2026-10-03), the first preset, which rebuilds the
+look the owner called perfect from gear pieces, so taking off one piece swaps only that piece. *Iron Ash V3, as built*
+(`look/three/ronin.js`, procedural) stays a pick (`&outfit=built`).
 
 ## The grid: slots × layers
 
@@ -109,10 +110,10 @@ A piece's rarity is its rarest colour. In the Pixel-render style the palette ste
 
 The party's four on the existing scale: `stats: 'V2E1'` is VIG +2, EDG +1 (`party/kit.js` `gearStats` reads the same
 keys: vigor, edge, speed, focus). 1–4 points a piece; samurai armour leans to VIG and EDG, ninja to SPD and EDG,
-villager to VIG and FOC. **Open for the owner:** a full outfit is 16 pieces, so it sums to ~20–33 points (Iron Ash in
-gear: VIG +16, 23 in all; random outfits 21–33, the general 33), where today's 7-slot wardrobe sums to ~8. On `player/stats.js`'s per-point effects (VIG 5% less damage a
-point) that is too strong once gear reaches the game: either base pieces give nothing, or the per-point effects shrink,
-or stats come only from the armour layer. Placeholders until then.
+villager to VIG and FOC. **Owner 1bB (2026-10-03): every piece counts, each point worth ¼** of `player/stats.js`'s
+per-point effect (`outfits.js` `GEAR_POINT`, `outfitEffect`), so a full outfit (~20–33 points; Iron Ash in gear: VIG +16,
+23 in all) counts for about 5–8, near today's 7-slot wardrobe (~8). The overlay shows both: `VIG +16 (4)`. Gear's stats
+reach the hero's stats once gear reaches the game.
 
 ## The pixel look
 

@@ -51,6 +51,10 @@ export function randomOutfit(seed = 1, family = null) {
 export function outfitStats(o) { const out = Object.fromEntries(STAT_KEYS.map(k => [k, 0]));
   for (const s of SLOTS) for (const l of LAYERS) { const p = o[s] && BY_ID[o[s][l]]; if (p) for (const k in p.stats) out[k] += p.stats[k]; }
   return out; }
+// what they count for: every piece counts, each point worth ¼ of player/stats.js's per-point effect (owner 1bB,
+// 2026-10-03), so a full 16-piece outfit (~20–33 points) lands near today's 7-slot wardrobe (~8)
+export const GEAR_POINT = .25;
+export function outfitEffect(o) { const st = outfitStats(o); for (const k in st) st[k] *= GEAR_POINT; return st; }
 // "id,id,,id…" in slot then layer order (empty for nothing), and back; unknown ids are dropped
 export const encode = o => SLOTS.flatMap(s => LAYERS.map(l => (o[s] && o[s][l]) || '')).join(',');
 export function decode(str) { const o = empty(), ids = String(str || '').split(',');

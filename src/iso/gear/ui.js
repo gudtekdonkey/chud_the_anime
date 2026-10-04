@@ -3,7 +3,7 @@
 // browser and can be opened from the URL (&outfit=<preset> | random | random-ninja | the encoded outfit).
 import { SLOTS, SLOT_NAME, LAYERS, LAYER_NAME, FAMILIES, STAT_KEYS, STAT_SHORT } from 'ronin-engine/iso/gear/schema.js';
 import { BY_CELL } from './items.js';
-import { PRESETS, PRESET, randomOutfit, outfitStats, encode, decode } from './outfits.js';
+import { PRESETS, PRESET, randomOutfit, outfitStats, outfitEffect, encode, decode } from './outfits.js';
 
 const KEY = 'ronin-iso-outfit';
 const CSS = `.iso .gear-slots { display: grid; grid-template-columns: auto 1fr; gap: 2px 6px; align-items: center; margin-top: 4px; }
@@ -15,13 +15,15 @@ const CSS = `.iso .gear-slots { display: grid; grid-template-columns: auto 1fr; 
 .iso .gear-stats { font: 11px ui-monospace, monospace; color: var(--cyan); }
 .iso details summary { cursor: pointer; color: var(--dim); font-size: 12px; padding: 2px 0; }`;
 
-// what the page starts in: the URL's pick, else the last one remembered, else Iron Ash as built (null)
+// what the page starts in: the URL's pick, else the last one remembered, else Iron Ash in gear (owner 1cB, 2026-10-03:
+// his default look is built from gear, so taking off a piece swaps only that piece); 'built' is the procedural model (null)
 export function startOutfit(Q) {
   const pick = Q.get('outfit') ?? (() => { try { return localStorage.getItem(KEY); } catch { return null; } })();
   return parse(pick);
 }
 function parse(pick) {
-  if (!pick || pick === 'built') return null;
+  if (!pick) return PRESET['iron-ash'].o;
+  if (pick === 'built') return null;
   if (PRESET[pick]) return PRESET[pick].o;
   const m = /^random(?:-(\w+))?(?::(\d+))?$/.exec(pick); if (m) return randomOutfit(+(m[2] || Date.now() % 1e6), FAMILIES.includes(m[1]) ? m[1] : null);
   return decode(pick);
@@ -44,7 +46,8 @@ export function wireGear(root, outfit, onDress) {
   const show = () => {
     for (const s of SLOTS) for (const l of LAYERS) { const el = $(`g-${s}-${l}`); el.value = (cur && cur[s][l]) || ''; el.disabled = !cur; }
     const st = cur ? outfitStats(cur) : null;
-    $('g-stats').textContent = st ? STAT_KEYS.map(k => `${STAT_SHORT[k]} +${st[k]}`).join('  ') : 'as built: the procedural Iron Ash';
+    const ef = cur ? outfitEffect(cur) : null;   // the points as worn, and what they count for at ¼ a point (owner 1bB)
+    $('g-stats').textContent = st ? STAT_KEYS.map(k => `${STAT_SHORT[k]} +${st[k]} (${+ef[k].toFixed(2)})`).join('  ') : 'as built: the procedural Iron Ash';
   };
   const set = (o, name) => { cur = o; $('g-preset').value = name; try { localStorage.setItem(KEY, o ? (PRESETS.find(p => p.o === o) ? name : encode(o)) : 'built'); } catch { /* storage blocked: the pick lasts the visit */ } show(); onDress(o); };
   const randomise = () => { seed = (seed * 7919 + Date.now()) % 1e6 | 0; set(randomOutfit(seed, $('g-fam').value || null), 'custom'); };
