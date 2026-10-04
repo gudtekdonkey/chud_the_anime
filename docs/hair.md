@@ -13,7 +13,7 @@ Built on the 3D look of the iso slice (`?iso`); today's game and the pixel look 
 | `?iso&hairgrid&facings&hairs=chonmage&hats=none,kabuto&zoom=4&cell=3.5,0` | review: one hair's eight facings across, chosen hats down, close |
 | `npm run check:hair` | renders all 240 pairs in all 8 facings (screenshots in `test-output/hair/`), runs the audit on both bodies, plays the pickers in the courtyard |
 
-The samurai keep a topknot (chonmage) by default (owner); he wears the ronin's tied-back hair under the jingasa.
+The samurai keep a topknot (chonmage) by default (owner); he wears Long and loose under the jingasa (owner 2bC, 2026-10-03).
 A hat that refuses the hair is refused with the reason shown; a hair picked under a hat that refuses it takes the hat
 off (whichever went on last stays, as the wardrobe's masks do). Randomise only deals pairs that fit.
 
@@ -123,8 +123,6 @@ the shinobi's cloth; cords in white paper, red, indigo or straw.
 
 ## Open for the owner
 
-- His default hair under the jingasa (Claude's pick: the ronin's tied-back hair, its short tail and two locks just
-  showing below the brim), and the samurai's (the chonmage, as the design says).
 - The bare-headed hero's scalp colour (a dark warm skin, `#3a2f2a`; ronin.js's near-black head is otherwise kept).
-- Which hats and hairstyles go in the game, their colours (the bandana and headband in any colour, owner).
+- Their colours (the bandana and headband in any colour, owner); all 24 hairstyles and 10 hats stay (owner 2026-10-04).
 - The pixel look keeps its own drawing; hair there waits on the 3D-or-pixel pick.

@@ -63,11 +63,11 @@ try {
   await page.waitForFunction(() => window.__iso && window.__iso.ready && window.__iso.t > .3, undefined, { timeout: 60000 });
   await page.evaluate(() => document.querySelector('canvas').focus());   // a click would be a click to move (port.js)
   const heads = () => page.evaluate(() => window.__iso.heads);
-  let h = await heads(); if (h.hero.drawn !== 'ronin|jingasa' || h.foe.drawn !== 'chonmage|none') fail(`defaults drawn ${h.hero.drawn}, ${h.foe.drawn}`);
+  let h = await heads(); if (h.hero.drawn !== 'long-loose|jingasa' || h.foe.drawn !== 'chonmage|none') fail(`defaults drawn ${h.hero.drawn}, ${h.foe.drawn}`);
   ok(`he wears ${h.hero.drawn}, the samurai ${h.foe.drawn}`);
   step = 'Alt + H, T, Y';
   await page.keyboard.press('Alt+KeyH'); await page.keyboard.press('Alt+KeyT');
-  await page.waitForFunction(() => { const h = window.__iso.heads.hero; return h.drawn === h.hair + '|' + h.hat && h.hair !== 'ronin' && h.hat !== 'jingasa'; }, undefined, { timeout: 30000 });
+  await page.waitForFunction(() => { const h = window.__iso.heads.hero; return h.drawn === h.hair + '|' + h.hat && h.hair !== 'long-loose' && h.hat !== 'jingasa'; }, undefined, { timeout: 30000 });
   h = await heads(); const after = h.hero.drawn;
   await page.keyboard.press('Alt+KeyY');
   await page.waitForFunction(a => { const h = window.__iso.heads; return h.hero.drawn === h.hero.hair + '|' + h.hero.hat && h.foe.drawn === h.foe.hair + '|' + h.foe.hat; }, after, { timeout: 30000 });
