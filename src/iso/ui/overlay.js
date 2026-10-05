@@ -52,7 +52,7 @@ export function buildPage() {
     <label><input type="checkbox" id="o-glint">Keep the glints<kbd>Alt+8</kbd></label>
     <label>Bands <select id="o-bands"><option>3</option><option>4</option><option>5</option></select></label>
     <h2>Camera and hat</h2>
-    <label>Bodies <select id="o-body"><option value="39.5">Picked: oblique, body from 39.5°</option><option value="upright">Upright: full height, 20°</option><option value="54">True 54°</option></select><kbd>B</kbd></label>
+    <label>Bodies <select id="o-body"><option value="upright">Picked: upright, full height, 20°</option><option value="39.5">Oblique, body from 39.5°</option><option value="54">True 54°</option></select><kbd>B</kbd></label>
     <label>Hat tilt <select id="o-tilt"><option>0</option><option>8</option><option>14</option><option>20</option></select></label>
     <label>Brim <select id="o-brim"><option value="1">Wide, as drawn</option><option value=".72">Medium</option></select></label>
     <label>Facings <select id="o-free"><option value="0">8, stepped (sprites)</option><option value="1">Free (any angle)</option></select><kbd>T</kbd></label>

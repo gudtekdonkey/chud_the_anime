@@ -112,4 +112,4 @@ export const HAIR = [
       return { r: 'crown', g: 'spike', c: i % 2 ? 'hi' : 'h', at: [x, Math.sqrt(Math.max(.2, 1 - (x / 1.95) ** 2 - (z / 1.95) ** 2)) * 2.05 + .1, z], dir: [x * .2, .55, -1], len: 1.4 + .3 * (i % 3), w: .44 }; })] },
 ];
 export const HAIR_ID = Object.fromEntries(HAIR.map(h => [h.id, h]));
-export const DEFAULT_HAIR = { hero: 'ronin', foe: 'chonmage' };   // the samurai keep their topknot (owner)
+export const DEFAULT_HAIR = { hero: 'long-loose', foe: 'chonmage' };   // his hair under the jingasa long and loose (owner 2bC); the samurai keep their topknot (owner)

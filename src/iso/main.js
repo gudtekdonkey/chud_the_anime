@@ -3,7 +3,7 @@
 // look interface. A fixed 60 Hz update (the flow's world steps twice, at 1/120 s, as on its page), a render per frame.
 import * as THREE from 'three';
 import { makePipeline, PIPE, MOMENT } from 'ronin-engine/iso/gfx/post.js';
-import { CAM, follow, U, OBL, VW, projMatrix, toScreen } from 'ronin-engine/iso/gfx/view.js';
+import { CAM, follow, U, OBL, VW, projMatrix, toScreen, setBody } from 'ronin-engine/iso/gfx/view.js';
 import { SH } from 'ronin-engine/iso/gfx/shade.js';
 import { buildRoom, ROOM } from './world/room.js';
 import { W } from 'ronin-engine/clock/world.js';
@@ -49,6 +49,7 @@ import { mountHairPanel } from './hair/panel.js';
 import { HEADS } from './hair/head.js';
 
 const Q = new URLSearchParams(location.search), TICKS = +(Q.get('tick') || 0);
+setBody(Q.get('body') || 'upright');   // owner 4B (2026-10-03): the upright body view everywhere, in play too; &body=39.5 the old pick
 const { root, canvas, ms } = buildPage();
 const pipe = makePipeline(canvas);
 SETTINGS.fpsFor = fpsFor; setStyle(Q.has('style') ? +Q.get('style') : 3);   // the owner's pick: Painterly (gfx/style.js)

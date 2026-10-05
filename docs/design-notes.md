@@ -358,3 +358,12 @@ The owner said the deaths still don't feel like someone dying, and the execution
 - **3 and 3b: still open** (the lantern ash pickup's look, and whether taking it still glitches him).
 - **4 B: the upright body view everywhere** (full height from a low 20°), in play too; 39.5° is no longer the default. Not built yet.
 - **5: redo all five executions** (Behind the back, Through and past, Whirlwind, Far behind, Peek-a-boo). The direction for the redo is still to be asked.
+
+## The open-question picks, built (2026-10-05)
+
+- **4B built:** the slice boots on the upright body view (`setBody('upright')` in `iso/main.js`; the overlay's Bodies list leads with it). `&body=39.5` or `B` brings the old oblique back. The engine's own default stays 39.5, so other games choose for themselves.
+- **2bC built:** his hair under the jingasa is "Long and loose" (`DEFAULT_HAIR.hero = 'long-loose'`). The samurai keep the topknot. check-hair's default line follows.
+- **The submodule moved to `cd3d628`.** That commit has dealer_solana's painted layer (`sdf/`, and on the GPU) and an execution's own `pre`. Golden is unchanged on it.
+- **Not built, waiting on the owner:**
+  - **1bB and 1cB.** Two things block them. First, a gear outfit drops the hair-and-hat head slot (`look3d.js` builds `headSlot` only when the hero is not dressed), so the gear-built default would undo 2bC. Second, today's game may not import `src/iso/gear/`, and `party/kit.js` would need it to count gear points. Options are on the summary.
+  - **5, the five executions.** The direction is still owed.
